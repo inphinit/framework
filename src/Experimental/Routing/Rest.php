@@ -7,18 +7,18 @@
  * Released under the MIT license
  */
 
-namespace Experimental\Routing;
+namespace Inphinit\Experimental\Routing;
 
 use Inphinit\App;
 use Inphinit\Routing\Route;
 use Inphinit\Routing\Router;
 
-use Experimental\Exception;
+use Inphinit\Experimental\Exception;
 
 /*
 usage:
 
-    use Experimental\Routing\Rest;
+    use Inphinit\Experimental\Routing\Rest;
 
     Rest::create('RestControllerClass');
 

@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Experimental;
+namespace Inphinit\Experimental;
 
 use Inphinit\App;
 use Inphinit\View;
@@ -16,36 +16,22 @@ use Inphinit\Response;
 
 class Debug
 {
-    private static $initiate = false;
     private static $views = array();
     private static $displayErrors;
 
-    private static function register()
-    {
-        if (self::$initiate) {
-            return null;
-        }
-
-        self::$initiate = true;
-
-        self::$displayErrors = ini_get('display_errors');
-
-        ini_set('display_errors', '0');
-    }
-
     public static function unregister()
     {
-        if (self::$initiate === false) {
-            return null;
+        $nc = '\\' . get_called_class();
+
+        App::off('error',     array( $nc, 'renderError' ));
+        App::off('terminate', array( $nc, 'renderPerformance' ));
+        App::off('terminate', array( $nc, 'renderClasses' ));
+
+        if (false === empty(self::$displayErrors)) {
+            ini_set('display_errors', self::$displayErrors);
+
+            self::$displayErrors = null;
         }
-
-        App::off('error',     array( '\\Experimental\\Debug', 'renderError' ));
-        App::off('terminate', array( '\\Experimental\\Debug', 'renderPerformance' ));
-        App::off('terminate', array( '\\Experimental\\Debug', 'renderClasses' ));
-
-        ini_set('display_errors', self::$displayErrors);
-
-        self::$initiate = false;
     }
 
     public static function renderError($type, $message, $file, $line)
@@ -98,12 +84,18 @@ class Debug
             Exception::raise($view . ' view is not found', 2);
         }
 
-        $callRender = array( '\\Experimental\\Debug', 'render' . ucfirst($type) );
+        $callRender = array( '\\' . get_called_class(), 'render' . ucfirst($type) );
 
         switch ($type) {
             case 'error':
                 self::$views[$type] = $view;
                 App::on('error', $callRender);
+
+                if (empty(self::$displayErrors)) {
+                    self::$displayErrors = ini_get('display_errors');
+
+                    ini_set('display_errors', '0');
+                }
             break;
 
             case 'classes':
@@ -115,8 +107,6 @@ class Debug
             default:
                 Exception::raise($type . ' is not valid event', 2);
         }
-
-        self::register();
     }
 
     public static function details($message, $file, $line)
@@ -192,6 +182,10 @@ class Debug
     public static function caller($level = 0)
     {
         $trace = debug_backtrace(0);
+
+        if ($level === -1) {
+            return $trace;
+        }
 
         if (empty($trace[$level])) {
             return false;

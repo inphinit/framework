@@ -7,16 +7,16 @@
  * Released under the MIT license
  */
 
-namespace Experimental\Routing;
+namespace Inphinit\Experimental\Routing;
 
 use Inphinit\App;
 use Inphinit\Routing\Route;
 use Inphinit\Routing\Router;
 
-use Experimental\Exception;
+use Inphinit\Experimental\Exception;
 
 /*
-use Experimental\Routing\Quick;
+use Inphinit\Experimental\Routing\Quick;
 
 Quick::create('Namespace.level2.classname');
 */

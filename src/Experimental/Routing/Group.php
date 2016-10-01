@@ -7,45 +7,16 @@
  * Released under the MIT license
  */
 
-namespace Experimental\Routing;
+namespace Inphinit\Experimental\Routing;
 
 use Inphinit\App;
 use Inphinit\Request;
 use Inphinit\Routing\Router;
 
-/*
-    Usage examples:
-
-    use Experimental\Routing\Group;
-
-    //Group by path, navigate to http://[server]/foo/bar
-    Group::create()->path('/foo/')->call(function () {
-        Route::set('GET', '/bar', 'Controller:action');
-    });
-
-    //Group by path with regexp, navite http://[server]/something/baz
-    Group::create()->path('re:#^/([a-z]+)/#ui')->call(function ($arg1) {
-        Route::set('GET', '/baz', 'Controller:action');
-    });
-
-    //Group by subdomain, navite http://[server]/something/baz
-    Group::create()->domain('re:#^([a-z]+)\.server\.io$#i')->call(function ($arg1) {
-        Route::set('GET', '/baz', 'Controller:action');
-    });
-
-
-    //Combined group subdomain+path
-    Group::create()
-        ->domain('re:#^([a-z]+)\.server\.io$#i')
-        ->path('re:#/([a-z]+)/$#i')
-        ->call(function ($userDomain, $path) {
-            Route::set('GET', '/', 'Controller:action');
-        });
-*/
-
 class Group extends Router
 {
     private $ready = false;
+    private $callback;
     private $domain;
     private $path;
     private $ns;
@@ -98,9 +69,9 @@ class Group extends Router
         return $this;
     }
 
-    public function call(\Closure $call)
+    public function then(\Closure $callback)
     {
-        $this->call = $call;
+        $this->callback = $callback;
 
         return $this;
     }
@@ -193,13 +164,13 @@ class Group extends Router
         if ($argsPath !== false) {
             $args = array_merge($args, $argsPath);
 
-            parent::$prefixPath += substr($this->currentPrefixPath, 0, -1);
+            parent::$prefixPath = substr($this->currentPrefixPath, 0, -1);
             $valids++;
         }
 
         if ($valids === $checks) {
-            parent::$prefixNS += $this->ns;
-            call_user_func_array($this->call, $args);
+            parent::$prefixNS = $this->ns;
+            call_user_func_array($this->callback, $args);
         }
 
         parent::$prefixNS = $oNS;

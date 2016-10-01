@@ -14,8 +14,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Inphinit\\": "src/Inphinit",
-            "Experimental\\": "src/Experimental"
+            "Experimental\\": "src/Experimental",
+            "Inphinit\\": "src/Inphinit"
         }
     }
 }

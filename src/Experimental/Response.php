@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Experimental;
+namespace Inphinit\Experimental;
 
 use InphinitApp;
 use Inphinit\Response as DefaultResponse;

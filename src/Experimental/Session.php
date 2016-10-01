@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Experimental;
+namespace Inphinit\Experimental;
 
 class Session
 {
