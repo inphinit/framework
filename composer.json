@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Experimental\\": "src/Experimental",
+            "Inphinit\\Experimental\\": "src/Experimental",
             "Inphinit\\": "src/Inphinit"
         }
     }
