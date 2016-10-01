@@ -15,20 +15,6 @@ use Inphinit\Routing\Router;
 
 use Inphinit\Experimental\Exception;
 
-/*
-usage:
-
-    use Inphinit\Experimental\Routing\Rest;
-
-    Rest::create('RestControllerClass');
-
-Group:
-
-    Group::create()->path('/foo/')->call(function () {
-        Rest::create('RestControllerClass');
-    });
-*/
-
 class Rest extends Router
 {
     private $controller;
@@ -52,11 +38,11 @@ class Rest extends Router
         }
 
         $this->valids = array(
-            'index'   => array( 'GET', '/' ),
-            'create'  => array( 'GET', '/create' ),
+            'index'   => array( 'GET',  '/' ),
+            'create'  => array( 'GET',  '/create' ),
             'store'   => array( 'POST', '/' ),
-            'show'    => array( 'GET', 're:#^/([a-z0-9_\-]+)$#i' ),
-            'edit'    => array( 'GET', 're:#^/([a-z0-9_\-]+)/edit$#i' ),
+            'show'    => array( 'GET',  're:#^/([a-z0-9_\-]+)$#i' ),
+            'edit'    => array( 'GET',  're:#^/([a-z0-9_\-]+)/edit$#i' ),
             'update'  => array( array('PUT', 'PATCH'), 're:#^/([a-z0-9_\-]+)$#i' ),
             'destroy' => array( 'DELETE', 're:#^/([a-z0-9_\-]+)$#i' ),
         );

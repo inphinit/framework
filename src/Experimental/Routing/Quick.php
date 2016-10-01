@@ -12,47 +12,49 @@ namespace Inphinit\Experimental\Routing;
 use Inphinit\App;
 use Inphinit\Routing\Route;
 use Inphinit\Routing\Router;
-
 use Inphinit\Experimental\Exception;
-
-/*
-use Inphinit\Experimental\Routing\Quick;
-
-Quick::create('Namespace.level2.classname');
-*/
 
 class Quick extends Router
 {
+    private static $debuglvl = 2;
     private $classMethods = array();
     private $fullController;
     private $controller;
     private $format;
+    private $prefix;
     private $ready = false;
 
     const BOTH = 1;
     const SLASH = 2;
     const NOSLASH = 3;
 
-    public static function create($namecontroller)
+    public static function create($prefix = '', $namecontroller)
     {
-        return new static($namecontroller);
+        self::$debuglvl = 3;
+
+        return new static($prefix, $namecontroller);
     }
 
-    public function __construct($namecontroller)
+    public function __construct($prefix = '', $namecontroller)
     {
         $this->format = Quick::BOTH;
 
         $controller = parent::$prefixNS . strtr($namecontroller, '.', '\\');
+
         $fc = '\\Controller\\' . $controller;
 
         if (class_exists($fc) === false) {
-            Exception::raise('Invalid class ' . $fc, 2);
+            Exception::raise('Invalid class ' . $fc, self::$debuglvl);
         }
+
+        self::$debuglvl = 2;
 
         $this->classMethods = self::parseVerbs(get_class_methods($fc));
 
         $this->controller = $namecontroller;
         $this->fullController = $fc;
+
+        $this->prefix = empty($prefix) ? '' : ('/' . trim($prefix, '/'));
 
         App::on('init', array($this, 'prepare'));
     }
@@ -60,18 +62,19 @@ class Quick extends Router
     private static function parseVerbs($methods)
     {
         $list = array();
+        $reMatch = '#^(any|get|post|patch|put|head|delete|options|trace|connect)([a-zA-Z0-9_]+)$#';
 
         foreach ($methods as $value) {
             $verb = array();
 
-            if (preg_match('#^(any|get|post|patch|put|head|delete|options|trace|connect)([a-zA-Z0-9_]+)$#', $value, $verb) > 0) {
+            if (preg_match($reMatch, $value, $verb) > 0) {
                 if (strcasecmp('index', $verb[2]) === 0) {
                     $verb[2] = '';
                 } else {
-                    //Next update: Convert camelCase to camel-case
+                    $verb[2] = strtolower(preg_replace('#([a-z])([A-Z])#', '$1-$2', $verb[2]));
                 }
 
-                $list[] = array(strtoupper($verb[1]), strtolower($verb[2]), $value);
+                $list[] = array(strtoupper($verb[1]), $verb[2], $value);
             }
         }
 
@@ -108,12 +111,16 @@ class Quick extends Router
         $classMethods = $this->classMethods;
 
         foreach ($classMethods as $value) {
-            if ($value[1] !== '' && ($format === self::BOTH || $format === self::SLASH)) {
-                Route::set($value[0], '/' . $value[1] . '/', $controller . ':' . $value[2]);
+            if ($format === self::BOTH || $format === self::SLASH) {
+                $route = $this->prefix . '/' . (empty($value[1]) ? '' : ($value[1] . '/'));
+
+                Route::set($value[0], $route, $controller . ':' . $value[2]);
             }
 
             if ($format === self::BOTH || $format === self::NOSLASH) {
-                Route::set($value[0], '/' . $value[1], $controller . ':' . $value[2]);
+                $route = $this->prefix . (empty($value[1]) ? '' : ('/' . $value[1]));
+
+                Route::set($value[0], $route, $controller . ':' . $value[2]);
             }
         }
 
