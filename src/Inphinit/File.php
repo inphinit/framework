@@ -101,7 +101,7 @@ class File
         return $mimetype;
     }
 
-    public static function output($path, $length = 1024, $delay = 0)
+    public static function output($path, $length = 102400, $delay = 0)
     {
         if (is_readable($path) === false) {
             return false;
@@ -111,7 +111,7 @@ class File
 
         $handle = fopen($path, 'rb');
 
-        $length = is_int($length) && $length > 0 ? $length : 1024;
+        $length = is_int($length) && $length > 0 ? $length : 102400;
 
         while (false === feof($handle)) {
             echo fread($handle, $length);

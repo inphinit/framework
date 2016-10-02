@@ -53,28 +53,25 @@ class Request
             return false;
         }
 
-        $all = self::$reqHeaders;
+        $headers = self::$reqHeaders;
 
-        if (empty($all)) {
-            $server = $_SERVER;
-
-            foreach ($server as $key => $value) {
+        if (empty($headers)) {
+            foreach ($_SERVER as $key => $value) {
                 if (strpos($key, 'HTTP_') === 0) {
                     $current = Helper::camelCase(substr($key, 5), '_', '-');
-                    $all[$current] = $value;
+                    $headers[$current] = $value;
                 }
             }
 
-            $server = null;
-            self::$reqHeaders = $all;
+            self::$reqHeaders = $headers;
         }
 
         if ($name !== null) {
             $name = Helper::camelCase($name, '-', '-');
-            return  isset($all[$name]) ? $all[$name] : false;
+            return  isset($headers[$name]) ? $headers[$name] : false;
         }
 
-        return $all;
+        return $headers;
     }
 
     public static function query()
@@ -88,19 +85,19 @@ class Request
 
     public static function get($key, $alternative = false)
     {
-        $data = Helper::arrayPath($key, $_GET);
+        $data = empty($_GET) ? false : Helper::arrayPath($key, $_GET);
         return $data === false ? $alternative : $data;
     }
 
     public static function post($key, $alternative = false)
     {
-        $data = Helper::arrayPath($key, $_POST);
+        $data = empty($_POST) ? false : Helper::arrayPath($key, $_POST);
         return $data === false ? $alternative : $data;
     }
 
     public static function cookie($key, $alternative = false)
     {
-        $data = Helper::arrayPath($key, $_COOKIE);
+        $data = empty($_COOKIE) ? false : Helper::arrayPath($key, $_COOKIE);
         return $data === false ? $alternative : $data;
     }
 

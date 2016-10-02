@@ -44,7 +44,7 @@ class Cache
             $data = file_get_contents($lastModify);
 
             if ($data !== false && $data > REQUEST_TIME) {
-                $this->isCache      = true;
+                $this->isCache = true;
 
                 header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $data) . ' GMT');
                 header('Etag: ' . sha1_file($filename));
@@ -132,6 +132,10 @@ class Cache
 
     public function show()
     {
-        File::output($this->cacheName, 1024);
+        if (filesize($this->cacheName) > 524287) {
+            File::output($this->cacheName);
+        } else {
+            readfile($this->cacheName);
+        }
     }
 }
