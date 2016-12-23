@@ -61,23 +61,23 @@ function UtilsStatusCode()
 
 function UtilsPath()
 {
-    static $pathInfo;
+    static $pathinfo;
 
-    if ($pathInfo !== null) {
-        return $pathInfo;
+    if ($pathinfo !== null) {
+        return $pathinfo;
     }
 
     $sname  = $_SERVER['SCRIPT_NAME'];
-    $reqUri = empty($_SERVER['REQUEST_URI']) ? null :
+    $requri = empty($_SERVER['REQUEST_URI']) ? null :
                 preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
 
-    $pathInfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
+    $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
 
-    $pathInfo = substr(urldecode($reqUri), strlen($pathInfo) + 1);
+    $pathinfo = substr(urldecode($requri), strlen($pathinfo) + 1);
 
-    $pathInfo = '/' . ($pathInfo === false ? '' : $pathInfo);
+    $pathinfo = '/' . ($pathinfo === false ? '' : $pathinfo);
 
-    return $pathInfo;
+    return $pathinfo;
 }
 
 function UtilsAutoload()
@@ -130,7 +130,8 @@ function UtilsAutoload()
 
         $path = INPHINIT_PATH;
 
-        $files = $isfile ? array( $path . $base ) : array( $path . $base . '.php', $path . $base . '.hh' );
+        $files = $isfile ? array( $path . $base ) :
+                           array( $path . $base . '.php', $path . $base . '.hh' );
 
         $files = array_values(array_filter($files, 'is_file'));
 

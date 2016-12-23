@@ -9,46 +9,197 @@
 
 namespace Inphinit\Experimental;
 
-class Session
+use Inphinit\AppData;
+
+class Session implements \IteratorAggregate
 {
-    private $started = false;
+    private $handler;
+    private $iterator;
+    private $data = array();
+    private $insertions = array();
+    private $deletions = array();
+    private $currentId;
+    private $currentName;
 
-    public function __construct()
+    public function __construct($name = 'inphinit', $id = null, $savepath = null, array $opts = array())
     {
-        $this->started = session_id() !== '';
+        if (headers_sent()) {
+            Exception::raise('Cannot modify header information - headers already sent', 2);
+        }
 
-        if (false === $this->started) {
-            AppData::createCommomFolders();
+        AppData::createCommomFolders();
 
-            $this->path(AppData::storagePath() . '/session');
-            $this->name('inphinit');
+        $savepath = $savepath ? $savepath : (AppData::storagePath() . 'session');
+        $savepath = rtrim($savepath, '/') . '/';
 
-            session_start();
+        $tmpname = null;
 
-            $this->started = true;
+        if ($id === null) {
+            if (empty($_COOKIE[$name])) {
+                $tmpname = tempnam($savepath, 'S_');
+                $this->currentId = substr(basename($tmpname), 2);
+                $this->currentId = substr(basename($this->currentId), 0, -4);
+            } else {
+                $this->currentId = $_COOKIE[$name];
+            }
+        } else {
+            $this->currentId = $id;
+        }
+
+        if ($tmpname === null) {
+            $tmpname = $savepath . 'S_' . $this->currentId . '.tmp';
+        }
+
+        $this->currentName = $name;
+
+        $this->handler = fopen($tmpname, 'a+');
+
+        if ($this->handler === false) {
+            Exception::raise('Failed to write session data', 2);
+        }
+
+        $opts = $opts + array(
+            'expire' => 0, 'path' => '', 'domain' => '',
+            'secure' => false, 'httponly' => false
+        );
+
+        if (!setcookie($name, $this->currentId, $opts['expire'], $opts['path'], $opts['domain'], $opts['secure'], $opts['httponly']))
+        {
+            Exception::raise('Failed to set HTTP cookie', 2);
+        }
+
+        $opts = null;
+
+        $this->read();
+    }
+
+    public function __destruct()
+    {
+        $this->commit();
+
+        if ($this->handler) {
+            fclose($this->handler);
+        }
+
+        $this->data =
+        $this->iterator =
+        $this->deletions =
+        $this->insertions =
+        $this->handler = null;
+    }
+
+    public function commit()
+    {
+        if (empty($this->insertions) && empty($this->deletions)) {
+            return null;
+        }
+
+        if (flock($this->handler, LOCK_EX) === false) {
+            usleep(10000);
+            $this->commit();
+            return null;
+        }
+
+        $data = '';
+
+        rewind($this->handler);
+
+        while (feof($this->handler) === false) {
+            $data .= fread($this->handler, 8192);
+        }
+
+        $data = trim($data);
+
+        if ($data !== '') {
+            $data = unserialize($data);
+
+            $this->data = $this->insertions + $data;
+
+            $data = null;
+
+            foreach ($this->deletions as $key => $value) {
+                unset($this->data[$key]);
+            }
+        } else {
+            $this->data = $this->insertions;
+        }
+
+        $this->insertions = array();
+        $this->deletions = array();
+
+        $this->write();
+
+        flock($this->handler, LOCK_UN);
+    }
+
+    private function read()
+    {
+        if (flock($this->handler, LOCK_EX) === false) {
+            usleep(10000);
+            $this->read();
+            return null;
+        }
+
+        $data = '';
+
+        rewind($this->handler);
+
+        while (feof($this->handler) === false) {
+            $data .= fread($this->handler, 8192);
+        }
+
+        $data = trim($data);
+
+        if ($data !== '') {
+            $this->data = unserialize($data);
+            $data = null;
+        }
+
+        flock($this->handler, LOCK_UN);
+    }
+
+    private function write()
+    {
+        ftruncate($this->handler, 0);
+        rewind($this->handler);
+
+        fwrite($this->handler, serialize($this->data));
+    }
+
+    public function __clone()
+    {
+        Exception::raise('Prevent clone', 2);
+    }
+
+    public function __get($name)
+    {
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
     }
 
-    public function path($path = null)
+    public function __set($name, $value)
     {
-        return $path === null ? session_save_path() : session_save_path($path);
+        unset($this->deletions[$name]);
+
+        $this->insertions[$name] = $value;
+        $this->data = $this->insertions + $this->data;
     }
 
-    public function name($name = null)
+    public function __isset($name)
     {
-        return $name === null ? session_name() : session_name($name);
+        return array_key_exists($name, $this->data);
     }
 
-    public function close()
+    public function __unset($name)
     {
-        if ($this->started) {
-            session_write_close();
-        }
+        unset($this->data[$name], $this->insertions[$name]);
+
+        $this->deletions[$name] = true;
     }
 
-    public static function get($key, $alternative = false)
+    public function getIterator()
     {
-        $data = Helper::arrayPath($key, $_SESSION);
-        return $data === false ? $alternative : $data;
+        return $this->iterator = new \ArrayIterator($this->data);
     }
 }

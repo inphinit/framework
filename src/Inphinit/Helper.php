@@ -21,7 +21,7 @@ class Helper
                 'major' => $match[1],
                 'minor' => $match[2],
                 'patch' => $match[3],
-                'extra' => empty($match[5]) === false ? $match[5] : null
+                'extra' => empty($match[5]) ? null : $match[5]
             );
         }
 
