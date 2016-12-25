@@ -168,7 +168,7 @@ class Session implements \IteratorAggregate
 
     public function __clone()
     {
-        Exception::raise('Prevent clone', 2);
+        Exception::raise('Can\'t clone object', 2);
     }
 
     public function __get($name)

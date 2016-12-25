@@ -19,6 +19,12 @@ class Debug
     private static $views = array();
     private static $displayErrors;
 
+    /**
+     * Unregister debug events
+     *
+     * @param  string        $path
+     * @return void
+     */
     public static function unregister()
     {
         $nc = '\\' . get_called_class();
@@ -34,6 +40,15 @@ class Debug
         }
     }
 
+    /**
+     * Render a View to error
+     *
+     * @param  string        $type
+     * @param  string        $message
+     * @param  string        $file
+     * @param  integer       $line
+     * @return void
+     */
     public static function renderError($type, $message, $file, $line)
     {
         if (empty(self::$views['error'])) {
@@ -58,6 +73,11 @@ class Debug
         View::render(self::$views['error'], $data);
     }
 
+    /**
+     * Render a View to show performance, memory and time to display page
+     *
+     * @return void
+     */
     public static function renderPerformance()
     {
         if (empty(self::$views['performance'])) {
@@ -67,6 +87,11 @@ class Debug
         View::render(self::$views['performance'], self::performance());
     }
 
+    /**
+     * Render a View to show performance and show declared classes
+     *
+     * @return void
+     */
     public static function renderClasses()
     {
         if (empty(self::$views['classes'])) {
@@ -78,6 +103,11 @@ class Debug
             ));
     }
 
+    /**
+     * Register a debug views
+     *
+     * @return void
+     */
     public static function view($type, $view)
     {
         if ($view !== null && View::exists($view) === false) {
@@ -109,6 +139,11 @@ class Debug
         }
     }
 
+    /**
+     * Get detailed from error, include eval errors
+     *
+     * @return array
+     */
     public static function details($message, $file, $line)
     {
         $match = array();
@@ -128,6 +163,11 @@ class Debug
         );
     }
 
+    /**
+     * Get memory usage and you can also use it to calculate runtime.
+     *
+     * @return void
+     */
     public static function performance()
     {
         return array(
@@ -138,6 +178,11 @@ class Debug
         );
     }
 
+    /**
+     * Get declared classes
+     *
+     * @return array
+     */
     public static function classes()
     {
         $objs = array();
@@ -159,10 +204,17 @@ class Debug
         return $objs;
     }
 
-    public static function source($source, $line)
+    /**
+     * Get snippet from a file
+     *
+     * @param  string        $file
+     * @param  integer       $line
+     * @return array|boolean
+     */
+    public static function source($file, $line)
     {
-        if ($line <= 0 || is_file($source) === false) {
-            return null;
+        if ($line <= 0 || is_file($file) === false) {
+            return false;
         } elseif ($line >= 5) {
             $init = $line - 5;
             $end  = $line + 5;
@@ -175,10 +227,16 @@ class Debug
 
         return array(
             'breakpoint' => $breakpoint,
-            'preview' => explode(EOL, File::portion($source, $init, $end, true))
+            'preview' => explode(EOL, File::portion($file, $init, $end, true))
         );
     }
 
+    /**
+     * Get caller
+     *
+     * @param  integer       $level
+     * @return array|boolean
+     */
     public static function caller($level = 0)
     {
         $trace = debug_backtrace(0);

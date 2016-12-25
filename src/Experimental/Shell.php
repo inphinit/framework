@@ -17,11 +17,21 @@ class Shell
     private $argc = 0;
     private $argv = array();
 
+    /**
+     * Handle the object's destruction.
+     *
+     * @return void
+     */
     public function __destruct()
     {
         $this->io = null;
     }
 
+    /**
+     * Create a Shell instance for use CLI interface
+     *
+     * @return void
+     */
     public function __construct()
     {
         if (self::isCli()) {
@@ -41,28 +51,53 @@ class Shell
         }
     }
 
+    /**
+     * Get arguments
+     *
+     * @return string
+     */
     public function arguments()
     {
         return $this->argv;
     }
 
+    /**
+     * Check if using arguments
+     *
+     * @return boolean
+     */
     public function hasArgs()
     {
         return $this->argc !== 0;
     }
 
+    /**
+     * Check if script is executed in CLI
+     *
+     * @return boolean
+     */
     public static function isCli()
     {
         return php_sapi_name() === 'cli';
     }
 
-    public static function input($length = 1024)
+    /**
+     * Get input data
+     *
+     * @return mixed
+     */
+    public static function input($length = 0)
     {
         if (self::isCli()) {
-            return fgets(STDIN, $length);
+            return $length > 0 ? fgets(STDIN, $length) : fgets(STDIN);
         }
     }
 
+    /**
+     * Add callback event to input
+     *
+     * @return void
+     */
     public function inputObserver($callback, $exitCicle = 'exit')
     {
         if (self::isCli() === false || is_callable($callback) === false) {
@@ -75,6 +110,11 @@ class Shell
         $this->fireInputObserver();
     }
 
+    /**
+     * Trigger observer input
+     *
+     * @return void
+     */
     protected function fireInputObserver()
     {
         $response = rtrim(self::input(), PHP_EOL);

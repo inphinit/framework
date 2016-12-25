@@ -11,6 +11,12 @@ namespace Inphinit\Experimental;
 
 class Exception extends \ErrorException
 {
+    /**
+     * Raise an error
+     *
+     * @throws ErrorException
+     * @return void
+     */
     public static function raise($message, $level = 1, $type = E_ERROR)
     {
         $data = Debug::caller($level);

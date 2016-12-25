@@ -16,14 +16,24 @@ class View
 
     private static $force = false;
 
+    /**
+     * Force the View::render method to render at the time it is called
+     *
+     * @return void
+     */
     public static function forceRender()
     {
         self::$force = true;
     }
 
+    /**
+     * Starts rendering of registered views. After calling this method call it will automatically execute View::forceRender().
+     *
+     * @return void
+     */
     public static function dispatch()
     {
-        $views = self::$views;
+        $views = array_filter(self::$views);
 
         self::forceRender();
 
@@ -36,11 +46,24 @@ class View
         }
     }
 
+    /**
+     * Adds values that will be added as variables to the views that will be executed later
+     *
+     * @param  string        $key
+     * @param  mixed         $value
+     * @return void
+     */
     public static function shareData($key, $value)
     {
         self::$sharedData[$key] = $value;
     }
 
+    /**
+     * Removes one or all values that have been added by View::shareData.
+     *
+     * @param  string|null        $key
+     * @return void
+     */
     public static function removeData($key = null)
     {
         if ($key === null) {
@@ -51,12 +74,24 @@ class View
         }
     }
 
+    /**
+     * Check if view exists in ./application/View/ folder
+     *
+     * @param  string        $view
+     * @return boolean
+     */
     public static function exists($view)
     {
         $path = INPHINIT_PATH . 'application/View/' . strtr($view, '.', '/') . '.php';
         return is_file($path) && \UtilsCaseSensitivePath($path);
     }
 
+    /**
+     * Register or render a View. If View is registred this method returns the index number from View
+     *
+     * @param  string        $view
+     * @return integer|null
+     */
     public static function render($view, array $data = array())
     {
         if (self::$force) {
@@ -70,13 +105,19 @@ class View
         }
 
         self::$views[] = array(strtr($view, '.', '/'), $data);
-        return count(self::$views);
+        return count(self::$views) - 1;
     }
 
-    public static function remove($id)
+    /**
+     * Remove a registred View by index
+     *
+     * @param  integer        $view
+     * @return void
+     */
+    public static function remove($index)
     {
-        if (isset(self::$view[$id])) {
-            self::$view[$id] = null;
+        if (isset(self::$views[$index])) {
+            self::$views[$index] = null;
         }
     }
 }

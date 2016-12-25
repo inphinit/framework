@@ -14,6 +14,14 @@ class Route extends Router
     private static $httpRoutes = array();
     private static $current;
 
+    /**
+     * Register or remove a action from controller for a route
+     *
+     * @param  string|array  $method
+     * @param  mixed         $path
+     * @param  mixed         $action
+     * @return mixed
+     */
     public static function set($method, $path, $action)
     {
         if (is_array($method)) {
@@ -26,6 +34,15 @@ class Route extends Router
         }
     }
 
+    /**
+     * Get params from routes using regex
+     *
+     * @param  string         $httpMethod
+     * @param  string         $route
+     * @param  string         $pathinfo
+     * @param  array          $matches
+     * @return boolean
+     */
     private static function find($httpMethod, $route, $pathinfo, &$matches)
     {
         $match = explode(' re:', $route, 2);
@@ -42,6 +59,11 @@ class Route extends Router
         return false;
     }
 
+    /**
+     * Get action controller from current route
+     *
+     * @return string
+     */
     public static function get()
     {
         if (self::$current !== null) {
@@ -66,10 +88,10 @@ class Route extends Router
             $func = $routes[$http];
             $verb = $http;
         } elseif (empty($routes) === false) {
-            foreach ($routes as $key => $value) {
-                if (strpos($key, ' re:') !== false && self::find($httpMethod, $key, $pathinfo, $args)) {
-                    $func = $value;
-                    $verb = $key;
+            foreach ($routes as $route => $action) {
+                if (strpos($route, ' re:') !== false && self::find($httpMethod, $route, $pathinfo, $args)) {
+                    $func = $action;
+                    $verb = $route;
                     break;
                 }
             }

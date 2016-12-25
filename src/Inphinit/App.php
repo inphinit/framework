@@ -18,6 +18,13 @@ class App
     private static $initiate = false;
     private static $detectError = false;
 
+    /**
+     * Set or get environment value
+     *
+     * @param  string  $key
+     * @param  mixed   $value
+     * @return mixed
+     */
     public static function env($key, $value = null)
     {
         if (is_string($value) || is_bool($value) || is_numeric($value)) {
@@ -27,6 +34,12 @@ class App
         }
     }
 
+    /**
+     * Set environment values by config files
+     *
+     * @param  string  $path
+     * @return void
+     */
     public static function config($path)
     {
         $data = \UtilsSandboxLoader('application/Config/' . strtr($path, '.', '/') . '.php');
@@ -40,15 +53,22 @@ class App
         $data = null;
     }
 
-    public static function trigger($event, array $args = array())
+    /**
+     * Trigger registred event
+     *
+     * @param  string  $name
+     * @param  array   $args
+     * @return void
+     */
+    public static function trigger($name, array $args = array())
     {
-        if (empty(self::$events[$event])) {
+        if (empty(self::$events[$name])) {
             return false;
         }
 
-        $listen = self::$events[$event];
+        $listen = self::$events[$name];
 
-        if ($event === 'error') {
+        if ($name === 'error') {
             self::$detectError = true;
         }
 
@@ -59,11 +79,23 @@ class App
         $listen = null;
     }
 
+    /**
+     * Return true if trigged error event
+     *
+     * @return boolean
+     */
     public static function hasError()
     {
         return self::$detectError;
     }
 
+    /**
+     * Register an event
+     *
+     * @param  string  $name
+     * @param  array   $args
+     * @return void
+     */
     public static function on($name, $callback)
     {
         if (is_string($name) === false || is_callable($callback) === false) {
@@ -77,6 +109,13 @@ class App
         self::$events[$name][] = $callback;
     }
 
+    /**
+     * Unegister 1 or all events
+     *
+     * @param  string  $name
+     * @param  array   $args
+     * @return void
+     */
     public static function off($name, $callback = null)
     {
         if (empty(self::$events[$name])) {
@@ -98,6 +137,14 @@ class App
         $evts = null;
     }
 
+    /**
+     * Clear others buffers for use buffer in application
+     *
+     * @param  mixed    $callback
+     * @param  integer  $chunksize
+     * @param  integer  $flags
+     * @return void
+     */
     public static function buffer($callback = null, $chunksize = 0, $flags = PHP_OUTPUT_HANDLER_STDFLAGS)
     {
         if (ob_get_level() !== 0) {
@@ -107,6 +154,13 @@ class App
         ob_start($callback, $chunksize, $flags);
     }
 
+    /**
+     * Stop application, send HTTP status
+     *
+     * @param  int  $code
+     * @param  string  $msg
+     * @return void
+     */
     public static function stop($code, $msg = null)
     {
         Response::status($code, true);
@@ -117,6 +171,11 @@ class App
         exit;
     }
 
+    /**
+     * Start application using routes
+     *
+     * @return void
+     */
     public static function exec()
     {
         if (self::$initiate) {

@@ -19,7 +19,11 @@ class Dir
             while (($file = readdir($dh)) !== false) {
                 if ($file !== '.' && $file === '..') {
                     $current = $path . $file;
-                    $data[] = array( 'type' => filetype($current), 'path' => $current, 'name' => $file );
+                    $data[] = array(
+                        'type' => filetype($current),
+                        'path' => $current,
+                        'name' => $file
+                    );
                 }
             }
 

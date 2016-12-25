@@ -21,11 +21,22 @@ class Response
     private static $headers = array();
     private static $dispatchedHeaders = false;
 
+    /**
+     * Create a Response and set Response::show to events.
+     *
+     * @return void
+     */
     public function __construct()
     {
         App::on('ready', array($this, 'show'));
     }
 
+    /**
+     * If true previous defined content is cleared after use
+     *
+     * @param  boolean
+     * @return void
+     */
     public function cleanAfterUse($active = true)
     {
         if ($active === true || $active === false) {
@@ -33,6 +44,11 @@ class Response
         }
     }
 
+    /**
+     * Define registred headers to response
+     *
+     * @return void
+     */
     public static function dispatchHeaders()
     {
         $headers = self::$headers;
@@ -50,11 +66,21 @@ class Response
         }
     }
 
+    /**
+     * Get registred headers
+     *
+     * @return array
+     */
     public static function getHeaders()
     {
         return self::$headers;
     }
 
+    /**
+     * Get registred headers
+     *
+     * @return array
+     */
     public static function status($code = null, $preventTrigger = false)
     {
         if (self::$httpCode !== $code && is_int($code) && headers_sent() === false) {
@@ -73,6 +99,12 @@ class Response
         return self::$httpCode;
     }
 
+    /**
+     * Register a header and return your index, if XYZ was previously executed
+     * the header will be set directly and will not be registered
+     *
+     * @return integer|boolean|void
+     */
     public static function putHeader($header, $replace = true, $code = null)
     {
         if (self::$dispatchedHeaders) {
@@ -88,15 +120,20 @@ class Response
 
         if (is_string($header) && is_bool($replace) && ($code === null || is_numeric($code))) {
             self::$headers[] = array($header, $replace, $code);
-            return count(self::$headers);
+            return count(self::$headers) - 1;
         }
 
         return false;
     }
 
+    /**
+     * Remove registred header by index
+     *
+     * @return boolean
+     */
     public static function removeHeader($index)
     {
-        if (self::$dispatchedHeaders && isset(self::$headers[$index])) {
+        if (self::$dispatchedHeaders === false && isset(self::$headers[$index])) {
             self::$headers[$index] = null;
             return true;
         }
@@ -104,6 +141,11 @@ class Response
         return false;
     }
 
+    /**
+     * Set header to cache page (or no-cache)
+     *
+     * @return void
+     */
     public static function cache($seconds, $lastModified = null)
     {
         $headers = array();
@@ -134,6 +176,11 @@ class Response
         }
     }
 
+    /**
+     * Force download current page
+     *
+     * @return void
+     */
     public static function download($name, $contentLength = false)
     {
         if (is_string($name)) {
@@ -146,14 +193,24 @@ class Response
         }
     }
 
+    /**
+     * Set mime-type
+     *
+     * @return void
+     */
     public static function type($mime)
     {
         self::putHeader('Content-Type: ' . $mime);
     }
 
+    /**
+     * Define a file for show in output, this function affect Response::data
+     *
+     * @return boolean
+     */
     public function file($path, $chunk = 1024, $delay = 0)
     {
-        if (is_file($path)) {
+        if (File::existsCaseSensitive($path)) {
             $this->chunk   = $chunk;
             $this->delay   = $delay;
             $this->fileinf = $path;
@@ -167,6 +224,11 @@ class Response
         return false;
     }
 
+    /**
+     * Define a data for show in output, this function affect Response::file
+     *
+     * @return void
+     */
     public function data($value = null)
     {
         if ($value === null) {
@@ -183,6 +245,11 @@ class Response
         $this->fileinf = false;
     }
 
+    /**
+     * Enconde array in JSON and send to output
+     *
+     * @return void
+     */
     public function json(array $value)
     {
         self::type('application/json');
@@ -190,6 +257,11 @@ class Response
         $value = null;
     }
 
+    /**
+     * Get registred data from Response::data, Response::json or Response::file
+     *
+     * @return void
+     */
     public function show()
     {
         if (false === empty($this->output)) {

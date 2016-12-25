@@ -13,6 +13,12 @@ class Request
 {
     private static $reqHeaders = array();
 
+    /**
+     * Get current HTTP path or route path
+     *
+     * @param  boolean       $info
+     * @return string|boolean
+     */
     public static function path($info = false)
     {
         if ($info === true) {
@@ -26,6 +32,12 @@ class Request
         return false;
     }
 
+    /**
+     * Check if is a specific HTTP method, HTTPS, and xmlhttprequest (Depends on how an ajax call was made)
+     *
+     * @param  boolean       $info
+     * @return string|boolean
+     */
     public static function is($check)
     {
         if (empty($_SERVER['REQUEST_METHOD'])) {
@@ -47,6 +59,12 @@ class Request
         return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
     }
 
+    /**
+     * Get http headers from current request
+     *
+     * @param  string       $name
+     * @return string|array|boolean
+     */
     public static function header($name = null)
     {
         if ($name !== null && is_string($name) === false) {
@@ -58,7 +76,7 @@ class Request
         if (empty($headers)) {
             foreach ($_SERVER as $key => $value) {
                 if (strpos($key, 'HTTP_') === 0) {
-                    $current = Helper::camelCase(substr($key, 5), '_', '-');
+                    $current = Helper::capitalize(substr($key, 5), '_', '-');
                     $headers[$current] = $value;
                 }
             }
@@ -67,13 +85,19 @@ class Request
         }
 
         if ($name !== null) {
-            $name = Helper::camelCase($name, '-', '-');
+            $name = Helper::capitalize($name, '-', '-');
             return  isset($headers[$name]) ? $headers[$name] : false;
         }
 
         return $headers;
     }
 
+    /**
+     * Get querystring, this method is useful for anyone who uses IIS.
+     *
+     * @param  string       $name
+     * @return string|array|boolean
+     */
     public static function query()
     {
         if (empty($_GET['RESERVED_IISREDIRECT']) === false) {
@@ -83,24 +107,54 @@ class Request
         return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : false;
     }
 
+    /**
+     * Get a value from $_GET, if $_GET is a array multidimensional, you can use dot like path:
+     * If $_GET['foo'] returns this array( 'baz' => 'bar' => 1); use Request::get('foo.bar.baz');
+     *
+     * @param  string       $key
+     * @param  mixed        $alternative
+     * @return mixed
+     */
     public static function get($key, $alternative = false)
     {
         $data = empty($_GET) ? false : Helper::arrayPath($key, $_GET);
         return $data === false ? $alternative : $data;
     }
 
+    /**
+     * Get a value from $_POST, if $_POST is a array multidimensional, you can use dot like path:
+     * If $_POST['foo'] returns this array( 'baz' => 'bar' => 1); use Request::post('foo.bar.baz');
+     *
+     * @param  string       $key
+     * @param  mixed        $alternative
+     * @return mixed
+     */
     public static function post($key, $alternative = false)
     {
         $data = empty($_POST) ? false : Helper::arrayPath($key, $_POST);
         return $data === false ? $alternative : $data;
     }
 
+    /**
+     * Get a value from $_COOKIE (support path using dots)
+     *
+     * @param  string       $key
+     * @param  mixed        $alternative
+     * @return mixed
+     */
     public static function cookie($key, $alternative = false)
     {
         $data = empty($_COOKIE) ? false : Helper::arrayPath($key, $_COOKIE);
         return $data === false ? $alternative : $data;
     }
 
+    /**
+     * Get a value from $_FILES (support path using dots)
+     *
+     * @param  string       $key
+     * @param  mixed        $alternative
+     * @return mixed
+     */
     public static function file($key)
     {
         $pos = strpos($key, '.');
@@ -129,6 +183,12 @@ class Request
         );
     }
 
+    /**
+     * Get a value input handler
+     *
+     * @param  boolean      $binary
+     * @return resource|boolean
+     */
     public static function raw($binary = true)
     {
         if (is_readable('php://input')) {

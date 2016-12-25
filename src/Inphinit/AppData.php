@@ -14,11 +14,23 @@ class AppData
     private static $sessionStarted = false;
     private static $defaultPaths = array( 'tmp', 'cache', 'log', 'session' );
 
+    /**
+     * Get absolute path from storage location
+     *
+     * @return string
+     */
     public static function storagePath()
     {
         return INPHINIT_PATH . 'storage/';
     }
 
+    /**
+     * Clear old files in a folder from stoage path
+     *
+     * @param  string   $path
+     * @param  integer  $time
+     * @return boolean
+     */
     public static function autoclean($path, $time = 0)
     {
         if (false === in_array($path, self::$defaultPaths)) {
@@ -54,6 +66,12 @@ class AppData
         return false;
     }
 
+    /**
+     * Create a tmp in storage/tmp folder
+     *
+     * @param  string   $data
+     * @return string
+     */
     public static function createTmp($data = null)
     {
         $name = self::storagePath() . 'tmp/~' . str_replace(' ', '-', microtime()) . '.tmp';
@@ -79,6 +97,12 @@ class AppData
         return $name;
     }
 
+    /**
+     * Create a folder in storage using 0600 permission (if unix-like)
+     *
+     * @param  string   $data
+     * @return string
+     */
     public static function createFolder($path)
     {
         $mask = umask(0);
@@ -92,6 +116,13 @@ class AppData
         return $r;
     }
 
+    /**
+     * Create a file in a folder in storage
+     *
+     * @param  string   $path
+     * @param  string   $data
+     * @return boolean
+     */
     public static function createFile($path, $data = null)
     {
         if (strpos($path, '..') === false && $path === trim($path, '/')) {
@@ -112,6 +143,13 @@ class AppData
         return false;
     }
 
+    /**
+     * Create a file in log folder in storage
+     *
+     * @param  string   $name
+     * @param  string   $data
+     * @return boolean
+     */
     public static function log($name, $data)
     {
         self::createCommomFolders();
@@ -129,6 +167,13 @@ class AppData
         return file_put_contents(self::storagePath() . 'log/' . $name, $data, FILE_APPEND) !== false;
     }
 
+    /**
+     * Create common folder if they don't exist.
+     *
+     * @param  string   $name
+     * @param  string   $data
+     * @return void
+     */
     public static function createCommomFolders()
     {
         $paths = self::$defaultPaths;
@@ -140,6 +185,12 @@ class AppData
         $paths = null;
     }
 
+    /**
+     * Delete a file in storage
+     *
+     * @param  string   $path
+     * @return boolean
+     */
     public static function delete($path)
     {
         $path = self::validPath($path);
@@ -158,6 +209,12 @@ class AppData
         return false;
     }
 
+    /**
+     * Method is used from others methods for check integrity.
+     *
+     * @param  string   $path
+     * @return boolean
+     */
     private static function validPath($path)
     {
         $fullPath = INPHINIT_PATH;
@@ -174,7 +231,14 @@ class AppData
         return $path;
     }
 
-    public static function rrdir($path) {
+    /**
+     * Remove recursive folders
+     *
+     * @param  string   $path
+     * @return boolean
+     */
+    public static function rrdir($path)
+    {
         $path = self::validPath($path);
 
         if ($path === false) {

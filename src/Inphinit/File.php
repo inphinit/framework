@@ -11,11 +11,25 @@ namespace Inphinit;
 
 class File
 {
+    /**
+     * Check if file exists using case-sensitive,
+     * For help developers who using Windows OS and using unix-like for production.
+     *
+     * @param  string        $path
+     * @return boolean
+     */
     public static function existsCaseSensitive($path)
     {
         return file_exists($path) && \UtilsCaseSensitivePath($path);
     }
 
+    /**
+     * Get file size, support for read files with more of 2GB in 32bit
+     * Returns false if file is not found
+     *
+     * @param  string        $path
+     * @return string|boolean
+     */
     public static function size($path)
     {
         if (file_exists($path) === false) {
@@ -26,6 +40,13 @@ class File
         return $size === false ? false : sprintf('%u', $size);
     }
 
+    /**
+     * Get file/folder permissions in a format more readable
+     * Returns false if file is not found
+     *
+     * @param  string        $path
+     * @return string|boolean
+     */
     public static function permission($path, $full = false)
     {
         if (file_exists($path) === false) {
@@ -76,6 +97,12 @@ class File
         return substr(sprintf('%o', $perms), -4);
     }
 
+    /**
+     * Get mimetype from file, return false if file is invalid
+     *
+     * @param  string        $path
+     * @return string|boolean
+     */
     public static function mime($path)
     {
         $mimetype = false;
@@ -101,6 +128,14 @@ class File
         return $mimetype;
     }
 
+    /**
+     * Show file in output, if use ob_start is auto used ob_flush. You can set delay for cycles
+     *
+     * @param  string        $path
+     * @param  integer       $length
+     * @param  integer       $delay
+     * @return void|boolean
+     */
     public static function output($path, $length = 102400, $delay = 0)
     {
         if (is_readable($path) === false) {

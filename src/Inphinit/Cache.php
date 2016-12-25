@@ -17,6 +17,11 @@ class Cache
     private $cacheTmp;
     private $isCache = false;
 
+    /**
+     * Create a cache instance by route path.
+     *
+     * @return void
+     */
     public function __construct($expires = 900, $lastModified = 0, $prefix = '')
     {
         $this->expires = $expires;
@@ -74,6 +79,11 @@ class Cache
         App::buffer(array($this, 'write'), 1024);
     }
 
+    /**
+     * Write cache
+     *
+     * @return void
+     */
     public function finish()
     {
         if ($this->isCache) {
@@ -95,6 +105,12 @@ class Cache
         }
     }
 
+    /**
+     * Check HTTP_IF_MODIFIED_SINCE, HTTP_IF_MODIFIED_SINCE and HTTP_IF_NONE_MATCH from server
+     * If true you can send `304 Not Modified`
+     *
+     * @return boolean
+     */
     public static function match($lm)
     {
         $nm = false;
@@ -116,11 +132,23 @@ class Cache
         return $nm;
     }
 
+    /**
+     * Checks if page (from route) is already cached.
+     *
+     * @return boolean
+     */
     public function cached()
     {
         return $this->isCache;
     }
 
+    /**
+     * Write data in cache file.
+     * This method returns the set value itself because the class uses `ob_start`
+     *
+     * @param  mixed         $data
+     * @return mixed
+     */
     public function write($data)
     {
         if ($this->handle !== null) {
@@ -130,6 +158,11 @@ class Cache
         return $data;
     }
 
+    /**
+     * Show cache content from current page (from route) in output
+     *
+     * @return void
+     */
     public function show()
     {
         if (filesize($this->cacheName) > 524287) {

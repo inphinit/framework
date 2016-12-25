@@ -9,11 +9,23 @@
 
 use Inphinit\App;
 
+/**
+ * Return normalized path (for checking case-sensitive in Windows OS)
+ *
+ * @param  string        $path
+ * @return string
+ */
 function UtilsCaseSensitivePath($path)
 {
     return $path === strtr(realpath($path), '\\', '/');
 }
 
+/**
+ * Sandbox include files
+ *
+ * @param  string        $path
+ * @return mixed
+ */
 function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array())
 {
     if (empty($utilsSandBoxData) === false) {
@@ -24,10 +36,16 @@ function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array()
     return include INPHINIT_PATH . $utilsSandBoxPath;
 }
 
+/**
+ * Use with `register_shutdown_function` et fatal errors and execute ```phpApp::trigger('terminate');```
+ *
+ * @param  string        $path
+ * @return void
+ */
 function UtilsShutDown()
 {
     if (class_exists('\\Inphinit\\View', false)) {
-        Inphinit\View::forceRender();
+        \Inphinit\View::forceRender();
     }
 
     $e = error_get_last();
@@ -40,6 +58,11 @@ function UtilsShutDown()
     App::trigger('terminate');
 }
 
+/**
+ * Get HTTP code from generate from server
+ *
+ * @return integer
+ */
 function UtilsStatusCode()
 {
     static $initial;
@@ -59,6 +82,12 @@ function UtilsStatusCode()
     return $initial;
 }
 
+/**
+ * Get path from current project
+ *
+ * @param  string        $path
+ * @return string
+ */
 function UtilsPath()
 {
     static $pathinfo;
@@ -80,6 +109,12 @@ function UtilsPath()
     return $pathinfo;
 }
 
+/**
+ * Alternative to autoloade-composer
+ *
+ * @param  string        $path
+ * @return void
+ */
 function UtilsAutoload()
 {
     static $initiate;
@@ -141,6 +176,16 @@ function UtilsAutoload()
     });
 }
 
+/**
+ * Function used from set_error_handler and trigger <code>App::trigger('error');</code>
+ *
+ * @param  string        $type
+ * @param  string        $message
+ * @param  string        $file
+ * @param  integer       $line
+ * @param  array         $details
+ * @return false
+ */
 function UtilsError($type, $message, $file, $line, $details)
 {
     static $preventDuplicate;
@@ -159,6 +204,11 @@ function UtilsError($type, $message, $file, $line, $details)
     return false;
 }
 
+/**
+ * Bootstrapping application
+ *
+ * @return void
+ */
 function UtilsConfig()
 {
     define('REQUEST_TIME', time());
