@@ -92,8 +92,8 @@ class App
     /**
      * Register an event
      *
-     * @param  string  $name
-     * @param  array   $args
+     * @param  string   $name
+     * @param  callable $callback
      * @return void
      */
     public static function on($name, $callback)
@@ -112,8 +112,8 @@ class App
     /**
      * Unegister 1 or all events
      *
-     * @param  string  $name
-     * @param  array   $args
+     * @param  string   $name
+     * @param  callable $callback
      * @return void
      */
     public static function off($name, $callback = null)
@@ -140,7 +140,7 @@ class App
     /**
      * Clear others buffers for use buffer in application
      *
-     * @param  mixed    $callback
+     * @param  callable $callback
      * @param  integer  $chunksize
      * @param  integer  $flags
      * @return void

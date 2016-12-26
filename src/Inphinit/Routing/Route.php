@@ -20,7 +20,7 @@ class Route extends Router
      * @param  string|array  $method
      * @param  mixed         $path
      * @param  mixed         $action
-     * @return mixed
+     * @return void
      */
     public static function set($method, $path, $action)
     {
