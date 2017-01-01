@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -23,18 +23,31 @@ class Rest extends Router
     private $valids;
     private $ready = false;
 
+    /**
+     * Create REST routes based in a \Controller
+     *
+     * @param string $namecontroller
+     * @return \Inphinit\Experimental\Routing\Rest
+     */
     public static function create($namecontroller)
     {
         return new static($namecontroller);
     }
 
+    /**
+     * Create REST routes based in a \Controller
+     *
+     * @param string $namecontroller
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
     public function __construct($namecontroller)
     {
         $controller = parent::$prefixNS . strtr($namecontroller, '.', '\\');
         $fc = '\\Controller\\' . $controller;
 
         if (class_exists($fc) === false) {
-            Exception::raise('Invalid class ' . $fc, 2);
+            throw new Exception('Invalid class ' . $fc, 2);
         }
 
         $this->valids = array(
@@ -57,16 +70,22 @@ class Rest extends Router
         App::on('init', array($this, 'prepare'));
     }
 
+    /**
+     * Define routes
+     *
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
     public function prepare()
     {
         if ($this->ready) {
-            return null;
+            return false;
         }
 
         $this->ready = true;
 
         if (empty($this->classMethods)) {
-            Exception::raise($this->fullController . ' is empty ', 2);
+            throw new Exception($this->fullController . ' is empty ', 2);
         }
 
         $controller   = $this->controller;
@@ -81,6 +100,12 @@ class Rest extends Router
         }
     }
 
+    /**
+     * Check if method class is valid for REST
+     *
+     * @param string $methodName
+     * @return array|bool
+     */
     private function getRoute($methodName)
     {
         if (empty($this->valids[$methodName])) {

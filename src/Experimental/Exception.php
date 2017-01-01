@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -12,14 +12,21 @@ namespace Inphinit\Experimental;
 class Exception extends \ErrorException
 {
     /**
-     * Raise an error
+     * Raise an exception
      *
-     * @throws ErrorException
+     * @param string $message
+     * @param int    $trace
+     * @param int    $code
+     * @param int    $severity
      * @return void
      */
-    public static function raise($message, $level = 1, $type = E_ERROR)
+    public function __construct($message, $trace = 1, $code = 0, $severity = E_ERROR)
     {
-        $data = Debug::caller($level);
-        throw new static($message, $type, 0, $data['file'], $data['line']);
+        if ($trace < 1) {
+            $trace = 1;
+        }
+
+        $data = Debug::caller($trace);
+        parent::__construct($message, $code, $severity, $data['file'], $data['line']);
     }
 }

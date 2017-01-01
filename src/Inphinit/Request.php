@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -16,8 +16,8 @@ class Request
     /**
      * Get current HTTP path or route path
      *
-     * @param  boolean       $info
-     * @return string|boolean
+     * @param bool $info
+     * @return string|bool
      */
     public static function path($info = false)
     {
@@ -35,8 +35,8 @@ class Request
     /**
      * Check if is a specific HTTP method, HTTPS, and xmlhttprequest (Depends on how an ajax call was made)
      *
-     * @param  boolean       $info
-     * @return string|boolean
+     * @param string $check
+     * @return string|bool
      */
     public static function is($check)
     {
@@ -62,8 +62,8 @@ class Request
     /**
      * Get http headers from current request
      *
-     * @param  string       $name
-     * @return string|array|boolean
+     * @param string $name
+     * @return string|array|bool
      */
     public static function header($name = null)
     {
@@ -95,8 +95,7 @@ class Request
     /**
      * Get querystring, this method is useful for anyone who uses IIS.
      *
-     * @param  string       $name
-     * @return string|array|boolean
+     * @return string|array|bool
      */
     public static function query()
     {
@@ -108,11 +107,12 @@ class Request
     }
 
     /**
-     * Get a value from $_GET, if $_GET is a array multidimensional, you can use dot like path:
-     * If $_GET['foo'] returns this array( 'baz' => 'bar' => 1); use Request::get('foo.bar.baz');
+     * Get a value from `$_GET`, if `$_GET` is a array multidimensional, you can use dot like path:
+     * If `$_GET['foo']` returns this `array( 'baz' => 'bar' => 1);` use `Request::get('foo.bar.baz');`
+     * for return `1`
      *
-     * @param  string       $key
-     * @param  mixed        $alternative
+     * @param string $key
+     * @param mixed  $alternative
      * @return mixed
      */
     public static function get($key, $alternative = false)
@@ -125,8 +125,8 @@ class Request
      * Get a value from $_POST, if $_POST is a array multidimensional, you can use dot like path:
      * If $_POST['foo'] returns this array( 'baz' => 'bar' => 1); use Request::post('foo.bar.baz');
      *
-     * @param  string       $key
-     * @param  mixed        $alternative
+     * @param string $key
+     * @param mixed  $alternative
      * @return mixed
      */
     public static function post($key, $alternative = false)
@@ -136,10 +136,10 @@ class Request
     }
 
     /**
-     * Get a value from $_COOKIE (support path using dots)
+     * Get a value from `$_COOKIE` (support path using dots)
      *
-     * @param  string       $key
-     * @param  mixed        $alternative
+     * @param string $key
+     * @param mixed  $alternative
      * @return mixed
      */
     public static function cookie($key, $alternative = false)
@@ -149,10 +149,9 @@ class Request
     }
 
     /**
-     * Get a value from $_FILES (support path using dots)
+     * Get a value from `$_FILES` (support path using dots)
      *
-     * @param  string       $key
-     * @param  mixed        $alternative
+     * @param string $key
      * @return mixed
      */
     public static function file($key)
@@ -186,8 +185,8 @@ class Request
     /**
      * Get a value input handler
      *
-     * @param  boolean      $binary
-     * @return resource|boolean
+     * @param bool $binary
+     * @return resource|bool
      */
     public static function raw($binary = true)
     {
@@ -198,7 +197,7 @@ class Request
                 return fopen('php://input', $mode);
             }
 
-            $tmp = AppData::createTmp();
+            $tmp = Storage::temp();
 
             if (copy('php://input', $tmp)) {
                 return fopen($tmp, $mode);

@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -16,16 +16,6 @@ class Shell
 
     private $argc = 0;
     private $argv = array();
-
-    /**
-     * Handle the object's destruction.
-     *
-     * @return void
-     */
-    public function __destruct()
-    {
-        $this->io = null;
-    }
 
     /**
      * Create a Shell instance for use CLI interface
@@ -64,7 +54,7 @@ class Shell
     /**
      * Check if using arguments
      *
-     * @return boolean
+     * @return bool
      */
     public function hasArgs()
     {
@@ -74,7 +64,7 @@ class Shell
     /**
      * Check if script is executed in CLI
      *
-     * @return boolean
+     * @return bool
      */
     public static function isCli()
     {
@@ -84,6 +74,7 @@ class Shell
     /**
      * Get input data
      *
+     * @param int $callback
      * @return mixed
      */
     public static function input($length = 0)
@@ -96,7 +87,9 @@ class Shell
     /**
      * Add callback event to input
      *
-     * @return void
+     * @param callable $callback
+     * @param string $exitCicle
+     * @return void|bool
      */
     public function inputObserver($callback, $exitCicle = 'exit')
     {
@@ -130,5 +123,10 @@ class Shell
         usleep(100);
 
         $this->fireInputObserver();
+    }
+
+    public function __destruct()
+    {
+        $this->io = null;
     }
 }

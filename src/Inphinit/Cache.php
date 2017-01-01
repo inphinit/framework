@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -11,28 +11,28 @@ namespace Inphinit;
 
 class Cache
 {
-    private $expires;
     private $handle;
     private $cacheName;
     private $cacheTmp;
     private $isCache = false;
 
     /**
-     * Create a cache instance by route path.
+     * Create a cache instance by route path
      *
+     * @param int    $expires
+     * @param int    $lastModified
+     * @param string $prefix
      * @return void
      */
     public function __construct($expires = 900, $lastModified = 0, $prefix = '')
     {
-        $this->expires = $expires;
-
-        if (AppData::createFolder('cache/output') === false) {
+        if (Storage::createFolder('cache/output') === false) {
             return null;
         }
 
-        $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $this->expires) : $lastModified;
+        $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $expires) : $lastModified;
 
-        $filename  = INPHINIT_PATH . 'storage/cache/output/~';
+        $filename = INPHINIT_PATH . 'storage/cache/output/~';
 
         if (false === empty($prefix)) {
             $filename .= strlen($prefix) . '.' . sha1($prefix) . '_';
@@ -46,13 +46,14 @@ class Cache
         $this->cacheName = $filename;
 
         if (file_exists($filename) && file_exists($lastModify)) {
-            $data = file_get_contents($lastModify);
+            $data = (int) file_get_contents($lastModify);
 
             if ($data !== false && $data > REQUEST_TIME) {
                 $this->isCache = true;
 
-                header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $data) . ' GMT');
                 header('Etag: ' . sha1_file($filename));
+
+                Response::cache($expires, $data);
 
                 if (self::match($data)) {
                     Response::status(304);
@@ -64,7 +65,7 @@ class Cache
             }
         }
 
-        $this->cacheTmp = AppData::createTmp();
+        $this->cacheTmp = Storage::temp();
 
         $tmp = fopen($this->cacheTmp, 'wb');
 
@@ -74,7 +75,7 @@ class Cache
 
         $this->handle = $tmp;
 
-        App::on('ready', array($this, 'finish'));
+        App::on('finish', array($this, 'finish'));
 
         App::buffer(array($this, 'write'), 1024);
     }
@@ -106,12 +107,13 @@ class Cache
     }
 
     /**
-     * Check HTTP_IF_MODIFIED_SINCE, HTTP_IF_MODIFIED_SINCE and HTTP_IF_NONE_MATCH from server
+     * Check `HTTP_IF_MODIFIED_SINCE`,` HTTP_IF_MODIFIED_SINCE` and `HTTP_IF_NONE_MATCH` from server
      * If true you can send `304 Not Modified`
      *
-     * @return boolean
+     * @param string $lm
+     * @return bool
      */
-    public static function match($lm)
+    public static function match($lastModified)
     {
         $nm = false;
 
@@ -135,7 +137,7 @@ class Cache
     /**
      * Checks if page (from route) is already cached.
      *
-     * @return boolean
+     * @return bool
      */
     public function cached()
     {
@@ -146,8 +148,8 @@ class Cache
      * Write data in cache file.
      * This method returns the set value itself because the class uses `ob_start`
      *
-     * @param  mixed         $data
-     * @return mixed
+     * @param string $data
+     * @return string
      */
     public function write($data)
     {

@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -11,13 +11,12 @@ namespace Inphinit;
 
 class View
 {
+    private static $force = false;
     private static $views = array();
     private static $sharedData = array();
 
-    private static $force = false;
-
     /**
-     * Force the View::render method to render at the time it is called
+     * Force the `View::render` method to render at the time it is called
      *
      * @return void
      */
@@ -27,7 +26,8 @@ class View
     }
 
     /**
-     * Starts rendering of registered views. After calling this method call it will automatically execute View::forceRender().
+     * Starts rendering of registered views. After calling this method call it will automatically
+     * execute `View::forceRender()`
      *
      * @return void
      */
@@ -49,8 +49,8 @@ class View
     /**
      * Adds values that will be added as variables to the views that will be executed later
      *
-     * @param  string        $key
-     * @param  mixed         $value
+     * @param string $key
+     * @param mixed  $value
      * @return void
      */
     public static function shareData($key, $value)
@@ -59,9 +59,9 @@ class View
     }
 
     /**
-     * Removes one or all values that have been added by View::shareData.
+     * Removes one or all values that have been added by `View::shareData`
      *
-     * @param  string|null        $key
+     * @param string|null $key
      * @return void
      */
     public static function removeData($key = null)
@@ -77,8 +77,8 @@ class View
     /**
      * Check if view exists in ./application/View/ folder
      *
-     * @param  string        $view
-     * @return boolean
+     * @param string $view
+     * @return bool
      */
     public static function exists($view)
     {
@@ -87,10 +87,11 @@ class View
     }
 
     /**
-     * Register or render a View. If View is registred this method returns the index number from View
+     * Register or render a View. If View is registered this method returns the index number from View
      *
-     * @param  string        $view
-     * @return integer|null
+     * @param string $view
+     * @param array $data
+     * @return int|null
      */
     public static function render($view, array $data = array())
     {
@@ -109,9 +110,9 @@ class View
     }
 
     /**
-     * Remove a registred View by index
+     * Remove a registered View by index
      *
-     * @param  integer        $view
+     * @param int $index
      * @return void
      */
     public static function remove($index)

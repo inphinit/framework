@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -13,10 +13,10 @@ class File
 {
     /**
      * Check if file exists using case-sensitive,
-     * For help developers who using Windows OS and using unix-like for production.
+     * For help developers who using Windows OS and using unix-like for production
      *
-     * @param  string        $path
-     * @return boolean
+     * @param string $path
+     * @return bool
      */
     public static function existsCaseSensitive($path)
     {
@@ -27,8 +27,8 @@ class File
      * Get file size, support for read files with more of 2GB in 32bit
      * Returns false if file is not found
      *
-     * @param  string        $path
-     * @return string|boolean
+     * @param string $path
+     * @return string|bool
      */
     public static function size($path)
     {
@@ -44,8 +44,9 @@ class File
      * Get file/folder permissions in a format more readable
      * Returns false if file is not found
      *
-     * @param  string        $path
-     * @return string|boolean
+     * @param string $path
+     * @param bool   $full
+     * @return string|bool
      */
     public static function permission($path, $full = false)
     {
@@ -100,8 +101,8 @@ class File
     /**
      * Get mimetype from file, return false if file is invalid
      *
-     * @param  string        $path
-     * @return string|boolean
+     * @param string $path
+     * @return string|bool
      */
     public static function mime($path)
     {
@@ -131,10 +132,10 @@ class File
     /**
      * Show file in output, if use ob_start is auto used ob_flush. You can set delay for cycles
      *
-     * @param  string        $path
-     * @param  integer       $length
-     * @param  integer       $delay
-     * @return void|boolean
+     * @param string $path
+     * @param int    $length
+     * @param int    $delay
+     * @return void|bool
      */
     public static function output($path, $length = 102400, $delay = 0)
     {

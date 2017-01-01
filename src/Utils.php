@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -12,7 +12,7 @@ use Inphinit\App;
 /**
  * Return normalized path (for checking case-sensitive in Windows OS)
  *
- * @param  string        $path
+ * @param string $path
  * @return string
  */
 function UtilsCaseSensitivePath($path)
@@ -23,7 +23,7 @@ function UtilsCaseSensitivePath($path)
 /**
  * Sandbox include files
  *
- * @param  string        $path
+ * @param string $path
  * @return mixed
  */
 function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array())
@@ -37,9 +37,9 @@ function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array()
 }
 
 /**
- * Use with `register_shutdown_function` et fatal errors and execute ```phpApp::trigger('terminate');```
+ * Use with `register_shutdown_function` fatal errors and execute `App::trigger('terminate')`
  *
- * @param  string        $path
+ * @param string $path
  * @return void
  */
 function UtilsShutDown()
@@ -61,7 +61,7 @@ function UtilsShutDown()
 /**
  * Get HTTP code from generate from server
  *
- * @return integer
+ * @return int
  */
 function UtilsStatusCode()
 {
@@ -85,7 +85,7 @@ function UtilsStatusCode()
 /**
  * Get path from current project
  *
- * @param  string        $path
+ * @param string $path
  * @return string
  */
 function UtilsPath()
@@ -110,9 +110,9 @@ function UtilsPath()
 }
 
 /**
- * Alternative to autoloade-composer
+ * Alternative to composer-autoload
  *
- * @param  string        $path
+ * @param string $path
  * @return void
  */
 function UtilsAutoload()
@@ -177,24 +177,20 @@ function UtilsAutoload()
 }
 
 /**
- * Function used from set_error_handler and trigger <code>App::trigger('error');</code>
+ * Function used from `set_error_handler` and trigger `App::trigger('error')`
  *
- * @param  string        $type
- * @param  string        $message
- * @param  string        $file
- * @param  integer       $line
- * @param  array         $details
+ * @param string  $type
+ * @param string  $message
+ * @param string  $file
+ * @param int $line
+ * @param array   $details
  * @return false
  */
 function UtilsError($type, $message, $file, $line, $details)
 {
-    static $preventDuplicate;
+    static $preventDuplicate = '';
 
     $str  = '?' . $file . ':' . $line . '?';
-
-    if ($preventDuplicate === null) {
-        $preventDuplicate = '';
-    }
 
     if (strpos($preventDuplicate, $str) === false) {
         $preventDuplicate .= $str;

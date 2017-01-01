@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -21,34 +21,57 @@ class Group extends Router
     private $path;
     private $ns;
 
+    /**
+     * Create a new route group
+     *
+     * @return \Inphinit\Experimental\Routing\Group
+     */
     public static function create()
     {
         return new static;
     }
 
+    /**
+     * Create a new route group
+     *
+     * @return void
+     */
     public function __construct()
     {
         App::on('init', array($this, 'prepare'));
     }
 
-
+    /**
+     * Define namespace prefix for group
+     *
+     * @param string $namespace
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
     public function prefixNS($namespace)
     {
         if (preg_match('#\\[a-z0-9_\\]+[a-z0-9_]$#', $namespace) === 0) {
-            Exception::raise('Invalid "' . $namespace . '"', 2);
+            throw new Exception('Invalid "' . $namespace . '"', 2);
         }
 
         $this->ns = $namespace;
     }
 
+    /**
+     * Define domain for group
+     *
+     * @param string $domain
+     * @throws \Inphinit\Experimental\Exception
+     * @return \Inphinit\Experimental\Routing\Group
+     */
     public function domain($domain)
     {
         if (empty($domain)) {
-            Exception::raise('domain is not defined', 2);
+            throw new Exception('domain is not defined', 2);
         }
 
         if (empty($domain) || trim($domain) !== $domain) {
-            Exception::raise('Invalid domain "' . $domain . '"', 2);
+            throw new Exception('Invalid domain "' . $domain . '"', 2);
         } else {
             $this->domain = $domain;
         }
@@ -56,12 +79,19 @@ class Group extends Router
         return $this;
     }
 
+    /**
+     * Define path for group
+     *
+     * @param string $path
+     * @throws \Inphinit\Experimental\Exception
+     * @return \Inphinit\Experimental\Routing\Group
+     */
     public function path($path)
     {
         if (empty($path)) {
-            Exception::raise('path is not defined', 2);
+            throw new Exception('path is not defined', 2);
         } elseif (!preg_match('~^(\/(.*?)\/|re\:#\^/(.*?)/#([imsxADSUXju]+))$~', $path)) {
-            Exception::raise('missing slash in "' . $path . '", use like this /foo/', 2);
+            throw new Exception('missing slash in "' . $path . '", use like this /foo/', 2);
         }
 
         $this->path = $path;
@@ -69,6 +99,13 @@ class Group extends Router
         return $this;
     }
 
+    /**
+     * Define callback for group, this callback is executed if the request meets the group
+     * settings
+     *
+     * @param \Closure
+     * @return \Inphinit\Experimental\Routing\Group
+     */
     public function then(\Closure $callback)
     {
         $this->callback = $callback;
@@ -76,6 +113,14 @@ class Group extends Router
         return $this;
     }
 
+    /**
+     * Method is used for check domain and path
+     *
+     * @param string $str
+     * @param string $input
+     * @param array  $matches
+     * @return bool
+     */
     protected static function checkRegEx($str, $input, &$matches)
     {
         if (strpos($str, 're:') !== 0) {
@@ -93,6 +138,11 @@ class Group extends Router
         return false;
     }
 
+    /**
+     * Method is used for check domain
+     *
+     * @return array|bool $matches
+     */
     protected function checkDomain()
     {
         if ($this->domain) {
@@ -109,6 +159,11 @@ class Group extends Router
         return false;
     }
 
+    /**
+     * Method is used for check path
+     *
+     * @return array|bool $matches
+     */
     protected function checkPath()
     {
         if ($this->path) {
@@ -127,6 +182,11 @@ class Group extends Router
         return false;
     }
 
+    /**
+     * Perform checking and execute predefined callback
+     *
+     * @return void
+     */
     public function prepare()
     {
         if ($this->ready) {

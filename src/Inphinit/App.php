@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -21,9 +21,9 @@ class App
     /**
      * Set or get environment value
      *
-     * @param  string  $key
-     * @param  mixed   $value
-     * @return mixed
+     * @param string                $key
+     * @param string|bool|int|float $value
+     * @return string|bool|int|float
      */
     public static function env($key, $value = null)
     {
@@ -35,9 +35,9 @@ class App
     }
 
     /**
-     * Set environment values by config files
+     * Set environment variables by config files
      *
-     * @param  string  $path
+     * @param string $path
      * @return void
      */
     public static function config($path)
@@ -56,8 +56,8 @@ class App
     /**
      * Trigger registred event
      *
-     * @param  string  $name
-     * @param  array   $args
+     * @param string $name
+     * @param array  $args
      * @return void
      */
     public static function trigger($name, array $args = array())
@@ -68,21 +68,25 @@ class App
 
         $listen = self::$events[$name];
 
+        usort($listen, function ($a, $b) {
+            return $b[1] >= $a[1];
+        });
+
         if ($name === 'error') {
             self::$detectError = true;
         }
 
         foreach ($listen as $callback) {
-            call_user_func_array($callback, $args);
+            call_user_func_array($callback[0], $args);
         }
 
         $listen = null;
     }
 
     /**
-     * Return true if trigged error event
+     * Return true if a script or event trigged a error or exception
      *
-     * @return boolean
+     * @return bool
      */
     public static function hasError()
     {
@@ -92,11 +96,12 @@ class App
     /**
      * Register an event
      *
-     * @param  string   $name
-     * @param  callable $callback
+     * @param string   $name
+     * @param callable $callback
+     * @param int      $priority
      * @return void
      */
-    public static function on($name, $callback)
+    public static function on($name, $callback, $priority = 0)
     {
         if (is_string($name) === false || is_callable($callback) === false) {
             return false;
@@ -106,14 +111,14 @@ class App
             self::$events[$name] = array();
         }
 
-        self::$events[$name][] = $callback;
+        self::$events[$name][] = array($callback, $priority);
     }
 
     /**
      * Unegister 1 or all events
      *
-     * @param  string   $name
-     * @param  callable $callback
+     * @param string   $name
+     * @param callable $callback
      * @return void
      */
     public static function off($name, $callback = null)
@@ -128,7 +133,7 @@ class App
         $evts = self::$events[$name];
 
         foreach ($evts as $key => $value) {
-            if ($value === $callback) {
+            if ($value[0] === $callback) {
                 unset($evts[$key]);
             }
         }
@@ -140,9 +145,9 @@ class App
     /**
      * Clear others buffers for use buffer in application
      *
-     * @param  callable $callback
-     * @param  integer  $chunksize
-     * @param  integer  $flags
+     * @param callable $callback
+     * @param int  $chunksize
+     * @param int  $flags
      * @return void
      */
     public static function buffer($callback = null, $chunksize = 0, $flags = PHP_OUTPUT_HANDLER_STDFLAGS)
@@ -157,8 +162,8 @@ class App
     /**
      * Stop application, send HTTP status
      *
-     * @param  int  $code
-     * @param  string  $msg
+     * @param int    $code
+     * @param string $msg
      * @return void
      */
     public static function stop($code, $msg = null)
@@ -199,6 +204,7 @@ class App
             $parsed = explode(':', $mainController, 2);
 
             $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
+
             $action = $parsed[1];
 
             $run = new $mainController;
@@ -207,7 +213,7 @@ class App
 
             $run = null;
         } else {
-            App::stop(404, 'Invalid route');
+            self::stop(404, 'Invalid route');
         }
 
         if (class_exists('\\Inphinit\\Response', false)) {

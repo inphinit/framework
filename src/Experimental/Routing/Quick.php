@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -24,10 +24,22 @@ class Quick extends Router
     private $prefix;
     private $ready = false;
 
+    /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo` */
     const BOTH = 1;
+
+    /** Create a route with slash at the end, like: `/foo/` */
     const SLASH = 2;
+
+    /** Create a route without slash at the end, like: `/foo` */
     const NOSLASH = 3;
 
+    /**
+     * Create routes based in a \Controller
+     *
+     * @param string Define prefix controller namespace
+     * @param string Define Controller class name
+     * @return \Inphinit\Experimental\Routing\Quick
+     */
     public static function create($prefix = '', $namecontroller)
     {
         self::$debuglvl = 3;
@@ -35,6 +47,14 @@ class Quick extends Router
         return new static($prefix, $namecontroller);
     }
 
+    /**
+     * Create routes based in a \Controller
+     *
+     * @param string Define prefix controller namespace
+     * @param string Define controllers class name
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
     public function __construct($prefix = '', $namecontroller)
     {
         $this->format = Quick::BOTH;
@@ -44,7 +64,7 @@ class Quick extends Router
         $fc = '\\Controller\\' . $controller;
 
         if (class_exists($fc) === false) {
-            Exception::raise('Invalid class ' . $fc, self::$debuglvl);
+            throw new Exception('Invalid class ' . $fc, self::$debuglvl);
         }
 
         self::$debuglvl = 2;
@@ -59,6 +79,12 @@ class Quick extends Router
         App::on('init', array($this, 'prepare'));
     }
 
+    /**
+     * Extract valid methods
+     *
+     * @param string Methods of \Controller class
+     * @return array
+     */
     private static function parseVerbs($methods)
     {
         $list = array();
@@ -81,6 +107,13 @@ class Quick extends Router
         return $list;
     }
 
+    /**
+     * Define route format, `Quick::BOTH` for create routes like `/foo/` and `/foo`, `Quick::SLASH`
+     * for create routes like `/foo/` and `Quick::NOSLASH` for create routes like `/foo`
+     *
+     * @param int define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
+     * @return \Inphinit\Experimental\Routing\Quick
+     */
     public function canonical($slash = null)
     {
         switch ($slash) {
@@ -94,16 +127,22 @@ class Quick extends Router
         return $this;
     }
 
+    /**
+     * Create routes by configurations
+     *
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
     public function prepare()
     {
         if ($this->ready) {
-            return null;
+            return false;
         }
 
         $this->ready = true;
 
         if (empty($this->classMethods)) {
-            Exception::raise($this->fullController . ' is empty ', 2);
+            throw new Exception($this->fullController . ' is empty ', 2);
         }
 
         $format       = $this->format;

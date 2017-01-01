@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -22,7 +22,7 @@ class Response
     private static $dispatchedHeaders = false;
 
     /**
-     * Create a Response and set Response::show to events.
+     * Create a Response and set `Response::show` to events.
      *
      * @return void
      */
@@ -34,7 +34,7 @@ class Response
     /**
      * If true previous defined content is cleared after use
      *
-     * @param  boolean
+     * @param bool $active
      * @return void
      */
     public function cleanAfterUse($active = true)
@@ -45,7 +45,7 @@ class Response
     }
 
     /**
-     * Define registred headers to response
+     * Define registered headers to response
      *
      * @return void
      */
@@ -67,7 +67,7 @@ class Response
     }
 
     /**
-     * Get registred headers
+     * Get registered headers
      *
      * @return array
      */
@@ -77,8 +77,10 @@ class Response
     }
 
     /**
-     * Get registred headers
+     * Get registered headers
      *
+     * @param int  $code
+     * @param bool $preventTrigger
      * @return array
      */
     public static function status($code = null, $preventTrigger = false)
@@ -87,7 +89,7 @@ class Response
             header('X-PHP-Response-Code: ' . $code, true, $code);
             self::$httpCode = $code;
 
-            if (!$preventTrigger) {
+            if (false === $preventTrigger) {
                 App::trigger('changestatus', array($code, null));
             }
 
@@ -100,10 +102,14 @@ class Response
     }
 
     /**
-     * Register a header and return your index, if XYZ was previously executed
-     * the header will be set directly and will not be registered
+     * Register a header and return your index, if `Response::dispatchHeaders`
+     * was previously executed the header will be set directly and will not be
+     * registered
      *
-     * @return integer|boolean|void
+     * @param string $header
+     * @param bool   $replace
+     * @param int    $code
+     * @return int|bool|void
      */
     public static function putHeader($header, $replace = true, $code = null)
     {
@@ -127,9 +133,10 @@ class Response
     }
 
     /**
-     * Remove registred header by index
+     * Remove registered header by index
      *
-     * @return boolean
+     * @param int $index
+     * @return bool
      */
     public static function removeHeader($index)
     {
@@ -144,20 +151,22 @@ class Response
     /**
      * Set header to cache page (or no-cache)
      *
+     * @param int $seconds
+     * @param int $lastModified
      * @return void
      */
     public static function cache($seconds, $lastModified = null)
     {
         $headers = array();
 
-        if ($seconds === 0) {
+        if ($seconds < 1) {
             $g = gmdate('D, d M Y H:i:s');
             $headers['Expires: ' . $g . ' GMT'] = true;
             $headers['Last-Modified: ' . $g . ' GMT'] = true;
             $headers['Cache-Control: no-store, no-cache, must-revalidate'] = true;
             $headers['Cache-Control: post-check=0, pre-check=0'] = false;
             $headers['Pragma: no-cache'] = true;
-        } elseif ($seconds > 1) {
+        } else {
             $headers['Expires: ' . gmdate('D, d M Y H:i:s', REQUEST_TIME + $seconds) . ' GMT'] = true;
             $headers['Cache-Control: public, max-age=' . $seconds] = true;
             $headers['Pragma: max-age=' . $seconds] = true;
@@ -167,28 +176,28 @@ class Response
             }
         }
 
-        if ($seconds > -1) {
-            foreach ($headers as $key => $value) {
-                self::putHeader($key, $value);
-            }
-
-            $headers = null;
+        foreach ($headers as $key => $value) {
+            self::putHeader($key, $value);
         }
+
+        $headers = null;
     }
 
     /**
      * Force download current page
      *
+     * @param string $name
+     * @param int    $contentLength
      * @return void
      */
-    public static function download($name, $contentLength = false)
+    public static function download($name, $contentLength = 0)
     {
         if (is_string($name)) {
             self::putHeader('Content-Transfer-Encoding: Binary');
             self::putHeader('Content-Disposition: attachment; filename="' . strtr($name, '"', '-') . '"');
         }
 
-        if (is_int($contentLength)) {
+        if ($contentLength > 0) {
             self::putHeader('Content-Length: ' . $contentLength);
         }
     }
@@ -196,6 +205,7 @@ class Response
     /**
      * Set mime-type
      *
+     * @param string $mime
      * @return void
      */
     public static function type($mime)
@@ -204,9 +214,12 @@ class Response
     }
 
     /**
-     * Define a file for show in output, this function affect Response::data
+     * Define a file for show in output, this function affect `Response::data`
      *
-     * @return boolean
+     * @param string $path
+     * @param int    $chunk
+     * @param int    $delay
+     * @return bool
      */
     public function file($path, $chunk = 1024, $delay = 0)
     {
@@ -225,8 +238,10 @@ class Response
     }
 
     /**
-     * Define a data for show in output, this function affect Response::file
+     * Set a data for show in output, this function affect `Response::file`,
+     * or get setted previous data
      *
+     * @param string $value
      * @return void
      */
     public function data($value = null)
@@ -246,8 +261,9 @@ class Response
     }
 
     /**
-     * Enconde array in JSON and send to output
+     * Encode array in JSON and send to output
      *
+     * @param array $value
      * @return void
      */
     public function json(array $value)
@@ -258,7 +274,7 @@ class Response
     }
 
     /**
-     * Get registred data from Response::data, Response::json or Response::file
+     * Get registred data from `Response::data`, `Response::json` or `Response::file`
      *
      * @return void
      */

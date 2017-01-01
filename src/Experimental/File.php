@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -13,6 +13,15 @@ use Inphinit\App;
 
 class File
 {
+    /**
+     * Read a script excerpt
+     *
+     * @param string $path
+     * @param int    $init
+     * @param int    $end
+     * @param bool   $lines
+     * @return string
+     */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
     {
         if (false === is_file($path)) {
@@ -43,10 +52,16 @@ class File
         return $output;
     }
 
+    /**
+     * Read a script excerpt
+     *
+     * @param string $path
+     * @return bool
+     */
     public static function isBinary($path)
     {
         if (false === is_readable($path)) {
-            Exception::raise($path . ' is not readable', 2);
+            throw new Exception($path . ' is not readable', 2);
         }
 
         $size = filesize($path);

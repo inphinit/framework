@@ -2,22 +2,24 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
+ *
+ * @since 0.0.1
  */
 
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
-use Inphinit\AppData;
+use Inphinit\Storage;
 
 class Maintenance
 {
     /**
      * Down site to maintenance mode
      *
-     * @return boolean
+     * @return bool
      */
     public static function down()
     {
@@ -27,7 +29,7 @@ class Maintenance
     /**
      * Up site
      *
-     * @return void
+     * @return bool
      */
     public static function up()
     {
@@ -37,8 +39,8 @@ class Maintenance
     /**
      * Enable/disable maintenance mode
      *
-     * @param $enable
-     * @return boolean
+     * @param bool $enable
+     * @return bool
      */
     protected static function enable($enable)
     {
@@ -52,7 +54,7 @@ class Maintenance
 
         $wd = preg_replace('#,(\s+|)\)#', '$1)', var_export($data, true));
 
-        $path = AppData::createTmp('<?php' . EOL . 'return ' . $wd . ';' . EOL);
+        $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL);
 
         $response = copy($path, INPHINIT_PATH . 'application/Config/config.php');
 
@@ -64,13 +66,13 @@ class Maintenance
     /**
      * Up the site only in certain conditions, eg. the site administrator of the IP.
      *
-     * @callable $enable
+     * @param callable $callback
      * @return void
      */
     public static function ignoreif($callback)
     {
         if (is_callable($callback) === false) {
-            Exception::raise('Invalid callback');
+            throw new Exception('Invalid callback');
         }
 
         App::on('init', function() use ($callback) {

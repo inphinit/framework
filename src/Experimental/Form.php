@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -16,11 +16,24 @@ class Form
 
     private static $alloweds = 'button|checkbox|color|date|datetime|email|file|hidden|image|month|number|password|radio|range|reset|search|submit|tel|text|time|url|week';
 
+    /**
+     * Define new forms for use xhtml (`<input />`) or html format (`<input>`)
+     *
+     * @param bool $xhtml
+     * @return bool
+     */
     public static function xhtml($xhtml)
     {
         self::$useXhtml = $xhtml === true ? ' /' : '';
     }
 
+    /**
+     * Define default attributes for all elements
+     *
+     * @param string $byType
+     * @param array  $attributes
+     * @return void
+     */
     public static function setup($byType, array $attributes)
     {
         if (0 !== preg_match('#^(' . self::$alloweds . '|select|form)$#', $type)) {
@@ -28,22 +41,40 @@ class Form
         }
     }
 
-    public static function comboRange($name, $low, $high, $step = null, $value = null, $attributes = null)
+    /**
+     * Generate combo by range
+     *
+     * @param string $name
+     * @param int    $low
+     * @param int    $high
+     * @param string $step
+     * @param string $value
+     * @param string $attributes
+     * @return string|null
+     */
+    public static function comboRange($name, $low, $high, $step = null, $value = null, array $attributes = array())
     {
         if (is_numeric($low) && is_numeric($high)) {
             if ($step !== null) {
                 $range = range($low, $high, $step);
-                $range = array_combine($range, $range);
             } else {
                 $range = range($low, $high);
-                $range = array_combine($range, $range);
             }
+
+            $range = array_combine($range, $range);
 
             return self::combo($name, $range, $value, $attributes);
         }
+
         return null;
     }
 
+    /**
+     * Convert all applicable data to HTML entities
+     *
+     * @param string $data
+     * @return void
+     */
     private static function entities($data)
     {
         return strtr($data, array(
@@ -53,9 +84,18 @@ class Form
             ));
     }
 
-    public static function combo($name, $options = null, $value = null, $attributes = null)
+    /**
+     * Create a select combo based in an array
+     *
+     * @param string $name
+     * @param array  $options
+     * @param string $value
+     * @param string $name
+     * @return void
+     */
+    public static function combo($name, array $options, $value = null, array $attributes = array())
     {
-        $input = self::applyAttr($attributes, '<select{{attr}}>', $name, 'select');
+        $input = self::setAttr($attributes, '<select{{attr}}>', $name, 'select');
 
         foreach ($options as $key => $val) {
             $input .= '<option value="' . self::entities($val) . '"';
@@ -70,7 +110,16 @@ class Form
         return $input . '</select>';
     }
 
-    public static function input($type, $name, $attributes = null, $value = null)
+    /**
+     * Create a input or textarea
+     *
+     * @param string $type
+     * @param string $name
+     * @param string $value
+     * @param array  $attributes
+     * @return void
+     */
+    public static function input($type, $name, $value = null, array $attributes = array())
     {
         if ($type === 'textarea') {
             $input = '<textarea{{attr}}>';
@@ -89,19 +138,24 @@ class Form
 
             $input .= '"{{attr}}' . self::$useXhtml . '>';
         } else {
-            return null;
+            throw new Exception('Invalid type');
         }
 
-        return self::applyAttr($attributes, $input, $name, $type);
+        return self::setAttr($attributes, $input, $name, $type);
     }
 
-    private static function applyAttr($attributes, $field, $name, $type)
+    /**
+     * set attributes in an element
+     *
+     * @param array  $attributes
+     * @param string $field
+     * @param string $name
+     * @param string $value
+     * @return void
+     */
+    private static function setAttr(array $attributes, $field, $name, $type)
     {
         $attrs = '';
-
-        if (false === is_array($attributes)) {
-            $attributes = array();
-        }
 
         if (in_array($type, array_keys(self::$preAttrs))) {
             $attributes = self::$preAttrs[$type] + $attributes;

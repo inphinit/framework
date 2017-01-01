@@ -2,7 +2,7 @@
 /*
  * Experimental
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -22,7 +22,6 @@ class Debug
     /**
      * Unregister debug events
      *
-     * @param  string        $path
      * @return void
      */
     public static function unregister()
@@ -43,10 +42,10 @@ class Debug
     /**
      * Render a View to error
      *
-     * @param  string        $type
-     * @param  string        $message
-     * @param  string        $file
-     * @param  integer       $line
+     * @param string $type
+     * @param string $message
+     * @param string $file
+     * @param int $line
      * @return void
      */
     public static function renderError($type, $message, $file, $line)
@@ -67,7 +66,11 @@ class Debug
 
             echo json_encode($data);
 
-            App::abort(500);
+            App::stop(500);
+        }
+
+        if ($type === E_ERROR || $type === E_RECOVERABLE_ERROR) {
+            View::forceRender();
         }
 
         View::render(self::$views['error'], $data);
@@ -106,12 +109,15 @@ class Debug
     /**
      * Register a debug views
      *
+     * @param string $type
+     * @param string $view
+     *
      * @return void
      */
     public static function view($type, $view)
     {
         if ($view !== null && View::exists($view) === false) {
-            Exception::raise($view . ' view is not found', 2);
+            throw new Exception($view . ' view is not found', 2);
         }
 
         $callRender = array( '\\' . get_called_class(), 'render' . ucfirst($type) );
@@ -135,13 +141,16 @@ class Debug
             break;
 
             default:
-                Exception::raise($type . ' is not valid event', 2);
+                throw new Exception($type . ' is not valid event', 2);
         }
     }
 
     /**
      * Get detailed from error, include eval errors
      *
+     * @param string $message
+     * @param string $file
+     * @param string $line
      * @return array
      */
     public static function details($message, $file, $line)
@@ -149,10 +158,15 @@ class Debug
         $match = array();
         $oFile = $file;
 
+        if (preg_match('#called in ([\s\S]+?) on line (\d+)#', $message, $match)) {
+            $file = $match[1];
+            $line = (int) $match[2];
+        }
+
         if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code$#', trim($file), $match)) {
             $oFile = $match[1] . ' : eval():' . $line;
             $file  = $match[1];
-            $line  = $match[2];
+            $line  = (int) $match[2];
         }
 
         return array(
@@ -180,7 +194,6 @@ class Debug
 
     /**
      * Get declared classes
-     *
      * @return array
      */
     public static function classes()
@@ -207,9 +220,9 @@ class Debug
     /**
      * Get snippet from a file
      *
-     * @param  string        $file
-     * @param  integer       $line
-     * @return array|boolean
+     * @param string $file
+     * @param int $line
+     * @return array|bool
      */
     public static function source($file, $line)
     {
@@ -234,14 +247,14 @@ class Debug
     /**
      * Get caller
      *
-     * @param  integer       $level
-     * @return array|boolean
+     * @param int $level
+     * @return array|bool
      */
     public static function caller($level = 0)
     {
         $trace = debug_backtrace(0);
 
-        if ($level === -1) {
+        if ($level < 0) {
             return $trace;
         }
 
@@ -249,8 +262,13 @@ class Debug
             return false;
         }
 
-        $file  = $trace[$level]['file'];
-        $line  = $trace[$level]['line'];
+        if (empty($trace[$level]['file'])) {
+            $level = 1;
+        }
+
+        $file = $trace[$level]['file'];
+        $line = $trace[$level]['line'];
+
         $trace = null;
 
         return array(

@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -17,9 +17,9 @@ class Route extends Router
     /**
      * Register or remove a action from controller for a route
      *
-     * @param  string|array  $method
-     * @param  mixed         $path
-     * @param  mixed         $action
+     * @param string|array $method
+     * @param string       $path
+     * @param string       $action
      * @return void
      */
     public static function set($method, $path, $action)
@@ -37,11 +37,11 @@ class Route extends Router
     /**
      * Get params from routes using regex
      *
-     * @param  string         $httpMethod
-     * @param  string         $route
-     * @param  string         $pathinfo
-     * @param  array          $matches
-     * @return boolean
+     * @param string $httpMethod
+     * @param string $route
+     * @param string $pathinfo
+     * @param array  $matches
+     * @return bool
      */
     private static function find($httpMethod, $route, $pathinfo, &$matches)
     {

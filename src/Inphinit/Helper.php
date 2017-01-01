@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2016 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -11,16 +11,13 @@ namespace Inphinit;
 
 class Helper
 {
-    const URL_UTF8 = 2;
-    const URL_ASCII = 1;
-
     /**
      * Parse version format
      *
-     * @param  string        $version
-     * @return integer
+     * @param string $version
+     * @return int
      */
-    public static function extractVersion($version)
+    public static function parseVersion($version)
     {
         if (preg_match('#^(\d+)\.(\d+)\.(\d+)(\-([\w.\-]+)|)$#', $version, $match) > 0) {
             return (object) array(
@@ -37,8 +34,8 @@ class Helper
     /**
      * Convert string to ASCII
      *
-     * @param  string        $text
-     * @return integer
+     * @param string $text
+     * @return int
      */
     public static function toAscii($text)
     {
@@ -47,36 +44,11 @@ class Helper
     }
 
     /**
-     * Convert text to url format
-     *
-     * @param  string        $text
-     * @return integer
-     */
-    public static function url($text, $type = null)
-    {
-        $text = preg_replace('#[`\'"\^~\{\}\[\]\(\)]#', '', $text);
-        $text = preg_replace('#[\n\s\/\p{P}]#u', '-', $text);
-
-        if ($type === Helper::URL_UTF8) {
-            $text = preg_replace('#[^\d\p{L}\p{N}\-]#u', '', $text);
-        } elseif ($type === Helper::URL_ASCII) {
-            $text = preg_replace('#[^\d\p{L}\-]#u', '', $text);
-            $text = self::url($text);
-        } else {
-            $text = self::toAscii($text);
-            $text = preg_replace('#[^a-z\d\-]#i', '', $text);
-        }
-
-        $text = preg_replace('#[\-]+[\-]#', '-', $text);
-        return trim($text, '-');
-    }
-
-    /**
      * Capitalize words using hyphen or a custom delimiter.
      *
-     * @param  string        $str
-     * @param  string        $delimiter
-     * @param  string        $glue
+     * @param string $str
+     * @param string $delimiter
+     * @param string $glue
      * @return string
      */
     public static function capitalize($str, $delimiter = '-', $glue = '')
@@ -87,8 +59,8 @@ class Helper
     /**
      * Read array by path using dot
      *
-     * @param  string        $path
-     * @param  array         $items
+     * @param string $path
+     * @param array  $items
      * @return mixed
      */
     public static function arrayPath($path, array $items)
