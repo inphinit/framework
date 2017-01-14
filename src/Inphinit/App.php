@@ -54,7 +54,7 @@ class App
     }
 
     /**
-     * Trigger registred event
+     * Trigger registered event
      *
      * @param string $name
      * @param array  $args
@@ -140,23 +140,6 @@ class App
 
         self::$events[$name] = $evts;
         $evts = null;
-    }
-
-    /**
-     * Clear others buffers for use buffer in application
-     *
-     * @param callable $callback
-     * @param int  $chunksize
-     * @param int  $flags
-     * @return void
-     */
-    public static function buffer($callback = null, $chunksize = 0, $flags = PHP_OUTPUT_HANDLER_STDFLAGS)
-    {
-        if (ob_get_level() !== 0) {
-            ob_end_clean();
-        }
-
-        ob_start($callback, $chunksize, $flags);
     }
 
     /**

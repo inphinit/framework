@@ -95,7 +95,7 @@ class Xml
      * </code>
      * </pre>
      *
-     * @throws Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Exception
      * @return string
      */
     public function __toString()
@@ -111,7 +111,7 @@ class Xml
      * Save file to location
      *
      * @param string $path
-     * @throws Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Exception
      * @return string
      */
     public function save($path)

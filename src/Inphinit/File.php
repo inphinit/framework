@@ -24,8 +24,8 @@ class File
     }
 
     /**
-     * Get file size, support for read files with more of 2GB in 32bit
-     * Returns false if file is not found
+     * Get file size, support for read files with more of 2GB in 32bit.
+     * Return `false` if file is not found
      *
      * @param string $path
      * @return string|bool
@@ -41,8 +41,8 @@ class File
     }
 
     /**
-     * Get file/folder permissions in a format more readable
-     * Returns false if file is not found
+     * Get file/folder permissions in a format more readable.
+     * Return `false` if file is not found
      *
      * @param string $path
      * @param bool   $full
@@ -99,7 +99,7 @@ class File
     }
 
     /**
-     * Get mimetype from file, return false if file is invalid
+     * Get mimetype from file, return `false` if file is invalid
      *
      * @param string $path
      * @return string|bool

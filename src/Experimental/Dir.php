@@ -17,7 +17,7 @@ class Dir implements \IteratorAggregate
      * Return items from a folder
      *
      * @param string $path
-     * @throws Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public function __construct($path)
@@ -76,7 +76,7 @@ class Dir implements \IteratorAggregate
      * Return items from root project folder (probably, will depend on the setting
      * of the "INPHINIT_ROOT" constant)
      *
-     * @return array|bool
+     * @return \Inphinit\Experimental\Dir
      */
     public static function root()
     {
@@ -86,7 +86,7 @@ class Dir implements \IteratorAggregate
     /**
      * Return items from storage folder
      *
-     * @return array|bool
+     * @return \Inphinit\Experimental\Dir
      */
     public static function storage()
     {
@@ -96,7 +96,7 @@ class Dir implements \IteratorAggregate
     /**
      * Return items from application folder
      *
-     * @return array|bool
+     * @return \Inphinit\Experimental\Dir
      */
     public static function application()
     {

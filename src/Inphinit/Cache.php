@@ -77,7 +77,11 @@ class Cache
 
         App::on('finish', array($this, 'finish'));
 
-        App::buffer(array($this, 'write'), 1024);
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        ob_start(array($this, 'write'), 1024);
     }
 
     /**
@@ -107,7 +111,7 @@ class Cache
     }
 
     /**
-     * Check `HTTP_IF_MODIFIED_SINCE`,` HTTP_IF_MODIFIED_SINCE` and `HTTP_IF_NONE_MATCH` from server
+     * Check `HTTP_IF_MODIFIED_SINCE` and `HTTP_IF_NONE_MATCH` from server
      * If true you can send `304 Not Modified`
      *
      * @param string $lm
