@@ -39,7 +39,6 @@ function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array()
 /**
  * Use with `register_shutdown_function` fatal errors and execute `App::trigger('terminate')`
  *
- * @param string $path
  * @return void
  */
 function UtilsShutDown()
@@ -85,7 +84,6 @@ function UtilsStatusCode()
 /**
  * Get path from current project
  *
- * @param string $path
  * @return string
  */
 function UtilsPath()
@@ -112,7 +110,6 @@ function UtilsPath()
 /**
  * Alternative to composer-autoload
  *
- * @param string $path
  * @return void
  */
 function UtilsAutoload()
@@ -179,10 +176,10 @@ function UtilsAutoload()
 /**
  * Function used from `set_error_handler` and trigger `App::trigger('error')`
  *
- * @param string  $type
+ * @param int     $type
  * @param string  $message
  * @param string  $file
- * @param int $line
+ * @param int     $line
  * @param array   $details
  * @return false
  */

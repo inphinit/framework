@@ -16,6 +16,8 @@ class Session implements \IteratorAggregate
 {
     private $handler;
     private $iterator;
+    private $savepath;
+    private $prefix = 'sess_';
     private $data = array();
     private $insertions = array();
     private $deletions = array();
@@ -25,10 +27,10 @@ class Session implements \IteratorAggregate
     /**
      * Create cookie session and configure session
      *
-     * @param  string $name
-     * @param  string $id
-     * @param  array  $opts
-     * @throws Inphinit\Experimental\Exception
+     * @param string $name
+     * @param string $id
+     * @param array  $opts
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public function __construct($name = 'inphinit', $id = null, array $opts = array())
@@ -37,14 +39,13 @@ class Session implements \IteratorAggregate
             throw new Exception('Cannot modify header information - headers already sent', 2);
         }
 
-        $savepath = Storage::resolve('session');
+        $this->savepath = Storage::resolve('session');
 
         $tmpname = null;
-        $prefix = 'sess_';
 
         if ($id === null) {
             if (empty($_COOKIE[$name])) {
-                $tmpname = Storage::temp(null, 'session', $prefix, '');
+                $tmpname = Storage::temp(null, 'session', $this->prefix, '');
 
                 if ($tmpname === false) {
                     throw new Exception('Failed to create session file', 2);
@@ -61,7 +62,7 @@ class Session implements \IteratorAggregate
         }
 
         if ($tmpname === null) {
-            $tmpname = $savepath . '/' . $prefix . $this->currentId;
+            $tmpname = $this->savepath . '/' . $this->prefix . $this->currentId;
         }
 
         $this->currentName = $name;
@@ -134,6 +135,8 @@ class Session implements \IteratorAggregate
         $this->write();
 
         flock($this->handler, LOCK_UN);
+
+        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -165,6 +168,8 @@ class Session implements \IteratorAggregate
         }
 
         flock($this->handler, LOCK_UN);
+
+        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -213,10 +218,18 @@ class Session implements \IteratorAggregate
      */
     public function __set($name, $value)
     {
+        try {
+            serialize($value);
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage(), 2);
+        }
+
         unset($this->deletions[$name]);
 
         $this->insertions[$name] = $value;
         $this->data = $this->insertions + $this->data;
+
+        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -242,6 +255,8 @@ class Session implements \IteratorAggregate
         unset($this->data[$name], $this->insertions[$name]);
 
         $this->deletions[$name] = true;
+
+        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -253,8 +268,8 @@ class Session implements \IteratorAggregate
      * $foo = new Session;
      *
      * foreach ($foo as $key => $value) {
-     *      var_dump($key, $value);
-     *      echo EOL;
+     *     var_dump($key, $value);
+     *     echo EOL;
      * }
      * </code>
      * </pre>
@@ -263,7 +278,7 @@ class Session implements \IteratorAggregate
      */
     public function getIterator()
     {
-        return $this->iterator = new \ArrayIterator($this->data);
+        return $this->iterator;
     }
 
     public function __destruct()
