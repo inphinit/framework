@@ -12,6 +12,7 @@ namespace Inphinit\Experimental\Routing;
 use Inphinit\App;
 use Inphinit\Request;
 use Inphinit\Routing\Router;
+use Inphinit\Experimental\Exception;
 
 class Group extends Router
 {
@@ -29,16 +30,6 @@ class Group extends Router
     public static function create()
     {
         return new static;
-    }
-
-    /**
-     * Create a new route group
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        App::on('init', array($this, 'prepare'));
     }
 
     /**
@@ -90,7 +81,7 @@ class Group extends Router
     {
         if (empty($path)) {
             throw new Exception('path is not defined', 2);
-        } elseif (!preg_match('~^(\/(.*?)\/|re\:#\^/(.*?)/#([imsxADSUXju]+))$~', $path)) {
+        } elseif (!preg_match('~^(/(.*?)/|re\:#\^/(.*?)/#([imsxADSUXju]+))$~', $path)) {
             throw new Exception('missing slash in "' . $path . '", use like this /foo/', 2);
         }
 
@@ -167,7 +158,7 @@ class Group extends Router
     protected function checkPath()
     {
         if ($this->path) {
-            $path = Request::path();
+            $path = Request::path(true);
 
             if (strpos($path, $this->path) === 0) {
                 $this->currentPrefixPath = $this->path;

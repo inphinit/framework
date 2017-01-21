@@ -142,9 +142,22 @@ class Packages implements \IteratorAggregate
     }
 
     /**
-     * Each loaded libs
+     * Allow iteration with `for`, `foreach` and `while`
      *
-     * @return void
+     * Example:
+     * <pre>
+     * <code>
+     * $foo = new Packages;
+     * $foo->inAutoload(); //Get imported classes
+     *
+     * foreach ($foo as $namespace => $path) {
+     *     var_dump($namespace, $path);
+     *     echo EOL;
+     * }
+     * </code>
+     * </pre>
+     *
+     * @return \ArrayIterator
      */
     public function getIterator()
     {

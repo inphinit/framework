@@ -170,9 +170,9 @@ class App
             return null;
         }
 
-        self::trigger('init');
-
         self::$initiate = true;
+
+        self::trigger('init');
 
         if (self::env('maintenance') === true) {
             self::stop(503);
@@ -188,11 +188,9 @@ class App
 
             $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
 
-            $action = $parsed[1];
+            $run = array(new $mainController, $parsed[1]);
 
-            $run = new $mainController;
-
-            call_user_func_array(array($run, $action), is_array($route['args']) ? $route['args'] : array());
+            call_user_func_array($run, is_array($route['args']) ? $route['args'] : array());
 
             $run = null;
         } else {

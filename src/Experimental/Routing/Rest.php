@@ -12,7 +12,6 @@ namespace Inphinit\Experimental\Routing;
 use Inphinit\App;
 use Inphinit\Routing\Route;
 use Inphinit\Routing\Router;
-
 use Inphinit\Experimental\Exception;
 
 class Rest extends Router
@@ -66,8 +65,6 @@ class Rest extends Router
         $allowedMethods = array_keys($this->valids);
 
         $this->classMethods = array_intersect(get_class_methods($fc), $allowedMethods);
-
-        App::on('init', array($this, 'prepare'));
     }
 
     /**
