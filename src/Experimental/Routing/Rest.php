@@ -53,10 +53,10 @@ class Rest extends Router
             'index'   => array( 'GET',  '/' ),
             'create'  => array( 'GET',  '/create' ),
             'store'   => array( 'POST', '/' ),
-            'show'    => array( 'GET',  're:#^/([a-z0-9_\-]+)$#i' ),
-            'edit'    => array( 'GET',  're:#^/([a-z0-9_\-]+)/edit$#i' ),
-            'update'  => array( array('PUT', 'PATCH'), 're:#^/([a-z0-9_\-]+)$#i' ),
-            'destroy' => array( 'DELETE', 're:#^/([a-z0-9_\-]+)$#i' ),
+            'show'    => array( 'GET',  '/{[a-zA-Z0-9_\-]+}' ),
+            'edit'    => array( 'GET',  '/{[a-zA-Z0-9_\-]+}/edit' ),
+            'update'  => array( array('PUT', 'PATCH'), '/{[a-zA-Z0-9_\-]+}' ),
+            'destroy' => array( 'DELETE', '/{[a-zA-Z0-9_\-]+}' ),
         );
 
         $this->controller = $namecontroller;

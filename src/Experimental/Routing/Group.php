@@ -81,7 +81,7 @@ class Group extends Router
     {
         if (empty($path)) {
             throw new Exception('path is not defined', 2);
-        } elseif (!preg_match('~^(/(.*?)/|re\:#\^/(.*?)/#([imsxADSUXju]+))$~', $path)) {
+        } elseif (preg_match('#^/(.*?)/$#', $path) === 0) {
             throw new Exception('missing slash in "' . $path . '", use like this /foo/', 2);
         }
 
@@ -137,34 +137,17 @@ class Group extends Router
     protected function checkDomain()
     {
         if ($this->domain) {
-            list($host, $port) = explode(':', Request::header('Host'), 2);
+            $host = Request::header('Host');
 
             if ($host === $this->domain) {
                 return array();
-            } elseif ($host && self::checkRegEx($this->domain, $host, $matches)) {
-                array_shift($matches);
-                return $matches;
-            }
-        }
+            } elseif ($host) {
+                $re = parent::parse($this->domain);
 
-        return false;
-    }
+                if ($re === false || preg_match_all('#^' . $re . '$#', $host, $matches) === 0) {
+                    return false;
+                }
 
-    /**
-     * Method is used for check path
-     *
-     * @return array|bool $matches
-     */
-    protected function checkPath()
-    {
-        if ($this->path) {
-            $path = Request::path(true);
-
-            if (strpos($path, $this->path) === 0) {
-                $this->currentPrefixPath = $this->path;
-                return array();
-            } elseif (self::checkRegEx($this->path, $path, $matches)) {
-                $this->currentPrefixPath = $matches[0];
                 array_shift($matches);
                 return $matches;
             }
@@ -189,39 +172,20 @@ class Group extends Router
         $oNS = parent::$prefixNS;
         $oPP = parent::$prefixPath;
 
-        $args = array();
-
-        $checks = 0;
-        $valids = 0;
+        $argsDomain = false;
 
         if ($this->domain) {
-            $checks++;
+            $argsDomain = $this->checkDomain();
         }
 
-        if ($this->path) {
-            $checks++;
-        }
-
-        $argsDomain = $this->checkDomain();
-
-        if ($argsDomain !== false) {
-            $args = array_merge($args, $argsDomain);
-
-            $valids++;
-        }
-
-        $argsPath = $this->checkPath();
-
-        if ($argsPath !== false) {
-            $args = array_merge($args, $argsPath);
-
-            parent::$prefixPath = substr($this->currentPrefixPath, 0, -1);
-            $valids++;
-        }
-
-        if ($valids === $checks) {
+        if ($this->path || $argsDomain !== false) {
             parent::$prefixNS = $this->ns;
-            call_user_func_array($this->callback, $args);
+
+            if ($this->path) {
+                parent::$prefixPath = rtrim($this->path, '/');
+            }
+
+            call_user_func_array($this->callback, $argsDomain ? $argsDomain : array());
         }
 
         parent::$prefixNS = $oNS;

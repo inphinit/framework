@@ -45,13 +45,15 @@ class Route extends Router
      */
     private static function find($httpMethod, $route, $pathinfo, &$matches)
     {
-        $match = explode(' re:', $route, 2);
+        $match = explode(' ', $route, 2);
 
         if ($match[0] !== 'ANY' && $match[0] !== $httpMethod) {
             return false;
         }
 
-        if (preg_match($match[1], $pathinfo, $matches) > 0) {
+        $re = self::parse($match[1]);
+
+        if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches) > 0) {
             array_shift($matches);
             return true;
         }
@@ -89,7 +91,7 @@ class Route extends Router
             $verb = $http;
         } elseif (empty($routes) === false) {
             foreach ($routes as $route => $action) {
-                if (strpos($route, ' re:') !== false && self::find($httpMethod, $route, $pathinfo, $args)) {
+                if (self::find($httpMethod, $route, $pathinfo, $args)) {
                     $func = $action;
                     $verb = $route;
                     break;
