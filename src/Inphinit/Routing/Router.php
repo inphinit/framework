@@ -28,7 +28,7 @@ abstract class Router
     /**
      * Parse string like.: {[a-z]+}.domain.com or /user/{[a-z]+}/{\d+} to regex
      *
-     * @var string
+     * @param string $str
      * @return bool|string
      */
     public static function parse($str)
@@ -43,11 +43,15 @@ abstract class Router
                     array( '\\' . get_called_class(), 'args' ), $str);
     }
 
+    /**
+     * Convert one argument like {[a-z]+} to ([a-z]+), this function is used by `Router::parse`
+     *
+     * @param string $rearg
+     * @return string
+     */
     public static function args($rearg)
     {
         $rearg = str_replace('\\', '', $rearg[0]);
-        $rearg = ltrim($rearg, '{');
-        $rearg = rtrim($rearg, '}');
-        return '(' . $rearg . ')';
+        return '(' . substr($rearg, 1, -1) . ')';
     }
 }
