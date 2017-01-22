@@ -53,7 +53,7 @@ class Route extends Router
 
         $re = self::parse($match[1]);
 
-        if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches) > 0) {
+        if ($re !== false && preg_match('#^' . $re . '$#', $pathinfo, $matches) > 0) {
             array_shift($matches);
             return true;
         }
