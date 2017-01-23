@@ -130,33 +130,6 @@ class Group extends Router
     }
 
     /**
-     * Method is used for check domain
-     *
-     * @return array|bool $matches
-     */
-    protected function checkDomain()
-    {
-        if ($this->domain) {
-            $host = Request::header('Host');
-
-            if ($host === $this->domain) {
-                return array();
-            } elseif ($host) {
-                $re = parent::parse($this->domain);
-
-                if ($re === false || preg_match_all('#^' . $re . '$#', $host, $matches) === 0) {
-                    return false;
-                }
-
-                array_shift($matches);
-                return $matches;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Perform checking and execute predefined callback
      *
      * @return void

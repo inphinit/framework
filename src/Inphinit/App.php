@@ -188,11 +188,8 @@ class App
 
             $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
 
-            $run = array(new $mainController, $parsed[1]);
-
-            call_user_func_array($run, is_array($route['args']) ? $route['args'] : array());
-
-            $run = null;
+            call_user_func_array(array(new $mainController, $parsed[1]),
+                                    is_array($route['args']) ? $route['args'] : array());
         } else {
             self::stop(404, 'Invalid route');
         }

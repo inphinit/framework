@@ -94,11 +94,9 @@ function UtilsPath()
         return $pathinfo;
     }
 
-    $sname  = $_SERVER['SCRIPT_NAME'];
-    $requri = empty($_SERVER['REQUEST_URI']) ? null :
-                preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
+    $requri = preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
 
-    $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
+    $pathinfo = rtrim(strtr(dirname($_SERVER['SCRIPT_NAME']), '\\', '/'), '/');
 
     $pathinfo = substr(urldecode($requri), strlen($pathinfo) + 1);
 
