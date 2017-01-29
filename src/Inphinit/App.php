@@ -16,7 +16,8 @@ class App
     private static $events = array();
     private static $configs = array();
     private static $initiate = false;
-    private static $detectError = false;
+    private static $error = false;
+    private static $done = false;
 
     /**
      * Set or get environment value
@@ -73,7 +74,7 @@ class App
         });
 
         if ($name === 'error') {
-            self::$detectError = true;
+            self::$error = true;
         }
 
         foreach ($listen as $callback) {
@@ -84,13 +85,23 @@ class App
     }
 
     /**
+     * Return `true` if `App::exec` is performed
+     *
+     * @return bool
+     */
+    public static function isReady()
+    {
+        return self::$done;
+    }
+
+    /**
      * Return true if a script or event trigged a error or exception
      *
      * @return bool
      */
     public static function hasError()
     {
-        return self::$detectError;
+        return self::$error;
     }
 
     /**
@@ -188,7 +199,7 @@ class App
 
             $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
 
-            call_user_func_array(array(new $mainController, $parsed[1]),
+            $output = call_user_func_array(array(new $mainController, $parsed[1]),
                                     is_array($route['args']) ? $route['args'] : array());
         } else {
             self::stop(404, 'Invalid route');
@@ -203,6 +214,13 @@ class App
         }
 
         self::trigger('ready');
+
+        self::$done = true;
+
+        if ($output) {
+            echo $output;
+        }
+
         self::trigger('finish');
     }
 }

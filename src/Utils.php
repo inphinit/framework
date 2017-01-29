@@ -140,7 +140,7 @@ function UtilsAutoload()
         $base = false;
 
         if (empty($prefixes) === false) {
-            if (isset($prefixes[$classname]) && preg_match('#\.[a-z0-9]+$#', $prefixes[$classname]) !== 0) {
+            if (isset($prefixes[$classname]) && preg_match('#\.[a-z0-9]+$#i', $prefixes[$classname]) !== 0) {
                 $isfile = true;
                 $base = $prefixes[$classname];
             } else {

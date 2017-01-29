@@ -15,7 +15,8 @@ class Packages implements \IteratorAggregate
     private $classmapName = 'autoload_classmap.php';
     private $psrZeroName  = 'autoload_namespaces.php';
     private $psrFourName  = 'autoload_psr4.php';
-    private $libs = array();
+    private $logs = array();
+    private $libs;
 
     /**
      * Create a `Inphinit\Packages` instance.
@@ -31,6 +32,26 @@ class Packages implements \IteratorAggregate
 
         $this->composerPath = $path;
         $this->libs = new \ArrayIterator(array());
+    }
+
+    /**
+     * Get log
+     *
+     * @return array
+     */
+    public function logs()
+    {
+        return $this->log;
+    }
+
+    /**
+     * Auto import composer packages
+     *
+     * @return int
+     */
+    public function auto()
+    {
+        return 0 + $this->classmap() + $this->psr0() + $this->psr4();
     }
 
     /**
@@ -53,8 +74,6 @@ class Packages implements \IteratorAggregate
 
             return count($this->libs);
         }
-
-        return false;
     }
 
     /**
@@ -78,9 +97,11 @@ class Packages implements \IteratorAggregate
                 }
             }
 
+            $this->log[] = 'Imported ' . $i . ' classes from classmap';
             return $i;
         }
 
+        $this->log[] = 'Warn: classmap not found';
         return false;
     }
 
@@ -92,7 +113,15 @@ class Packages implements \IteratorAggregate
      */
     public function psr0()
     {
-        return $this->load($this->composerPath . $this->psrZeroName);
+        $i = $this->load($this->composerPath . $this->psrZeroName);
+
+        if ($i !== false) {
+            $this->log[] = 'Imported ' . $i . ' classes from psr0';
+            return $i;
+        }
+
+        $this->log[] = 'Warn: psr0 not found';
+        return false;
     }
 
     /**
@@ -103,7 +132,15 @@ class Packages implements \IteratorAggregate
      */
     public function psr4()
     {
-        return $this->load($this->composerPath . $this->psrFourName);
+        $i = $this->load($this->composerPath . $this->psrFourName);
+
+        if ($i !== false) {
+            $this->log[] = 'Imported ' . $i . ' classes from psr4';
+            return $i;
+        }
+
+        $this->log[] = 'Warn: psr4 not found';
+        return false;
     }
 
     /**

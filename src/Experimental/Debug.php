@@ -45,7 +45,7 @@ class Debug
      * @param string $type
      * @param string $message
      * @param string $file
-     * @param int $line
+     * @param int    $line
      * @return void
      */
     public static function renderError($type, $message, $file, $line)
@@ -102,8 +102,8 @@ class Debug
         }
 
         View::render(self::$views['classes'], array(
-                'classes' => self::classes()
-            ));
+            'classes' => self::classes()
+        ));
     }
 
     /**

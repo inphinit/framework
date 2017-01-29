@@ -14,7 +14,7 @@ use Inphinit\Response;
 
 class Session implements \IteratorAggregate
 {
-    private $handler;
+    private $handle;
     private $iterator;
     private $savepath;
     private $prefix = 'sess_';
@@ -23,13 +23,14 @@ class Session implements \IteratorAggregate
     private $deletions = array();
     private $currentId;
     private $currentName;
+    private $opts;
 
     /**
      * Create cookie session and configure session
      *
-     * @param string $name
-     * @param string $id
-     * @param array  $opts
+     * @param string      $name
+     * @param string|null $id
+     * @param array       $opts
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
@@ -52,11 +53,11 @@ class Session implements \IteratorAggregate
                 }
 
                 $cid = substr(basename($tmpname), 5);
-
-                $this->currentId = $cid;
             } else {
-                $this->currentId = $_COOKIE[$name];
+                $cid = $_COOKIE[$name];
             }
+
+            $this->currentId = $cid;
         } else {
             $this->currentId = $id;
         }
@@ -65,11 +66,9 @@ class Session implements \IteratorAggregate
             $tmpname = $this->savepath . '/' . $this->prefix . $this->currentId;
         }
 
-        $this->currentName = $name;
+        $this->handle = fopen($tmpname, 'a+');
 
-        $this->handler = fopen($tmpname, 'a+');
-
-        if ($this->handler === false) {
+        if ($this->handle === false) {
             throw new Exception('Failed to write session data', 2);
         }
 
@@ -78,42 +77,34 @@ class Session implements \IteratorAggregate
             'secure' => false, 'httponly' => false
         );
 
-        if (!setcookie($name, $this->currentId, $opts['expire'], $opts['path'], $opts['domain'], $opts['secure'], $opts['httponly']))
-        {
-            throw new Exception('Failed to set HTTP cookie', 2);
-        }
+        $this->opts = (object) $opts;
 
         $opts = null;
 
+        $this->currentName = $name;
+
+        $this->cookie();
         $this->read();
     }
 
     /**
      * Lock session file and save variables
-     *
+     * @param bool $unlock
      * @return void
      */
-    public function commit()
+    public function commit($unlock = true)
     {
         if (empty($this->insertions) && empty($this->deletions)) {
             return null;
         }
 
-        if (flock($this->handler, LOCK_EX) === false) {
-            usleep(10000);
-            $this->commit();
-            return null;
-        }
+        $this->lock();
 
         $data = '';
 
-        rewind($this->handler);
+        rewind($this->handle);
 
-        while (feof($this->handler) === false) {
-            $data .= fread($this->handler, 8192);
-        }
-
-        $data = trim($data);
+        $data = trim(stream_get_contents($this->handle));
 
         if ($data !== '') {
             $data = unserialize($data);
@@ -134,9 +125,73 @@ class Session implements \IteratorAggregate
 
         $this->write();
 
-        flock($this->handler, LOCK_UN);
+        if ($unlock) {
+            flock($this->handle, LOCK_UN);
+        }
 
         $this->iterator = new \ArrayIterator($this->data);
+    }
+
+    /**
+     * Regenerate ID
+     *
+     * @param string|null $id
+     * @param bool        $trydeleteold
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
+    public function regenerate($id = null, $trydeleteold = false)
+    {
+        if (headers_sent()) {
+            throw new Exception('Cannot modify header information - headers already sent', 2);
+        }
+
+        $old = $this->savepath . '/' . $this->prefix . $this->currentId;
+
+        $this->commit(false);
+
+        if (empty($id)) {
+            $tmpname = Storage::temp(null, 'session', $this->prefix, '');
+
+            if ($tmpname === false) {
+                throw new Exception('Failed to create new session file', 2);
+            }
+
+            $id = substr(basename($tmpname), 5);
+        } else {
+            $tmpname = $this->savepath . '/' . $this->prefix . $id;
+        }
+
+        if (copy($this->handle, $tmpname) === false) {
+            throw new Exception('Failed to copy new old session', 2);
+        }
+
+        flock($this->handle, LOCK_UN);
+        fclose($this->handle);
+
+        if ($trydeleteold) {
+            unlink($old);
+        }
+
+        $this->handle = fopen($tmpname, 'a+');
+
+        $this->currentId = $id;
+
+        $this->cookie();
+    }
+
+    /**
+     * Set cookie
+     *
+     * @return void
+     */
+    private function cookie()
+    {
+        if (!setcookie($this->currentName, $this->currentId, $this->opts->expire,
+                $this->opts->path, $this->opts->domain, $this->opts->secure, $this->opts->httponly)
+        ) {
+            throw new Exception('Failed to set HTTP cookie', 3);
+        }
     }
 
     /**
@@ -146,30 +201,35 @@ class Session implements \IteratorAggregate
      */
     private function read()
     {
-        if (flock($this->handler, LOCK_EX) === false) {
-            usleep(10000);
-            $this->read();
-            return null;
-        }
+        $this->lock();
 
         $data = '';
 
-        rewind($this->handler);
+        rewind($this->handle);
 
-        while (feof($this->handler) === false) {
-            $data .= fread($this->handler, 8192);
-        }
-
-        $data = trim($data);
+        $data = trim(stream_get_contents($this->handle));
 
         if ($data !== '') {
             $this->data = unserialize($data);
             $data = null;
         }
 
-        flock($this->handler, LOCK_UN);
+        flock($this->handle, LOCK_UN);
 
         $this->iterator = new \ArrayIterator($this->data);
+    }
+
+    /**
+     * Quick lock session
+     *
+     * @return void
+     */
+    private function lock()
+    {
+        if (flock($this->handle, LOCK_EX) === false) {
+            usleep(5000);
+            $this->lock();
+        }
     }
 
     /**
@@ -179,10 +239,10 @@ class Session implements \IteratorAggregate
      */
     private function write()
     {
-        ftruncate($this->handler, 0);
-        rewind($this->handler);
+        ftruncate($this->handle, 0);
+        rewind($this->handle);
 
-        fwrite($this->handler, serialize($this->data));
+        fwrite($this->handle, serialize($this->data));
     }
 
     /**
@@ -200,6 +260,7 @@ class Session implements \IteratorAggregate
      * Magic method for get session variables (this method also returns variables that have not yet
      * been committed)
      *
+     * @param string $name
      * @return mixed
      */
     public function __get($name)
@@ -213,7 +274,7 @@ class Session implements \IteratorAggregate
      * Magic method for set session variables (this method don't commit data)
      *
      * @param string $name
-     * @param string $value
+     * @param mixed  $value
      * @return void
      */
     public function __set($name, $value)
@@ -285,14 +346,14 @@ class Session implements \IteratorAggregate
     {
         $this->commit();
 
-        if ($this->handler) {
-            fclose($this->handler);
+        if ($this->handle) {
+            fclose($this->handle);
         }
 
         $this->data =
         $this->iterator =
         $this->deletions =
         $this->insertions =
-        $this->handler = null;
+        $this->handle = null;
     }
 }

@@ -104,7 +104,7 @@ class Storage
         }
 
         $fullpath = self::path() . $path . '/' . $prefix .
-                str_replace(array(' ', '.'), '-', microtime()). '-' . rand(1, 1000) . $sulfix;
+                        base_convert(microtime(false), 10, 36) . rand(1, 1000) . $sulfix;
 
         if (is_file($fullpath)) {
             return self::temp($data);
