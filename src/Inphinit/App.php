@@ -126,7 +126,7 @@ class App
     }
 
     /**
-     * Unegister 1 or all events
+     * Unregister 1 or all events
      *
      * @param string   $name
      * @param callable $callback

@@ -44,7 +44,7 @@ class Shell
     /**
      * Get arguments
      *
-     * @return string
+     * @return array
      */
     public function arguments()
     {
@@ -74,8 +74,8 @@ class Shell
     /**
      * Get input data
      *
-     * @param int $callback
-     * @return mixed
+     * @param int $length
+     * @return string|bool
      */
     public static function input($length = 0)
     {
@@ -88,7 +88,7 @@ class Shell
      * Add callback event to input
      *
      * @param callable $callback
-     * @param string $exitCicle
+     * @param string   $exitCicle
      * @return void|bool
      */
     public function inputObserver($callback, $exitCicle = 'exit')
