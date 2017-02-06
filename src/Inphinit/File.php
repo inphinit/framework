@@ -50,7 +50,7 @@ class File
      */
     public static function permission($path, $full = false)
     {
-        if (file_exists($path) === false) {
+        if (self::existsCaseSensitive($path) === false) {
             return false;
         }
 
@@ -108,7 +108,7 @@ class File
     {
         $mimetype = false;
 
-        if (is_readable($path)) {
+        if (self::existsCaseSensitive($path) && is_readable($path)) {
             if (function_exists('finfo_open')) {
                 $finfo    = finfo_open(FILEINFO_MIME_TYPE);
                 $mimetype = finfo_buffer($finfo,
@@ -139,7 +139,7 @@ class File
      */
     public static function output($path, $length = 102400, $delay = 0)
     {
-        if (is_readable($path) === false) {
+        if (self::existsCaseSensitive($path) === false || is_readable($path) === false) {
             return false;
         }
 

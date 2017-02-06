@@ -160,8 +160,7 @@ function UtilsAutoload()
 
         $path = INPHINIT_PATH;
 
-        $files = $isfile ? array( $path . $base ) :
-                           array( $path . $base . '.php', $path . $base . '.hh' );
+        $files = $isfile ? array( $path . $base ) : array( $path . $base . '.php', $path . $base . '.hh' );
 
         $files = array_values(array_filter($files, 'is_file'));
 

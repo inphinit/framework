@@ -40,11 +40,11 @@ class Quick extends Router
      * @param string Define Controller class name
      * @return \Inphinit\Experimental\Routing\Quick
      */
-    public static function create($prefix = '', $namecontroller)
+    public static function create($namecontroller, $prefix = '')
     {
         self::$debuglvl = 3;
 
-        return new static($prefix, $namecontroller);
+        return new static($namecontroller, $prefix);
     }
 
     /**
@@ -55,7 +55,7 @@ class Quick extends Router
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function __construct($prefix = '', $namecontroller)
+    public function __construct($namecontroller, $prefix = '')
     {
         $this->format = Quick::BOTH;
 

@@ -9,6 +9,7 @@
 
 namespace Inphinit;
 
+use Inphinit\App;
 use Inphinit\Experimental\Uri;
 
 class Storage
@@ -48,7 +49,7 @@ class Storage
     }
 
     /**
-     * Clear old files in a folder from stoage path
+     * Clear old files in a folder from storage path
      *
      * @param string $path
      * @param int    $time
@@ -56,24 +57,25 @@ class Storage
      */
     public static function autoclean($path, $time = 0)
     {
-        if (in_array($path, self::$defaultPaths) === false) {
+        $path = self::resolve($path);
+
+        if ($path === false) {
             return false;
         }
 
-        $dir = self::path() . $path . '/';
         $response = true;
 
-        if (is_dir($dir) && ($dh = opendir($dir))) {
+        if (is_dir($path) && ($dh = opendir($path))) {
             if (is_int($time) === false) {
-                $time = 86400;
+                $time = App::env('appdata_expires');
             }
 
             $expires = REQUEST_TIME - $time;
 
             while (false !== ($file = readdir($dh))) {
-                $path = $dir . $file;
+                $current = $path . $file;
 
-                if (is_file($path) && filemtime($path) < $expires && unlink($path) === false) {
+                if (is_file($current) && filemtime($current) < $expires && unlink($current) === false) {
                     $response = false;
                 }
             }
@@ -99,12 +101,13 @@ class Storage
      */
     public static function temp($data = null, $path = 'tmp', $prefix = '~', $sulfix = '.tmp')
     {
-        if (false === in_array($path, self::$defaultPaths)) {
+        $path = self::resolve($path);
+
+        if ($path === false) {
             return false;
         }
 
-        $fullpath = self::path() . $path . '/' . $prefix .
-                        base_convert(microtime(false), 10, 36) . rand(1, 1000) . $sulfix;
+        $fullpath = $path . '/' . $prefix . base_convert(microtime(true), 10, 36) . rand(1, 1000) . $sulfix;
 
         if (is_file($fullpath)) {
             return self::temp($data);
@@ -144,10 +147,10 @@ class Storage
 
         if (is_file($path)) {
             if ($data) {
-                file_put_contents($path, $data);
+                return file_put_contents($path, $data, FILE_APPEND|LOCK_EX) !== false;
             }
 
-            return $path;
+            return true;
         }
 
         self::createFolder(dirname($path));

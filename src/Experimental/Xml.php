@@ -13,7 +13,7 @@ use Inphinit\Storage;
 
 class Xml
 {
-    private $handler;
+    private $handle;
     private $logerrors = array();
 
     /**
@@ -40,7 +40,7 @@ class Xml
 
         $default .= '?><' . $root . '></' . $root . '>';
 
-        $this->handler = new \SimpleXMLElement($default);
+        $this->handle = new \SimpleXMLElement($default);
     }
 
     /**
@@ -51,7 +51,7 @@ class Xml
      */
     public function fromArray(array $data)
     {
-        self::generate($data, $this->handler);
+        self::generate($data, $this->handle);
         $this->saveErrors();
     }
 
@@ -100,11 +100,11 @@ class Xml
      */
     public function __toString()
     {
-        if ($this->handler) {
-            return $this->handler->asXML();
+        if ($this->handle) {
+            return $this->handle->asXML();
         }
 
-        throw new Exception('XML was not generated because the handler is no longer available.', 2);
+        throw new Exception('XML was not generated because the handle is no longer available.', 2);
     }
 
     /**
@@ -120,8 +120,8 @@ class Xml
             throw new Exception('Path is not writable', 2);
         }
 
-        if ($this->handler) {
-            $tmp = Storage::temp($this->handler->asXML(), 'tmp', '~xml-');
+        if ($this->handle) {
+            $tmp = Storage::temp($this->handle->asXML(), 'tmp', '~xml-');
             $response = copy($tmp, $path);
 
             unlink($tmp);
@@ -129,7 +129,7 @@ class Xml
             return $response;
         }
 
-        throw new Exception('XML was not generated because the handler is no longer available.', 2);
+        throw new Exception('XML was not generated because the handle is no longer available.', 2);
     }
 
     /**
@@ -157,6 +157,6 @@ class Xml
 
     public function __destruct()
     {
-        $this->handler = $this->errors = null;
+        $this->handle = $this->errors = null;
     }
 }

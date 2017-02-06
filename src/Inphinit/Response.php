@@ -11,38 +11,9 @@ namespace Inphinit;
 
 class Response
 {
-    private $output;
-    private $fileinf = false;
-    private $chunk;
-    private $delay;
-    private $clean = true;
-
     private static $httpCode;
     private static $headers = array();
     private static $dispatchedHeaders = false;
-
-    /**
-     * Create a Response and set `Response::show` to events.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        App::on('ready', array($this, 'show'));
-    }
-
-    /**
-     * If true previous defined content is cleared after use
-     *
-     * @param bool $active
-     * @return void
-     */
-    public function cleanAfterUse($active = true)
-    {
-        if ($active === true || $active === false) {
-            $this->clean = $active;
-        }
-    }
 
     /**
      * Define registered headers to response
@@ -211,90 +182,5 @@ class Response
     public static function type($mime)
     {
         self::putHeader('Content-Type: ' . $mime);
-    }
-
-    /**
-     * Define a file for show in output, this function affect `Response::data`
-     *
-     * @param string $path
-     * @param int    $chunk
-     * @param int    $delay
-     * @return bool
-     */
-    public function file($path, $chunk = 1024, $delay = 0)
-    {
-        if (File::existsCaseSensitive($path)) {
-            $this->chunk   = $chunk;
-            $this->delay   = $delay;
-            $this->fileinf = $path;
-            $this->output  = true;
-
-            return true;
-        }
-
-        $this->output  = null;
-        $this->fileinf = false;
-        return false;
-    }
-
-    /**
-     * Set a data for show in output, this function affect `Response::file`,
-     * or get setted previous data
-     *
-     * @param string $value
-     * @return void
-     */
-    public function data($value = null)
-    {
-        if ($value === null) {
-            return $this->output;
-        }
-
-        if ($value === false) {
-            $this->output = null;
-        } else {
-            $this->output = $value;
-            $value = null;
-        }
-
-        $this->fileinf = false;
-    }
-
-    /**
-     * Encode array in JSON and send to output
-     *
-     * @param array $value
-     * @return void
-     */
-    public function json(array $value)
-    {
-        self::type('application/json');
-        $this->data(json_encode($value));
-        $value = null;
-    }
-
-    /**
-     * Get registred data from `Response::data`, `Response::json` or `Response::file`
-     *
-     * @return void
-     */
-    public function show()
-    {
-        if (false === empty($this->output)) {
-            $path = $this->fileinf;
-
-            if ($path !== false) {
-                File::output($path, $this->chunk, $this->delay);
-            } else {
-                echo $this->output;
-            }
-        }
-
-        if ($this->clean) {
-            $this->fileinf = false;
-            $this->output  = null;
-
-            App::off('ready', array($this, 'show'));
-        }
     }
 }

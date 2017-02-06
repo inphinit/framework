@@ -21,6 +21,7 @@ class Group extends Router
     private $domain;
     private $path;
     private $ns;
+    private static $cachehost;
 
     /**
      * Create a new route group
@@ -105,25 +106,36 @@ class Group extends Router
     }
 
     /**
-     * Method is used for check domain and path
+     * Method is used for check domain and return arguments if using regex
      *
-     * @param string $str
-     * @param string $input
-     * @param array  $matches
-     * @return bool
+     * @return array|bool
      */
-    protected static function checkRegEx($str, $input, &$matches)
+    protected function checkDomain()
     {
-        if (strpos($str, 're:') !== 0) {
-            return false;
-        }
+        if ($this->domain) {
+            if (self::$cachehost !== null) {
+                $host = self::$cachehost;
+            } else {
+                $host = Request::header('Host');
+                $oh = strstr($host, ':', true);
+                $host = $oh ? $oh : $host;
 
-        $re = explode('re:', $str, 2);
+                self::$cachehost = $host;
+            }
 
-        $matches = array();
+            if ($host === $this->domain) {
+                return array();
+            } elseif ($host) {
+                $re = self::parse($this->domain);
 
-        if (preg_match($re[1], $input, $matches) > 0) {
-            return true;
+                if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
+                    return false;
+                }
+
+                array_shift($matches);
+
+                return $matches;
+            }
         }
 
         return false;
