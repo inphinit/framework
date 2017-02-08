@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
+use Inphinit\Storage;
 
 class File
 {
@@ -53,7 +54,7 @@ class File
     }
 
     /**
-     * Read a script excerpt
+     * Determines whether the file is binary
      *
      * @param string $path
      * @return bool
@@ -72,7 +73,7 @@ class File
 
         $data = file_get_contents($path, false, null, -1, 5012);
 
-        if (false && function_exists('finfo_open')) {
+        if (function_exists('finfo_open')) {
             $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
             $encode = finfo_buffer($finfo, $data, FILEINFO_MIME_ENCODING);
             finfo_close($finfo);
@@ -93,5 +94,40 @@ class File
         $data = null;
 
         return preg_match('#^[0-1]+$#', $buffer) === 1;
+    }
+
+    /**
+     * Get file size, support for read files with more of 2GB in 32bit.
+     * Return `false` if file is not found
+     *
+     * @param string $path
+     * @return string|bool
+     */
+    public static function size($path)
+    {
+        if (preg_match('#^(\.\./|/|[A-Za-z]+:)#', $path) === 0) {
+            $path = INPHINIT_ROOT . $path;
+        }
+
+        if (is_file($path) === false) {
+            return false;
+        }
+
+        $ch = curl_init('file:///' . ltrim($path, '/'));
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HEADER, 1);
+        curl_setopt($ch, CURLOPT_NOBODY, 1);
+
+        $headers = curl_exec($ch);
+        curl_close($ch);
+
+        $ch = null;
+
+        if (preg_match('#(^c|\sc)ontent\-length:(\s|)(\d+)#i', $headers, $matches) > 0) {
+            return $matches[3];
+        }
+
+        return false;
     }
 }

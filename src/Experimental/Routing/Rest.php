@@ -25,46 +25,46 @@ class Rest extends Router
     /**
      * Create REST routes based in a \Controller
      *
-     * @param string $namecontroller
+     * @param string $controller
      * @return \Inphinit\Experimental\Routing\Rest
      */
-    public static function create($namecontroller)
+    public static function create($controller)
     {
-        return new static($namecontroller);
+        return new static($controller);
     }
 
     /**
      * Create REST routes based in a \Controller
      *
-     * @param string $namecontroller
+     * @param string $controller
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function __construct($namecontroller)
+    public function __construct($controller)
     {
-        $controller = parent::$prefixNS . strtr($namecontroller, '.', '\\');
-        $fc = '\\Controller\\' . $controller;
+        $fullcontroller = parent::$prefixNS . strtr($controller, '.', '\\');
+        $fullcontroller = '\\Controller\\' . $fullcontroller;
 
-        if (class_exists($fc) === false) {
-            throw new Exception('Invalid class ' . $fc, 2);
+        if (class_exists($fullcontroller) === false) {
+            throw new Exception('Invalid class ' . $fullcontroller, 2);
         }
 
         $this->valids = array(
             'index'   => array( 'GET',  '/' ),
             'create'  => array( 'GET',  '/create' ),
             'store'   => array( 'POST', '/' ),
-            'show'    => array( 'GET',  '/{[a-zA-Z0-9_\-]+}' ),
-            'edit'    => array( 'GET',  '/{[a-zA-Z0-9_\-]+}/edit' ),
-            'update'  => array( array('PUT', 'PATCH'), '/{[a-zA-Z0-9_\-]+}' ),
-            'destroy' => array( 'DELETE', '/{[a-zA-Z0-9_\-]+}' ),
+            'show'    => array( 'GET',  '/{:[^/]+:}' ),
+            'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
+            'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
+            'destroy' => array( 'DELETE', '/{:[^/]+:}' ),
         );
 
-        $this->controller = $namecontroller;
-        $this->fullController = $fc;
+        $this->controller = $controller;
+        $this->fullController = $fullcontroller;
 
         $allowedMethods = array_keys($this->valids);
 
-        $this->classMethods = array_intersect(get_class_methods($fc), $allowedMethods);
+        $this->classMethods = array_intersect(get_class_methods($fullcontroller), $allowedMethods);
     }
 
     /**
@@ -85,7 +85,7 @@ class Rest extends Router
             throw new Exception($this->fullController . ' is empty ', 2);
         }
 
-        $controller   = $this->controller;
+        $controller = $this->controller;
         $classMethods = $this->classMethods;
 
         foreach ($classMethods as $value) {

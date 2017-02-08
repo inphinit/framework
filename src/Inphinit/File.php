@@ -24,23 +24,6 @@ class File
     }
 
     /**
-     * Get file size, support for read files with more of 2GB in 32bit.
-     * Return `false` if file is not found
-     *
-     * @param string $path
-     * @return string|bool
-     */
-    public static function size($path)
-    {
-        if (file_exists($path) === false) {
-            return false;
-        }
-
-        $size = filesize($path);
-        return $size === false ? false : sprintf('%u', $size);
-    }
-
-    /**
      * Get file/folder permissions in a format more readable.
      * Return `false` if file is not found
      *
