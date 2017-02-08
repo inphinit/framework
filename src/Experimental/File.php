@@ -11,6 +11,7 @@ namespace Inphinit\Experimental;
 
 use Inphinit\App;
 use Inphinit\Storage;
+use Inphinit\File as MainFile;
 
 class File
 {
@@ -25,9 +26,7 @@ class File
      */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
     {
-        if (false === is_file($path)) {
-            return false;
-        }
+        self::isfile($path);
 
         if ($lines !== true) {
             return file_get_contents($path, false, null, $init, $end);
@@ -61,9 +60,7 @@ class File
      */
     public static function isBinary($path)
     {
-        if (false === is_readable($path)) {
-            throw new Exception($path . ' is not readable', 2);
-        }
+        self::isfile($path);
 
         $size = filesize($path);
 
@@ -109,9 +106,7 @@ class File
             $path = INPHINIT_ROOT . $path;
         }
 
-        if (is_file($path) === false) {
-            return false;
-        }
+        self::isfile($path);
 
         $ch = curl_init('file:///' . ltrim($path, '/'));
 
@@ -129,5 +124,14 @@ class File
         }
 
         return false;
+    }
+
+    private static function isfile($path, $readable = false)
+    {
+        if (false === MainFile::existsCaseSensitive($path) || false === is_file($path)) {
+            throw new Exception($path . ' not found', 3);
+        } elseif ($readable && false === is_readable($file)) {
+            throw new Exception($path . ' not readable', 3);
+        }
     }
 }
