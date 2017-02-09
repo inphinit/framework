@@ -193,17 +193,24 @@ class App
 
         $route = Route::get();
 
-        if ($route) {
-            $mainController = $route['controller'];
+        if ($route === false) {
+            self::stop(404, 'Invalid route');
+        }
+
+        $mainController = $route['controller'];
+
+        if ($mainController instanceof \Closure) {
+            $caller = $mainController;
+        } else {
             $parsed = explode(':', $mainController, 2);
 
             $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
 
-            $output = call_user_func_array(array(new $mainController, $parsed[1]),
-                                    is_array($route['args']) ? $route['args'] : array());
-        } else {
-            self::stop(404, 'Invalid route');
+            $caller = array(new $mainController, $parsed[1]);
         }
+
+        $output = call_user_func_array($caller,
+                    is_array($route['args']) ? $route['args'] : array());
 
         if (class_exists('\\Inphinit\\Response', false)) {
             Response::dispatchHeaders();

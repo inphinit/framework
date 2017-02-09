@@ -28,9 +28,15 @@ class Route extends Router
             foreach ($method as $value) {
                 self::set($value, $path, $action);
             }
-        } elseif (ctype_alpha($method) && is_string($path) && ($action === null || is_string($action))) {
+        } elseif (ctype_alpha($method) && is_string($path)) {
+            if ($action === null || is_string($action)) {
+                $action = parent::$prefixNS . $action;
+            } else if ($action !== null && ($action instanceof \Closure) === false) {
+                return null;
+            }
+
             $verb = strtoupper(trim($method)) . ' ' . parent::$prefixPath . $path;
-            self::$httpRoutes[$verb] = $action === null ? $action : parent::$prefixNS . $action;
+            self::$httpRoutes[$verb] = $action;
         }
     }
 
@@ -64,7 +70,7 @@ class Route extends Router
     /**
      * Get action controller from current route
      *
-     * @return string
+     * @return string|bool
      */
     public static function get()
     {
