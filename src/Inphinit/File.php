@@ -20,8 +20,7 @@ class File
      */
     public static function existsCaseSensitive($path)
     {
-        $path = strtr($path, '\\', '/');
-        return file_exists($path) && \UtilsCaseSensitivePath($path);
+        return file_exists($path) && \UtilsCaseSensitivePath(strtr($path, '\\', '/'));
     }
 
     /**

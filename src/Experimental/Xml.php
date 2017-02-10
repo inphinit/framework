@@ -157,6 +157,6 @@ class Xml
 
     public function __destruct()
     {
-        $this->handle = $this->errors = null;
+        $this->handle = $this->logerrors = null;
     }
 }
