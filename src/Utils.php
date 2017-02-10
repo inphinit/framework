@@ -178,7 +178,7 @@ function UtilsAutoload()
  * @param string  $file
  * @param int     $line
  * @param array   $details
- * @return false
+ * @return bool
  */
 function UtilsError($type, $message, $file, $line, $details)
 {

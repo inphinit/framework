@@ -9,11 +9,7 @@
 
 namespace Inphinit\Experimental;
 
-use Inphinit\App;
-use Inphinit\Storage;
-use Inphinit\File as MainFile;
-
-class File
+class File extends \Inphinit\File
 {
     /**
      * Read a script excerpt
@@ -26,7 +22,7 @@ class File
      */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
     {
-        self::isfile($path);
+        self::fullpath($path);
 
         if ($lines !== true) {
             return file_get_contents($path, false, null, $init, $end);
@@ -60,7 +56,7 @@ class File
      */
     public static function isBinary($path)
     {
-        self::isfile($path);
+        self::fullpath($path, true);
 
         $size = filesize($path);
 
@@ -102,13 +98,9 @@ class File
      */
     public static function size($path)
     {
-        if (preg_match('#^(\.\./|/|[A-Za-z]+:)#', $path) === 0) {
-            $path = INPHINIT_ROOT . $path;
-        }
+        $path = self::fullpath($path);
 
-        self::isfile($path);
-
-        $ch = curl_init('file:///' . ltrim($path, '/'));
+        $ch = curl_init('file://' . ltrim($path, '/'));
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 1);
@@ -126,12 +118,14 @@ class File
         return false;
     }
 
-    private static function isfile($path, $readable = false)
+    private static function fullpath($path, $readable = false)
     {
-        if (false === MainFile::existsCaseSensitive($path) || false === is_file($path)) {
+        if (false === self::existsCaseSensitive($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
         } elseif ($readable && false === is_readable($file)) {
             throw new Exception($path . ' not readable', 3);
         }
+
+        return realpath($path);
     }
 }
