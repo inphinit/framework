@@ -51,11 +51,13 @@ class Cache
             if ($data !== false && $data > REQUEST_TIME) {
                 $this->isCache = true;
 
-                header('Etag: ' . sha1_file($filename));
+                $etag = sha1_file($filename);
+
+                header('Etag: ' . $etag);
 
                 Response::cache($expires, $data);
 
-                if (self::match($data)) {
+                if (self::match($data, $etag)) {
                     Response::status(304);
                 } else {
                     App::on('ready', array($this, 'show'));
@@ -104,7 +106,7 @@ class Cache
             return null;
         }
 
-        if (File::size($this->cacheTmp) > 0) {
+        if (filesize($this->cacheTmp) > 0) {
             copy($this->cacheTmp, $this->cacheName);
             file_put_contents($this->cacheName . '.1', $this->lastModified);
         }
@@ -114,28 +116,27 @@ class Cache
      * Check `HTTP_IF_MODIFIED_SINCE` and `HTTP_IF_NONE_MATCH` from server
      * If true you can send `304 Not Modified`
      *
-     * @param string $lm
+     * @param string $lastModified
+     * @param string $etag
      * @return bool
      */
-    public static function match($lastModified)
+    public static function match($lastModified, $etag = null)
     {
-        $nm = false;
-
         if (false === empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
             if (preg_match('/^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$/i', $_SERVER['HTTP_IF_MODIFIED_SINCE']) !== 0 &&
-                strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) == $lm)
+                strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) == $lastModified)
             {
-                $nm = true;
+                return true;
             }
         }
 
-        if ($nm === false && false === empty($_SERVER['HTTP_IF_NONE_MATCH']) &&
-                $lm === trim($_SERVER['HTTP_IF_NONE_MATCH']))
+        if (false === empty($_SERVER['HTTP_IF_NONE_MATCH']) &&
+                $etag === trim($_SERVER['HTTP_IF_NONE_MATCH']))
         {
-            $nm = true;
+            return true;
         }
 
-        return $nm;
+        return false;
     }
 
     /**

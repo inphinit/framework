@@ -94,12 +94,10 @@ class Route extends Router
             $func = $routes[$verb];
         } elseif (isset($routes[$http])) {
             $func = $routes[$http];
-            $verb = $http;
         } elseif (empty($routes) === false) {
             foreach ($routes as $route => $action) {
                 if (self::find($httpMethod, $route, $pathinfo, $args)) {
                     $func = $action;
-                    $verb = $route;
                     break;
                 }
             }

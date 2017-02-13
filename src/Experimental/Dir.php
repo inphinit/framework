@@ -9,6 +9,8 @@
 
 namespace Inphinit\Experimental;
 
+use Inphinit\File;
+
 class Dir implements \IteratorAggregate
 {
     private $iterator;
@@ -25,7 +27,7 @@ class Dir implements \IteratorAggregate
         $data = array();
 
         if (false === is_dir($path)) {
-            throw new Exception('Invalid folder', 2);
+            throw new Exception('Folder not found', 2);
         }
 
         $path = strtr(realpath($path), '\\', '/');
@@ -45,6 +47,8 @@ class Dir implements \IteratorAggregate
                     );
                 }
             }
+
+            closedir($handle);
 
             $this->iterator = new \ArrayIterator($data);
         }
