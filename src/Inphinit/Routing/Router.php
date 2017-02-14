@@ -43,7 +43,8 @@ abstract class Router
     }
 
     /**
-     * Convert one argument like `{:[a-z]+:}` to `([a-z]+)`, this function is used by `Router::parse`
+     * Convert one argument like `{:[a-z]+:}` to `([a-z]+)`,
+     * this function is used by `Router::parse`
      *
      * @param string $rearg
      * @return string

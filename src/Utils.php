@@ -126,30 +126,28 @@ function UtilsAutoload()
 
         if (isset($prefixes) === false) {
             $path = INPHINIT_PATH . 'boot/namespaces.php';
-            $prefixes = is_file($path) ? include $path : array();
+            $prefixes = is_file($path) ? include $path : false;
         }
-
-        $classname = ltrim($classname, '\\');
-        $cp = array();
 
         if (is_array($prefixes) === false) {
             return NULL;
         }
 
+        $classname = ltrim($classname, '\\');
+
         $isfile = false;
         $base = false;
 
-        if (empty($prefixes) === false) {
-            if (isset($prefixes[$classname]) && preg_match('#\.[a-z0-9]+$#i', $prefixes[$classname]) !== 0) {
-                $isfile = true;
-                $base = $prefixes[$classname];
-            } else {
-                foreach ($prefixes as $prefix => $path) {
-                    if (stripos($classname, $prefix) === 0) {
-                        $classname = substr($classname, strlen($prefix));
-                        $base = trim($path, '/') . '/' . str_replace(substr($prefix, -1), '/', $classname);
-                        break;
-                    }
+        if (isset($prefixes[$classname]) && preg_match('#\.[a-z\d]+$#i', $prefixes[$classname]) !== 0) {
+            $isfile = true;
+            $base = $prefixes[$classname];
+        } else {
+            foreach ($prefixes as $prefix => $path) {
+                if (stripos($classname, $prefix) === 0) {
+                    $classname = substr($classname, strlen($prefix));
+                    $base = trim($path, '/') . '/' .
+                            str_replace(substr($prefix, -1), '/', $classname);
+                    break;
                 }
             }
         }
@@ -160,7 +158,8 @@ function UtilsAutoload()
 
         $path = INPHINIT_PATH;
 
-        $files = $isfile ? array( $path . $base ) : array( $path . $base . '.php', $path . $base . '.hh' );
+        $files = $isfile ? array( $path . $base ) :
+                            array( $path . $base . '.php', $path . $base . '.hh' );
 
         $files = array_values(array_filter($files, 'is_file'));
 
@@ -173,11 +172,11 @@ function UtilsAutoload()
 /**
  * Function used from `set_error_handler` and trigger `App::trigger('error')`
  *
- * @param int     $type
- * @param string  $message
- * @param string  $file
- * @param int     $line
- * @param array   $details
+ * @param int    $type
+ * @param string $message
+ * @param string $file
+ * @param int    $line
+ * @param array  $details
  * @return bool
  */
 function UtilsError($type, $message, $file, $line, $details)
