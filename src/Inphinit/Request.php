@@ -67,7 +67,10 @@ class Request
      */
     public static function header($name = null)
     {
-        if ($name !== null && is_string($name) === false) {
+        if (is_string($name)) {
+            $name = 'HTTP_' . strtoupper(strtr($name, '-', '_'));
+            return isset($_SERVER[$name]) ? $_SERVER[$name] : false;
+        } elseif ($name === null) {
             return false;
         }
 
@@ -84,12 +87,7 @@ class Request
             self::$reqHeaders = $headers;
         }
 
-        if ($name !== null) {
-            $name = Helper::capitalize($name, '-', '-');
-            return  isset($headers[$name]) ? $headers[$name] : false;
-        }
-
-        return $headers;
+        return self::$reqHeaders;
     }
 
     /**

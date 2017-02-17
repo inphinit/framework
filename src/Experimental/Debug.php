@@ -69,7 +69,7 @@ class Debug
             App::stop(500);
         }
 
-        if ($type === E_ERROR || $type === E_RECOVERABLE_ERROR) {
+        if ($type === E_ERROR || $type === E_PARSE || $type === E_RECOVERABLE_ERROR) {
             View::forceRender();
         }
 
