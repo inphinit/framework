@@ -16,9 +16,9 @@ use Inphinit\Experimental\Exception;
 
 class Rest extends Router
 {
+    private $contentType = 'application/json; charset=UTF-8';
     private $controller;
     private $fullController;
-    private $classMethods = array();
     private $valids;
     private $ready = false;
 
@@ -30,7 +30,9 @@ class Rest extends Router
      */
     public static function create($controller)
     {
-        return new static($controller);
+        $rest = new static($controller);
+        $rest->prepare();
+        $rest = null;
     }
 
     /**
@@ -42,11 +44,11 @@ class Rest extends Router
      */
     public function __construct($controller)
     {
-        $fullcontroller = parent::$prefixNS . strtr($controller, '.', '\\');
-        $fullcontroller = '\\Controller\\' . $fullcontroller;
+        $fullController = parent::$prefixNS . strtr($controller, '.', '\\');
+        $fullController = '\\Controller\\' . $fullController;
 
-        if (class_exists($fullcontroller) === false) {
-            throw new Exception('Invalid class ' . $fullcontroller, 2);
+        if (class_exists($fullController) === false) {
+            throw new Exception('Invalid class ' . $fullController, 2);
         }
 
         $this->valids = array(
@@ -60,11 +62,18 @@ class Rest extends Router
         );
 
         $this->controller = $controller;
-        $this->fullController = $fullcontroller;
+        $this->fullController = $fullController;
+    }
 
-        $allowedMethods = array_keys($this->valids);
-
-        $this->classMethods = array_intersect(get_class_methods($fullcontroller), $allowedMethods);
+    /**
+     * Define routes
+     *
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
+    public function type($contentType)
+    {
+        $this->contentType = $contentType;
     }
 
     /**
@@ -81,34 +90,29 @@ class Rest extends Router
 
         $this->ready = true;
 
-        if (empty($this->classMethods)) {
-            throw new Exception($this->fullController . ' is empty ', 2);
+        $methods = get_class_methods($this->fullController);
+        $allowedMethods = array_keys($this->valids);
+
+        $classMethods = array_intersect($methods, $allowedMethods);
+
+        if (empty($classMethods)) {
+            throw new Exception(' controller exists, but is not a valid', 2);
         }
 
-        $controller = $this->controller;
-        $classMethods = $this->classMethods;
+        $controller = $this->fullController;
 
-        foreach ($classMethods as $value) {
-            $route = $this->getRoute($value);
+        foreach ($classMethods as $method) {
+            $route = empty($this->valids[$method]) ? false : $this->valids[$method];
+            $contentType = $this->contentType;
 
             if ($route) {
-                Route::set($route[0], $route[1], $controller . ':' . $value);
+                Route::set($route[0], $route[1],
+                function($arg = array()) use ($method, $contentType, $controller)
+                {
+                    header('Content-Type: ' . $contentType);
+                    return call_user_func_array(array(new $controller, $method), $arg);
+                });
             }
         }
-    }
-
-    /**
-     * Check if method class is valid for REST
-     *
-     * @param string $methodName
-     * @return array|bool
-     */
-    private function getRoute($methodName)
-    {
-        if (empty($this->valids[$methodName])) {
-            return false;
-        }
-
-        return $this->valids[$methodName];
     }
 }

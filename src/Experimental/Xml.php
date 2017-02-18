@@ -30,8 +30,6 @@ class Xml
             return false;
         }
 
-        \libxml_use_internal_errors(true);
-
         $default  = '<?xml version="1.0"';
 
         if (is_string($charset)) {
@@ -51,8 +49,12 @@ class Xml
      */
     public function fromArray(array $data)
     {
+        $restore = \libxml_use_internal_errors(true);
+
         self::generate($data, $this->handle);
         $this->saveErrors();
+
+        \libxml_use_internal_errors($restore);
     }
 
     /**
@@ -139,7 +141,8 @@ class Xml
      * @param \SimpleXMLElement $xmlNode
      * @return void
      */
-    private static function generate($data, \SimpleXMLElement $xmlNode) {
+    private static function generate($data, \SimpleXMLElement $xmlNode)
+    {
         foreach ($data as $key => $value) {
             if (is_array($value)) {
                 if (is_numeric($key)) {

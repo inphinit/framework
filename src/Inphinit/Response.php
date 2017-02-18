@@ -58,6 +58,7 @@ class Response
     {
         if (self::$httpCode !== $code && is_int($code) && headers_sent() === false) {
             header('X-PHP-Response-Code: ' . $code, true, $code);
+
             self::$httpCode = $code;
 
             if (false === $preventTrigger) {

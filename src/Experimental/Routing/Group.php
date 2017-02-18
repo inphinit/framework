@@ -18,10 +18,12 @@ use Inphinit\Experimental\Exception;
 class Group extends Router
 {
     private $ready = false;
+    private $currentPrefixPath;
     private $callback;
     private $domain;
     private $path;
     private $ns;
+    private $arguments = array();
     private static $cachehost;
 
     /**
@@ -43,11 +45,13 @@ class Group extends Router
      */
     public function prefixNS($namespace)
     {
-        if (preg_match('#\\[a-z0-9_\\]+[a-z0-9_]$#', $namespace) === 0) {
+        if (preg_match('#[^a-z0-9_\\\\]#i', $namespace) !== 0) {
             throw new Exception('Invalid "' . $namespace . '"', 2);
         }
 
         $this->ns = $namespace;
+
+        return $this;
     }
 
     /**
@@ -83,7 +87,7 @@ class Group extends Router
     {
         if (empty($path)) {
             throw new Exception('path is not defined', 2);
-        } elseif (preg_match('#^/(.*?)/$#', $path) === 0) {
+        } elseif ($path !== '/' . trim($path, '/') . '/') {
             throw new Exception('missing slash in "' . $path . '", use like this /foo/', 2);
         }
 
@@ -107,23 +111,23 @@ class Group extends Router
 
         $this->ready = true;
 
-        $argsDomain = false;
-
-        if ($this->domain) {
-            $argsDomain = $this->checkDomain();
+        if ($this->checkDomain() === false || $this->checkPath() === false) {
+            return false;
         }
 
         $oNS = parent::$prefixNS;
         $oPP = parent::$prefixPath;
 
-        if ($this->path || $argsDomain !== false) {
+        if ($this->ns) {
             parent::$prefixNS = $this->ns;
+        }
 
-            if ($this->path) {
-                parent::$prefixPath = rtrim($this->path, '/');
-            }
+        if ($this->path) {
+            parent::$prefixPath = rtrim($this->currentPrefixPath, '/');
+        }
 
-            call_user_func_array($callback, $argsDomain ? $argsDomain : array());
+        if ($this->path || $this->domain || $this->ns) {
+            call_user_func_array($callback, $this->arguments);
         }
 
         parent::$prefixNS = $oNS;
@@ -133,33 +137,70 @@ class Group extends Router
     /**
      * Method is used for check domain and return arguments if using regex
      *
-     * @return array|bool
+     * @return bool
      */
     protected function checkDomain()
     {
-        if ($this->domain) {
-            if (self::$cachehost !== null) {
-                $host = self::$cachehost;
-            } else {
-                $host = Request::header('Host');
-                $oh = strstr($host, ':', true);
-                $host = $oh ? $oh : $host;
+        if ($this->domain === null) {
+            return true;
+        }
 
-                self::$cachehost = $host;
+        if (self::$cachehost !== null) {
+            $host = self::$cachehost;
+        } else {
+            $fhost = Request::header('Host');
+            $host = strstr($fhost, ':', true);
+            $host = $host ? $host : $fhost;
+
+            self::$cachehost = $host;
+        }
+
+        if ($host === $this->domain) {
+            return true;
+        } elseif ($host) {
+            $re = Regex::parse($this->domain);
+
+            if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
+                return false;
             }
 
-            if ($host === $this->domain) {
-                return array();
-            } elseif ($host) {
-                $re = Regex::parse($this->domain);
+            array_shift($matches);
 
-                if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
-                    return false;
-                }
+            $this->arguments = array_merge($this->arguments, $matches);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Method is used for check path
+     *
+     * @return bool
+     */
+    protected function checkPath()
+    {
+        if ($this->path === null) {
+            return true;
+        }
+
+        $pathinfo = \UtilsPath();
+
+        if (strpos($pathinfo, $this->path) === 0) {
+            $this->currentPrefixPath = $this->path;
+            return true;
+        } else {
+            $re = Regex::parse($this->path);
+
+            if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches) > 0) {
+                $this->currentPrefixPath = $matches[0];
 
                 array_shift($matches);
 
-                return $matches;
+                $this->arguments = array_merge($this->arguments, $matches);
+
+                return true;
             }
         }
 
