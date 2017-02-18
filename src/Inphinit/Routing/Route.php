@@ -9,8 +9,6 @@
 
 namespace Inphinit\Routing;
 
-use Inphinit\Regex;
-
 class Route extends Router
 {
     private static $current;
@@ -70,7 +68,7 @@ class Route extends Router
             $func = $routes[$http];
         } elseif (empty($routes) === false) {
             foreach ($routes as $route => $action) {
-                if (Regex::find($httpMethod, $route, $pathinfo, $args)) {
+                if (parent::find($httpMethod, $route, $pathinfo, $args)) {
                     $func = $action;
                     break;
                 }
