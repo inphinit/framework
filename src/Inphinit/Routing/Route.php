@@ -11,7 +11,6 @@ namespace Inphinit\Routing;
 
 class Route extends Router
 {
-    private static $httpRoutes = array();
     private static $current;
 
     /**
@@ -36,35 +35,8 @@ class Route extends Router
             }
 
             $verb = strtoupper(trim($method)) . ' ' . parent::$prefixPath . $path;
-            self::$httpRoutes[$verb] = $action;
+            parent::$httpRoutes[$verb] = $action;
         }
-    }
-
-    /**
-     * Get params from routes using regex
-     *
-     * @param string $httpMethod
-     * @param string $route
-     * @param string $pathinfo
-     * @param array  $matches
-     * @return bool
-     */
-    private static function find($httpMethod, $route, $pathinfo, &$matches)
-    {
-        $match = explode(' ', $route, 2);
-
-        if ($match[0] !== 'ANY' && $match[0] !== $httpMethod) {
-            return false;
-        }
-
-        $re = self::parse($match[1]);
-
-        if ($re !== false && preg_match('#^' . $re . '$#', $pathinfo, $matches) > 0) {
-            array_shift($matches);
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -83,7 +55,7 @@ class Route extends Router
 
         $args = null;
 
-        $routes = array_filter(self::$httpRoutes);
+        $routes = array_filter(parent::$httpRoutes);
         $pathinfo = \UtilsPath();
         $httpMethod = $_SERVER['REQUEST_METHOD'];
 
@@ -96,7 +68,7 @@ class Route extends Router
             $func = $routes[$http];
         } elseif (empty($routes) === false) {
             foreach ($routes as $route => $action) {
-                if (self::find($httpMethod, $route, $pathinfo, $args)) {
+                if (parent::find($httpMethod, $route, $pathinfo, $args)) {
                     $func = $action;
                     break;
                 }
@@ -111,7 +83,7 @@ class Route extends Router
             self::$current = false;
         }
 
-        $routes = self::$httpRoutes = null;
+        $routes = null;
 
         return self::$current;
     }

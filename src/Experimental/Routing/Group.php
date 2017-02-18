@@ -100,9 +100,33 @@ class Group extends Router
      */
     public function then(\Closure $callback)
     {
-        $this->callback = $callback;
+        if ($this->ready) {
+            return false;
+        }
 
-        return $this;
+        $this->ready = true;
+
+        $argsDomain = false;
+
+        if ($this->domain) {
+            $argsDomain = $this->checkDomain();
+        }
+
+        $oNS = parent::$prefixNS;
+        $oPP = parent::$prefixPath;
+
+        if ($this->path || $argsDomain !== false) {
+            parent::$prefixNS = $this->ns;
+
+            if ($this->path) {
+                parent::$prefixPath = rtrim($this->path, '/');
+            }
+
+            call_user_func_array($callback, $argsDomain ? $argsDomain : array());
+        }
+
+        parent::$prefixNS = $oNS;
+        parent::$prefixPath = $oPP;
     }
 
     /**
@@ -139,41 +163,5 @@ class Group extends Router
         }
 
         return false;
-    }
-
-    /**
-     * Perform checking and execute predefined callback
-     *
-     * @return void
-     */
-    public function prepare()
-    {
-        if ($this->ready) {
-            return false;
-        }
-
-        $this->ready = true;
-
-        $oNS = parent::$prefixNS;
-        $oPP = parent::$prefixPath;
-
-        $argsDomain = false;
-
-        if ($this->domain) {
-            $argsDomain = $this->checkDomain();
-        }
-
-        if ($this->path || $argsDomain !== false) {
-            parent::$prefixNS = $this->ns;
-
-            if ($this->path) {
-                parent::$prefixPath = rtrim($this->path, '/');
-            }
-
-            call_user_func_array($this->callback, $argsDomain ? $argsDomain : array());
-        }
-
-        parent::$prefixNS = $oNS;
-        parent::$prefixPath = $oPP;
     }
 }
