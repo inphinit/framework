@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
+use Inphinit\Regex;
 use Inphinit\Request;
 
 class Redirect extends \Inphinit\Routing\Router
@@ -126,7 +127,7 @@ class Redirect extends \Inphinit\Routing\Router
 
         if ($valid === false && empty($routes) === false) {
             foreach ($routes as $route => $action) {
-                if (self::find('GET', $route, $path, $args)) {
+                if (Regex::find('GET', $route, $path, $args)) {
                     $valid = true;
                     break;
                 }

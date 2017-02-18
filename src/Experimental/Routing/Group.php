@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental\Routing;
 
 use Inphinit\App;
+use Inphinit\Regex;
 use Inphinit\Request;
 use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
@@ -150,7 +151,7 @@ class Group extends Router
             if ($host === $this->domain) {
                 return array();
             } elseif ($host) {
-                $re = self::parse($this->domain);
+                $re = Regex::parse($this->domain);
 
                 if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
                     return false;
