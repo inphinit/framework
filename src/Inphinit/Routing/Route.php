@@ -28,7 +28,7 @@ class Route extends Router
                 self::set($value, $path, $action);
             }
         } elseif (ctype_alpha($method) && is_string($path)) {
-            if ($action === null || is_string($action)) {
+            if (is_string($action)) {
                 $action = parent::$prefixNS . $action;
             } else if ($action !== null && ($action instanceof \Closure) === false) {
                 return null;

@@ -54,7 +54,7 @@ class Redirect extends \Inphinit\Routing\Router
         }
 
         if (headers_sent()) {
-            throw new Exception('Path is not defined', 2);
+            throw new Exception('Headers already sent', 2);
         }
 
         header('Location: ' . $this->httpPath, true, $this->httpStatus);
@@ -89,10 +89,10 @@ class Redirect extends \Inphinit\Routing\Router
      */
     public static function to($path, $status = 302, $prevent = false)
     {
-        (new static($path))
-            ->status($status)
-            ->prevent($prevent)
-            ->perform();
+        $redirect = new static($path);
+        $redirect->status($status)
+                 ->prevent($prevent)
+                 ->perform();
     }
 
     /**
