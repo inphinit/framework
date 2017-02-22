@@ -42,8 +42,6 @@ class Session implements \IteratorAggregate
 
         $this->savepath = Storage::resolve('session');
 
-        $tmpname = null;
-
         if ($id === null) {
             if (empty($_COOKIE[$name])) {
                 $tmpname = Storage::temp(null, 'session', $this->prefix, '');
@@ -62,7 +60,7 @@ class Session implements \IteratorAggregate
             $this->currentId = $id;
         }
 
-        if ($tmpname === null) {
+        if (empty($tmpname)) {
             $tmpname = $this->savepath . '/' . $this->prefix . $this->currentId;
         }
 

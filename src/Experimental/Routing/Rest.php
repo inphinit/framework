@@ -90,20 +90,24 @@ class Rest extends Router
 
         $this->ready = true;
 
-        $methods = get_class_methods($this->fullController);
+        $controller = $this->fullController;
+
+        $methods = get_class_methods($controller);
         $allowedMethods = array_keys($this->valids);
 
         $classMethods = array_intersect($methods, $allowedMethods);
 
         if (empty($classMethods)) {
-            throw new Exception(' controller exists, but is not a valid', 2);
+            throw new Exception($controller . ' controller exists, but is not a valid', 2);
         }
 
-        $controller = $this->fullController;
+        $contentType = $this->contentType;
+        $valids = $this->valids;
+
+        $this->valids = null;
 
         foreach ($classMethods as $method) {
-            $route = empty($this->valids[$method]) ? false : $this->valids[$method];
-            $contentType = $this->contentType;
+            $route = empty($valids[$method]) ? false : $valids[$method];
 
             if ($route) {
                 Route::set($route[0], $route[1],

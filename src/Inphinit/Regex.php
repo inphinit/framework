@@ -11,6 +11,8 @@ namespace Inphinit;
 
 class Regex
 {
+    private static $rearg = '[\[\]{}()?^$\#*+\\.]';
+
     /**
      * Parse string like.: `{:[a-z]+:}.domain.com` or `/user/{:[a-z]+:}/{:\d+:}` to regex
      *
@@ -23,7 +25,7 @@ class Regex
             return false;
         }
 
-        $str = preg_replace('#[\[\]{}()\-+~=.\^$\#\\\\]#', '\\\$0', $str);
+        $str = preg_replace('#' . self::$rearg . '#', '\\\$0', $str);
         return preg_replace_callback('#\\\{:.*?:\\\}#',
                     array( '\\' . get_called_class(), 'args' ), $str);
     }
@@ -37,7 +39,7 @@ class Regex
      */
     public static function args($arg)
     {
-        $arg = preg_replace('#\\\\([\[\]{}()\-+~=.\^$\#\\\\])#', '$1', $arg[0]);
+        $arg = preg_replace('#\\\\(' . self::$rearg . ')#', '$1', $arg[0]);
         return '(' . substr($arg, 2, -2) . ')';
     }
 }

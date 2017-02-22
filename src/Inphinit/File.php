@@ -89,27 +89,28 @@ class File
      */
     public static function mime($path)
     {
-        $mimetype = false;
+        $mime = false;
 
         if (self::existsCaseSensitive($path) && is_readable($path)) {
             if (function_exists('finfo_open')) {
-                $finfo    = finfo_open(FILEINFO_MIME_TYPE);
-                $mimetype = finfo_buffer($finfo,
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mime  = finfo_buffer($finfo,
                                 file_get_contents($path, false, null, -1, 5012),
                                     FILEINFO_MIME_TYPE);
                 finfo_close($finfo);
             } elseif (function_exists('mime_content_type')) {
-                $mimetype = mime_content_type($path);
+                $mime = mime_content_type($path);
             }
         } else {
-            return $mimetype;
+            return false;
         }
 
-        if ($mimetype !== false && filesize($path) < 2 && strpos($mimetype, 'application/') === 0) {
-            $mimetype = 'text/plain';
+        if ($mime !== false && strpos($mime, 'application/') === 0) {
+            $size = filesize($path);
+            $mime = $size >= 0 && $size < 2 ? 'text/plain' : $mime;
         }
 
-        return $mimetype;
+        return $mime;
     }
 
     /**

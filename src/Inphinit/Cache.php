@@ -26,10 +26,6 @@ class Cache
      */
     public function __construct($expires = 900, $lastModified = 0, $prefix = '')
     {
-        if (Storage::createFolder('cache/output') === false) {
-            return null;
-        }
-
         $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $expires) : $lastModified;
 
         $filename = INPHINIT_PATH . 'storage/cache/output/~';
@@ -65,6 +61,10 @@ class Cache
 
                 return null;
             }
+        }
+
+        if (Storage::createFolder('cache/output') === false) {
+            return null;
         }
 
         $this->cacheTmp = Storage::temp();
