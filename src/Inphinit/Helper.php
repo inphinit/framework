@@ -15,7 +15,7 @@ class Helper
      * Parse version format
      *
      * @param string $version
-     * @return int
+     * @return array|bool
      */
     public static function parseVersion($version)
     {
@@ -35,7 +35,7 @@ class Helper
      * Convert string to ASCII
      *
      * @param string $text
-     * @return int
+     * @return string
      */
     public static function toAscii($text)
     {

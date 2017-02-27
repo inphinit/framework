@@ -74,7 +74,7 @@ class Xml
     /**
      * Get internal errors from libxml
      *
-     * @return void
+     * @return array
      */
     public function errors()
     {
@@ -114,7 +114,7 @@ class Xml
      *
      * @param string $path
      * @throws \Inphinit\Experimental\Exception
-     * @return string
+     * @return bool
      */
     public function save($path)
     {

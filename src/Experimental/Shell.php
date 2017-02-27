@@ -82,6 +82,8 @@ class Shell
         if (self::isCli()) {
             return $length > 0 ? fgets(STDIN, $length) : fgets(STDIN);
         }
+
+        return false;
     }
 
     /**

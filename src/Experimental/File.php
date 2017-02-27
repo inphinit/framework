@@ -22,7 +22,7 @@ class File extends \Inphinit\File
      */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
     {
-        self::fullpath($path);
+        self::fullpath($path, true);
 
         if ($lines !== true) {
             return file_get_contents($path, false, null, $init, $end);
@@ -60,33 +60,19 @@ class File extends \Inphinit\File
 
         $size = filesize($path);
 
-        if ($size < 2) {
+        if ($size >= 0 && $size < 2) {
             return false;
         }
 
         $data = file_get_contents($path, false, null, -1, 5012);
 
-        if (function_exists('finfo_open')) {
-            $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
-            $encode = finfo_buffer($finfo, $data, FILEINFO_MIME_ENCODING);
-            finfo_close($finfo);
-
-            $data = null;
-
-            return $encode === 'binary';
-        }
-
-        $buffer = '';
-
-        for ($i = 0; $i < $size; ++$i) {
-            if (isset($data[$i])) {
-                $buffer .= sprintf('%08b', ord($data[$i]));
-            }
-        }
+        $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
+        $encode = finfo_buffer($finfo, $data);
+        finfo_close($finfo);
 
         $data = null;
 
-        return preg_match('#^[0-1]+$#', $buffer) === 1;
+        return strcasecmp($encode, 'binary') === 0;
     }
 
     /**
@@ -98,7 +84,7 @@ class File extends \Inphinit\File
      */
     public static function size($path)
     {
-        $path = self::fullpath($path);
+        $path = self::fullpath($path, true);
 
         $ch = curl_init('file://' . ltrim($path, '/'));
 
@@ -120,9 +106,11 @@ class File extends \Inphinit\File
 
     private static function fullpath($path, $readable = false)
     {
+        $path = preg_match('#^[a-z\-]+:[\\\/]|/#i', $path) !== 0 ? $path : INPHINIT_ROOT . $path;
+
         if (false === self::existsCaseSensitive($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
-        } elseif ($readable && false === is_readable($file)) {
+        } elseif ($readable && false === is_readable($path)) {
             throw new Exception($path . ' not readable', 3);
         }
 

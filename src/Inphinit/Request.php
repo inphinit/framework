@@ -36,7 +36,7 @@ class Request
      * Check if is a specific HTTP method, HTTPS, and xmlhttprequest (Depends on how an ajax call was made)
      *
      * @param string $check
-     * @return string|bool
+     * @return bool
      */
     public static function is($check)
     {
@@ -93,12 +93,12 @@ class Request
     /**
      * Get querystring, this method is useful for anyone who uses IIS.
      *
-     * @return string|array|bool
+     * @return string|bool
      */
     public static function query()
     {
         if (empty($_GET['RESERVED_IISREDIRECT']) === false) {
-            return '';
+            return false;
         }
 
         return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : false;
@@ -115,8 +115,7 @@ class Request
      */
     public static function get($key, $alternative = false)
     {
-        $data = empty($_GET) ? false : Helper::arrayPath($key, $_GET);
-        return $data === false ? $alternative : $data;
+        return self::data($_GET, $key, $alternative);
     }
 
     /**
@@ -129,8 +128,7 @@ class Request
      */
     public static function post($key, $alternative = false)
     {
-        $data = empty($_POST) ? false : Helper::arrayPath($key, $_POST);
-        return $data === false ? $alternative : $data;
+        return self::data($_POST, $key, $alternative);
     }
 
     /**
@@ -142,8 +140,7 @@ class Request
      */
     public static function cookie($key, $alternative = false)
     {
-        $data = empty($_COOKIE) ? false : Helper::arrayPath($key, $_COOKIE);
-        return $data === false ? $alternative : $data;
+        return self::data($_COOKIE, $key, $alternative);
     }
 
     /**
@@ -168,11 +165,17 @@ class Request
         }
 
         if ($restKey === null) {
-            return Helper::arrayPath($firstKey, $_FILES);
+            return $_FILES[$firstKey];
+        }
+
+        $tmpName = Helper::arrayPath($restKey, $_FILES[$firstKey]['tmp_name']);
+
+        if ($tmpName === false) {
+            return false;
         }
 
         return array(
-            'tmp_name' => Helper::arrayPath($restKey, $_FILES[$firstKey]['tmp_name']),
+            'tmp_name' => $tmpName,
             'name'     => Helper::arrayPath($restKey, $_FILES[$firstKey]['name']),
             'type'     => Helper::arrayPath($restKey, $_FILES[$firstKey]['type']),
             'error'    => Helper::arrayPath($restKey, $_FILES[$firstKey]['error']),
@@ -203,5 +206,19 @@ class Request
         }
 
         return false;
+    }
+
+    private static function data($data, $key, $alternative = false)
+    {
+        if (empty($data)) {
+            return $alternative;
+        }
+
+        if (strpos($key, '.') === false) {
+            return empty($data[$key]) ? $data[$key] : $alternative;
+        }
+
+        $data = Helper::arrayPath($key, $data);
+        return $data === false ? $alternative : $data;
     }
 }

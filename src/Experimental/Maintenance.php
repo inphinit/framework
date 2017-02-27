@@ -47,7 +47,7 @@ class Maintenance
         $data = include INPHINIT_PATH . 'application/Config/config.php';
 
         if ($data['maintenance'] === $enable) {
-            return null;
+            return true;
         }
 
         $data['maintenance'] = $enable;

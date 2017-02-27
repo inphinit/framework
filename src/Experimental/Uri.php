@@ -23,8 +23,8 @@ class Uri
      * Convert text to URL format
      *
      * @param string $text
-     * @param string $type
-     * @return int
+     * @param int    $type
+     * @return string
      */
     public static function encodepath($text, $type = null)
     {
@@ -51,7 +51,7 @@ class Uri
      *
      * @param string $path
      * @param bool   $backspace
-     * @return int
+     * @return string
      */
     public static function canonicalize($path, $backspace = true)
     {
@@ -89,7 +89,7 @@ class Uri
      * Normalize URL, include canonicalized path
      *
      * @param string $url
-     * @return int
+     * @return string
      */
     public static function normalize($url)
     {

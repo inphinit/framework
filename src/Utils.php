@@ -13,7 +13,7 @@ use Inphinit\App;
  * Return normalized path (for checking case-sensitive in Windows OS)
  *
  * @param string $path
- * @return string
+ * @return bool
  */
 function UtilsCaseSensitivePath($path)
 {

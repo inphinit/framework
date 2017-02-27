@@ -41,7 +41,7 @@ class Group extends Router
      *
      * @param string $namespace
      * @throws \Inphinit\Experimental\Exception
-     * @return void
+     * @return \Inphinit\Experimental\Routing\Group
      */
     public function prefixNS($namespace)
     {
@@ -101,7 +101,7 @@ class Group extends Router
      * settings
      *
      * @param \Closure
-     * @return \Inphinit\Experimental\Routing\Group
+     * @return void
      */
     public function then(\Closure $callback)
     {
@@ -112,7 +112,7 @@ class Group extends Router
         $this->ready = true;
 
         if ($this->checkDomain() === false || $this->checkPath() === false) {
-            return false;
+            return null;
         }
 
         $oNS = parent::$prefixNS;
@@ -126,9 +126,7 @@ class Group extends Router
             parent::$prefixPath = rtrim($this->currentPrefixPath, '/');
         }
 
-        if ($this->path || $this->domain || $this->ns) {
-            call_user_func_array($callback, $this->arguments);
-        }
+        call_user_func_array($callback, $this->arguments);
 
         parent::$prefixNS = $oNS;
         parent::$prefixPath = $oPP;

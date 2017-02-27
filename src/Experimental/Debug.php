@@ -42,7 +42,7 @@ class Debug
     /**
      * Render a View to error
      *
-     * @param string $type
+     * @param int    $type
      * @param string $message
      * @param string $file
      * @param int    $line
@@ -150,7 +150,7 @@ class Debug
      *
      * @param string $message
      * @param string $file
-     * @param string $line
+     * @param int    $line
      * @return array
      */
     public static function details($message, $file, $line)
@@ -180,7 +180,7 @@ class Debug
     /**
      * Get memory usage and you can also use it to calculate runtime.
      *
-     * @return void
+     * @return array
      */
     public static function performance()
     {
@@ -221,7 +221,7 @@ class Debug
      * Get snippet from a file
      *
      * @param string $file
-     * @param int $line
+     * @param int    $line
      * @return array|bool
      */
     public static function source($file, $line)

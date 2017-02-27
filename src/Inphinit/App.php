@@ -24,7 +24,7 @@ class App
      *
      * @param string                $key
      * @param string|bool|int|float $value
-     * @return string|bool|int|float
+     * @return string|bool|int|float|void
      */
     public static function env($key, $value = null)
     {
@@ -64,7 +64,7 @@ class App
     public static function trigger($name, array $args = array())
     {
         if (empty(self::$events[$name])) {
-            return false;
+            return null;
         }
 
         $listen = self::$events[$name];
@@ -115,7 +115,7 @@ class App
     public static function on($name, $callback, $priority = 0)
     {
         if (is_string($name) === false || is_callable($callback) === false) {
-            return false;
+            return null;
         }
 
         if (isset(self::$events[$name]) === false) {
@@ -135,7 +135,7 @@ class App
     public static function off($name, $callback = null)
     {
         if (empty(self::$events[$name])) {
-            return false;
+            return null;
         } elseif ($callback === null) {
             self::$events[$name] = array();
             return null;

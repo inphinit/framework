@@ -51,6 +51,7 @@ class Dir implements \IteratorAggregate
             closedir($handle);
 
             $this->iterator = new \ArrayIterator($data);
+            $data = null;
         }
     }
 
@@ -78,7 +79,7 @@ class Dir implements \IteratorAggregate
 
     /**
      * Return items from root project folder (probably, will depend on the setting
-     * of the "INPHINIT_ROOT" constant)
+     * of the `INPHINIT_ROOT` constant)
      *
      * @return \Inphinit\Experimental\Dir
      */

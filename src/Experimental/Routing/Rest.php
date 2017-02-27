@@ -26,7 +26,7 @@ class Rest extends Router
      * Create REST routes based in a \Controller
      *
      * @param string $controller
-     * @return \Inphinit\Experimental\Routing\Rest
+     * @return void
      */
     public static function create($controller)
     {
@@ -85,7 +85,7 @@ class Rest extends Router
     public function prepare()
     {
         if ($this->ready) {
-            return false;
+            return null;
         }
 
         $this->ready = true;

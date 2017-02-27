@@ -74,6 +74,8 @@ class Packages implements \IteratorAggregate
 
             return count($this->libs);
         }
+
+        return false;
     }
 
     /**

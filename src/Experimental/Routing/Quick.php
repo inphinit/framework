@@ -136,7 +136,7 @@ class Quick extends Router
     public function prepare()
     {
         if ($this->ready) {
-            return false;
+            return null;
         }
 
         $this->ready = true;

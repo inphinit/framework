@@ -186,11 +186,7 @@ class Storage
             return false;
         }
 
-        if (is_file($path) && unlink($path)) {
-            return true;
-        }
-
-        return false;
+        return is_file($path) && unlink($path);
     }
 
     /**
@@ -230,11 +226,7 @@ class Storage
     {
         $path = self::resolve($path);
 
-        if ($path === false) {
-            return false;
-        }
-
-        return self::rrmdir($path);
+        return $path && self::rrmdir($path);
     }
 
     /**

@@ -20,7 +20,7 @@ class Form
      * Define new forms for use xhtml (`<input />`) or html format (`<input>`)
      *
      * @param bool $xhtml
-     * @return bool
+     * @return void
      */
     public static function xhtml($xhtml)
     {
@@ -47,7 +47,7 @@ class Form
      * @param string $name
      * @param int    $low
      * @param int    $high
-     * @param string $step
+     * @param int    $step
      * @param string $value
      * @param string $attributes
      * @return string|null
@@ -73,7 +73,7 @@ class Form
      * Convert all applicable data to HTML entities
      *
      * @param string $data
-     * @return void
+     * @return string
      */
     private static function entities($data)
     {
@@ -91,7 +91,7 @@ class Form
      * @param array  $options
      * @param string $value
      * @param string $name
-     * @return void
+     * @return string
      */
     public static function combo($name, array $options, $value = null, array $attributes = array())
     {
@@ -117,7 +117,7 @@ class Form
      * @param string $name
      * @param string $value
      * @param array  $attributes
-     * @return void
+     * @return string
      */
     public static function input($type, $name, $value = null, array $attributes = array())
     {
@@ -151,7 +151,7 @@ class Form
      * @param string $field
      * @param string $name
      * @param string $value
-     * @return void
+     * @return string
      */
     private static function setAttr(array $attributes, $field, $name, $type)
     {
