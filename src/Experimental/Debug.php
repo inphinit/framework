@@ -132,13 +132,13 @@ class Debug
 
                     ini_set('display_errors', '0');
                 }
-            break;
+                break;
 
             case 'classes':
             case 'performance':
                 self::$views[$type] = $view;
                 App::on('terminate', $callRender);
-            break;
+                break;
 
             default:
                 throw new Exception($type . ' is not valid event', 2);

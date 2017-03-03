@@ -103,17 +103,10 @@ class Uri
 
         $isHttp = false;
 
-        if (isset($url['scheme'])) {
-            $scheme = strtolower($url['scheme']);
+        $scheme = empty($url['scheme']) ? null : strtolower($url['scheme']);
+        $isHttp = in_array($scheme, array( 'https', 'https' ));
 
-            if ($scheme === 'https') {
-                $url['port'] = null;
-                $isHttp = true;
-            } else {
-                $normalized .= $scheme === 'file' ? 'file:///' : ($url['scheme'] . '://');
-                $isHttp = $scheme === 'http';
-            }
-        }
+        $normalized .= $scheme === 'file' ? 'file://' : ($url['scheme'] . '://');
 
         if (isset($url['user'])) {
             $normalized .= $url['user'];
@@ -125,8 +118,8 @@ class Uri
             $normalized .= $isHttp || $scheme === 'ftp' ? strtolower($url['host']) : $url['host'];
         }
 
-        if (isset($url['port'])) {
-            $normalized .= $isHttp && $url['port'] == 80 ? '' : (':' . $url['port']);
+        if (isset($url['port']) && $isHttp) {
+            $normalized .= $url['port'] == 80 ? '' : (':' . $url['port']);
         }
 
         if (empty($url['path']) || $url['path'] === '/') {

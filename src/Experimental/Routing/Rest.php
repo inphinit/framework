@@ -110,11 +110,11 @@ class Rest extends Router
             $route = empty($valids[$method]) ? false : $valids[$method];
 
             if ($route) {
-                Route::set($route[0], $route[1],
-                function($arg = array()) use ($method, $contentType, $controller)
-                {
+                Route::set($route[0], $route[1], function ()
+                use ($method, $contentType, $controller) {
                     header('Content-Type: ' . $contentType);
-                    return call_user_func_array(array(new $controller, $method), $arg);
+
+                    return call_user_func_array(array(new $controller, $method), func_get_args());
                 });
             }
         }

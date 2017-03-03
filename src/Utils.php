@@ -72,9 +72,10 @@ function UtilsStatusCode()
 
     $initial = 200;
 
-    if (empty($_SERVER['PHP_SELF']) === false &&
-        preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match) > 0)
-    {
+    if (
+        empty($_SERVER['PHP_SELF']) === false &&
+        preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match) > 0
+    ) {
         $initial = (int) $match[1];
     }
 
@@ -95,12 +96,15 @@ function UtilsPath()
     }
 
     $requri = preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
+    $sname = $_SERVER['SCRIPT_NAME'];
 
-    $pathinfo = rtrim(strtr(dirname($_SERVER['SCRIPT_NAME']), '\\', '/'), '/');
-
-    $pathinfo = substr(urldecode($requri), strlen($pathinfo) + 1);
-
-    $pathinfo = '/' . ($pathinfo === false ? '' : $pathinfo);
+    if ($requri !== $sname && $sname !== '/index.php') {
+        $pathinfo = rtrim(strtr(dirname($_SERVER['SCRIPT_NAME']), '\\', '/'), '/');
+        $pathinfo = substr(urldecode($requri), strlen($pathinfo));
+        $pathinfo = $pathinfo === false ? '/' : $pathinfo;
+    } else {
+        $pathinfo = $requri;
+    }
 
     return $pathinfo;
 }
@@ -120,8 +124,7 @@ function UtilsAutoload()
 
     $initiate = true;
 
-    spl_autoload_register(function($classname)
-    {
+    spl_autoload_register(function ($classname) {
         static $prefixes;
 
         if (isset($prefixes) === false) {
@@ -130,7 +133,7 @@ function UtilsAutoload()
         }
 
         if (is_array($prefixes) === false) {
-            return NULL;
+            return null;
         }
 
         $classname = ltrim($classname, '\\');
@@ -153,7 +156,7 @@ function UtilsAutoload()
         }
 
         if ($base === false) {
-            return NULL;
+            return null;
         }
 
         $path = INPHINIT_PATH;

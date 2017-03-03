@@ -44,8 +44,7 @@ class Request
             return false;
         }
 
-        switch ($check)
-        {
+        switch ($check) {
             case 'secure':
                 return empty($_SERVER['HTTPS']) === false && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
 

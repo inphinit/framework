@@ -30,7 +30,7 @@ class Route extends Router
         } elseif (ctype_alpha($method) && is_string($path)) {
             if (is_string($action)) {
                 $action = parent::$prefixNS . $action;
-            } else if ($action !== null && ($action instanceof \Closure) === false) {
+            } elseif ($action !== null && ($action instanceof \Closure) === false) {
                 return null;
             }
 

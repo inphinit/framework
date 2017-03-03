@@ -168,8 +168,7 @@ class Packages implements \IteratorAggregate
 
         $first = true;
 
-        foreach ($this->libs as $key => $value)
-        {
+        foreach ($this->libs as $key => $value) {
             fwrite($handle, ($first ? '' : ',') . $eol . "    '" . $key . "' => '" . $value . "'");
             $first = false;
         }

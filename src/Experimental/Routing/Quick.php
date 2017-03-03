@@ -121,7 +121,7 @@ class Quick extends Router
             case self::SLASH:
             case self::NOSLASH:
                 $this->format = $slash;
-            break;
+                break;
         }
 
         return $this;

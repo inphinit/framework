@@ -93,11 +93,13 @@ class File
 
         if (self::existsCaseSensitive($path) && is_readable($path)) {
             if (function_exists('finfo_open')) {
+                $buffer = file_get_contents($path, false, null, -1, 5012);
+
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime  = finfo_buffer($finfo,
-                                file_get_contents($path, false, null, -1, 5012),
-                                    FILEINFO_MIME_TYPE);
+                $mime = finfo_buffer($finfo, $buffer);
                 finfo_close($finfo);
+
+                $buffer = null;
             } elseif (function_exists('mime_content_type')) {
                 $mime = mime_content_type($path);
             }

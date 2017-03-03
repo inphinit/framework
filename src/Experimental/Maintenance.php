@@ -75,7 +75,7 @@ class Maintenance
             throw new Exception('Invalid callback');
         }
 
-        App::on('init', function() use ($callback) {
+        App::on('init', function () use ($callback) {
             if ($callback()) {
                 App::env('maintenance', false);
             }
