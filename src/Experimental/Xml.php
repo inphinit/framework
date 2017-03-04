@@ -51,8 +51,12 @@ class Xml
     {
         $restore = \libxml_use_internal_errors(true);
 
+        \libxml_clear_errors();
+
         self::generate($data, $this->handle);
         $this->saveErrors();
+
+        \libxml_clear_errors();
 
         \libxml_use_internal_errors($restore);
     }

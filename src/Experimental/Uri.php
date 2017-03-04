@@ -99,14 +99,9 @@ class Uri
             return $url;
         }
 
-        $normalized = '';
-
-        $isHttp = false;
-
         $scheme = empty($url['scheme']) ? null : strtolower($url['scheme']);
-        $isHttp = in_array($scheme, array( 'https', 'https' ));
 
-        $normalized .= $scheme === 'file' ? 'file://' : ($url['scheme'] . '://');
+        $normalized = $scheme === 'file' ? 'file://' : ($url['scheme'] . '://');
 
         if (isset($url['user'])) {
             $normalized .= $url['user'];
@@ -115,11 +110,18 @@ class Uri
         }
 
         if (isset($url['host'])) {
-            $normalized .= $isHttp || $scheme === 'ftp' ? strtolower($url['host']) : $url['host'];
+            $isValid = array( 'https', 'https', 'ftp', 'sftp' );
+            $normalized .= in_array($scheme, $isValid) ? strtolower($url['host']) : $url['host'];
         }
 
-        if (isset($url['port']) && $isHttp) {
-            $normalized .= $url['port'] == 80 ? '' : (':' . $url['port']);
+        if (
+        isset($url['port']) &&
+        ($url['port'] == 80 && $scheme === 'http') === false &&
+        ($url['port'] == 443 && $scheme === 'https') === false &&
+        ($url['port'] == 21 && $scheme === 'ftp') === false &&
+        ($url['port'] == 22 && $scheme === 'sftp') === false
+        ) {
+            $normalized .= ':' . $url['port'];
         }
 
         if (empty($url['path']) || $url['path'] === '/') {
