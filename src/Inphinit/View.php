@@ -105,8 +105,7 @@ class View
             return null;
         }
 
-        self::$views[] = array(strtr($view, '.', '/'), $data);
-        return count(self::$views) - 1;
+        return array_push(self::$views, array(strtr($view, '.', '/'), $data)) - 1;
     }
 
     /**

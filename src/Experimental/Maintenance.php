@@ -5,8 +5,6 @@
  * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
- *
- * @since 0.0.1
  */
 
 namespace Inphinit\Experimental;

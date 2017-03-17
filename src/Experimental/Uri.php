@@ -41,7 +41,7 @@ class Uri
             $text = preg_replace('#[^a-z\d\-]#i', '', $text);
         }
 
-        $text = preg_replace('#[\-]+[\-]#', '-', $text);
+        $text = preg_replace('#-+-#', '-', $text);
 
         return trim($text, '-');
     }

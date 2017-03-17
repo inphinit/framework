@@ -97,8 +97,7 @@ class Response
         }
 
         if (is_string($header) && is_bool($replace) && ($code === null || is_numeric($code))) {
-            self::$headers[] = array($header, $replace, $code);
-            return count(self::$headers) - 1;
+            return array_push(self::$headers, array($header, $replace, $code)) - 1;
         }
 
         return false;
