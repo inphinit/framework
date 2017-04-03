@@ -203,17 +203,7 @@ class Storage
             return false;
         }
 
-        if (is_dir($path)) {
-            return true;
-        }
-
-        $mask = umask(0);
-
-        $r = mkdir($path, 0600, true);
-
-        umask($mask);
-
-        return $r;
+        return is_dir($path) || mkdir($path, 0700, true);
     }
 
     /**
@@ -239,15 +229,11 @@ class Storage
         $paths = self::$defaultPaths;
         $storage = self::path();
 
-        $mask = umask(0);
-
         foreach ($paths as $path) {
             if (is_dir($storage . $path) === false) {
-                mkdir($storage . $path, 0600);
+                mkdir($storage . $path, 0700, true);
             }
         }
-
-        umask($mask);
 
         $paths = null;
     }

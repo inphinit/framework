@@ -24,13 +24,25 @@ class Quick extends Router
     private $prefix;
     private $ready = false;
 
-    /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo` */
+    /**
+     * Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo`
+     *
+     * @var int
+     */
     const BOTH = 1;
 
-    /** Create a route with slash at the end, like: `/foo/` */
+    /**
+     * Create a route with slash at the end, like: `/foo/`
+     *
+     * @var int
+     */
     const SLASH = 2;
 
-    /** Create a route without slash at the end, like: `/foo` */
+    /**
+     * Create a route without slash at the end, like: `/foo`
+     *
+     * @var int
+     */
     const NOSLASH = 3;
 
     /**

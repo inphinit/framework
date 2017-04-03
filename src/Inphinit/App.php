@@ -13,6 +13,13 @@ use Inphinit\Routing\Route;
 
 class App
 {
+    /**
+     * Inphinit framework version
+     *
+     * @var string
+     */
+    const VERSION = '0.0.1';
+
     private static $events = array();
     private static $configs = array();
     private static $initiate = false;
@@ -162,9 +169,7 @@ class App
      */
     public static function stop($code, $msg = null)
     {
-        Response::status($code, true);
-
-        self::trigger('changestatus', array($code, $msg));
+        Response::status($code, true) && self::trigger('changestatus', array($code, $msg));
         self::trigger('finish');
 
         exit;
@@ -189,13 +194,13 @@ class App
             self::stop(503);
         }
 
-        self::trigger('changestatus', array(\UtilsStatusCode(), null));
-
         $route = Route::get();
 
         if ($route === false) {
             self::stop(404, 'Invalid route');
         }
+
+        self::trigger('changestatus', array(\UtilsStatusCode(), null));
 
         $mainController = $route['controller'];
 

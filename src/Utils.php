@@ -99,7 +99,7 @@ function UtilsPath()
     $sname = $_SERVER['SCRIPT_NAME'];
 
     if ($requri !== $sname && $sname !== '/index.php') {
-        $pathinfo = rtrim(strtr(dirname($_SERVER['SCRIPT_NAME']), '\\', '/'), '/');
+        $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
         $pathinfo = substr(urldecode($requri), strlen($pathinfo));
         $pathinfo = $pathinfo === false ? '/' : $pathinfo;
     } else {
@@ -215,4 +215,6 @@ function UtilsConfig()
 
     register_shutdown_function('UtilsShutDown');
     set_error_handler('UtilsError', E_ALL|E_STRICT);
+
+    header_remove('X-Powered-By');
 }

@@ -40,10 +40,6 @@ class Request
      */
     public static function is($check)
     {
-        if (empty($_SERVER['REQUEST_METHOD'])) {
-            return false;
-        }
-
         switch ($check) {
             case 'secure':
                 return empty($_SERVER['HTTPS']) === false && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
@@ -55,7 +51,7 @@ class Request
                 return strcasecmp(self::header('X-Pjax'), 'true') === 0;
         }
 
-        return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+        return isset($_SERVER['REQUEST_METHOD']) && strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
     }
 
     /**
@@ -191,20 +187,18 @@ class Request
     public static function raw($binary = true)
     {
         if (is_readable('php://input')) {
-            $mode = $binary === true ? 'rb' : 'r';
-
-            if (PHP_VERSION_ID >= 50600) {
-                return fopen('php://input', $mode);
-            }
-
-            $tmp = Storage::temp();
-
-            if (copy('php://input', $tmp)) {
-                return fopen($tmp, $mode);
-            }
+            return false;
         }
 
-        return false;
+        $mode = $binary === true ? 'rb' : 'r';
+
+        if (PHP_VERSION_ID >= 50600) {
+            return fopen('php://input', $mode);
+        }
+
+        $tmp = Storage::temp();
+
+        return copy('php://input', $tmp) ? fopen($tmp, $mode) : false;
     }
 
     private static function data($data, $key, $alternative = false)

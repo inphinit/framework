@@ -15,6 +15,8 @@ class Cache
     private $cacheName;
     private $cacheTmp;
     private $isCache = false;
+    private $expires;
+    private $lastModified;
 
     /**
      * Create a cache instance by route path
@@ -26,9 +28,7 @@ class Cache
      */
     public function __construct($expires = 900, $lastModified = 0, $prefix = '')
     {
-        $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $expires) : $lastModified;
-
-        $filename = INPHINIT_PATH . 'storage/cache/output/~';
+        $filename = Storage::resolve('cache/output/') . '~';
 
         if (false === empty($prefix)) {
             $filename .= strlen($prefix) . '.' . sha1($prefix) . '_';
@@ -41,23 +41,25 @@ class Cache
 
         $this->cacheName = $filename;
 
-        if (file_exists($filename) && file_exists($lastModify)) {
-            $data = (int) file_get_contents($lastModify);
+        if (is_file($filename) && is_file($lastModify)) {
+            $lmdata = file_get_contents($lastModify);
 
-            if ($data !== false && $data > REQUEST_TIME) {
-                $this->isCache = true;
+            $this->isCache = $lmdata > REQUEST_TIME;
 
+            if ($this->isCache && (Request::is('GET') || Request::is('HEAD'))) {
                 $etag = sha1_file($filename);
 
                 header('Etag: ' . $etag);
 
-                Response::cache($expires, $data);
+                Response::cache($expires, $lmdata);
 
-                if (self::match($data, $etag)) {
-                    Response::status(304);
-                } else {
-                    App::on('ready', array($this, 'show'));
+                if (self::match($lmdata, $etag)) {
+                    App::stop(304);
                 }
+            }
+
+            if ($this->isCache) {
+                App::on('ready', array($this, 'show'));
 
                 return null;
             }
@@ -76,6 +78,8 @@ class Cache
         }
 
         $this->handle = $tmp;
+        $this->expires = $expires;
+        $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $expires) : $lastModified;
 
         App::on('finish', array($this, 'finish'));
 
@@ -97,13 +101,14 @@ class Cache
             return null;
         }
 
-        if ($this->handle) {
-            ob_end_flush();
-            fclose($this->handle);
-        }
+        ob_end_flush();
 
         if (App::hasError()) {
             return null;
+        }
+
+        if ($this->handle) {
+            fclose($this->handle);
         }
 
         if (filesize($this->cacheTmp) > 0) {
@@ -122,21 +127,17 @@ class Cache
      */
     public static function match($lastModified, $etag = null)
     {
-        if (false === empty($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-            if (preg_match('/^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$/i', $_SERVER['HTTP_IF_MODIFIED_SINCE']) !== 0 &&
-                strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) == $lastModified)
-            {
-                return true;
-            }
-        }
+        $modifiedsince = Request::header('If-Modified-Since');
 
-        if (false === empty($_SERVER['HTTP_IF_NONE_MATCH']) &&
-                $etag === trim($_SERVER['HTTP_IF_NONE_MATCH']))
-        {
+        if ($modifiedsince &&
+            preg_match('/^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$/i', $modifiedsince) !== 0 &&
+            strtotime($modifiedsince) == $lastModified) {
             return true;
         }
 
-        return false;
+        $nonematch = Request::header('If-None-Match');
+
+        return $nonematch && trim($nonematch) === $etag;
     }
 
     /**
