@@ -129,7 +129,7 @@ class Form
             }
 
             $input .= '</textarea>';
-        } elseif (0 !== preg_match('#^(' . self::$alloweds . ')$#', $type)) {
+        } elseif (preg_match('#^(' . self::$alloweds . ')$#', $type)) {
             $input = '<input type="' . $type . '" value="';
 
             if ($value !== null) {

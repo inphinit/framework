@@ -19,7 +19,7 @@ class Helper
      */
     public static function parseVersion($version)
     {
-        if (preg_match('#^(\d+)\.(\d+)\.(\d+)(\-([\w.\-]+)|)$#', $version, $match) > 0) {
+        if (preg_match('#^(\d+)\.(\d+)\.(\d+)(\-([\w.\-]+)|)$#', $version, $match)) {
             return (object) array(
                 'major' => $match[1],
                 'minor' => $match[2],

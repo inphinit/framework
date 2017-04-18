@@ -25,8 +25,6 @@ class Response
         $headers = self::$headers;
 
         if (empty($headers) === false) {
-            $lastCode = null;
-
             self::$dispatchedHeaders = true;
 
             foreach ($headers as $value) {
@@ -123,17 +121,15 @@ class Response
      * Set header to cache page (or no-cache)
      *
      * @param int $seconds
-     * @param int $lastModified
+     * @param int $modified
      * @return void
      */
-    public static function cache($seconds, $lastModified = null)
+    public static function cache($seconds, $modified = 0)
     {
         $headers = array();
 
         if ($seconds < 1) {
-            $g = gmdate('D, d M Y H:i:s');
-            $headers['Expires: ' . $g . ' GMT'] = true;
-            $headers['Last-Modified: ' . $g . ' GMT'] = true;
+            $headers['Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT'] = true;
             $headers['Cache-Control: no-store, no-cache, must-revalidate'] = true;
             $headers['Cache-Control: post-check=0, pre-check=0'] = false;
             $headers['Pragma: no-cache'] = true;
@@ -141,11 +137,11 @@ class Response
             $headers['Expires: ' . gmdate('D, d M Y H:i:s', REQUEST_TIME + $seconds) . ' GMT'] = true;
             $headers['Cache-Control: public, max-age=' . $seconds] = true;
             $headers['Pragma: max-age=' . $seconds] = true;
-
-            if (is_int($lastModified)) {
-                $headers['Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT'] = true;
-            }
         }
+
+        $modified = $modified > 0 ? $modified : REQUEST_TIME;
+
+        $headers['Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified) . ' GMT'] = true;
 
         foreach ($headers as $key => $value) {
             self::putHeader($key, $value);

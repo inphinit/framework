@@ -74,7 +74,7 @@ function UtilsStatusCode()
 
     if (
         empty($_SERVER['PHP_SELF']) === false &&
-        preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match) > 0
+        preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match)
     ) {
         $initial = (int) $match[1];
     }
@@ -103,7 +103,7 @@ function UtilsPath()
         $pathinfo = substr(urldecode($requri), strlen($pathinfo));
         $pathinfo = $pathinfo === false ? '/' : $pathinfo;
     } else {
-        $pathinfo = $requri;
+        $pathinfo = urldecode($requri);
     }
 
     return $pathinfo;
@@ -141,7 +141,7 @@ function UtilsAutoload()
         $isfile = false;
         $base = false;
 
-        if (isset($prefixes[$classname]) && preg_match('#\.[a-z\d]+$#i', $prefixes[$classname]) !== 0) {
+        if (isset($prefixes[$classname]) && preg_match('#\.[a-z\d]+$#i', $prefixes[$classname])) {
             $isfile = true;
             $base = $prefixes[$classname];
         } else {
@@ -164,10 +164,11 @@ function UtilsAutoload()
         $files = $isfile ? array( $path . $base ) :
                             array( $path . $base . '.php', $path . $base . '.hh' );
 
-        $files = array_values(array_filter($files, 'is_file'));
+        $files = array_filter($files, 'is_file');
+        $files = array_shift($files);
 
-        if (isset($files[0]) && UtilsCaseSensitivePath($files[0])) {
-            include_once $files[0];
+        if ($files && UtilsCaseSensitivePath($files)) {
+            include_once $files;
         }
     });
 }

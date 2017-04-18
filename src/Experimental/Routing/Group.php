@@ -40,17 +40,11 @@ class Group extends Router
      * Define namespace prefix for group
      *
      * @param string $namespace
-     * @throws \Inphinit\Experimental\Exception
      * @return \Inphinit\Experimental\Routing\Group
      */
     public function prefixNS($namespace)
     {
-        if (preg_match('#[^a-z0-9_\\\\]#i', $namespace) !== 0) {
-            throw new Exception('Invalid "' . $namespace . '"', 2);
-        }
-
-        $this->ns = $namespace;
-
+        $this->ns = trim($namespace, '.\\') . '.';
         return $this;
     }
 
@@ -191,7 +185,7 @@ class Group extends Router
         } else {
             $re = Regex::parse($this->path);
 
-            if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches) > 0) {
+            if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches)) {
                 $this->currentPrefixPath = $matches[0];
 
                 array_shift($matches);

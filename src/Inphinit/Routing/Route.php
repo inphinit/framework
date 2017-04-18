@@ -30,7 +30,7 @@ class Route extends Router
         } elseif (ctype_alpha($method) && is_string($path)) {
             if (is_string($action)) {
                 $action = parent::$prefixNS . $action;
-            } elseif ($action !== null && ($action instanceof \Closure) === false) {
+            } elseif ($action !== null && !$action instanceof \Closure) {
                 return null;
             }
 
@@ -42,7 +42,7 @@ class Route extends Router
     /**
      * Get action controller from current route
      *
-     * @return string|bool
+     * @return array|bool
      */
     public static function get()
     {
@@ -50,10 +50,9 @@ class Route extends Router
             return self::$current;
         }
 
-        $func = false;
-        $verb = false;
+        $func = $verb = false;
 
-        $args = null;
+        $args = array();
 
         $routes = array_filter(parent::$httpRoutes);
         $pathinfo = \UtilsPath();
@@ -77,7 +76,7 @@ class Route extends Router
 
         if ($func !== false) {
             self::$current = array(
-                'controller' => $func, 'args' => $args
+                'callback' => $func, 'args' => $args
             );
         } else {
             self::$current = false;

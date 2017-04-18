@@ -9,14 +9,8 @@
 
 namespace Inphinit;
 
-use Inphinit\App;
-use Inphinit\Experimental\Uri;
-
 class Storage
 {
-    private static $sessionStarted = false;
-    private static $defaultPaths = array( 'tmp', 'cache', 'log', 'session' );
-
     /**
      * Get absolute path from storage location
      *
@@ -41,7 +35,7 @@ class Storage
             return false;
         }
 
-        if (strpos($path, self::path()) === 0) {
+        if ($path . '/' === self::path() || strpos($path, self::path()) === 0) {
             return $path;
         }
 
@@ -53,41 +47,32 @@ class Storage
      *
      * @param string $path
      * @param int    $time
-     * @return bool
+     * @return void
      */
     public static function autoclean($path, $time = 0)
     {
         $path = self::resolve($path);
 
-        if ($path === false) {
-            return false;
-        }
-
-        $response = true;
-
-        if (is_dir($path) && ($dh = opendir($path))) {
+        if ($path !== false && is_dir($path) && ($dh = opendir($path))) {
             if (is_int($time) === false) {
                 $time = App::env('appdata_expires');
             }
 
             $expires = REQUEST_TIME - $time;
+            $path .= '/';
 
             while (false !== ($file = readdir($dh))) {
                 $current = $path . $file;
 
-                if (is_file($current) && filemtime($current) < $expires && unlink($current) === false) {
-                    $response = false;
+                if (is_file($current) && filemtime($current) < $expires) {
+                    unlink($current);
                 }
             }
 
             closedir($dh);
 
-            $dh = $file = null;
-
-            return $response;
+            $dh = null;
         }
-
-        return false;
     }
 
     /**
@@ -101,75 +86,47 @@ class Storage
      */
     public static function temp($data = null, $path = 'tmp', $prefix = '~', $sulfix = '.tmp')
     {
-        $path = self::resolve($path);
+        $fullpath = self::resolve($path);
 
-        if ($path === false) {
+        if ($fullpath === false) {
             return false;
         }
 
-        $fullpath = $path . '/' . $prefix . base_convert(microtime(true), 10, 36) . rand(1, 1000) . $sulfix;
+        $fullpath .= '/' . $prefix . base_convert(microtime(true), 10, 36);
+        $fullpath .= rand(1, 1000) . $sulfix;
 
-        if (is_file($fullpath)) {
-            return self::temp($data);
+        if (is_file($fullpath) || self::put($fullpath, $data, LOCK_EX) === false) {
+            return self::temp($data, $path, $prefix, $sulfix);
         }
 
-        self::createCommomFolders();
-
-        $handle = fopen($fullpath, 'wb');
-
-        if ($handle === false) {
-            return false;
-        }
-
-        if ($data !== null) {
-            fwrite($handle, $data);
-        }
-
-        fclose($handle);
-
-        return $fullpath;
+        return true;
     }
 
     /**
      * Create a file in a folder in storage
      *
-     * @param string $path
-     * @param string $data
+     * @param string   $path
+     * @param string   $data
+     * @param int|null $flags
      * @return bool|string
      */
-    public static function put($path, $data = null)
+    public static function put($path, $data = null, $flags = null)
     {
+        $flags = $flags ? $flags : FILE_APPEND|LOCK_EX;
+
         $path = self::resolve($path);
 
         if ($path === false) {
             return false;
         }
 
-        if (is_file($path)) {
-            if ($data) {
-                return file_put_contents($path, $data, FILE_APPEND|LOCK_EX) !== false;
-            }
+        $data = is_numeric($data) === false && !$data ? '' : $data;
 
+        if (is_file($path) && !$data) {
             return true;
         }
 
-        self::createFolder(dirname($path));
-
-        $tmp = self::temp($data);
-
-        return $tmp !== false ? copy($tmp, $path) : false;
-    }
-
-    /**
-     * Create a file in log folder in storage
-     *
-     * @param string $name
-     * @param string $data
-     * @return bool
-     */
-    public static function log($name, $data)
-    {
-        return self::put('log/' . $name, $data);
+        return self::createFolder(dirname($path)) && file_put_contents($path, $data, $flags) !== false;
     }
 
     /**
@@ -182,15 +139,11 @@ class Storage
     {
         $path = self::resolve($path);
 
-        if ($path === false) {
-            return false;
-        }
-
-        return is_file($path) && unlink($path);
+        return $path && is_file($path) && unlink($path);
     }
 
     /**
-     * Create a folder in storage using 0600 permission (if unix-like)
+     * Create a folder in storage using 0700 permission (if unix-like)
      *
      * @param string $path
      * @return bool
@@ -199,11 +152,7 @@ class Storage
     {
         $path = self::resolve($path);
 
-        if ($path === false) {
-            return false;
-        }
-
-        return is_dir($path) || mkdir($path, 0700, true);
+        return $path && (is_dir($path) || mkdir($path, 0700, true));
     }
 
     /**
@@ -216,26 +165,7 @@ class Storage
     {
         $path = self::resolve($path);
 
-        return $path && self::rrmdir($path);
-    }
-
-    /**
-     * Create common folders if they don't exist.
-     *
-     * @return void
-     */
-    public static function createCommomFolders()
-    {
-        $paths = self::$defaultPaths;
-        $storage = self::path();
-
-        foreach ($paths as $path) {
-            if (is_dir($storage . $path) === false) {
-                mkdir($storage . $path, 0700, true);
-            }
-        }
-
-        $paths = null;
+        return $path && is_dir($path) && self::rrmdir($path);
     }
 
     /**
@@ -246,10 +176,12 @@ class Storage
      */
     private static function rrmdir($path)
     {
+        $path .= '/';
+
         $files = array_diff(scandir($path), array('..', '.'));
 
         foreach ($files as $file) {
-            $current = $path . '/' . $file;
+            $current = $path . $file;
 
             if (is_dir($current)) {
                 if (self::rrmdir($current) === false) {

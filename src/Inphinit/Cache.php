@@ -15,45 +15,56 @@ class Cache
     private $cacheName;
     private $cacheTmp;
     private $isCache = false;
+    private $isGetHead = false;
+    private $noStarted = true;
     private $expires;
-    private $lastModified;
+    private $modified;
+    private static $needHeaders;
 
     /**
      * Create a cache instance by route path
      *
      * @param int    $expires
-     * @param int    $lastModified
+     * @param int    $modified
      * @param string $prefix
+     * @param bool   $querystring
      * @return void
      */
-    public function __construct($expires = 900, $lastModified = 0, $prefix = '')
+    public function __construct($expires = 900, $modified = 0, $prefix = '', $querystring = false)
     {
-        $filename = Storage::resolve('cache/output/') . '~';
-
-        if (false === empty($prefix)) {
-            $filename .= strlen($prefix) . '.' . sha1($prefix) . '_';
-        }
+        $filename = INPHINIT_PATH . 'storage/cache/output/';
 
         $path = \UtilsPath();
 
-        $filename .= sha1($path) . '-' . strlen($path);
-        $lastModify = $filename . '.1';
+        $filename .= strlen($path) . '/' . sha1($path) . '/';
+
+        $name = '';
+
+        if (false === empty($prefix)) {
+            $name = strlen($prefix) . '.' . sha1($prefix) . '/';
+        }
+
+        if ($querystring && ($qs = Request::query())) {
+            $name .= strlen($qs) . '.' . sha1($qs);
+        } else {
+            $name .= 'cache';
+        }
+
+        $filename .= $name;
+        $checkexpires = $filename . '.1';
 
         $this->cacheName = $filename;
 
-        if (is_file($filename) && is_file($lastModify)) {
-            $lmdata = file_get_contents($lastModify);
+        if (is_file($filename) && is_file($checkexpires)) {
+            $this->isCache = file_get_contents($checkexpires) > REQUEST_TIME;
 
-            $this->isCache = $lmdata > REQUEST_TIME;
-
-            if ($this->isCache && (Request::is('GET') || Request::is('HEAD'))) {
+            if ($this->isCache && self::isGetHead()) {
                 $etag = sha1_file($filename);
 
-                header('Etag: ' . $etag);
-
-                Response::cache($expires, $lmdata);
-
-                if (self::match($lmdata, $etag)) {
+                if (self::match(REQUEST_TIME + $modified, $etag)) {
+                    Response::putHeader('Etag: ' . $etag);
+                    Response::cache($expires, $modified);
+                    Response::dispatchHeaders();
                     App::stop(304);
                 }
             }
@@ -63,10 +74,6 @@ class Cache
 
                 return null;
             }
-        }
-
-        if (Storage::createFolder('cache/output') === false) {
-            return null;
         }
 
         $this->cacheTmp = Storage::temp();
@@ -79,15 +86,30 @@ class Cache
 
         $this->handle = $tmp;
         $this->expires = $expires;
-        $this->lastModified = $lastModified === 0 ? (REQUEST_TIME + $expires) : $lastModified;
-
-        App::on('finish', array($this, 'finish'));
+        $this->modified = $modified === 0 ? REQUEST_TIME : $modified;
 
         if (ob_get_level() > 0) {
             ob_end_clean();
         }
 
-        ob_start(array($this, 'write'), 1024);
+        if (ob_start(array($this, 'write'), 1024)) {
+            $this->noStarted = false;
+            App::on('finish', array($this, 'finish'));
+        }
+    }
+
+    /**
+     * Check is HEAD or GET method
+     *
+     * @return bool
+     */
+    protected static function isGetHead()
+    {
+        if (self::$needHeaders !== null) {
+            return self::$needHeaders;
+        }
+
+        return self::$needHeaders = Request::is('GET') || Request::is('HEAD');
     }
 
     /**
@@ -97,23 +119,37 @@ class Cache
      */
     public function finish()
     {
-        if ($this->isCache) {
+        if ($this->isCache || $this->noStarted) {
             return null;
         }
 
         ob_end_flush();
 
-        if (App::hasError()) {
-            return null;
-        }
-
         if ($this->handle) {
             fclose($this->handle);
         }
 
-        if (filesize($this->cacheTmp) > 0) {
-            copy($this->cacheTmp, $this->cacheName);
-            file_put_contents($this->cacheName . '.1', $this->lastModified);
+        if (App::hasError()) {
+            return null;
+        }
+
+        Storage::put($this->cacheName);
+
+        if (filesize($this->cacheTmp) > 0 && copy($this->cacheTmp, $this->cacheName)) {
+            file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
+
+            if (self::isGetHead()) {
+                Response::putHeader('Etag: ' . sha1_file($this->cacheName));
+                Response::cache($this->expires, $this->modified);
+                Response::dispatchHeaders();
+            }
+
+            if (App::isReady()) {
+                $this->show();
+                return null;
+            }
+
+            App::on('ready', array($this, 'show'));
         }
     }
 
@@ -121,17 +157,17 @@ class Cache
      * Check `HTTP_IF_MODIFIED_SINCE` and `HTTP_IF_NONE_MATCH` from server
      * If true you can send `304 Not Modified`
      *
-     * @param string $lastModified
+     * @param string $modified
      * @param string $etag
      * @return bool
      */
-    public static function match($lastModified, $etag = null)
+    public static function match($modified, $etag = null)
     {
         $modifiedsince = Request::header('If-Modified-Since');
 
         if ($modifiedsince &&
             preg_match('/^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$/i', $modifiedsince) !== 0 &&
-            strtotime($modifiedsince) == $lastModified) {
+            strtotime($modifiedsince) == $modified) {
             return true;
         }
 
@@ -163,7 +199,7 @@ class Cache
             fwrite($this->handle, $data);
         }
 
-        return $data;
+        return '';
     }
 
     /**

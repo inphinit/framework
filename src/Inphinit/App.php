@@ -202,20 +202,18 @@ class App
 
         self::trigger('changestatus', array(\UtilsStatusCode(), null));
 
-        $mainController = $route['controller'];
+        $callback = $route['callback'];
 
-        if ($mainController instanceof \Closure) {
-            $caller = $mainController;
-        } else {
-            $parsed = explode(':', $mainController, 2);
+        if (!$callback instanceof \Closure) {
+            $parsed = explode(':', $callback, 2);
 
-            $mainController = '\\Controller\\' . strtr($parsed[0], '.', '\\');
-
-            $caller = array(new $mainController, $parsed[1]);
+            $callback = '\\Controller\\' . strtr($parsed[0], '.', '\\');
+            $callback = array(new $callback, $parsed[1]);
         }
 
-        $output = call_user_func_array($caller,
-                    is_array($route['args']) ? $route['args'] : array());
+        $output = call_user_func_array($callback, $route['args']);
+
+        self::trigger('before');
 
         if (class_exists('\\Inphinit\\Response', false)) {
             Response::dispatchHeaders();

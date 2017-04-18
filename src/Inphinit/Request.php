@@ -11,7 +11,7 @@ namespace Inphinit;
 
 class Request
 {
-    private static $reqHeaders = array();
+    private static $reqHeaders;
 
     /**
      * Get current HTTP path or route path
@@ -65,24 +65,22 @@ class Request
         if (is_string($name)) {
             $name = 'HTTP_' . strtoupper(strtr($name, '-', '_'));
             return isset($_SERVER[$name]) ? $_SERVER[$name] : false;
-        } elseif ($name === null) {
-            return false;
         }
 
-        $headers = self::$reqHeaders;
+        if (self::$reqHeaders !== null) {
+            return self::$reqHeaders;
+        }
 
-        if (empty($headers)) {
-            foreach ($_SERVER as $key => $value) {
-                if (strpos($key, 'HTTP_') === 0) {
-                    $current = Helper::capitalize(substr($key, 5), '_', '-');
-                    $headers[$current] = $value;
-                }
+        foreach ($_SERVER as $key => $value) {
+            if (strpos($key, 'HTTP_') === 0) {
+                $current = Helper::capitalize(substr($key, 5), '_', '-');
+                $headers[$current] = $value;
             }
-
-            self::$reqHeaders = $headers;
         }
 
-        return self::$reqHeaders;
+        self::$reqHeaders = $headers;
+
+        return $headers;
     }
 
     /**

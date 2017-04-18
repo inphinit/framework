@@ -21,7 +21,6 @@ class Quick extends Router
     private $fullController;
     private $controller;
     private $format;
-    private $prefix;
     private $ready = false;
 
     /**
@@ -48,30 +47,29 @@ class Quick extends Router
     /**
      * Create routes based in a \Controller
      *
-     * @param string Define prefix controller namespace
-     * @param string Define Controller class name
+     * @param string $name Define Controller class name
+     * @throws \Inphinit\Experimental\Exception
      * @return \Inphinit\Experimental\Routing\Quick
      */
-    public static function create($namecontroller, $prefix = '')
+    public static function create($name)
     {
         self::$debuglvl = 3;
 
-        return new static($namecontroller, $prefix);
+        return new static($name);
     }
 
     /**
      * Create routes based in a \Controller
      *
-     * @param string Define prefix controller namespace
-     * @param string Define controllers class name
+     * @param string $name Define controllers class name
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function __construct($namecontroller, $prefix = '')
+    public function __construct($name)
     {
         $this->format = Quick::BOTH;
 
-        $controller = parent::$prefixNS . strtr($namecontroller, '.', '\\');
+        $controller = strtr(parent::$prefixNS . $name, '.', '\\');
 
         $fc = '\\Controller\\' . $controller;
 
@@ -81,31 +79,27 @@ class Quick extends Router
 
         self::$debuglvl = 2;
 
-        $this->classMethods = self::parseVerbs(get_class_methods($fc));
+        $this->classMethods = self::verbs(get_class_methods($fc));
 
-        $this->controller = $namecontroller;
         $this->fullController = $fc;
-
-        $this->prefix = empty($prefix) ? '' : ('/' . trim($prefix, '/'));
-
-        App::on('init', array($this, 'prepare'));
+        $this->controller = $name;
     }
 
     /**
      * Extract valid methods
      *
-     * @param string Methods of \Controller class
+     * @param string $methods Methods of \Controller class
      * @return array
      */
-    private static function parseVerbs($methods)
+    private static function verbs($methods)
     {
         $list = array();
-        $reMatch = '#^(any|get|post|patch|put|head|delete|options|trace|connect)([a-zA-Z0-9_]+)$#';
+        $reMatch = '#^(any|get|post|patch|put|head|delete|options|trace|connect)([A-Z0-9]\w+)$#';
 
         foreach ($methods as $value) {
             $verb = array();
 
-            if (preg_match($reMatch, $value, $verb) > 0) {
+            if (preg_match($reMatch, $value, $verb)) {
                 if (strcasecmp('index', $verb[2]) === 0) {
                     $verb[2] = '';
                 } else {
@@ -123,10 +117,10 @@ class Quick extends Router
      * Define route format, `Quick::BOTH` for create routes like `/foo/` and `/foo`, `Quick::SLASH`
      * for create routes like `/foo/` and `Quick::NOSLASH` for create routes like `/foo`
      *
-     * @param int define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
+     * @param int $slash define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
      * @return \Inphinit\Experimental\Routing\Quick
      */
-    public function canonical($slash = null)
+    public function canonical($slash = Quick::NOSLASH)
     {
         switch ($slash) {
             case self::BOTH:
@@ -134,6 +128,8 @@ class Quick extends Router
             case self::NOSLASH:
                 $this->format = $slash;
                 break;
+            default:
+                throw new Exception('Invalid type', 2);
         }
 
         return $this;
@@ -163,13 +159,13 @@ class Quick extends Router
 
         foreach ($classMethods as $value) {
             if ($format === self::BOTH || $format === self::SLASH) {
-                $route = $this->prefix . '/' . (empty($value[1]) ? '' : ($value[1] . '/'));
+                $route = '/' . (empty($value[1]) ? '' : ($value[1] . '/'));
 
                 Route::set($value[0], $route, $controller . ':' . $value[2]);
             }
 
             if ($format === self::BOTH || $format === self::NOSLASH) {
-                $route = $this->prefix . (empty($value[1]) ? '' : ('/' . $value[1]));
+                $route = empty($value[1]) ? '' : ('/' . $value[1]);
 
                 Route::set($value[0], $route, $controller . ':' . $value[2]);
             }

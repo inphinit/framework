@@ -32,7 +32,7 @@ abstract class Router
      *
      * @var string
      */
-    protected static $prefixPath = '';
+    public static $prefixPath = '';
 
     /**
      * Get params from routes using regex
@@ -43,7 +43,7 @@ abstract class Router
      * @param array  $matches
      * @return bool
      */
-    protected static function find($httpMethod, $route, $pathinfo, &$matches)
+    protected static function find($httpMethod, $route, $pathinfo, array &$matches)
     {
         $match = explode(' ', $route, 2);
 

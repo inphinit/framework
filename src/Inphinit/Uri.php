@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental;
+namespace Inphinit;
 
 use Inphinit\Helper;
 
@@ -28,7 +28,7 @@ class Uri
      */
     public static function encodepath($text, $type = null)
     {
-        $text = preg_replace('#[`\'"\^~\{\}\[\]\(\)]#', '', $text);
+        $text = preg_replace('#[`\'"\^~{}\[\]()]#', '', $text);
         $text = preg_replace('#[\n\s\/\p{P}]#u', '-', $text);
 
         if ($type === self::UNICODE) {
@@ -127,7 +127,7 @@ class Uri
         if (empty($url['path']) || $url['path'] === '/') {
             $normalized .= '/';
         } else {
-            $normalized .= '/' . ltrim('/' . self::canonicalize($url['path']), '/');
+            $normalized .= '/' . ltrim(self::canonicalize($url['path']), '/');
         }
 
         if (isset($url['query'])) {
