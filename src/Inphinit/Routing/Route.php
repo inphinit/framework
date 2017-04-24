@@ -65,7 +65,7 @@ class Route extends Router
             $func = $routes[$verb];
         } elseif (isset($routes[$http])) {
             $func = $routes[$http];
-        } elseif (empty($routes) === false) {
+        } else {
             foreach ($routes as $route => $action) {
                 if (parent::find($httpMethod, $route, $pathinfo, $args)) {
                     $func = $action;

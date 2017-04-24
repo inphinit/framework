@@ -51,7 +51,6 @@ function UtilsShutDown()
 
     if ($e !== null) {
         UtilsError($e['type'], $e['message'], $e['file'], $e['line'], null);
-        $e = null;
     }
 
     App::trigger('terminate');
@@ -123,33 +122,27 @@ function UtilsAutoload()
     }
 
     $initiate = true;
+    $prefixes = require INPHINIT_PATH . 'boot/namespaces.php';
 
-    spl_autoload_register(function ($classname) {
-        static $prefixes;
+    if (is_array($prefixes) === false) {
+        return null;
+    }
 
-        if (isset($prefixes) === false) {
-            $path = INPHINIT_PATH . 'boot/namespaces.php';
-            $prefixes = is_file($path) ? include $path : false;
-        }
+    spl_autoload_register(function ($class) use ($prefixes) {
 
-        if (is_array($prefixes) === false) {
-            return null;
-        }
+        $class = ltrim($class, '\\');
 
-        $classname = ltrim($classname, '\\');
+        $isfile = $base = false;
 
-        $isfile = false;
-        $base = false;
-
-        if (isset($prefixes[$classname]) && preg_match('#\.[a-z\d]+$#i', $prefixes[$classname])) {
+        if (isset($prefixes[$class]) && pathinfo($prefixes[$class], PATHINFO_EXTENSION)) {
             $isfile = true;
-            $base = $prefixes[$classname];
+            $base = $prefixes[$class];
         } else {
             foreach ($prefixes as $prefix => $path) {
-                if (stripos($classname, $prefix) === 0) {
-                    $classname = substr($classname, strlen($prefix));
+                if (stripos($class, $prefix) === 0) {
+                    $class = substr($class, strlen($prefix));
                     $base = trim($path, '/') . '/' .
-                            str_replace(substr($prefix, -1), '/', $classname);
+                            str_replace(substr($prefix, -1), '/', $class);
                     break;
                 }
             }
@@ -209,7 +202,7 @@ function UtilsConfig()
 
     App::config('config');
 
-    $dev = App::env('developer') === true;
+    $dev = App::env('developer');
 
     error_reporting($dev ? E_ALL|E_STRICT : E_ALL & ~E_STRICT & ~E_DEPRECATED);
     ini_set('display_errors', $dev ? 1 : 0);

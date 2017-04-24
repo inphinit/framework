@@ -68,7 +68,7 @@ class Rest extends Router
     /**
      * Define routes
      *
-     * @throws \Inphinit\Experimental\Exception
+     * @param string $contentType
      * @return void
      */
     public function type($contentType)

@@ -20,7 +20,7 @@ class Response
      *
      * @return void
      */
-    public static function dispatchHeaders()
+    public static function dispatch()
     {
         $headers = self::$headers;
 
@@ -79,7 +79,7 @@ class Response
     }
 
     /**
-     * Register a header and return your index, if `Response::dispatchHeaders`
+     * Register a header and return your index, if `Response::dispatch`
      * was previously executed the header will be set directly and will not be
      * registered
      *

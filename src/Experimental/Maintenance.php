@@ -21,7 +21,7 @@ class Maintenance
      */
     public static function down()
     {
-        return self::enable(true);
+        return static::enable(true);
     }
 
     /**
@@ -31,7 +31,7 @@ class Maintenance
      */
     public static function up()
     {
-        return self::enable(false);
+        return static::enable(false);
     }
 
     /**

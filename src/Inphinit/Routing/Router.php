@@ -32,7 +32,7 @@ abstract class Router
      *
      * @var string
      */
-    public static $prefixPath = '';
+    protected static $prefixPath = '';
 
     /**
      * Get params from routes using regex

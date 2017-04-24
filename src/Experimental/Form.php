@@ -44,29 +44,20 @@ class Form
     /**
      * Generate combo by range
      *
-     * @param string $name
-     * @param int    $low
-     * @param int    $high
-     * @param int    $step
-     * @param string $value
-     * @param string $attributes
+     * @param string      $name
+     * @param string|int  $low
+     * @param string|int  $high
+     * @param int         $step
+     * @param string|null $value
+     * @param string      $attributes
      * @return string|null
      */
     public static function comboRange($name, $low, $high, $step = null, $value = null, array $attributes = array())
     {
-        if (is_numeric($low) && is_numeric($high)) {
-            if ($step !== null) {
-                $range = range($low, $high, $step);
-            } else {
-                $range = range($low, $high);
-            }
+        $range = $step !== null ? range($low, $high, $step) : range($low, $high);
+        $range = array_combine($range, $range);
 
-            $range = array_combine($range, $range);
-
-            return self::combo($name, $range, $value, $attributes);
-        }
-
-        return null;
+        return self::combo($name, $range, $value, $attributes);
     }
 
     /**
@@ -87,10 +78,10 @@ class Form
     /**
      * Create a select combo based in an array
      *
-     * @param string $name
-     * @param array  $options
-     * @param string $value
-     * @param string $name
+     * @param string      $name
+     * @param array       $options
+     * @param string|null $value
+     * @param array       $attributes
      * @return string
      */
     public static function combo($name, array $options, $value = null, array $attributes = array())
@@ -113,10 +104,10 @@ class Form
     /**
      * Create a input or textarea
      *
-     * @param string $type
-     * @param string $name
-     * @param string $value
-     * @param array  $attributes
+     * @param string      $type
+     * @param string      $name
+     * @param string|null $value
+     * @param array       $attributes
      * @return string
      */
     public static function input($type, $name, $value = null, array $attributes = array())
@@ -150,7 +141,7 @@ class Form
      * @param array  $attributes
      * @param string $field
      * @param string $name
-     * @param string $value
+     * @param string $type
      * @return string
      */
     private static function setAttr(array $attributes, $field, $name, $type)

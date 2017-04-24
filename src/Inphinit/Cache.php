@@ -15,7 +15,6 @@ class Cache
     private $cacheName;
     private $cacheTmp;
     private $isCache = false;
-    private $isGetHead = false;
     private $noStarted = true;
     private $expires;
     private $modified;
@@ -58,13 +57,13 @@ class Cache
         if (is_file($filename) && is_file($checkexpires)) {
             $this->isCache = file_get_contents($checkexpires) > REQUEST_TIME;
 
-            if ($this->isCache && self::isGetHead()) {
+            if ($this->isCache && static::allowHeaders()) {
                 $etag = sha1_file($filename);
 
                 if (self::match(REQUEST_TIME + $modified, $etag)) {
                     Response::putHeader('Etag: ' . $etag);
                     Response::cache($expires, $modified);
-                    Response::dispatchHeaders();
+                    Response::dispatch();
                     App::stop(304);
                 }
             }
@@ -99,11 +98,11 @@ class Cache
     }
 
     /**
-     * Check is HEAD or GET method
+     * Check if is HEAD or GET, you can overwrite this method
      *
      * @return bool
      */
-    protected static function isGetHead()
+    protected static function allowHeaders()
     {
         if (self::$needHeaders !== null) {
             return self::$needHeaders;
@@ -138,10 +137,10 @@ class Cache
         if (filesize($this->cacheTmp) > 0 && copy($this->cacheTmp, $this->cacheName)) {
             file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
 
-            if (self::isGetHead()) {
+            if (static::allowHeaders()) {
                 Response::putHeader('Etag: ' . sha1_file($this->cacheName));
                 Response::cache($this->expires, $this->modified);
-                Response::dispatchHeaders();
+                Response::dispatch();
             }
 
             if (App::isReady()) {

@@ -37,13 +37,11 @@ class View
 
         self::forceRender();
 
-        if (empty($views) === false) {
-            foreach ($views as $value) {
-                self::render($value[0], $value[1]);
-            }
-
-            self::$views = $views = null;
+        foreach ($views as $value) {
+            self::render($value[0], $value[1]);
         }
+
+        self::$views = $views = null;
     }
 
     /**
@@ -100,9 +98,7 @@ class View
 
             \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php', $data);
 
-            $data = null;
-
-            return null;
+            return $data = null;
         }
 
         return array_push(self::$views, array(strtr($view, '.', '/'), $data)) - 1;

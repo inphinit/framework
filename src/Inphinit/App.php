@@ -52,10 +52,8 @@ class App
     {
         $data = \UtilsSandboxLoader('application/Config/' . strtr($path, '.', '/') . '.php');
 
-        if (empty($data) === false && is_array($data)) {
-            foreach ($data as $key => $value) {
-                self::env($key, $value);
-            }
+        foreach ($data as $key => $value) {
+            self::env($key, $value);
         }
 
         $data = null;
@@ -121,15 +119,13 @@ class App
      */
     public static function on($name, $callback, $priority = 0)
     {
-        if (is_string($name) === false || is_callable($callback) === false) {
-            return null;
-        }
+        if (is_string($name) && is_callable($callback)) {
+            if (isset(self::$events[$name]) === false) {
+                self::$events[$name] = array();
+            }
 
-        if (isset(self::$events[$name]) === false) {
-            self::$events[$name] = array();
+            self::$events[$name][] = array($callback, $priority);
         }
-
-        self::$events[$name][] = array($callback, $priority);
     }
 
     /**
@@ -190,7 +186,7 @@ class App
 
         self::trigger('init');
 
-        if (self::env('maintenance') === true) {
+        if (self::env('maintenance')) {
             self::stop(503);
         }
 
@@ -213,10 +209,8 @@ class App
 
         $output = call_user_func_array($callback, $route['args']);
 
-        self::trigger('before');
-
         if (class_exists('\\Inphinit\\Response', false)) {
-            Response::dispatchHeaders();
+            Response::dispatch();
         }
 
         if (class_exists('\\Inphinit\\View', false)) {

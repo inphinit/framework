@@ -20,6 +20,24 @@ class Uri
     const UNICODE = 2;
 
     /**
+     * Define default port to schemes, you can customize in a extended class
+     * If put a new port with scheme he is removed in final url, eg. `'myscheme:900',`
+     * `Url::normalize('myscheme://host:900/test')` => `myscheme://host/test`
+     *
+     * @var array
+     */
+    protected static $defaultPorts = array( 'http:80', 'https:443', 'ftp:21', 'sftp:22' );
+
+    /**
+     * Define default schemes, you can customize in a extended class
+     * If put a new scheme the host is converted to lower-case, eg. `'whatsapp',`
+     * `Uri::normalize('whatsapp://SEND?text=foo')` => `whatsapp://send?text=foo`
+     *
+     * @var array
+     */
+    protected static $defaultSchemes = array( 'https', 'https', 'ftp', 'sftp' );
+
+    /**
      * Convert text to URL format
      *
      * @param string $text
@@ -110,17 +128,15 @@ class Uri
         }
 
         if (isset($url['host'])) {
-            $isValid = array( 'https', 'https', 'ftp', 'sftp' );
-            $normalized .= in_array($scheme, $isValid) ? strtolower($url['host']) : $url['host'];
+            if (in_array($scheme, static::$defaultSchemes)) {
+                $host = urldecode($url['host']);
+                $normalized .= mb_strtolower($host);
+            } else {
+                $normalized .= $url['host'];
+            }
         }
 
-        if (
-        isset($url['port']) &&
-        ($url['port'] == 80 && $scheme === 'http') === false &&
-        ($url['port'] == 443 && $scheme === 'https') === false &&
-        ($url['port'] == 21 && $scheme === 'ftp') === false &&
-        ($url['port'] == 22 && $scheme === 'sftp') === false
-        ) {
+        if (isset($url['port']) && !in_array($scheme . ':' . $url['port'], static::$defaultPorts)) {
             $normalized .= ':' . $url['port'];
         }
 

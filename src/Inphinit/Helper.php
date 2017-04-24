@@ -63,7 +63,7 @@ class Helper
      * @param array  $items
      * @return mixed
      */
-    public static function arrayPath($path, array $items)
+    public static function extract($path, array $items)
     {
         $paths = explode('.', $path);
 
@@ -76,5 +76,16 @@ class Helper
         }
 
         return $items;
+    }
+
+    /**
+     * Equivalent to `is_iterable` from PHP-7.1.0+
+     *
+     * @param mixed $obj
+     * @return mixed
+     */
+    public function iterable($obj)
+    {
+        return is_array($obj) || $obj instanceof \Traversable;
     }
 }
