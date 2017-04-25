@@ -84,7 +84,7 @@ class Helper
      * @param mixed $obj
      * @return mixed
      */
-    public function iterable($obj)
+    public static function iterable($obj)
     {
         return is_array($obj) || $obj instanceof \Traversable;
     }
