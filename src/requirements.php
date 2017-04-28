@@ -54,6 +54,17 @@ if ($definedpath) {
         if (extension_loaded('xhprof')) {
             $warn[] = 'xhprof is enabled, is recommended disable this in "production mode"';
         }
+
+        $generators = array(
+            'generate-htaccess.php', 'generate-webconfig.php',
+            'generate-nginx.php', 'generate-hhvm.php'
+        );
+
+        foreach ($generators as $generator) {
+            if (is_file($generator)) {
+                $error[] = 'Remove ' . $generator . ' in production server';
+            }
+        }
     } else {
         if (function_exists('xcache_get') == true && ini_get('xcache.cacher') == true) {
             $warn[] = 'Disable xcache.cacher in dev mode';

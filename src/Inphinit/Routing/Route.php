@@ -27,7 +27,7 @@ class Route extends Router
             foreach ($method as $value) {
                 self::set($value, $path, $action);
             }
-        } elseif (ctype_alpha($method) && is_string($path)) {
+        } else {
             if (is_string($action)) {
                 $action = parent::$prefixNS . $action;
             } elseif ($action !== null && !$action instanceof \Closure) {
