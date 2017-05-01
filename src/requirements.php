@@ -56,8 +56,9 @@ if ($definedpath) {
         }
 
         $generators = array(
-            'generate-htaccess.php', 'generate-webconfig.php',
-            'generate-nginx.php', 'generate-hhvm.php'
+            'generate-htaccess.php',
+            'generate-webconfig.php',
+            'generate-nginx.php'
         );
 
         foreach ($generators as $generator) {
