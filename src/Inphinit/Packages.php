@@ -26,8 +26,8 @@ class Packages implements \IteratorAggregate
      */
     public function __construct($path)
     {
-        if (is_dir($path) === false) {
-            throw new \InvalidArgumentException('Composer path is not accessible: ' . $path);
+        if (empty($path) || is_dir($path) === false) {
+            throw new \InvalidArgumentException(empty($path) ? 'Path is empty' : 'Composer path is not accessible: ' . $path);
         }
 
         $this->composerPath = $path;

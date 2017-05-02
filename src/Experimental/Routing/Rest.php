@@ -69,11 +69,13 @@ class Rest extends Router
      * Define routes
      *
      * @param string $contentType
+     * @param string $charset
      * @return void
      */
-    public function type($contentType)
+    public function type($contentType, $charset = 'UTF-8')
     {
         $this->contentType = $contentType;
+        $this->charset = $charset;
     }
 
     /**
@@ -101,7 +103,7 @@ class Rest extends Router
             throw new Exception($controller . ' controller exists, but is not a valid', 2);
         }
 
-        $contentType = $this->contentType;
+        $contentType = $this->contentType . '; charset=' . $this->charset;
         $valids = $this->valids;
 
         $this->valids = null;

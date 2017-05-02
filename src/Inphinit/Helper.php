@@ -59,18 +59,19 @@ class Helper
     /**
      * Read array by path using dot
      *
-     * @param string $path
-     * @param array  $items
+     * @param string             $path
+     * @param array|\Traversable $items
      * @return mixed
      */
-    public static function extract($path, array $items)
+    public static function extract($path, $items)
     {
         $paths = explode('.', $path);
 
         foreach ($paths as $value) {
-            $items = is_array($items) && array_key_exists($value, $items) ? $items[$value] : false;
-
-            if ($items === false) {
+            if (self::iterable($items) && array_key_exists($value, $items)) {
+                $items = $items[$value];
+            } else {
+                $items = false;
                 break;
             }
         }
@@ -82,7 +83,7 @@ class Helper
      * Equivalent to `is_iterable` from PHP-7.1.0+
      *
      * @param mixed $obj
-     * @return mixed
+     * @return bool
      */
     public static function iterable($obj)
     {

@@ -29,13 +29,12 @@ if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 }
 
 if (!function_exists('mb_detect_encoding')) {
-    $error[] = 'Inphinit\Experimental\Uri class and Inphinit\Helper::toAscii ' .
-                     'not work, "Multibyte String" is disabled in php (if needed for you)';
+    $error[] = 'Inphinit\Uri class and Inphinit\Helper::toAscii not work, ' .
+                '"Multibyte String" is disabled in php (if needed for you)';
 }
 
 if (!function_exists('iconv')) {
-    $error[] = 'Inphinit\Experimental\Uri not work, ' .
-                     '"iconv" is disabled in php (if needed for you)';
+    $error[] = 'Inphinit\Uri not work, "iconv" is disabled in php (if needed for you)';
 }
 
 if (!function_exists('finfo_file')) {

@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental;
 
+use Inphinit\Helper;
 use Inphinit\Storage;
 
 class Xml
@@ -44,10 +45,10 @@ class Xml
     /**
      * Convert array in xml tags
      *
-     * @param array $data
+     * @param array|\Traversable $data
      * @return void
      */
-    public function fromArray(array $data)
+    public function fromArray($data)
     {
         $restore = \libxml_use_internal_errors(true);
 
@@ -68,7 +69,9 @@ class Xml
      */
     protected function saveErrors()
     {
-        foreach (libxml_get_errors() as $error) {
+        $errors = libxml_get_errors();
+
+        foreach ($errors as $error) {
             if (in_array($error, $this->errors)) {
                 $this->logerrors[] = $error;
             }
@@ -101,7 +104,6 @@ class Xml
      * </code>
      * </pre>
      *
-     * @throws \Inphinit\Experimental\Exception
      * @return string
      */
     public function __toString()
@@ -109,8 +111,6 @@ class Xml
         if ($this->handle) {
             return $this->handle->asXML();
         }
-
-        throw new Exception('XML was not generated because the handle is no longer available.', 2);
     }
 
     /**
@@ -141,20 +141,20 @@ class Xml
     /**
      * Recursively iterates the items in an array to convert to XML elements.
      *
-     * @param string $data
-     * @param \SimpleXMLElement $xmlNode
+     * @param array|\Traversable $data
+     * @param \SimpleXMLElement  $xmlNode
      * @return void
      */
     private static function generate($data, \SimpleXMLElement $xmlNode)
     {
         foreach ($data as $key => $value) {
-            if (is_array($value)) {
+            if (Helper::iterable($value)) {
                 if (is_numeric($key)) {
                     continue;
                 }
 
                 self::generate($value, $xmlNode->addChild($key));
-            } elseif (empty($key) === false && is_numeric($key) === false) {
+            } elseif (empty($key) === false && preg_match('#^[a-z][a-z\d_]+$#i', $key)) {
                 $xmlNode->addChild($key, htmlspecialchars($value));
             }
         }

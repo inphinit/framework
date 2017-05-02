@@ -161,7 +161,7 @@ class Request
             return $_FILES[$firstKey];
         }
 
-        $tmpName = Helper::arrayPath($restKey, $_FILES[$firstKey]['tmp_name']);
+        $tmpName = Helper::extract($restKey, $_FILES[$firstKey]['tmp_name']);
 
         if ($tmpName === false) {
             return false;
@@ -169,10 +169,10 @@ class Request
 
         return array(
             'tmp_name' => $tmpName,
-            'name'     => Helper::arrayPath($restKey, $_FILES[$firstKey]['name']),
-            'type'     => Helper::arrayPath($restKey, $_FILES[$firstKey]['type']),
-            'error'    => Helper::arrayPath($restKey, $_FILES[$firstKey]['error']),
-            'size'     => Helper::arrayPath($restKey, $_FILES[$firstKey]['size'])
+            'name'     => Helper::extract($restKey, $_FILES[$firstKey]['name']),
+            'type'     => Helper::extract($restKey, $_FILES[$firstKey]['type']),
+            'error'    => Helper::extract($restKey, $_FILES[$firstKey]['error']),
+            'size'     => Helper::extract($restKey, $_FILES[$firstKey]['size'])
         );
     }
 
@@ -209,7 +209,7 @@ class Request
             return empty($data[$key]) ? $data[$key] : $alternative;
         }
 
-        $data = Helper::arrayPath($key, $data);
+        $data = Helper::extract($key, $data);
         return $data === false ? $alternative : $data;
     }
 }
