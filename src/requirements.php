@@ -7,6 +7,12 @@
 * Released under the MIT license
 */
 
+function ini_enabled($key)
+{
+    $value = strtolower(ini_get($key));
+    return in_array($value, array( 'on', '1' ));
+}
+
 $definedpath = defined('INPHINIT_PATH');
 
 $error = array();
@@ -66,23 +72,23 @@ if ($definedpath) {
             }
         }
     } else {
-        if (function_exists('xcache_get') == true && ini_get('xcache.cacher') == true) {
+        if (function_exists('xcache_get') && ini_enabled('xcache.cacher')) {
             $warn[] = 'Disable xcache.cacher in dev mode';
         }
 
-        if (function_exists('opcache_get_status') == true && ini_get('opcache.enable') == true) {
+        if (function_exists('opcache_get_status') && ini_enabled('opcache.enable')) {
             $warn[] = 'Disable opcache.enable in dev mode';
         }
 
-        if (function_exists('wincache_ocache_meminfo') == true && ini_get('wincache.ocenabled') == true) {
+        if (function_exists('wincache_ocache_meminfo') && ini_enabled('wincache.ocenabled')) {
             $warn[] = 'Disable wincache.ocenabled in dev mode';
         }
 
-        if (function_exists('apc_compile_file') == true && ini_get('apc.enabled') == true) {
+        if (function_exists('apc_compile_file') && ini_enabled('apc.enabled')) {
             $warn[] = 'Disable apc.ocenabled in dev mode';
         }
 
-        if (function_exists('eaccelerator_get') == true && ini_get('eaccelerator.enable') == true) {
+        if (function_exists('eaccelerator_get') && ini_enabled('eaccelerator.enable')) {
             $warn[] = 'Disable eaccelerator.ocenabled in dev mode';
         }
     }

@@ -190,13 +190,13 @@ class App
             self::stop(503);
         }
 
+        self::trigger('changestatus', array(\UtilsStatusCode(), null));
+
         $route = Route::get();
 
         if ($route === false) {
             self::stop(404, 'Invalid route');
         }
-
-        self::trigger('changestatus', array(\UtilsStatusCode(), null));
 
         $callback = $route['callback'];
 
