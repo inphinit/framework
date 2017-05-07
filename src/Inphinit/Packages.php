@@ -13,8 +13,8 @@ class Packages implements \IteratorAggregate
 {
     private $composerPath;
     private $classmapName = 'autoload_classmap.php';
-    private $psrZeroName  = 'autoload_namespaces.php';
-    private $psrFourName  = 'autoload_psr4.php';
+    private $psrZeroName = 'autoload_namespaces.php';
+    private $psrFourName = 'autoload_psr4.php';
     private $logs = array();
     private $libs;
 
@@ -30,7 +30,7 @@ class Packages implements \IteratorAggregate
             throw new \InvalidArgumentException(empty($path) ? 'Path is empty' : 'Composer path is not accessible: ' . $path);
         }
 
-        $this->composerPath = $path;
+        $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
         $this->libs = new \ArrayIterator(array());
     }
 
@@ -169,7 +169,10 @@ class Packages implements \IteratorAggregate
         $first = true;
 
         foreach ($this->libs as $key => $value) {
+            $value = self::relativePath($value);
+
             fwrite($handle, ($first ? '' : ',') . $eol . "    '" . $key . "' => '" . $value . "'");
+
             $first = false;
         }
 
@@ -200,6 +203,17 @@ class Packages implements \IteratorAggregate
     public function getIterator()
     {
         return $this->libs;
+    }
+
+    private static function relativePath($path)
+    {
+        $path = strtr($path, '\\', '/');
+
+        if (defined('INPHINIT_PATH') && strpos($path, INPHINIT_PATH) === 0) {
+            $path = substr($path, strlen(INPHINIT_PATH));
+        }
+
+        return $path;
     }
 
     private static function addSlashPackage($prefix)

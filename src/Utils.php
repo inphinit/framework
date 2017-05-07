@@ -17,7 +17,7 @@ use Inphinit\App;
  */
 function UtilsCaseSensitivePath($path)
 {
-    return $path === strtr(realpath($path), '\\', '/');
+    return strtr($path, '\\', '/') === strtr(realpath($path), '\\', '/');
 }
 
 /**
@@ -94,7 +94,7 @@ function UtilsPath()
         return $pathinfo;
     }
 
-    $requri = preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
+    $requri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $sname = $_SERVER['SCRIPT_NAME'];
 
     if ($requri !== $sname && $sname !== '/index.php') {
@@ -141,8 +141,7 @@ function UtilsAutoload()
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
-                    $base = trim($path, '/') . '/' .
-                            str_replace(substr($prefix, -1), '/', $class);
+                    $base = $path . '/' . strtr($class, substr($prefix, -1), '/');
                     break;
                 }
             }
@@ -152,10 +151,9 @@ function UtilsAutoload()
             return null;
         }
 
-        $path = INPHINIT_PATH;
+        $path = preg_match('#^([a-z0-9]+:|/)#i', $base) ? $base : INPHINIT_PATH . $base;
 
-        $files = $isfile ? array( $path . $base ) :
-                            array( $path . $base . '.php', $path . $base . '.hh' );
+        $files = $isfile ? array( $path ) : array( $path . '.php', $path . '.hh' );
 
         $files = array_filter($files, 'is_file');
         $files = array_shift($files);
