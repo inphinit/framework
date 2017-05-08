@@ -53,7 +53,7 @@ abstract class Router
 
         $re = Regex::parse($match[1]);
 
-        if ($re !== false && preg_match('#^' . $re . '$#', $pathinfo, $matches) > 0) {
+        if ($re !== false && preg_match('#^' . $re . '$#', $pathinfo, $matches)) {
             array_shift($matches);
             return true;
         }
