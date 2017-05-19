@@ -33,15 +33,13 @@ class View
      */
     public static function dispatch()
     {
-        $views = array_filter(self::$views);
-
         self::forceRender();
 
-        foreach ($views as $value) {
-            self::render($value[0], $value[1]);
+        foreach (self::$views as $value) {
+            $value && self::render($value[0], $value[1]);
         }
 
-        self::$views = $views = null;
+        self::$views = null;
     }
 
     /**
@@ -67,7 +65,6 @@ class View
         if ($key === null) {
             self::$data = array();
         } else {
-            self::$data[$key] = null;
             unset(self::$data[$key]);
         }
     }
