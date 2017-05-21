@@ -18,6 +18,7 @@ class Cache
     private $noStarted = true;
     private $expires;
     private $modified;
+    private $finished = false;
     private static $needHeaders;
 
     /**
@@ -87,13 +88,12 @@ class Cache
         $this->expires = $expires;
         $this->modified = $modified === 0 ? REQUEST_TIME : $modified;
 
-        if (ob_get_level() > 0) {
-            ob_end_clean();
-        }
+        ob_get_level() > 0 && ob_end_clean();
 
         if (ob_start(array($this, 'write'), 1024)) {
             $this->noStarted = false;
             App::on('finish', array($this, 'finish'));
+            App::on('error', array($this, 'finish'));
         }
     }
 
@@ -118,23 +118,26 @@ class Cache
      */
     public function finish()
     {
-        if ($this->isCache || $this->noStarted) {
+        if ($this->isCache || $this->noStarted || $this->finished) {
             return null;
         }
 
-        ob_end_flush();
+        $this->finished = true;
+
+        ob_get_level() > 0 && ob_end_clean();
 
         if ($this->handle) {
             fclose($this->handle);
         }
 
         if (App::hasError()) {
+            is_file($this->cacheTmp) && unlink($this->cacheTmp);
             return null;
         }
 
         Storage::put($this->cacheName);
 
-        if (filesize($this->cacheTmp) > 0 && copy($this->cacheTmp, $this->cacheName)) {
+        if (filesize($this->cacheTmp) > 0 && rename($this->cacheTmp, $this->cacheName)) {
             file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
 
             if (static::allowHeaders()) {

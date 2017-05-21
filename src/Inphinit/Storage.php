@@ -99,7 +99,7 @@ class Storage
             return self::temp($data, $path, $prefix, $sulfix);
         }
 
-        return true;
+        return $fullpath;
     }
 
     /**

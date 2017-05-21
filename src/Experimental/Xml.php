@@ -108,9 +108,11 @@ class Xml
      */
     public function __toString()
     {
-        if ($this->handle) {
+        if ($this->handle !== null) {
             return $this->handle->asXML();
         }
+
+        return '';
     }
 
     /**
@@ -154,7 +156,7 @@ class Xml
                 }
 
                 self::generate($value, $xmlNode->addChild($key));
-            } elseif (empty($key) === false && preg_match('#^[a-z][a-z\d_]+$#i', $key)) {
+            } elseif (empty($key) === false && preg_match('#^([a-z][a-z\d_]|[a-z])+$#i', $key)) {
                 $xmlNode->addChild($key, htmlspecialchars($value));
             }
         }
