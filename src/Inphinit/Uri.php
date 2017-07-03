@@ -156,4 +156,16 @@ class Uri
 
         return $normalized;
     }
+
+    /**
+     * Create URL based in public root application, for example,
+     * if you install inphinit in a sub path like: `http://site/foo/bar/myapplication/`
+     *
+     * @param string $path
+     * @return string
+     */
+    public static function root($path = '')
+    {
+        return rtrim(INPHINIT_URL, '/') . self::canonicalize($url);
+    }
 }

@@ -195,6 +195,10 @@ function UtilsError($type, $message, $file, $line, $details)
  */
 function UtilsConfig()
 {
+    $url = dirname($_SERVER['SCRIPT_NAME']);
+    $url = $url === '\\' ? '' : $url;
+
+    define('INPHINIT_URL', $url . '/');
     define('REQUEST_TIME', time());
     define('EOL', chr(10));
 
