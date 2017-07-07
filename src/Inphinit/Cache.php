@@ -138,7 +138,11 @@ class Cache
         Storage::put($this->cacheName);
 
         if (filesize($this->cacheTmp) > 0 && rename($this->cacheTmp, $this->cacheName)) {
+
+            $headers = implode(EOL, headers_list());
+
             file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
+            file_put_contents($this->cacheName . '.php', $headers);
 
             if (static::allowHeaders()) {
                 Response::putHeader('Etag: ' . sha1_file($this->cacheName));
@@ -211,6 +215,12 @@ class Cache
      */
     public function show()
     {
+        $headers = explode(EOL, file_get_contents($this->cacheName . '.php'));
+
+        foreach ($headers as $header) {
+            header($header);
+        }
+
         if (filesize($this->cacheName) > 524287) {
             File::output($this->cacheName);
         } else {
