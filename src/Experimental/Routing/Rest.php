@@ -16,7 +16,8 @@ use Inphinit\Experimental\Exception;
 
 class Rest extends Router
 {
-    private $contentType = 'application/json; charset=UTF-8';
+    private $contentType = 'application/json';
+    private $charset = 'UTF-8';
     private $controller;
     private $fullController;
     private $valids;
