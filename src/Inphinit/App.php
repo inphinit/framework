@@ -9,6 +9,7 @@
 
 namespace Inphinit;
 
+use Inphinit\Viewing\View;
 use Inphinit\Routing\Route;
 
 class App
@@ -213,7 +214,7 @@ class App
             Response::dispatch();
         }
 
-        if (class_exists('\\Inphinit\\View', false)) {
+        if (class_exists('\\Inphinit\\Viewing\\View', false)) {
             View::dispatch();
         }
 

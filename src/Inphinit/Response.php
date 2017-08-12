@@ -58,7 +58,7 @@ class Response
             self::$httpCode = \UtilsStatusCode();
         }
 
-        if (is_int($code) && self::$httpCode !== $code) {
+        if (self::$httpCode !== $code && $code > 99 && $code < 600) {
             if (headers_sent()) {
                 return false;
             }

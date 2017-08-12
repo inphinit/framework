@@ -216,6 +216,32 @@ class Packages implements \IteratorAggregate
         return $path;
     }
 
+    /**
+     * Get package version from composer.lock file
+     *
+     * @param string $name set package for detect version
+     * @return bool|string
+     */
+    public static function version($name)
+    {
+        $file = INPHINIT_ROOT . 'composer.lock';
+        $data = is_file($file) ? json_decode(file_get_contents($file)) : false;
+
+        if (empty($data->packages)) {
+            return false;
+        }
+
+        foreach ($data->packages as $package) {
+            if ($package->name === $name) {
+                return $package->version;
+            }
+        }
+
+        $data = null;
+
+        return false;
+    }
+
     private static function addSlashPackage($prefix)
     {
         return str_replace('\\', '\\\\', $prefix);

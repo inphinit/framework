@@ -7,13 +7,13 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Viewing;
 
 class View
 {
     private static $force = false;
     private static $views = array();
-    private static $sharedData = array();
+    private static $shared = array();
 
     /**
      * Force the `View::render` method to render at the time it is called
@@ -43,29 +43,18 @@ class View
     }
 
     /**
-     * Adds values that will be added as variables to the views that will be executed later
+     * Share or remove shared data to Views, shared variables will be added as variables to the views that will be executed later
      *
      * @param string $key
      * @param mixed  $value
      * @return void
      */
-    public static function shareData($key, $value)
+    public static function data($key, $value)
     {
-        self::$sharedData[$key] = $value;
-    }
-
-    /**
-     * Removes one or all values that have been added by `View::shareData`
-     *
-     * @param string|null $key
-     * @return void
-     */
-    public static function removeData($key = null)
-    {
-        if ($key === null) {
-            self::$data = array();
+        if ($value === null) {
+            unset(self::$shared[$key]);
         } else {
-            unset(self::$data[$key]);
+            self::$shared[$key] = $value;
         }
     }
 
@@ -91,9 +80,8 @@ class View
     public static function render($view, array $data = array())
     {
         if (self::$force) {
-            $data = self::$sharedData + $data;
-
-            \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php', $data);
+            \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php',
+                self::$shared + $data);
 
             return $data = null;
         }

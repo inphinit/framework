@@ -43,8 +43,8 @@ function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array()
  */
 function UtilsShutDown()
 {
-    if (class_exists('\\Inphinit\\View', false)) {
-        \Inphinit\View::forceRender();
+    if (class_exists('\\Inphinit\\Viewing\\View', false)) {
+        \Inphinit\Viewing\View::forceRender();
     }
 
     $e = error_get_last();

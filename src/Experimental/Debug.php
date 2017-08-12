@@ -10,9 +10,9 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
-use Inphinit\View;
 use Inphinit\Request;
 use Inphinit\Response;
+use Inphinit\Viewing\View;
 
 class Debug
 {

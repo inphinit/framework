@@ -57,10 +57,6 @@ class Group extends Router
      */
     public function domain($domain)
     {
-        if (empty($domain)) {
-            throw new Exception('domain is not defined', 2);
-        }
-
         if (empty($domain) || trim($domain) !== $domain) {
             throw new Exception('Invalid domain "' . $domain . '"', 2);
         } else {
@@ -79,10 +75,8 @@ class Group extends Router
      */
     public function path($path)
     {
-        if (empty($path)) {
-            throw new Exception('path is not defined', 2);
-        } elseif ($path !== '/' . trim($path, '/') . '/') {
-            throw new Exception('missing slash in "' . $path . '", use like this /foo/', 2);
+        if ($path !== '/' . trim($path, '/') . '/') {
+            throw new Exception('Invalid path "' . $path . '", use like this /foo/', 2);
         }
 
         $this->path = $path;
@@ -100,7 +94,7 @@ class Group extends Router
     public function then(\Closure $callback)
     {
         if ($this->ready) {
-            return false;
+            return null;
         }
 
         $this->ready = true;
