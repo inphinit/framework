@@ -61,7 +61,7 @@ class Redirect extends \Inphinit\Routing\Router
             $path = rtrim(INPHINIT_URL, '/') . $path;
         }
 
-        header('Location: ' . $path, true, $code);
+        Response::putHeader('Location', $path);
     }
 
     /**

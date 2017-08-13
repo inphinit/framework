@@ -71,10 +71,7 @@ function UtilsStatusCode()
 
     $initial = 200;
 
-    if (
-        empty($_SERVER['PHP_SELF']) === false &&
-        preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match)
-    ) {
+    if (preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match)) {
         $initial = (int) $match[1];
     }
 

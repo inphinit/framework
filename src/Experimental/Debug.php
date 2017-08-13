@@ -16,8 +16,9 @@ use Inphinit\Viewing\View;
 
 class Debug
 {
-    private static $views = array();
     private static $displayErrors;
+    private static $views = array();
+    private static $fatal = array(E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR, E_RECOVERABLE_ERROR);
 
     /**
      * Unregister debug events
@@ -56,7 +57,7 @@ class Debug
 
         $data = self::details($message, $file, $line);
 
-        if (!headers_sent() && Request::is('xhr')) {
+        if (!headers_sent() && strcasecmp(Request::header('accept'), 'application/json') === 0) {
             ob_start();
 
             self::unregister();
@@ -69,7 +70,7 @@ class Debug
             App::stop(500);
         }
 
-        if ($type === E_ERROR || $type === E_PARSE || $type === E_RECOVERABLE_ERROR) {
+        if (in_array($type, self::$fatal)) {
             View::forceRender();
         }
 

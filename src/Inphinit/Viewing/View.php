@@ -9,6 +9,8 @@
 
 namespace Inphinit\Viewing;
 
+use Inphinit\App;
+
 class View
 {
     private static $force = false;
@@ -79,7 +81,7 @@ class View
      */
     public static function render($view, array $data = array())
     {
-        if (self::$force) {
+        if (self::$force || App::isReady()) {
             \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php',
                 self::$shared + $data);
 

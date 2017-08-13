@@ -62,7 +62,7 @@ class Cache
                 $etag = sha1_file($filename);
 
                 if (self::match(REQUEST_TIME + $modified, $etag)) {
-                    Response::putHeader('Etag: ' . $etag);
+                    Response::putHeader('Etag', $etag);
                     Response::cache($expires, $modified);
                     Response::dispatch();
                     App::stop(304);
@@ -145,17 +145,16 @@ class Cache
             file_put_contents($this->cacheName . '.php', $headers);
 
             if (static::allowHeaders()) {
-                Response::putHeader('Etag: ' . sha1_file($this->cacheName));
+                Response::putHeader('Etag', sha1_file($this->cacheName));
                 Response::cache($this->expires, $this->modified);
                 Response::dispatch();
             }
 
             if (App::isReady()) {
                 $this->show();
-                return null;
+            } else {
+                App::on('ready', array($this, 'show'));
             }
-
-            App::on('ready', array($this, 'show'));
         }
     }
 
@@ -172,7 +171,7 @@ class Cache
         $modifiedsince = Request::header('If-Modified-Since');
 
         if ($modifiedsince &&
-            preg_match('/^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$/i', $modifiedsince) !== 0 &&
+            preg_match('#^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$#i', $modifiedsince) !== 0 &&
             strtotime($modifiedsince) == $modified) {
             return true;
         }
@@ -201,7 +200,7 @@ class Cache
      */
     public function write($data)
     {
-        if ($this->handle !== null) {
+        if ($this->handle) {
             fwrite($this->handle, $data);
         }
 

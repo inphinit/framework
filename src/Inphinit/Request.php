@@ -21,12 +21,10 @@ class Request
      */
     public static function path($info = false)
     {
-        if ($info === true) {
+        if ($info) {
             return \UtilsPath();
-        }
-
-        if (isset($_SERVER['REQUEST_URI'])) {
-            return preg_replace('#\?(.*)$#', '', $_SERVER['REQUEST_URI']);
+        } elseif (isset($_SERVER['REQUEST_URI'])) {
+            return preg_replace('#\?.*$#', '', $_SERVER['REQUEST_URI']);
         }
 
         return false;
@@ -55,7 +53,7 @@ class Request
     }
 
     /**
-     * Get http headers from current request
+     * Get HTTP headers from current request
      *
      * @param string $name
      * @return string|array|bool
@@ -65,11 +63,11 @@ class Request
         if (is_string($name)) {
             $name = 'HTTP_' . strtoupper(strtr($name, '-', '_'));
             return isset($_SERVER[$name]) ? $_SERVER[$name] : false;
-        }
-
-        if (self::$reqHeaders !== null) {
+        } elseif (self::$reqHeaders !== null) {
             return self::$reqHeaders;
         }
+
+        $headers = array();
 
         foreach ($_SERVER as $key => $value) {
             if (strpos($key, 'HTTP_') === 0) {
@@ -151,13 +149,9 @@ class Request
         if ($pos > 0) {
             $firstKey = substr($key, 0, $pos);
             $restKey  = substr($key, $pos + 1);
-        }
-
-        if (isset($_FILES[$firstKey]['name']) === false) {
+        } elseif (isset($_FILES[$firstKey]['name']) === false) {
             return false;
-        }
-
-        if ($restKey === null) {
+        } elseif ($restKey === null) {
             return $_FILES[$firstKey];
         }
 
@@ -188,7 +182,7 @@ class Request
             return false;
         }
 
-        $mode = $binary === true ? 'rb' : 'r';
+        $mode = $binary ? 'rb' : 'r';
 
         if (PHP_VERSION_ID >= 50600) {
             return fopen('php://input', $mode);
@@ -203,9 +197,7 @@ class Request
     {
         if (empty($data)) {
             return $alternative;
-        }
-
-        if (strpos($key, '.') === false) {
+        } elseif (strpos($key, '.') === false) {
             return empty($data[$key]) ? $data[$key] : $alternative;
         }
 

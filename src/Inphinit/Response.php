@@ -22,16 +22,12 @@ class Response
      */
     public static function dispatch()
     {
-        $headers = self::$headers;
-
-        if (empty($headers) === false) {
+        if (empty(self::$headers) === false) {
             self::$dispatchedHeaders = true;
 
-            foreach ($headers as $value) {
-                self::putHeader($value[0], $value[1]);
+            foreach (self::$headers as $value) {
+                self::putHeader($value[0], $value[1], $value[2]);
             }
-
-            $headers = null;
         }
     }
 
@@ -58,24 +54,20 @@ class Response
             self::$httpCode = \UtilsStatusCode();
         }
 
-        if (self::$httpCode !== $code && $code > 99 && $code < 600) {
-            if (headers_sent()) {
-                return false;
-            }
-
-            header('X-PHP-Response-Code: ' . $code, true, $code);
-
-            $lastCode = self::$httpCode;
-            self::$httpCode = $code;
-
-            if (false === $preventTrigger) {
-                App::trigger('changestatus', array($code, null));
-            }
-
-            return $lastCode;
+        if (self::$httpCode === $code || headers_sent() || $code < 100 || $code > 599) {
+            return false;
         }
 
-        return self::$httpCode;
+        header('X-PHP-Response-Code: ' . $code, true, $code);
+
+        $lastCode = self::$httpCode;
+        self::$httpCode = $code;
+
+        if (false === $preventTrigger) {
+            App::trigger('changestatus', array($code, null));
+        }
+
+        return $lastCode;
     }
 
     /**
@@ -85,36 +77,28 @@ class Response
      *
      * @param string $header
      * @param bool   $replace
-     * @return bool|void
+     * @return void
      */
-    public static function putHeader($header, $replace = true)
+    public static function putHeader($name, $value, $replace = true)
     {
-        if (self::$dispatchedHeaders) {
-            header($header, $replace);
-            return null;
+        if (self::$dispatchedHeaders || App::isReady()) {
+            header($name . ': ' . ltrim($value), $replace);
+        } else {
+            self::$headers[] = array($name, $value, $replace);
         }
-
-        if (is_string($header) && is_bool($replace)) {
-            return array_push(self::$headers, array($header, $replace)) - 1;
-        }
-
-        return false;
     }
 
     /**
-     * Remove registered header by index
+     * Remove registered header
      *
-     * @param int $index
-     * @return bool
+     * @param string $name
+     * @return void
      */
-    public static function removeHeader($index)
+    public static function removeHeader($name)
     {
-        if (self::$dispatchedHeaders === false && isset(self::$headers[$index])) {
-            self::$headers[$index] = null;
-            return true;
-        }
-
-        return false;
+        self::$headers = array_filter(self::$headers, function ($header) use ($name) {
+            return strcasecmp($header[0], $name) !== 0;
+        });
     }
 
     /**
@@ -126,28 +110,18 @@ class Response
      */
     public static function cache($seconds, $modified = 0)
     {
-        $headers = array();
-
         if ($seconds < 1) {
-            $headers['Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT'] = true;
-            $headers['Cache-Control: no-store, no-cache, must-revalidate'] = true;
-            $headers['Cache-Control: post-check=0, pre-check=0'] = false;
-            $headers['Pragma: no-cache'] = true;
+            self::putHeader('Expires', gmdate('D, d M Y H:i:s') . ' GMT');
+            self::putHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+            self::putHeader('Cache-Control', 'post-check=0, pre-check=0', false);
+            self::putHeader('Pragma', 'no-cache');
         } else {
-            $headers['Expires: ' . gmdate('D, d M Y H:i:s', REQUEST_TIME + $seconds) . ' GMT'] = true;
-            $headers['Cache-Control: public, max-age=' . $seconds] = true;
-            $headers['Pragma: max-age=' . $seconds] = true;
+            self::putHeader('Expires', gmdate('D, d M Y H:i:s', REQUEST_TIME + $seconds) . ' GMT');
+            self::putHeader('Cache-Control', 'public, max-age=' . $seconds);
+            self::putHeader('Pragma', 'max-age=' . $seconds);
         }
 
-        $modified = $modified > 0 ? $modified : REQUEST_TIME;
-
-        $headers['Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified) . ' GMT'] = true;
-
-        foreach ($headers as $key => $value) {
-            self::putHeader($key, $value);
-        }
-
-        $headers = null;
+        self::putHeader('Last-Modified', gmdate('D, d M Y H:i:s', $modified > 0 ? $modified : REQUEST_TIME) . ' GMT');
     }
 
     /**
@@ -160,12 +134,12 @@ class Response
     public static function download($name, $contentLength = 0)
     {
         if (is_string($name)) {
-            self::putHeader('Content-Transfer-Encoding: Binary');
-            self::putHeader('Content-Disposition: attachment; filename="' . strtr($name, '"', '-') . '"');
+            self::putHeader('Content-Transfer-Encoding', 'Binary');
+            self::putHeader('Content-Disposition', 'attachment; filename="' . strtr($name, '"', '-') . '"');
         }
 
         if ($contentLength > 0) {
-            self::putHeader('Content-Length: ' . $contentLength);
+            self::putHeader('Content-Length', $contentLength);
         }
     }
 
@@ -173,10 +147,10 @@ class Response
      * Set mime-type
      *
      * @param string $mime
-     * @return bool|void
+     * @return void
      */
     public static function type($mime)
     {
-        return self::putHeader('Content-Type: ' . $mime);
+        self::putHeader('Content-Type', $mime);
     }
 }

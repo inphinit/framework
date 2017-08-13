@@ -105,10 +105,10 @@ class Storage
     /**
      * Create a file in a folder in storage
      *
-     * @param string   $path
-     * @param string   $data
-     * @param int|null $flags
-     * @return bool|string
+     * @param string $path
+     * @param string $data
+     * @param int    $flags
+     * @return bool
      */
     public static function put($path, $data = null, $flags = null)
     {

@@ -26,7 +26,7 @@ class Xml
      */
     public function __construct($root, $charset = 'UTF-8')
     {
-        if (empty($root) || ctype_alpha($root) === false) {
+        if (ctype_alpha($root) === false) {
             throw new Exception('First argument in Response::xml requires a string', 2);
             return false;
         }
@@ -124,7 +124,7 @@ class Xml
      */
     public function save($path)
     {
-        if (false !== is_writable(dirname($path))) {
+        if (is_writable(dirname($path)) === false) {
             throw new Exception('Path is not writable', 2);
         }
 
@@ -156,7 +156,7 @@ class Xml
                 }
 
                 self::generate($value, $xmlNode->addChild($key));
-            } elseif (empty($key) === false && preg_match('#^([a-z][a-z\d_]|[a-z])+$#i', $key)) {
+            } elseif (preg_match('#^([a-z][a-z\d_]|[a-z])+$#i', $key)) {
                 $xmlNode->addChild($key, htmlspecialchars($value));
             }
         }

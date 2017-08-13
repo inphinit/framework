@@ -97,8 +97,8 @@ class File extends \Inphinit\File
 
         $ch = null;
 
-        if (preg_match('#(^c|\sc)ontent\-length:(\s|)(\d+)#i', $headers, $matches)) {
-            return $matches[3];
+        if (preg_match('#content-length:\s+?(\d+)#i', $headers, $matches)) {
+            return $matches[1];
         }
 
         return false;
@@ -106,7 +106,7 @@ class File extends \Inphinit\File
 
     private static function fullpath($path, $readable = false)
     {
-        $path = preg_match('#^[a-z\-]+:[\\\/]|/#i', $path) ? $path : INPHINIT_ROOT . $path;
+        $path = preg_match('#^[a-z\-]+:[\\\/]|^/#i', $path) ? $path : INPHINIT_ROOT . $path;
 
         if (false === self::existsCaseSensitive($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
