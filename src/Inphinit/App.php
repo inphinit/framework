@@ -67,6 +67,10 @@ class App
      */
     public static function trigger($name, array $args = array())
     {
+        if ($name === 'error') {
+            self::$state = 5;
+        }
+
         if (empty(self::$events[$name])) {
             return null;
         }
@@ -76,10 +80,6 @@ class App
         usort($listen, function ($a, $b) {
             return $b[1] >= $a[1];
         });
-
-        if ($name === 'error') {
-            self::$state = 5;
-        }
 
         foreach ($listen as $callback) {
             call_user_func_array($callback[0], $args);
@@ -164,7 +164,11 @@ class App
     public static function stop($code, $msg = null)
     {
         Response::status($code, true) && self::trigger('changestatus', array($code, $msg));
-        self::trigger('finish');
+
+        if (self::$state < 4) {
+            self::$state = 4;
+            self::trigger('finish');
+        }
 
         exit;
     }
