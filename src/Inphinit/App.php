@@ -23,9 +23,7 @@ class App
 
     private static $events = array();
     private static $configs = array();
-    private static $initiate = false;
-    private static $error = false;
-    private static $done = false;
+    private static $state = 0;
 
     /**
      * Set or get environment value
@@ -80,7 +78,7 @@ class App
         });
 
         if ($name === 'error') {
-            self::$error = true;
+            self::$state = 5;
         }
 
         foreach ($listen as $callback) {
@@ -91,23 +89,22 @@ class App
     }
 
     /**
-     * Return `true` if `App::exec` is performed
+     * Return application state
      *
-     * @return bool
-     */
-    public static function isReady()
-    {
-        return self::$done;
-    }
-
-    /**
-     * Return true if a script or event trigged a error or exception
+     * <ul>
+     * <li>0 - Unexecuted</li>
+     * <li>1 - Initiade</li>
+     * <li>2 - Interactive</li>
+     * <li>3 - Ready</li>
+     * <li>4 - Finished</li>
+     * <li>5 - Error</li>
+     * </ul>
      *
-     * @return bool
+     * @return int
      */
-    public static function hasError()
+    public static function state()
     {
-        return self::$error;
+        return self::$state;
     }
 
     /**
@@ -179,15 +176,16 @@ class App
      */
     public static function exec()
     {
-        if (self::$initiate) {
+        if (self::$state > 1) {
             return null;
         }
 
-        self::$initiate = true;
+        self::$state = 1;
 
         self::trigger('init');
 
         if (self::env('maintenance')) {
+            self::$state = 4;
             self::stop(503);
         }
 
@@ -196,6 +194,7 @@ class App
         $route = Route::get();
 
         if ($route === false) {
+            self::$state = 5;
             self::stop(404, 'Invalid route');
         }
 
@@ -218,14 +217,24 @@ class App
             View::dispatch();
         }
 
-        self::trigger('ready');
+        if (self::$state < 2) {
+            self::$state = 2;
+        }
 
-        self::$done = true;
+        self::trigger('ready');
 
         if ($output) {
             echo $output;
         }
 
+        if (self::$state < 3) {
+            self::$state = 3;
+        }
+
         self::trigger('finish');
+
+        if (self::$state < 4) {
+            self::$state = 4;
+        }
     }
 }

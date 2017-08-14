@@ -71,7 +71,7 @@ class Debug
         }
 
         if (in_array($type, self::$fatal)) {
-            View::forceRender();
+            View::dispatch();
         }
 
         View::render(self::$views['error'], $data);
@@ -200,9 +200,8 @@ class Debug
     public static function classes()
     {
         $objs = array();
-        $listClasses = get_declared_classes();
 
-        foreach ($listClasses as $value) {
+        foreach (get_declared_classes() as $value) {
             $value = ltrim($value, '\\');
             $cname = new \ReflectionClass($value);
 
@@ -212,8 +211,6 @@ class Debug
 
             $cname = null;
         }
-
-        $listClasses = null;
 
         return $objs;
     }
@@ -257,13 +254,9 @@ class Debug
 
         if ($level < 0) {
             return $trace;
-        }
-
-        if (empty($trace[$level])) {
+        } elseif (empty($trace[$level])) {
             return false;
-        }
-
-        if (empty($trace[$level]['file'])) {
+        } elseif (empty($trace[$level]['file'])) {
             $level = 1;
         }
 

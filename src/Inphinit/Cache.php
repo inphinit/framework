@@ -126,11 +126,9 @@ class Cache
 
         ob_get_level() > 0 && ob_end_clean();
 
-        if ($this->handle) {
-            fclose($this->handle);
-        }
+        $this->handle && fclose($this->handle);
 
-        if (App::hasError()) {
+        if (App::state() === 4) {
             is_file($this->cacheTmp) && unlink($this->cacheTmp);
             return null;
         }
@@ -138,11 +136,14 @@ class Cache
         Storage::put($this->cacheName);
 
         if (filesize($this->cacheTmp) > 0 && rename($this->cacheTmp, $this->cacheName)) {
+            $headers = implode('\');header(\'', headers_list());
 
-            $headers = implode(EOL, headers_list());
+            if ($headers !== '') {
+                $headers = 'header(\'' . $headers . '\');';
+            }
 
             file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
-            file_put_contents($this->cacheName . '.php', $headers);
+            file_put_contents($this->cacheName . '.php', '<?php ' . $headers);
 
             if (static::allowHeaders()) {
                 Response::putHeader('Etag', sha1_file($this->cacheName));
@@ -150,7 +151,7 @@ class Cache
                 Response::dispatch();
             }
 
-            if (App::isReady()) {
+            if (App::state() > 2) {
                 $this->show();
             } else {
                 App::on('ready', array($this, 'show'));
@@ -200,10 +201,7 @@ class Cache
      */
     public function write($data)
     {
-        if ($this->handle) {
-            fwrite($this->handle, $data);
-        }
-
+        $this->handle && fwrite($this->handle, $data);
         return '';
     }
 
@@ -214,11 +212,7 @@ class Cache
      */
     public function show()
     {
-        $headers = explode(EOL, file_get_contents($this->cacheName . '.php'));
-
-        foreach ($headers as $header) {
-            header($header);
-        }
+        include $this->cacheName . '.php';
 
         if (filesize($this->cacheName) > 524287) {
             File::output($this->cacheName);

@@ -75,13 +75,14 @@ class Response
      * was previously executed the header will be set directly and will not be
      * registered
      *
-     * @param string $header
+     * @param string $name
+     * @param string $value
      * @param bool   $replace
      * @return void
      */
     public static function putHeader($name, $value, $replace = true)
     {
-        if (self::$dispatchedHeaders || App::isReady()) {
+        if (self::$dispatchedHeaders || App::state() > 2) {
             header($name . ': ' . ltrim($value), $replace);
         } else {
             self::$headers[] = array($name, $value, $replace);

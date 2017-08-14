@@ -37,11 +37,13 @@ class View
     {
         self::forceRender();
 
-        foreach (self::$views as $value) {
-            $value && self::render($value[0], $value[1]);
-        }
+        if (self::$views) {
+            foreach (self::$views as $value) {
+                $value && self::render($value[0], $value[1]);
+            }
 
-        self::$views = null;
+            self::$views = null;
+        }
     }
 
     /**
@@ -81,9 +83,8 @@ class View
      */
     public static function render($view, array $data = array())
     {
-        if (self::$force || App::isReady()) {
-            \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php',
-                self::$shared + $data);
+        if (self::$force || App::state() > 2) {
+            \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php', self::$shared + $data);
 
             return $data = null;
         }

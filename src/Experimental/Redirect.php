@@ -47,17 +47,11 @@ class Redirect extends \Inphinit\Routing\Router
     {
         if (headers_sent()) {
             throw new Exception('Headers already sent', 2);
-        }
-
-        if ($code < 300 || $code > 399) {
+        } elseif ($code < 300 || $code > 399) {
             throw new Exception('Invalid redirect HTTP status', 2);
-        }
-
-        if (empty($path)) {
+        } elseif (empty($path)) {
             throw new Exception('Path is not defined', 2);
-        }
-
-        if (strpos($path, '/') === 0) {
+        } elseif (strpos($path, '/') === 0) {
             $path = rtrim(INPHINIT_URL, '/') . $path;
         }
 
@@ -76,9 +70,7 @@ class Redirect extends \Inphinit\Routing\Router
 
         if ($referer === false) {
             return false;
-        }
-
-        if ($only) {
+        } elseif ($only) {
             static::only($referer, 302, $trigger);
         } else {
             static::to($referer, 302, $trigger);
@@ -96,30 +88,26 @@ class Redirect extends \Inphinit\Routing\Router
 
         if ($verb === false) {
             throw new Exception('Action not defined in route', 2);
-        }
-
-        if (strpos($verb, 'GET /') !== 0 && strpos($verb, 'ANY /') !== 0) {
+        } elseif (strpos($verb, 'GET /') !== 0 && strpos($verb, 'ANY /') !== 0) {
             throw new Exception('Method not allowed', 2);
         }
 
-        $verb = substr($verb, 4);
+        $url = substr($verb, 4);
+        $j = preg_match_all('#\{:.*?:\}#', $url);
+        $i = count($args);
+        $argc = $j > 0 || $i > 0;
 
-        $j = count($args);
-        $i = 0;
+        if ($argc && $j === $i) {
+            $i = 0;
 
-        if (preg_match('#\{:.*?:\}#', $verb)) {
-            $url = preg_replace_callback('#\{:.*?:\}#', function () use ($args, &$i) {
+            $to = preg_replace_callback('#\{:.*?:\}#', function () use ($args, &$i) {
                 return $args[$i++];
-            }, $verb);
+            }, $url);
 
-            if ($i !== $j) {
-                throw new Exception('Invalid number of arguments', 2);
-            }
-
-            if (!preg_match('#' . Regex::parse($verb) . '#', $url)) {
+            if (!preg_match('#' . Regex::parse($url) . '#', $to)) {
                 throw new Exception('Invalid URL from regex: ' . $verb, 2);
             }
-        } else if ($j > 0) {
+        } elseif ($argc) {
             throw new Exception('Invalid number of arguments', 2);
         }
 

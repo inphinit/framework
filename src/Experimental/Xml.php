@@ -69,9 +69,7 @@ class Xml
      */
     protected function saveErrors()
     {
-        $errors = libxml_get_errors();
-
-        foreach ($errors as $error) {
+        foreach (libxml_get_errors() as $error) {
             if (in_array($error, $this->errors)) {
                 $this->logerrors[] = $error;
             }

@@ -49,7 +49,7 @@ class Request
                 return strcasecmp(self::header('X-Pjax'), 'true') === 0;
         }
 
-        return isset($_SERVER['REQUEST_METHOD']) && strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+        return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
     }
 
     /**

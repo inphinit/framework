@@ -88,10 +88,10 @@ class Quick extends Router
     /**
      * Extract valid methods
      *
-     * @param string $methods Methods of \Controller class
+     * @param array $methods Methods of \Controller class
      * @return array
      */
-    private static function verbs($methods)
+    private static function verbs(array $methods)
     {
         $list = array();
         $reMatch = '#^(any|get|post|patch|put|head|delete|options|trace|connect)([A-Z0-9]\w+)$#';
@@ -153,11 +153,10 @@ class Quick extends Router
             throw new Exception($this->fullController . ' is empty ', 2);
         }
 
-        $format       = $this->format;
-        $controller   = $this->controller;
-        $classMethods = $this->classMethods;
+        $format     = $this->format;
+        $controller = $this->controller;
 
-        foreach ($classMethods as $value) {
+        foreach ($this->classMethods as $value) {
             if ($format === self::BOTH || $format === self::SLASH) {
                 $route = '/' . (empty($value[1]) ? '' : ($value[1] . '/'));
 

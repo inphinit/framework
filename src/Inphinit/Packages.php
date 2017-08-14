@@ -153,25 +153,24 @@ class Packages implements \IteratorAggregate
      */
     public function save($path)
     {
-        if (is_writeable($path) === false) {
-            throw new \InvalidArgumentException('This path is not writabled: ' . $path);
-        }
-
         if (count($this->libs) === 0) {
             return false;
         }
 
         $handle = fopen($path, 'w');
-        $eol = chr(10);
 
-        fwrite($handle, '<?php' . $eol . 'return array(');
+        if ($handle === false) {
+            throw new \InvalidArgumentException('This path is not writabled: ' . $path);
+        }
+
+        fwrite($handle, '<?php' . EOL . 'return array(');
 
         $first = true;
 
         foreach ($this->libs as $key => $value) {
             $value = self::relativePath($value);
 
-            fwrite($handle, ($first ? '' : ',') . $eol . "    '" . $key . "' => '" . $value . "'");
+            fwrite($handle, ($first ? '' : ',') . EOL . "    '" . $key . "' => '" . $value . "'");
 
             $first = false;
         }
