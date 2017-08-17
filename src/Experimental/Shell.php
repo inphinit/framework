@@ -16,6 +16,7 @@ class Shell
 
     private $argc = 0;
     private $argv = array();
+    private $started = false;
 
     /**
      * Create a Shell instance for use CLI interface
@@ -91,18 +92,25 @@ class Shell
      *
      * @param callable $callback
      * @param string   $exitCicle
-     * @return void|bool
+     * @return bool
      */
-    public function inputObserver($callback, $exitCicle = 'exit')
+    public function inputObserver($callback, $exitCicle = null)
     {
         if (self::isCli() === false || is_callable($callback) === false) {
             return false;
         }
 
-        $this->ec = $exitCicle;
-
         $this->io = $callback;
+        $this->ec = $exitCicle ? $exitCicle : $this->ec;
+
+        if ($this->started) {
+            return true;
+        }
+
+        $this->started = true;
         $this->fireInputObserver();
+
+        return true;
     }
 
     /**

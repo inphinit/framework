@@ -22,7 +22,7 @@ class File extends \Inphinit\File
      */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
     {
-        self::fullpath($path, true);
+        self::fullpath($path);
 
         if ($lines !== true) {
             return file_get_contents($path, false, null, $init, $end);
@@ -56,7 +56,7 @@ class File extends \Inphinit\File
      */
     public static function isBinary($path)
     {
-        self::fullpath($path, true);
+        self::fullpath($path);
 
         $size = filesize($path);
 
@@ -84,9 +84,9 @@ class File extends \Inphinit\File
      */
     public static function size($path)
     {
-        $path = self::fullpath($path, true);
+        $path = ltrim(self::fullpath($path), '/');
 
-        $ch = curl_init('file://' . ltrim($path, '/'));
+        $ch = curl_init('file://' . $path);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 1);
@@ -104,7 +104,7 @@ class File extends \Inphinit\File
         return false;
     }
 
-    private static function fullpath($path, $readable = false)
+    private static function fullpath($path)
     {
         $path = preg_match('#^[a-z\-]+:[\\\/]|^/#i', $path) ? $path : INPHINIT_ROOT . $path;
 
