@@ -108,7 +108,7 @@ class File extends \Inphinit\File
     {
         $path = preg_match('#^[a-z\-]+:[\\\/]|^/#i', $path) ? $path : INPHINIT_ROOT . $path;
 
-        if (false === self::existsCaseSensitive($path) || false === is_file($path)) {
+        if (false === self::exists($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
         } elseif ($readable && false === is_readable($path)) {
             throw new Exception($path . ' not readable', 3);

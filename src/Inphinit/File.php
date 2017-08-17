@@ -18,7 +18,7 @@ class File
      * @param string $path
      * @return bool
      */
-    public static function existsCaseSensitive($path)
+    public static function exists($path)
     {
         return file_exists($path) && \UtilsCaseSensitivePath(strtr($path, '\\', '/'));
     }
@@ -33,7 +33,7 @@ class File
      */
     public static function permission($path, $full = false)
     {
-        if (self::existsCaseSensitive($path) === false) {
+        if (self::exists($path) === false) {
             return false;
         }
 
@@ -92,7 +92,7 @@ class File
     {
         $mime = false;
 
-        if (self::existsCaseSensitive($path) && is_readable($path)) {
+        if (self::exists($path) && is_readable($path)) {
             if (function_exists('finfo_open')) {
                 $buffer = file_get_contents($path, false, null, -1, 5012);
 
@@ -104,8 +104,6 @@ class File
             } elseif (function_exists('mime_content_type')) {
                 $mime = mime_content_type($path);
             }
-        } else {
-            return false;
         }
 
         if ($mime !== false && strpos($mime, 'application/') === 0) {
@@ -126,7 +124,7 @@ class File
      */
     public static function output($path, $length = 102400, $delay = 0)
     {
-        if (self::existsCaseSensitive($path) === false || is_readable($path) === false) {
+        if (self::exists($path) === false || is_readable($path) === false) {
             return false;
         }
 
