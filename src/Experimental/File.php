@@ -110,7 +110,7 @@ class File extends \Inphinit\File
 
         if (false === self::exists($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
-        } elseif ($readable && false === is_readable($path)) {
+        } elseif (false === is_readable($path)) {
             throw new Exception($path . ' not readable', 3);
         }
 

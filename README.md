@@ -29,6 +29,6 @@ To start the framework see the wiki:
 ## TODO
 
 - [ ] Auth
-- [ ] Redirect
+- [x] Redirect
 - [ ] ORM
 - [ ] Unit testing

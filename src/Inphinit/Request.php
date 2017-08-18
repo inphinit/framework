@@ -17,17 +17,15 @@ class Request
      * Get current HTTP path or route path
      *
      * @param bool $info
-     * @return string|bool
+     * @return string
      */
     public static function path($info = false)
     {
         if ($info) {
             return \UtilsPath();
-        } elseif (isset($_SERVER['REQUEST_URI'])) {
+        } else {
             return preg_replace('#\?.*$#', '', $_SERVER['REQUEST_URI']);
         }
-
-        return false;
     }
 
     /**
