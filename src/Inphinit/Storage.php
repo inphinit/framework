@@ -29,11 +29,11 @@ class Storage
      */
     public static function resolve($path)
     {
-        $path = strpos($path, '../') !== false ? Uri::canonicalize($path) : $path;
-
         if (empty($path)) {
             return false;
         }
+
+        $path = Uri::canonpath($path);
 
         if ($path . '/' === self::path() || strpos($path, self::path()) === 0) {
             return $path;
@@ -49,12 +49,12 @@ class Storage
      * @param int    $time
      * @return void
      */
-    public static function autoclean($path, $time = 0)
+    public static function autoclean($path, $time = -1)
     {
         $path = self::resolve($path);
 
         if ($path !== false && is_dir($path) && ($dh = opendir($path))) {
-            if (is_int($time) === false) {
+            if ($time < 0) {
                 $time = App::env('appdata_expires');
             }
 
@@ -178,9 +178,7 @@ class Storage
     {
         $path .= '/';
 
-        $files = array_diff(scandir($path), array('..', '.'));
-
-        foreach ($files as $file) {
+        foreach (array_diff(scandir($path), array('..', '.')) as $file) {
             $current = $path . $file;
 
             if (is_dir($current)) {

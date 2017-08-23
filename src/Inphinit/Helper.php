@@ -89,4 +89,27 @@ class Helper
     {
         return is_array($obj) || $obj instanceof \Traversable;
     }
+
+    /**
+     * Check if array is sequential, like ['foo', 'bar']
+     *
+     * @param mixed $obj
+     * @return bool
+     */
+    public static function seq(array $array)
+    {
+        $k = array_keys($array);
+        return $k === array_keys($k);
+    }
+
+    /**
+     * Check if array is associative, like [ 'bar' => foo', 'baz' => 'bar']
+     *
+     * @param mixed $obj
+     * @return bool
+     */
+    public static function assoc(array $array)
+    {
+        return false === self::isseq($array);
+    }
 }

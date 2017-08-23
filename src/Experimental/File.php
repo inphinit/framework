@@ -64,13 +64,9 @@ class File extends \Inphinit\File
             return false;
         }
 
-        $data = file_get_contents($path, false, null, -1, 5012);
-
         $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
-        $encode = finfo_buffer($finfo, $data);
+        $encode = finfo_buffer($finfo, file_get_contents($path, false, null, -1, 5012));
         finfo_close($finfo);
-
-        $data = null;
 
         return strcasecmp($encode, 'binary') === 0;
     }
@@ -88,9 +84,9 @@ class File extends \Inphinit\File
 
         $ch = curl_init('file://' . $path);
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_HEADER, 1);
-        curl_setopt($ch, CURLOPT_NOBODY, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
 
         $headers = curl_exec($ch);
         curl_close($ch);
@@ -106,8 +102,6 @@ class File extends \Inphinit\File
 
     private static function fullpath($path)
     {
-        $path = preg_match('#^[a-z\-]+:[\\\/]|^/#i', $path) ? $path : INPHINIT_ROOT . $path;
-
         if (false === self::exists($path) || false === is_file($path)) {
             throw new Exception($path . ' not found', 3);
         } elseif (false === is_readable($path)) {

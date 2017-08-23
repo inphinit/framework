@@ -230,15 +230,18 @@ class Packages implements \IteratorAggregate
             return false;
         }
 
+        $version = false;
+
         foreach ($data->packages as $package) {
             if ($package->name === $name) {
-                return $package->version;
+                $version = $package->version;
+                break;
             }
         }
 
         $data = null;
 
-        return false;
+        return $version;
     }
 
     private static function addSlashPackage($prefix)

@@ -48,7 +48,7 @@ class Xml
      * @param array|\Traversable $data
      * @return void
      */
-    public function fromArray($data)
+    public function fromArray(array $data)
     {
         $restore = \libxml_use_internal_errors(true);
 
@@ -69,7 +69,7 @@ class Xml
      */
     protected function saveErrors()
     {
-        foreach (libxml_get_errors() as $error) {
+        foreach (\libxml_get_errors() as $error) {
             if (in_array($error, $this->errors)) {
                 $this->logerrors[] = $error;
             }
@@ -153,13 +153,24 @@ class Xml
                     continue;
                 }
 
-                self::generate($value, $xmlNode->addChild($key));
+                if (Helper::seq($value)) {
+                    foreach ($value as $subvalue) {
+                        self::add($key, $subvalue, $xmlNode);
+                    }
+                } else {
+                    self::generate($value, $xmlNode->addChild($key));
+                }
             } elseif (preg_match('#^([a-z][a-z\d_]|[a-z])+$#i', $key)) {
-                $xmlNode->addChild($key, htmlspecialchars($value));
+                self::add($key, $value, $xmlNode);
             }
         }
 
         $data = $xmlNode = null;
+    }
+
+    private static function add($nameNode, $value, \SimpleXMLElement $xmlNode)
+    {
+        $xmlNode->addChild($nameNode, htmlspecialchars($value));
     }
 
     public function __destruct()

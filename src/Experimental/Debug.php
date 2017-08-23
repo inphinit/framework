@@ -16,6 +16,7 @@ use Inphinit\Viewing\View;
 
 class Debug
 {
+    private static $showBeforeView = false;
     private static $displayErrors;
     private static $views = array();
     private static $fatal = array(E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR, E_RECOVERABLE_ERROR);
@@ -74,7 +75,7 @@ class Debug
             View::dispatch();
         }
 
-        View::render(self::$views['error'], $data);
+        self::render(self::$views['error'], $data);
     }
 
     /**
@@ -84,11 +85,9 @@ class Debug
      */
     public static function renderPerformance()
     {
-        if (empty(self::$views['performance'])) {
-            return null;
+        if (!empty(self::$views['performance'])) {
+            self::render(self::$views['performance'], self::performance());
         }
-
-        View::render(self::$views['performance'], self::performance());
     }
 
     /**
@@ -98,13 +97,11 @@ class Debug
      */
     public static function renderClasses()
     {
-        if (empty(self::$views['classes'])) {
-            return null;
+        if (!empty(self::$views['classes'])) {
+            self::render(self::$views['classes'], array(
+                'classes' => self::classes()
+            ));
         }
-
-        View::render(self::$views['classes'], array(
-            'classes' => self::classes()
-        ));
     }
 
     /**
@@ -140,6 +137,10 @@ class Debug
                 self::$views[$type] = $view;
                 App::on('terminate', $callRender);
                 break;
+
+            case 'before':
+                self::$views[$type] = $view;
+            break;
 
             default:
                 throw new Exception($type . ' is not valid event', 2);
@@ -269,5 +270,15 @@ class Debug
             'file' => $file,
             'line' => $line
         );
+    }
+
+    private static function render($view, $data)
+    {
+        if (!self::$showBeforeView && !empty(self::$views['before'])) {
+            self::$showBeforeView = true;
+            View::render(self::$views['before']);
+        }
+
+        View::render($view, $data);
     }
 }

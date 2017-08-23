@@ -93,7 +93,7 @@ class App
      *
      * <ul>
      * <li>0 - Unexecuted</li>
-     * <li>1 - Initiade</li>
+     * <li>1 - Initiated</li>
      * <li>2 - Interactive</li>
      * <li>3 - Ready</li>
      * <li>4 - Finished</li>

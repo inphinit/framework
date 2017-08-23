@@ -59,46 +59,38 @@ class Uri
             $text = preg_replace('#[^a-z\d\-]#i', '', $text);
         }
 
-        $text = preg_replace('#-+-#', '-', $text);
-
-        return trim($text, '-');
+        return trim(preg_replace('#--+#', '-', $text), '-');
     }
 
     /**
      * Canonicalize paths
      *
      * @param string $path
-     * @param bool   $backspace
      * @return string
      */
-    public static function canonicalize($path, $backspace = true)
+    public static function canonpath($path)
     {
-        if ($backspace) {
-            $path = strtr($path, '\\', '/');
-        }
+        $path = strtr($path, '\\', '/');
 
-        if (preg_match('#(../|//)#', $path) === 0) {
+        if (preg_match('#\.\./|//|\./#', $path) === 0) {
             return $path;
         }
 
-        while (strpos($path, '../') === 0) {
-            $path = substr($path, 3);
-        }
+        $path = preg_replace('#//+#', '/', $path);
 
-        $items = explode('/', $path);
         $canonical = array();
 
-        foreach ($items as $item) {
+        foreach (explode('/', $path) as $item) {
             if ($item === '..') {
                 array_pop($canonical);
-            } elseif ($item !== '.' && $item !== '') {
+            } elseif ($item !== '.') {
                 $canonical[] = $item;
             }
         }
 
-        $path = implode('/', $canonical) . (substr($path, -1) === '/' ? '/' : '');
+        $path = implode('/', $canonical);
 
-        $canonical = $items = null;
+        $canonical = null;
 
         return $path;
     }
@@ -107,53 +99,62 @@ class Uri
      * Normalize URL, include canonicalized path
      *
      * @param string $url
-     * @return string
+     * @return string|bool
      */
     public static function normalize($url)
     {
-        $url = parse_url($url);
+        $u = parse_url(preg_replace('#^file:/+([a-z]+:)#i', '$1', $url));
 
-        if ($url === false) {
+        if ($u === false) {
             return $url;
         }
 
-        $scheme = empty($url['scheme']) ? null : strtolower($url['scheme']);
+        if (empty($u['scheme'])) {
+            $u = null;
+            return false;
+        }
 
-        $normalized = $scheme === 'file' ? 'file://' : ($url['scheme'] . '://');
+        $scheme = strtolower($u['scheme']);
 
-        if (isset($url['user'])) {
-            $normalized .= $url['user'];
-            $normalized .= isset($url['pass']) ? (':' . $url['pass']) : '';
+        if (strlen($scheme) > 1) {
+            $normalized = $scheme . '://';
+        } else {
+            $normalized = strtoupper($scheme) . ':';
+        }
+
+        if (isset($u['user'])) {
+            $normalized .= $u['user'];
+            $normalized .= isset($u['pass']) ? (':' . $u['pass']) : '';
             $normalized .= '@';
         }
 
-        if (isset($url['host'])) {
+        if (isset($u['host'])) {
             if (in_array($scheme, static::$defaultSchemes)) {
-                $host = urldecode($url['host']);
-                $normalized .= mb_strtolower($host);
+                $normalized .= mb_strtolower(urldecode($u['host']));
             } else {
-                $normalized .= $url['host'];
+                $normalized .= $u['host'];
             }
         }
 
-        if (isset($url['port']) && !in_array($scheme . ':' . $url['port'], static::$defaultPorts)) {
-            $normalized .= ':' . $url['port'];
+        if (isset($u['port']) && !in_array($scheme . ':' . $u['port'], static::$defaultPorts)) {
+            $normalized .= ':' . $u['port'];
         }
 
-        if (empty($url['path']) || $url['path'] === '/') {
+        if (empty($u['path']) || $u['path'] === '/') {
             $normalized .= '/';
         } else {
-            $normalized .= '/' . ltrim(self::canonicalize($url['path']), '/');
+            $normalized .= '/' . ltrim(self::canonpath($u['path']), '/');
         }
 
-        if (isset($url['query'])) {
-            $normalized .= '?' . $url['query'];
+        if (isset($u['query'])) {
+            $normalized .= self::canonquery($u['query'], '?');
         }
 
-        if (isset($url['fragment'])) {
-            $normalized .= '#' . $url['fragment'];
+        if (isset($u['fragment'])) {
+            $normalized .= '#' . $u['fragment'];
         }
 
+        $u = null;
         return $normalized;
     }
 
@@ -166,6 +167,26 @@ class Uri
      */
     public static function root($path = '')
     {
-        return rtrim(INPHINIT_URL, '/') . self::canonicalize($url);
+        return rtrim(INPHINIT_URL, '/') . self::canonpath($path);
+    }
+
+    /**
+     * Reorder querystring by "keys"
+     * if: `Uri::canonquery('z=1&u=2&a=5')` returns `a=5&u=2&z=1`
+     *
+     * @param string $path
+     * @param string $prefix
+     * @return string
+     */
+    public static function canonquery($query, $prefix = '')
+    {
+        parse_str(preg_replace('#^\?#', '', $query), $args);
+
+        if (empty($args)) {
+            return '';
+        }
+
+        ksort($args);
+        return $prefix . http_build_query($args);
     }
 }

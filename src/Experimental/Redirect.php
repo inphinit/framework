@@ -9,7 +9,7 @@
 
 namespace Inphinit\Experimental;
 
-use Inphinit\App;
+use Inphinit\Uri;
 use Inphinit\Regex;
 use Inphinit\Request;
 use Inphinit\Response;
@@ -52,7 +52,7 @@ class Redirect extends \Inphinit\Routing\Router
         } elseif (empty($path)) {
             throw new Exception('Path is not defined', 2);
         } elseif (strpos($path, '/') === 0) {
-            $path = rtrim(INPHINIT_URL, '/') . $path;
+            $path = Uri::root($path);
         }
 
         Response::status($code);
@@ -96,9 +96,9 @@ class Redirect extends \Inphinit\Routing\Router
         $url = substr($verb, 4);
         $j = preg_match_all('#\{:.*?:\}#', $url);
         $i = count($args);
-        $argc = $j > 0 || $i > 0;
+        $ac = $j > 0 || $i > 0;
 
-        if ($argc && $j === $i) {
+        if ($ac && $j === $i) {
             $i = 0;
 
             $to = preg_replace_callback('#\{:.*?:\}#', function () use ($args, &$i) {
@@ -108,7 +108,7 @@ class Redirect extends \Inphinit\Routing\Router
             if (!preg_match('#' . Regex::parse($url) . '#', $to)) {
                 throw new Exception('Invalid URL from regex: ' . $verb, 2);
             }
-        } elseif ($argc) {
+        } elseif ($ac) {
             throw new Exception('Invalid number of arguments', 2);
         }
 

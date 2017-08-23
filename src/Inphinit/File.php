@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Uri;
+
 class File
 {
     /**
@@ -20,7 +22,20 @@ class File
      */
     public static function exists($path)
     {
-        return file_exists($path) && \UtilsCaseSensitivePath(strtr($path, '\\', '/'));
+        if (file_exists($path) === false) {
+            return false;
+        }
+
+        $pinfo = pathinfo($path);
+        $rpath = strtr(realpath($path), '\\', '/');
+
+        if ($pinfo['dirname'] !== '.') {
+            $path = Uri::canonpath($pinfo['dirname']) . '/' . $pinfo['basename'];
+        }
+
+        $pinfo = null;
+
+        return substr($rpath, strlen($rpath) - strlen($path)) === $path;
     }
 
     /**
@@ -39,47 +54,48 @@ class File
 
         $perms = fileperms($path);
 
-        if ($full === true) {
-            if (($perms & 0xC000) === 0xC000) {
-                $info = 's';
-            } elseif (($perms & 0xA000) === 0xA000) {
-                $info = 'l';
-            } elseif (($perms & 0x8000) === 0x8000) {
-                $info = '-';
-            } elseif (($perms & 0x6000) === 0x6000) {
-                $info = 'b';
-            } elseif (($perms & 0x4000) === 0x4000) {
-                $info = 'd';
-            } elseif (($perms & 0x2000) === 0x2000) {
-                $info = 'c';
-            } elseif (($perms & 0x1000) === 0x1000) {
-                $info = 'p';
-            } else {
-                $info = 'u';
-            }
-
-            $info .= $perms & 0x0100 ? 'r' : '-';
-            $info .= $perms & 0x0080 ? 'w' : '-';
-            $info .= $perms & 0x0040 ?
-                        ($perms & 0x0800 ? 's' : 'x') :
-                            ($perms & 0x0800 ? 'S' : '-');
-
-            $info .= $perms & 0x0020 ? 'r' : '-';
-            $info .= $perms & 0x0010 ? 'w' : '-';
-            $info .= $perms & 0x0008 ?
-                        ($perms & 0x0400 ? 's' : 'x') :
-                            ($perms & 0x0400 ? 'S' : '-');
-
-            $info .= $perms & 0x0004 ? 'r' : '-';
-            $info .= $perms & 0x0002 ? 'w' : '-';
-            $info .= $perms & 0x0001 ?
-                        ($perms & 0x0200 ? 't' : 'x') :
-                            ($perms & 0x0200 ? 'T' : '-');
-
-            return $info;
+        if ($full !== true) {
+            return substr(sprintf('%o', $perms), -4);
         }
 
-        return substr(sprintf('%o', $perms), -4);
+        if (($perms & 0xC000) === 0xC000) {
+            $info = 's';
+        } elseif (($perms & 0xA000) === 0xA000) {
+            $info = 'l';
+        } elseif (($perms & 0x8000) === 0x8000) {
+            $info = '-';
+        } elseif (($perms & 0x6000) === 0x6000) {
+            $info = 'b';
+        } elseif (($perms & 0x4000) === 0x4000) {
+            $info = 'd';
+        } elseif (($perms & 0x2000) === 0x2000) {
+            $info = 'c';
+        } elseif (($perms & 0x1000) === 0x1000) {
+            $info = 'p';
+        } else {
+            $info = 'u';
+        }
+
+        $info .= $perms & 0x0100 ? 'r' : '-';
+        $info .= $perms & 0x0080 ? 'w' : '-';
+        $info .= $perms & 0x0040 ?
+                    ($perms & 0x0800 ? 's' : 'x') :
+                        ($perms & 0x0800 ? 'S' : '-');
+
+        $info .= $perms & 0x0020 ? 'r' : '-';
+        $info .= $perms & 0x0010 ? 'w' : '-';
+        $info .= $perms & 0x0008 ?
+                    ($perms & 0x0400 ? 's' : 'x') :
+                        ($perms & 0x0400 ? 'S' : '-');
+
+        $info .= $perms & 0x0004 ? 'r' : '-';
+        $info .= $perms & 0x0002 ? 'w' : '-';
+        $info .= $perms & 0x0001 ?
+                    ($perms & 0x0200 ? 't' : 'x') :
+                        ($perms & 0x0200 ? 'T' : '-');
+
+        return $info;
+
     }
 
     /**
@@ -92,7 +108,7 @@ class File
     {
         $mime = false;
 
-        if (self::exists($path) && is_readable($path)) {
+        if (is_readable($path)) {
             if (function_exists('finfo_open')) {
                 $buffer = file_get_contents($path, false, null, -1, 5012);
 
@@ -124,7 +140,7 @@ class File
      */
     public static function output($path, $length = 102400, $delay = 0)
     {
-        if (self::exists($path) === false || is_readable($path) === false) {
+        if (is_readable($path) === false) {
             return false;
         }
 

@@ -54,7 +54,9 @@ class Response
             self::$httpCode = \UtilsStatusCode();
         }
 
-        if (self::$httpCode === $code || headers_sent() || $code < 100 || $code > 599) {
+        if ($code === null || self::$httpCode === $code) {
+            return self::$httpCode;
+        } elseif (headers_sent() || $code < 100 || $code > 599) {
             return false;
         }
 
@@ -132,12 +134,16 @@ class Response
      * @param int    $contentLength
      * @return void
      */
-    public static function download($name, $contentLength = 0)
+    public static function download($name = null, $contentLength = 0)
     {
-        if (is_string($name)) {
-            self::putHeader('Content-Transfer-Encoding', 'Binary');
-            self::putHeader('Content-Disposition', 'attachment; filename="' . strtr($name, '"', '-') . '"');
+        if ($name) {
+            $name = '; filename="' . strtr($name, '"', '-') . '"';
+        } else {
+            $name = '';
         }
+
+        self::putHeader('Content-Transfer-Encoding', 'Binary');
+        self::putHeader('Content-Disposition', 'attachment' . $name);
 
         if ($contentLength > 0) {
             self::putHeader('Content-Length', $contentLength);
