@@ -163,14 +163,15 @@ class Packages implements \IteratorAggregate
             throw new \InvalidArgumentException('This path is not writabled: ' . $path);
         }
 
-        fwrite($handle, '<?php' . EOL . 'return array(');
-
         $first = true;
+        $eol = chr(10);
+
+        fwrite($handle, '<?php' . $eol . 'return array(');
 
         foreach ($this->libs as $key => $value) {
             $value = self::relativePath($value);
 
-            fwrite($handle, ($first ? '' : ',') . EOL . "    '" . $key . "' => '" . $value . "'");
+            fwrite($handle, ($first ? '' : ',') . $eol . "    '" . $key . "' => '" . $value . "'");
 
             $first = false;
         }
