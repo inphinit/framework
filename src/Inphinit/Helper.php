@@ -96,10 +96,14 @@ class Helper
      * @param mixed $obj
      * @return bool
      */
-    public static function seq(array $array)
+    public static function seq($array)
     {
-        $k = array_keys($array);
-        return $k === array_keys($k);
+        if (is_array($array)) {
+            $k = array_keys($array);
+            return $k === array_keys($k);
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -108,8 +112,8 @@ class Helper
      * @param mixed $obj
      * @return bool
      */
-    public static function assoc(array $array)
+    public static function assoc($array)
     {
-        return false === self::isseq($array);
+        return false === self::seq($array);
     }
 }
