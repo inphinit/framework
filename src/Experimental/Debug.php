@@ -16,6 +16,7 @@ use Inphinit\Viewing\View;
 
 class Debug
 {
+    private static $loadConfigs = false;
     private static $showBeforeView = false;
     private static $displayErrors;
     private static $views = array();
@@ -270,6 +271,38 @@ class Debug
             'file' => $file,
             'line' => $line
         );
+    }
+
+    /**
+     * Convert error message in a link, see `system/config/debug.php`
+     *
+     * @param string $message
+     * @return string
+     */
+    public static function searcherror($message)
+    {
+        if (self::$loadConfigs === false) {
+            App::config('debug');
+            self::$loadConfigs = true;
+        }
+
+        $link = App::env('searcherror');
+
+        if (strpos($a, '%error%') === -1) {
+            return $message;
+        }
+
+        return preg_replace_callback('#(^.*?)\s+in\s|(^.*?)$#', function ($matches)
+        {
+            $error = empty($matches[1]) ? $matches[2] : $matches[1];
+
+            $url = str_replace('%error%', urlencode($error), );
+            $url = htmlentities($url);
+
+            return '<a target="_blank" href="' . $url . '">' . $error . '</a>' .
+                    (empty($matches[1]) ? '' : ' in ');
+
+        }, $message);
     }
 
     private static function render($view, $data)

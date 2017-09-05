@@ -44,11 +44,17 @@ class Dom extends \DOMDocument
     public function fromArray(array $data)
     {
         if (count($data) > 1) {
-            throw new Exception('xxxxxxxxxxxxx', 2);
+            throw new Exception('Root array accepts only a key', 2);
+        } elseif (count($data) === 1 && Helper::seq($data[key($data)])) {
+            throw new Exception('Document accpet only a node', 2);
         }
 
         $restore = \libxml_use_internal_errors(true);
         \libxml_clear_errors();
+
+        if ($this->documentElement) {
+            $this->removeChild($this->documentElement);
+        }
 
         $this->generate($this, $data);
         $this->saveErrors();
@@ -177,6 +183,8 @@ class Dom extends \DOMDocument
             throw new Exception('Can\'t create tmp file', 2);
         } elseif (copy($tmp, $path) === false) {
             throw new Exception('Cannot copy tmp file to ' . $path, 2);
+        } else {
+            unlink($tmp);
         }
     }
 

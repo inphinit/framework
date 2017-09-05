@@ -103,7 +103,19 @@ class Storage
     }
 
     /**
-     * Create a file in a folder in storage
+     * Create a file in a folder or overwrite existing file
+     *
+     * @param string $path
+     * @param string $data
+     * @return bool
+     */
+    public static function write($path, $data = null)
+    {
+        self::put($path, $data, LOCK_EX);
+    }
+
+    /**
+     * Create a file in a folder in storage or append data to existing file
      *
      * @param string $path
      * @param string $data
