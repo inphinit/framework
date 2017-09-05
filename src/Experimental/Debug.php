@@ -288,15 +288,15 @@ class Debug
 
         $link = App::env('searcherror');
 
-        if (strpos($a, '%error%') === -1) {
+        if (strpos($link, '%error%') === -1) {
             return $message;
         }
 
-        return preg_replace_callback('#(^.*?)\s+in\s|(^.*?)$#', function ($matches)
+        return preg_replace_callback('#(^.*?)\s+in\s|(^.*?)$#', function ($matches) use ($link)
         {
             $error = empty($matches[1]) ? $matches[2] : $matches[1];
 
-            $url = str_replace('%error%', urlencode($error), );
+            $url = str_replace('%error%', urlencode($error), $link);
             $url = htmlentities($url);
 
             return '<a target="_blank" href="' . $url . '">' . $error . '</a>' .
