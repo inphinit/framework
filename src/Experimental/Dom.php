@@ -135,7 +135,7 @@ class Dom extends \DOMDocument
      * Example:
      * <pre>
      * <code>
-     * $xml = new Document('root');
+     * $xml = new Dom;
      *
      * $xml->fromArray(array(
      *     'foo' => 'bar'
