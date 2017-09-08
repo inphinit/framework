@@ -292,15 +292,15 @@ class Debug
             return $message;
         }
 
-        return preg_replace_callback('#(^.*?)\s+in\s|(^.*?)$#', function ($matches) use ($link)
+        return preg_replace_callback('#(^.*?)\s+in\s+(.*?:\d+)|(^.*?)$#', function ($matches) use ($link)
         {
-            $error = empty($matches[1]) ? $matches[2] : $matches[1];
+            $error = empty($matches[3]) ? $matches[1] : $matches[3];
 
             $url = str_replace('%error%', urlencode($error), $link);
             $url = htmlentities($url);
 
             return '<a target="_blank" href="' . $url . '">' . $error . '</a>' .
-                    (empty($matches[1]) ? '' : ' in ');
+                    (empty($matches[2]) ? '' : (' in ' . $matches[2]));
 
         }, $message);
     }

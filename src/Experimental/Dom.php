@@ -188,6 +188,37 @@ class Dom extends \DOMDocument
         }
     }
 
+    /**
+     * Get namespaces attributes in element
+     *
+     * @param string $path
+     * @param string $format Support xml, html, and json
+     * @throws \Inphinit\Experimental\Exception
+     * @return void
+     */
+    public function getNamespaces(\DOMElement $element)
+    {
+        if ($this->xpath === null) {
+            $this->xpath = new \DOMXPath($this);
+        }
+
+        $nodes = $this->xpath->query('namespace::*', $element);
+
+        $ns = array();
+
+        if ($nodes) {
+            foreach ($nodes as $node) {
+                $arr = $element->getAttribute($node->nodeName);
+
+                if ($arr) {
+                    $ns[$node->nodeName] = $arr;
+                }
+            }
+        }
+
+        return $ns;
+    }
+
     private function generate(\DOMNode $node, $data)
     {
         if (is_array($data) === false) {
@@ -238,20 +269,6 @@ class Dom extends \DOMDocument
             foreach ($nodes as $node) {
                 if ($node->nodeType === XML_ELEMENT_NODE && ($this->complete || $this->simple || ctype_alnum($node->nodeName))) {
                     $items[$node->nodeName][] = $this->nodeContents($node);
-                } elseif ($this->complete && $node->nodeType === XML_COMMENT_NODE) {
-                    $items['@comments'][] = $node->nodeValue;
-                }
-            }
-
-            if ($node && $toplevel && $this->complete) {
-                $ns = $this->getNamespaces();
-
-                if ($ns) {
-                    $items[$node->nodeName]['@attributes'] =
-                        $ns + (
-                            isset($items[$node->nodeName]['@attributes']) ?
-                            $items[$node->nodeName]['@attributes'] : array()
-                        );
                 }
             }
 
@@ -262,21 +279,25 @@ class Dom extends \DOMDocument
         }
     }
 
-    private function nodeContents($node)
+    private function nodeContents(\DOMElement $node)
     {
-        $extras = array();
+        $extras = array( '@attributes' => array() );
 
-        if ($this->complete && $node->hasAttributes()) {
-            $extras['@attributes'] = array();
-
+        if ($this->complete) {
             foreach ($node->attributes as $attribute) {
                 $extras['@attributes'][$attribute->nodeName] = $attribute->nodeValue;
             }
         }
 
+        if ($this->complete && ($ns = $this->getNamespaces($node))) {
+            $extras['@attributes'] = $extras['@attributes'] + $ns;
+        }
+
         if ($node->getElementsByTagName('*')->length) {
-            $r = $this->getNodes($node->childNodes) + $extras;
-        } elseif (empty($extras)) {
+            $r = $this->getNodes($node->childNodes) + (
+                empty($extras['@attributes']) ? array() : $extras
+            );
+        } elseif (empty($extras['@attributes'])) {
             return $node->nodeValue;
         } else {
             $r = array($node->nodeValue) + $extras;
@@ -314,24 +335,5 @@ class Dom extends \DOMDocument
         }
 
         return true;
-    }
-
-    private function getNamespaces()
-    {
-        if ($this->xpath === null) {
-            $this->xpath = new \DOMXPath($this);
-        }
-
-        $nodes = $this->xpath->query('namespace::*', $this->documentElement);
-
-        $ns = array();
-
-        if ($nodes) {
-            foreach ($nodes as $node) {
-                $ns[$node->nodeName] = $node->nodeValue;
-            }
-        }
-
-        return $ns;
     }
 }

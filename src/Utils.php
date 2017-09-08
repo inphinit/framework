@@ -50,7 +50,7 @@ function UtilsShutDown()
     $e = error_get_last();
 
     if ($e !== null) {
-        UtilsError($e['type'], $e['message'], $e['file'], $e['line'], null);
+        UtilsError($e['type'], $e['message'], $e['file'], $e['line']);
     }
 
     App::trigger('terminate');
@@ -171,7 +171,8 @@ function UtilsAutoload()
  * @param array  $details
  * @return bool
  */
-function UtilsError($type, $message, $file, $line, $details)
+
+function UtilsError($type, $message, $file, $line, $details = null)
 {
     static $preventDuplicate = '';
 
@@ -179,7 +180,7 @@ function UtilsError($type, $message, $file, $line, $details)
 
     if (strpos($preventDuplicate, $str) === false) {
         $preventDuplicate .= $str;
-        App::trigger('error', array($type, $message, $file, $line, $details));
+        App::trigger('error', array($type, $message, $file, $line));
     }
 
     return false;
