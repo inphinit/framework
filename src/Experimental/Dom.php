@@ -16,6 +16,7 @@ class Dom extends \DOMDocument
 {
     private $xpath;
     private $logerrors = array();
+    private $internalErr;
 
     const XML = 1;
     const HTML = 2;
@@ -39,6 +40,7 @@ class Dom extends \DOMDocument
      * Convert array in node elements
      *
      * @param array|\Traversable $data
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public function fromArray(array $data)
@@ -49,18 +51,17 @@ class Dom extends \DOMDocument
             throw new Exception('Document accpet only a node', 2);
         }
 
-        $restore = \libxml_use_internal_errors(true);
-        \libxml_clear_errors();
-
         if ($this->documentElement) {
             $this->removeChild($this->documentElement);
         }
 
-        $this->generate($this, $data);
-        $this->saveErrors();
+        $this->enableInternal(true);
 
-        \libxml_clear_errors();
-        \libxml_use_internal_errors($restore);
+        $this->generate($this, $data);
+
+        $this->raise();
+
+        $this->enableInternal(false);
     }
 
     /**
@@ -79,18 +80,16 @@ class Dom extends \DOMDocument
     /**
      * Convert Dom to json string
      *
-     * @param int $format
-     *
+     * @param int $type
+     * @throws \Inphinit\Experimental\Exception
      * @return array
      */
-    public function toArray($format = Dom::SIMPLE)
+    public function toArray($type = Dom::SIMPLE)
     {
-        $this->simple = false;
-        $this->complete = false;
-
-        switch ($format) {
+        switch ($type) {
             case Dom::MININAL:
-                //....
+                $this->simple = false;
+                $this->complete = false;
             break;
             case Dom::SIMPLE:
                 $this->simple = true;
@@ -99,7 +98,7 @@ class Dom extends \DOMDocument
                 $this->complete = true;
             break;
             default:
-                throw new Exception('Error Processing Request', 1);
+                throw new Exception('Invalid type', 2);
         }
 
         return $this->getNodes($this->childNodes, true);
@@ -110,11 +109,15 @@ class Dom extends \DOMDocument
      *
      * @return void
      */
-    protected function saveErrors()
+    protected static function raise()
     {
-        foreach (\libxml_get_errors() as $error) {
-            if (in_array($error, $this->errors)) {
-                $this->logerrors[] = $error;
+        $err = \libxml_get_errors();
+
+        if (isset($err[0])) {
+            if (isset($err[0]->file) && !preg_match('#https?://#', $err[0]->file)) {
+                throw new DomException;
+            } else {
+                throw new Exception($err[0]->message, 3);
             }
         }
     }
@@ -122,11 +125,72 @@ class Dom extends \DOMDocument
     /**
      * Get internal errors from libxml
      *
-     * @return array
+     * @return mixed
      */
-    public function errors()
+    public function loadXML($source, $options = 0)
     {
-        return $this->logerrors;
+        $this->enableInternal(true);
+
+        $r = parent::loadXML($source, $options);
+
+        self::raise();
+
+        $this->enableInternal(false);
+
+        return $r;
+    }
+
+    /**
+     *
+     * @return bool
+     */
+    public function load($filename, $options = 0)
+    {
+        $this->enableInternal(true);
+
+        $r = parent::load($filename, $options);
+
+        self::raise();
+
+        $this->enableInternal(false);
+
+        return $r;
+    }
+
+    /**
+     * Get internal errors from libxml
+     *
+     * @return bool
+     */
+    public function loadHTML($source, $options = 0)
+    {
+        $this->enableInternal(true);
+
+        $r = parent::loadHTML($source, $options);
+
+        self::raise();
+
+        $this->enableInternal(false);
+
+        return $r;
+    }
+
+    /**
+     * Get internal errors from libxml
+     *
+     * @return bool
+     */
+    public function loadHTMLFile($filename, $options = 0)
+    {
+        $this->enableInternal(true);
+
+        $r = parent::loadHTMLFile($filename, $options);
+
+        self::raise();
+
+        $this->enableInternal(false);
+
+        return $r;
     }
 
     /**
@@ -156,7 +220,7 @@ class Dom extends \DOMDocument
      * Save file to location
      *
      * @param string $path
-     * @param string $format Support xml, html, and json
+     * @param int    $format Support xml, html, and json
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
@@ -189,10 +253,9 @@ class Dom extends \DOMDocument
     }
 
     /**
-     * Get namespaces attributes in element
+     * Get namespace attributes from element
      *
-     * @param string $path
-     * @param string $format Support xml, html, and json
+     * @param \DOMElement $element
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
@@ -217,6 +280,17 @@ class Dom extends \DOMDocument
         }
 
         return $ns;
+    }
+
+    private function enableInternal($enable)
+    {
+        if ($enable) {
+            $this->restore = \libxml_use_internal_errors(true);
+            \libxml_clear_errors();
+        } else {
+            \libxml_clear_errors();
+            \libxml_use_internal_errors($this->restore);
+        }
     }
 
     private function generate(\DOMNode $node, $data)
