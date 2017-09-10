@@ -55,6 +55,8 @@ class Debug
     {
         if (empty(self::$views['error'])) {
             return null;
+        } elseif (preg_match('#allowed\s+memory\s+size\s+of\s+\d+\s+bytes\s+exhausted\s+\(tried\s+to\s+allocate\s+\d+\s+bytes\)#i', $message)) {
+            die('<br><strong>Fatal error:</strong> ' . $message . ' in <strong>' . $file . '</strong> on line <strong>' . $line . '</strong>');
         }
 
         $data = self::details($message, $file, $line);
@@ -131,13 +133,13 @@ class Debug
 
                     ini_set('display_errors', '0');
                 }
-                break;
+            break;
 
             case 'classes':
             case 'performance':
                 self::$views[$type] = $view;
                 App::on('terminate', $callRender);
-                break;
+            break;
 
             case 'before':
                 self::$views[$type] = $view;
@@ -228,10 +230,10 @@ class Debug
     {
         if ($line <= 0 || is_file($file) === false) {
             return false;
-        } elseif ($line >= 5) {
+        } elseif ($line > 5) {
             $init = $line - 5;
             $end  = $line + 5;
-            $breakpoint = 5;
+            $breakpoint = 6;
         } else {
             $init = 0;
             $end  = 5;
@@ -240,7 +242,7 @@ class Debug
 
         return array(
             'breakpoint' => $breakpoint,
-            'preview' => explode(EOL, File::portion($file, $init, $end, true))
+            'preview' => preg_split('#\r\n|\n#', File::portion($file, $init, $end, true))
         );
     }
 
