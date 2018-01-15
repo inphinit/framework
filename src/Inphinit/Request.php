@@ -12,6 +12,7 @@ namespace Inphinit;
 class Request
 {
     private static $reqHeaders;
+    private static $reqHeadersLower;
 
     /**
      * Get current HTTP path or route path
@@ -21,11 +22,7 @@ class Request
      */
     public static function path($info = false)
     {
-        if ($info) {
-            return \UtilsPath();
-        } else {
-            return preg_replace('#\?.*$#', '', $_SERVER['REQUEST_URI']);
-        }
+        return $info ? \UtilsPath() : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     }
 
     /**
@@ -58,25 +55,16 @@ class Request
      */
     public static function header($name = null)
     {
+        if (self::$reqHeaders === null) {
+            self::generate();
+        }
+
         if (is_string($name)) {
-            $name = 'HTTP_' . strtoupper(strtr($name, '-', '_'));
-            return isset($_SERVER[$name]) ? $_SERVER[$name] : false;
-        } elseif (self::$reqHeaders !== null) {
-            return self::$reqHeaders;
+            $name = strtolower($name);
+            return isset(self::$reqHeadersLower[$name]) ? self::$reqHeadersLower[$name] : false;
         }
 
-        $headers = array();
-
-        foreach ($_SERVER as $key => $value) {
-            if (strpos($key, 'HTTP_') === 0) {
-                $current = Helper::capitalize(substr($key, 5), '_', '-');
-                $headers[$current] = $value;
-            }
-        }
-
-        self::$reqHeaders = $headers;
-
-        return $headers;
+        return self::$reqHeaders;
     }
 
     /**
@@ -191,15 +179,36 @@ class Request
         return copy('php://input', $tmp) ? fopen($tmp, $mode) : false;
     }
 
-    private static function data($data, $key, $alternative = false)
+    private static function data(&$data, $key, $alternative = false)
     {
         if (empty($data)) {
             return $alternative;
         } elseif (strpos($key, '.') === false) {
-            return empty($data[$key]) ? $data[$key] : $alternative;
+            return isset($data[$key]) ? $data[$key] : $alternative;
         }
 
         $data = Helper::extract($key, $data);
         return $data === false ? $alternative : $data;
+    }
+
+    private static function generate()
+    {
+        $headers = array();
+
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+        } else {
+            foreach ($_SERVER as $key => $value) {
+                if (strpos($key, 'HTTP_') === 0) {
+                    $current = Helper::capitalize(substr($key, 5), '_', '-');
+                    $headers[$current] = $value;
+                }
+            }
+        }
+
+        self::$reqHeaders = $headers;
+        self::$reqHeadersLower = array_change_key_case($headers, CASE_LOWER);
+
+        $headers = null;
     }
 }

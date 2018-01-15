@@ -71,8 +71,7 @@ class Helper
             if (self::iterable($items) && array_key_exists($value, $items)) {
                 $items = $items[$value];
             } else {
-                $items = false;
-                break;
+                return false;
             }
         }
 

@@ -11,7 +11,7 @@ namespace Inphinit;
 
 class Regex
 {
-    private static $rearg = '[[\]{}()|?^$\#*+\\.]';
+    private static $rearg = '[[\]{}()|!?^$\#=*+\\.]';
 
     /**
      * Parse string like.: `{:[a-z]+:}.domain.com` or `/user/{:[a-z]+:}/{:\d+:}` to regex
