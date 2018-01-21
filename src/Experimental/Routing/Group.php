@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -11,7 +11,7 @@ namespace Inphinit\Experimental\Routing;
 
 use Inphinit\App;
 use Inphinit\Regex;
-use Inphinit\Request;
+use Inphinit\Http\Request;
 use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
 

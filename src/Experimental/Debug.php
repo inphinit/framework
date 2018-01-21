@@ -2,7 +2,7 @@
 /*
  * Experimental
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -10,8 +10,8 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
-use Inphinit\Request;
-use Inphinit\Response;
+use Inphinit\Http\Request;
+use Inphinit\Http\Response;
 use Inphinit\Viewing\View;
 
 class Debug

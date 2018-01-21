@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -22,7 +22,7 @@ class Uri
     /**
      * Define default port to schemes, you can customize in a extended class
      * If put a new port with scheme he is removed in final url, eg. `'myscheme:900',`
-     * `Url::normalize('myscheme://host:900/test')` => `myscheme://host/test`
+     * `ClassExtendedFromUri::normalize('myscheme://host:900/test')` => `myscheme://host/test`
      *
      * @var array
      */

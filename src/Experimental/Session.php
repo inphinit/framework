@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -10,7 +10,7 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\Storage;
-use Inphinit\Response;
+use Inphinit\Http\Response;
 
 class Session implements \IteratorAggregate
 {

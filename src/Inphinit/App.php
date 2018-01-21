@@ -2,23 +2,20 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
 
 namespace Inphinit;
 
+use Inphinit\Http\Response;
 use Inphinit\Viewing\View;
 use Inphinit\Routing\Route;
 
 class App
 {
-    /**
-     * Inphinit framework version
-     *
-     * @var string
-     */
+    /** Inphinit framework version */
     const VERSION = '0.0.1';
 
     private static $events = array();
@@ -213,7 +210,7 @@ class App
 
         $output = call_user_func_array($callback, $route['args']);
 
-        if (class_exists('\\Inphinit\\Response', false)) {
+        if (class_exists('\\Inphinit\\Http\\Response', false)) {
             Response::dispatch();
         }
 

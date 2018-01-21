@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -94,7 +94,7 @@ class Packages implements \IteratorAggregate
 
             foreach ($data as $key => $value) {
                 if (false === empty($value)) {
-                    $this->libs[self::addSlashPackage($key)] = $value;
+                    $this->libs[addcslashes($key, '\\')] = $value;
                     $i++;
                 }
             }
@@ -245,11 +245,6 @@ class Packages implements \IteratorAggregate
         return $version;
     }
 
-    private static function addSlashPackage($prefix)
-    {
-        return str_replace('\\', '\\\\', $prefix);
-    }
-
     private function load($path)
     {
         if (false === is_file($path)) {
@@ -261,7 +256,7 @@ class Packages implements \IteratorAggregate
 
         foreach ($data as $key => $value) {
             if (isset($value[0]) && is_string($value[0])) {
-                $this->libs[self::addSlashPackage($key)] = $value[0];
+                $this->libs[addcslashes($key, '\\')] = $value[0];
                 $i++;
             }
         }

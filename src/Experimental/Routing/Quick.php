@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2017 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -23,25 +23,13 @@ class Quick extends Router
     private $format;
     private $ready = false;
 
-    /**
-     * Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo`
-     *
-     * @var int
-     */
+    /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo` */
     const BOTH = 1;
 
-    /**
-     * Create a route with slash at the end, like: `/foo/`
-     *
-     * @var int
-     */
+    /** Create a route with slash at the end, like: `/foo/` */
     const SLASH = 2;
 
-    /**
-     * Create a route without slash at the end, like: `/foo`
-     *
-     * @var int
-     */
+    /** Create a route without slash at the end, like: `/foo` */
     const NOSLASH = 3;
 
     /**
