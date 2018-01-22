@@ -10,18 +10,19 @@
 namespace Inphinit\Experimental\Http;
 
 use Inphinit\Http\Request;
+use Inphinit\Experimental\Exception;
 
 class Negotiation
 {
     private $headers;
 
-    /** Sort headers low to high by q-factors */
+    /** Sort values in the header low to high by q-factors */
     const LOW = 1;
 
-    /** Sort headers high to low by q-factors */
+    /** Sort values in the header high to low by q-factors */
     const HIGH = 2;
 
-    /** Get all values from accept headers (without q-factor) */
+    /** Get all values from a accept header (without q-factor) */
     const ALL = 3;
 
     /**
@@ -45,7 +46,8 @@ class Negotiation
      *
      * @param int $level Sorts languages using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
-     * @return array
+     * @throws \Inphinit\Experimental\Exception
+     * @return array|bool
      */
     public function languages($level = self::HIGH)
     {
@@ -57,6 +59,7 @@ class Negotiation
      *
      * @param int $level Sorts charsets using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
+     * @throws \Inphinit\Experimental\Exception
      * @return array
      */
     public function charsets($level = self::HIGH)
@@ -69,7 +72,8 @@ class Negotiation
      *
      * @param string $level Sorts encodings using `LOW` or `HIGH` constants,
      *                      or return all in an simple array use `ALL` constant
-     * @return array
+     * @throws \Inphinit\Experimental\Exception
+     * @return array|bool
      */
     public function encodings($level = self::HIGH)
     {
@@ -81,7 +85,8 @@ class Negotiation
      *
      * @param int $level Sorts types using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
-     * @return array
+     * @throws \Inphinit\Experimental\Exception
+     * @return array|bool
      */
     public function types($level = self::HIGH)
     {
@@ -94,6 +99,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
+     * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
     public function getLanguage($alternative = false)
@@ -108,6 +114,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
+     * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
     public function getCharset($alternative = false)
@@ -122,6 +129,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
+     * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
     public function getEncoding($alternative = false)
@@ -136,6 +144,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
+     * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
     public function getType($alternative = false)
@@ -149,7 +158,8 @@ class Negotiation
      *
      * @param string $header
      * @param int    $level
-     * @return mixed
+     * @throws \Inphinit\Experimental\Exception
+     * @return array|bool
      */
     public function header($header, $level = self::HIGH)
     {
@@ -167,37 +177,41 @@ class Negotiation
      *
      * @param string $value
      * @param int    $level
-     * @return mixed
+     * @throws \Inphinit\Experimental\Exception
+     * @return array
      */
     public static function qFactor($value, $level = self::HIGH)
     {
-        $q = explode(',', $value);
-        $j = count($q);
+        $multivalues = explode(',', $value);
 
-        for ($i = 0; $i < $j; $i++) {
-            $current = explode(';', $q[$i], 2);
-
-            if (empty($current[1])) {
-               $qfactor = 1.0;
-            } else {
-                $qfactor = floatval( str_replace('q=', '', $current[1]) );
+        foreach ($multivalues as &$hvalues) {
+            if (substr_count($hvalues, ';') > 1) {
+                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 2);
             }
 
-            $q[$i] = array(
+            $current = explode(';', $hvalues, 2);
+
+            if (empty($current[1])) {
+               $qvalue = 1.0;
+            } else {
+                $qvalue = self::parseQValue($current[1]);
+            }
+
+            $hvalues = array(
                 'value' => trim($current[0]),
-                'qfactor' => $qfactor
+                'qfactor' => $qvalue
             );
         }
 
         if ($level === self::ALL) {
-            foreach ($q as &$item) {
+            foreach ($multivalues as &$item) {
                 $item = $item['value'];
             }
 
-            return $q;
+            return $multivalues;
         }
 
-        usort($q, function ($a, $b) use ($level) {
+        usort($multivalues, function ($a, $b) use ($level) {
             if ($level === self::LOW) {
                 return $a['qfactor'] > $b['qfactor'];
             } else {
@@ -205,7 +219,7 @@ class Negotiation
             }
         });
 
-        return $q;
+        return $multivalues;
     }
 
     private function filter($key)
@@ -215,5 +229,18 @@ class Negotiation
             strpos($key, 'accept') === 0 &&
             strpos($key, 'accept-control-') !== 0
         );
+    }
+
+    private static function parseQValue($value)
+    {
+        $qvalue = str_replace('q=', '', $value);
+
+        if (is_numeric($qvalue) === false) {
+            throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 3);
+        } else if ($qvalue > 1) {
+            throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0 to 1): "' . $value . '"', 3);
+        }
+
+        return floatval($qvalue);
     }
 }

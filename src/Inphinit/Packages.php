@@ -266,6 +266,6 @@ class Packages implements \IteratorAggregate
 
     public function __destruct()
     {
-        $this->libs = null;
+        $this->logs = $this->libs = null;
     }
 }

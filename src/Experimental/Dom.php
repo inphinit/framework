@@ -285,11 +285,11 @@ class Dom extends \DOMDocument
     private function enableInternal($enable)
     {
         if ($enable) {
-            $this->restore = \libxml_use_internal_errors(true);
+            $this->internalErr = \libxml_use_internal_errors(true);
             \libxml_clear_errors();
         } else {
             \libxml_clear_errors();
-            \libxml_use_internal_errors($this->restore);
+            \libxml_use_internal_errors($this->internalErr);
         }
     }
 

@@ -137,6 +137,6 @@ class Shell
 
     public function __destruct()
     {
-        $this->io = null;
+        $this->argv = $this->io = null;
     }
 }

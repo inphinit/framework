@@ -348,6 +348,7 @@ class Session implements \IteratorAggregate
             fclose($this->handle);
         }
 
+        $this->opts =
         $this->data =
         $this->iterator =
         $this->deletions =
