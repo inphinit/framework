@@ -26,7 +26,9 @@ class File
             return false;
         }
 
+        $path = preg_replace('#^file:/+([a-z]:/|/)#i', '$1', $path);
         $pinfo = pathinfo($path);
+
         $rpath = strtr(realpath($path), '\\', '/');
 
         if ($pinfo['dirname'] !== '.') {
@@ -35,7 +37,7 @@ class File
 
         $pinfo = null;
 
-        return substr($rpath, strlen($rpath) - strlen($path)) === $path;
+        return $rpath === $path || substr($rpath, strlen($rpath) - strlen($path)) === $path;
     }
 
     /**

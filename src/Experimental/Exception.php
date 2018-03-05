@@ -9,7 +9,7 @@
 
 namespace Inphinit\Experimental;
 
-class Exception extends \ErrorException
+class Exception extends \Exception
 {
     /**
      * Raise an exception
@@ -20,13 +20,15 @@ class Exception extends \ErrorException
      * @param int    $severity
      * @return void
      */
-    public function __construct($message, $trace = 1, $code = 0, $severity = E_ERROR)
+    public function __construct($message = null, $trace = 0, $code = 0)
     {
-        if ($trace < 1) {
-            $trace = 1;
+        if ($trace > 0) {
+            $data = Debug::caller($trace);
+
+            $this->file = $data['file'];
+            $this->line = $data['line'];
         }
 
-        $data = Debug::caller($trace);
-        parent::__construct($message, $code, $severity, $data['file'], $data['line']);
+        parent::__construct($message, $code);
     }
 }

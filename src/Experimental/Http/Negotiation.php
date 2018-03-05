@@ -34,11 +34,9 @@ class Negotiation
      */
     public function __construct(array $headers = null)
     {
-        $headers = array_change_key_case($headers ? $headers : Request::header(), CASE_LOWER);
+        $this->headers = array_change_key_case($headers ? $headers : Request::header(), CASE_LOWER);
 
-        $this->headers = array_filter($headers, array($this, 'filter'), ARRAY_FILTER_USE_KEY);
-
-        $headers = null;
+        self::filter($this->headers);
     }
 
     /**
@@ -49,7 +47,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return array|bool
      */
-    public function languages($level = self::HIGH)
+    public function acceptLanguage($level = self::HIGH)
     {
         return $this->header('accept-language', $level);
     }
@@ -62,7 +60,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return array
      */
-    public function charsets($level = self::HIGH)
+    public function acceptCharset($level = self::HIGH)
     {
         return $this->header('accept-charset', $level);
     }
@@ -75,7 +73,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return array|bool
      */
-    public function encodings($level = self::HIGH)
+    public function acceptEncoding($level = self::HIGH)
     {
         return $this->header('accept-encoding', $level);
     }
@@ -88,7 +86,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return array|bool
      */
-    public function types($level = self::HIGH)
+    public function accept($level = self::HIGH)
     {
         return $this->header('accept', $level);
     }
@@ -104,8 +102,8 @@ class Negotiation
      */
     public function getLanguage($alternative = false)
     {
-        $header = $this->languages();
-        return $header ? $header[0]['value'] : $alternative;
+        $headers = $this->languages();
+        return $headers ? key($headers) : $alternative;
     }
 
     /**
@@ -119,8 +117,8 @@ class Negotiation
      */
     public function getCharset($alternative = false)
     {
-        $header = $this->charsets();
-        return $header ? $header[0]['value'] : $alternative;
+        $headers = $this->charsets();
+        return $headers ? key($headers) : $alternative;
     }
 
     /**
@@ -134,8 +132,8 @@ class Negotiation
      */
     public function getEncoding($alternative = false)
     {
-        $header = $this->encodings();
-        return $header ? $header[0]['value'] : $alternative;
+        $headers = $this->encodings();
+        return $headers ? key($headers) : $alternative;
     }
 
     /**
@@ -147,10 +145,10 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getType($alternative = false)
+    public function getAccept($alternative = false)
     {
-        $header = $this->types();
-        return $header ? $header[0]['value'] : $alternative;
+        $headers = $this->accept();
+        return $headers ? key($headers) : $alternative;
     }
 
     /**
@@ -183,8 +181,9 @@ class Negotiation
     public static function qFactor($value, $level = self::HIGH)
     {
         $multivalues = explode(',', $value);
+        $headers = array();
 
-        foreach ($multivalues as &$hvalues) {
+        foreach ($multivalues as $hvalues) {
             if (substr_count($hvalues, ';') > 1) {
                 throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 2);
             }
@@ -197,38 +196,31 @@ class Negotiation
                 $qvalue = self::parseQValue($current[1]);
             }
 
-            $hvalues = array(
-                'value' => trim($current[0]),
-                'qfactor' => $qvalue
-            );
+            $headers[ trim($current[0]) ] = $qvalue;
         }
+
+        $multivalues = null;
 
         if ($level === self::ALL) {
-            foreach ($multivalues as &$item) {
-                $item = $item['value'];
-            }
-
-            return $multivalues;
+            return array_keys($headers);
         }
 
-        usort($multivalues, function ($a, $b) use ($level) {
-            if ($level === self::LOW) {
-                return $a['qfactor'] > $b['qfactor'];
-            } else {
-                return $a['qfactor'] <= $b['qfactor'];
-            }
-        });
+        if ($level === self::LOW) {
+            asort($headers, SORT_NUMERIC);
+        } else {
+            arsort($headers, SORT_NUMERIC);
+        }
 
-        return $multivalues;
+        return $headers;
     }
 
-    private function filter($key)
+    private static function filter(&$headers)
     {
-        return $key === 'te' || (
-            $key !== 'accept-ranges' &&
-            strpos($key, 'accept') === 0 &&
-            strpos($key, 'accept-control-') !== 0
-        );
+        foreach ($headers as $key => &$value) {
+            if ($key !== 'te' && $key !== 'accept-ranges' && strpos($key, 'accept-') === 0 && strpos($key, 'accept-control-') !== 0) {
+                unset($value);
+            }
+        }
     }
 
     private static function parseQValue($value)

@@ -36,7 +36,7 @@ class Debug
         App::off('terminate', array( $nc, 'renderClasses' ));
 
         if (false === empty(self::$displayErrors)) {
-            ini_set('display_errors', self::$displayErrors);
+            function_exists('init_set') && ini_set('display_errors', self::$displayErrors);
 
             self::$displayErrors = null;
         }
@@ -59,7 +59,7 @@ class Debug
             die('<br><strong>Fatal error:</strong> ' . $message . ' in <strong>' . $file . '</strong> on line <strong>' . $line . '</strong>');
         }
 
-        $data = self::details($message, $file, $line);
+        $data = self::details($type, $message, $file, $line);
 
         if (!headers_sent() && strcasecmp(Request::header('accept'), 'application/json') === 0) {
             ob_start();
@@ -131,7 +131,7 @@ class Debug
                 if (empty(self::$displayErrors)) {
                     self::$displayErrors = ini_get('display_errors');
 
-                    ini_set('display_errors', '0');
+                    function_exists('init_set') && ini_set('display_errors', '0');
                 }
             break;
 
@@ -150,15 +150,7 @@ class Debug
         }
     }
 
-    /**
-     * Get detailed from error, include eval errors
-     *
-     * @param string $message
-     * @param string $file
-     * @param int    $line
-     * @return array
-     */
-    public static function details($message, $file, $line)
+    private static function details($type, $message, $file, $line)
     {
         $match = array();
         $oFile = $file;
@@ -172,6 +164,31 @@ class Debug
             $oFile = $match[1] . ' : eval():' . $line;
             $file  = $match[1];
             $line  = (int) $match[2];
+        }
+
+        switch ($type) {
+            case E_PARSE:
+                $message = 'Parse error: ' . $message;
+            break;
+
+            case E_DEPRECATED:
+                $message = 'Deprecated: ' . $message;
+            break;
+
+            case E_ERROR:
+            case E_USER_ERROR:
+                $message = 'Fatal error: ' . $message;
+            break;
+
+            case E_WARNING:
+            case E_USER_WARNING:
+                $message = 'Warning: ' . $message;
+            break;
+
+            case E_NOTICE:
+            case E_USER_NOTICE:
+                $message = 'Notice: ' . $message;
+            break;
         }
 
         return array(
@@ -242,7 +259,9 @@ class Debug
 
         return array(
             'breakpoint' => $breakpoint,
-            'preview' => preg_split('#\r\n|\n#', File::portion($file, $init, $end, true))
+            'preview' => preg_split('#\r\n|\n#',
+                trim( File::portion($file, $init, $end, true), "\r\n")
+            )
         );
     }
 
@@ -294,7 +313,7 @@ class Debug
             return $message;
         }
 
-        return preg_replace_callback('#(^.*?)\s+in\s+(.*?:\d+)|(^.*?)$#', function ($matches) use ($link)
+        return preg_replace_callback('#^([\s\S]+?)\s+in\s+([\s\S]+?:\d+)|^([\s\S]+?)$#', function ($matches) use ($link)
         {
             $error = empty($matches[3]) ? $matches[1] : $matches[3];
 

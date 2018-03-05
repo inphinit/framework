@@ -1,11 +1,11 @@
 <?php
 /*
-* Inphinit
-*
-* Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
-*
-* Released under the MIT license
-*/
+ * Inphinit
+ *
+ * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ *
+ * Released under the MIT license
+ */
 
 function ini_enabled($key)
 {
@@ -51,7 +51,7 @@ if (!function_exists('finfo_file')) {
 if ($definedpath) {
     $systemConfigs = require INPHINIT_PATH . 'application/Config/config.php';
 
-    if ($systemConfigs['developer'] === false) {
+    if ($systemConfigs['development'] === false) {
         if (extension_loaded('xdebug')) {
             $warn[] = 'xdebug is enabled, is recommended disable this in "production mode"';
         }
@@ -73,23 +73,23 @@ if ($definedpath) {
         }
     } else {
         if (function_exists('xcache_get') && ini_enabled('xcache.cacher')) {
-            $warn[] = 'Disable xcache.cacher in dev mode';
+            $warn[] = 'Disable xcache.cacher in "development mode"';
         }
 
         if (function_exists('opcache_get_status') && ini_enabled('opcache.enable')) {
-            $warn[] = 'Disable opcache.enable in dev mode';
+            $warn[] = 'Disable opcache.enable in "development mode"';
         }
 
         if (function_exists('wincache_ocache_meminfo') && ini_enabled('wincache.ocenabled')) {
-            $warn[] = 'Disable wincache.ocenabled in dev mode';
+            $warn[] = 'Disable wincache.ocenabled in "development mode"';
         }
 
         if (function_exists('apc_compile_file') && ini_enabled('apc.enabled')) {
-            $warn[] = 'Disable apc.ocenabled in dev mode';
+            $warn[] = 'Disable apc.ocenabled in "development mode"';
         }
 
         if (function_exists('eaccelerator_get') && ini_enabled('eaccelerator.enable')) {
-            $warn[] = 'Disable eaccelerator.ocenabled in dev mode';
+            $warn[] = 'Disable eaccelerator.ocenabled in "development mode"';
         }
     }
 }

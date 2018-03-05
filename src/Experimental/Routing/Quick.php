@@ -65,9 +65,17 @@ class Quick extends Router
             throw new Exception('Invalid class ' . $fc, self::$debuglvl);
         }
 
-        self::$debuglvl = 2;
+        $cm = self::verbs(get_class_methods($fc));
 
-        $this->classMethods = self::verbs(get_class_methods($fc));
+        if (empty($cm)) {
+            throw new Exception($this->fullController . ' is empty ', self::$debuglvl);
+        }
+
+        $this->classMethods = $cm;
+
+        $cm = null;
+
+        self::$debuglvl = 2;
 
         $this->fullController = $fc;
         $this->controller = $name;
@@ -115,7 +123,8 @@ class Quick extends Router
             case self::SLASH:
             case self::NOSLASH:
                 $this->format = $slash;
-                break;
+            break;
+
             default:
                 throw new Exception('Invalid type', 2);
         }
@@ -136,10 +145,6 @@ class Quick extends Router
         }
 
         $this->ready = true;
-
-        if (empty($this->classMethods)) {
-            throw new Exception($this->fullController . ' is empty ', 2);
-        }
 
         $format     = $this->format;
         $controller = $this->controller;

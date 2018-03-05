@@ -35,7 +35,7 @@ class Uri
      *
      * @var array
      */
-    protected static $defaultSchemes = array( 'https', 'https', 'ftp', 'sftp' );
+    protected static $defaultSchemes = array( 'http', 'https', 'ftp', 'sftp' );
 
     /**
      * Convert text to URL format
@@ -130,7 +130,8 @@ class Uri
 
         if (isset($u['host'])) {
             if (in_array($scheme, static::$defaultSchemes)) {
-                $normalized .= mb_strtolower(urldecode($u['host']));
+                $host = urldecode($u['host']);
+                $normalized .= mb_strtolower($host, mb_detect_encoding($host));
             } else {
                 $normalized .= $u['host'];
             }
@@ -167,7 +168,7 @@ class Uri
      */
     public static function root($path = '')
     {
-        return rtrim(INPHINIT_URL, '/') . self::canonpath($path);
+        return rtrim(INPHINIT_URL, '/') . ($path ? self::canonpath($path) : $path);
     }
 
     /**

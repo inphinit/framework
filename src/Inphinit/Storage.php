@@ -124,8 +124,6 @@ class Storage
      */
     public static function put($path, $data = null, $flags = null)
     {
-        $flags = $flags ? $flags : FILE_APPEND|LOCK_EX;
-
         $path = self::resolve($path);
 
         if ($path === false) {
@@ -137,6 +135,8 @@ class Storage
         if (is_file($path) && !$data) {
             return true;
         }
+
+        $flags = $flags ? $flags : FILE_APPEND|LOCK_EX;
 
         return self::createFolder(dirname($path)) && file_put_contents($path, $data, $flags) !== false;
     }

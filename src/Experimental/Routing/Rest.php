@@ -20,8 +20,16 @@ class Rest extends Router
     private $charset = 'UTF-8';
     private $controller;
     private $fullController;
-    private $valids;
     private $ready = false;
+    private static $valids = array(
+        'index'   => array( 'GET',  '/' ),
+        'create'  => array( 'GET',  '/create' ),
+        'store'   => array( 'POST', '/' ),
+        'show'    => array( 'GET',  '/{:[^/]+:}' ),
+        'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
+        'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
+        'destroy' => array( 'DELETE', '/{:[^/]+:}' ),
+    );
 
     /**
      * Create REST routes based in a \Controller
@@ -51,16 +59,6 @@ class Rest extends Router
         if (class_exists($fullController) === false) {
             throw new Exception('Invalid class ' . $fullController, 2);
         }
-
-        $this->valids = array(
-            'index'   => array( 'GET',  '/' ),
-            'create'  => array( 'GET',  '/create' ),
-            'store'   => array( 'POST', '/' ),
-            'show'    => array( 'GET',  '/{:[^/]+:}' ),
-            'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
-            'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
-            'destroy' => array( 'DELETE', '/{:[^/]+:}' ),
-        );
 
         $this->controller = $controller;
         $this->fullController = $fullController;
@@ -96,7 +94,7 @@ class Rest extends Router
         $controller = $this->fullController;
 
         $methods = get_class_methods($controller);
-        $allowedMethods = array_keys($this->valids);
+        $allowedMethods = array_keys(self::$valids);
 
         $classMethods = array_intersect($methods, $allowedMethods);
 
@@ -105,12 +103,9 @@ class Rest extends Router
         }
 
         $contentType = $this->contentType . '; charset=' . $this->charset;
-        $valids = $this->valids;
-
-        $this->valids = null;
 
         foreach ($classMethods as $method) {
-            $route = empty($valids[$method]) ? false : $valids[$method];
+            $route = empty(self::$valids[$method]) ? false : self::$valids[$method];
 
             if ($route) {
                 Route::set($route[0], $route[1], function ()

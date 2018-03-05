@@ -7,16 +7,19 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental;
+namespace Inphinit\Experimental\Dom;
 
 use Inphinit\Helper;
 use Inphinit\Storage;
 
-class Dom extends \DOMDocument
+class Document extends \DOMDocument
 {
     private $xpath;
     private $logerrors = array();
     private $internalErr;
+
+    private $complete = false;
+    private $simple = false;
 
     const XML = 1;
     const HTML = 2;
@@ -46,9 +49,9 @@ class Dom extends \DOMDocument
     public function fromArray(array $data)
     {
         if (count($data) > 1) {
-            throw new Exception('Root array accepts only a key', 2);
+            throw new DomException('Root array accepts only a key', 2);
         } elseif (count($data) === 1 && Helper::seq($data[key($data)])) {
-            throw new Exception('Document accpet only a node', 2);
+            throw new DomException('Document accpet only a node', 2);
         }
 
         if ($this->documentElement) {
@@ -59,7 +62,7 @@ class Dom extends \DOMDocument
 
         $this->generate($this, $data);
 
-        $this->raise();
+        self::raise();
 
         $this->enableInternal(false);
     }
@@ -68,11 +71,11 @@ class Dom extends \DOMDocument
      * Convert Dom to json string
      *
      * @param bool $format
-     * @param int $options `JSON_HEX_QUOT`, `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_NUMERIC_CHECK`, `JSON_PRETTY_PRINT`, `JSON_UNESCAPED_SLASHES`, `JSON_FORCE_OBJECT`, `JSON_PRESERVE_ZERO_FRACTION`, `JSON_UNESCAPED_UNICODE`, `JSON_PARTIAL_OUTPUT_ON_ERROR`. The behaviour of these constants is described in http://php.net/manual/en/json.constants.php
+     * @param int  $options `JSON_HEX_QUOT`, `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_NUMERIC_CHECK`, `JSON_PRETTY_PRINT`, `JSON_UNESCAPED_SLASHES`, `JSON_FORCE_OBJECT`, `JSON_PRESERVE_ZERO_FRACTION`, `JSON_UNESCAPED_UNICODE`, `JSON_PARTIAL_OUTPUT_ON_ERROR`. The behaviour of these constants is described in http://php.net/manual/en/json.constants.php
      *
      * @return string
      */
-    public function toJson($format = Dom::MININAL, $options = 0)
+    public function toJson($format = Document::MININAL, $options = 0)
     {
         return json_encode($this->toArray($format), $options);
     }
@@ -84,113 +87,27 @@ class Dom extends \DOMDocument
      * @throws \Inphinit\Experimental\Exception
      * @return array
      */
-    public function toArray($type = Dom::SIMPLE)
+    public function toArray($type = Document::SIMPLE)
     {
         switch ($type) {
-            case Dom::MININAL:
+            case Document::MININAL:
                 $this->simple = false;
                 $this->complete = false;
             break;
-            case Dom::SIMPLE:
+
+            case Document::SIMPLE:
                 $this->simple = true;
             break;
-            case Dom::COMPLETE:
+
+            case Document::COMPLETE:
                 $this->complete = true;
             break;
+
             default:
                 throw new Exception('Invalid type', 2);
         }
 
         return $this->getNodes($this->childNodes, true);
-    }
-
-    /**
-     * Save internal errors from libxml
-     *
-     * @return void
-     */
-    protected static function raise()
-    {
-        $err = \libxml_get_errors();
-
-        if (isset($err[0])) {
-            if (isset($err[0]->file) && !preg_match('#https?://#', $err[0]->file)) {
-                throw new DomException;
-            } else {
-                throw new Exception($err[0]->message, 3);
-            }
-        }
-    }
-
-    /**
-     * Get internal errors from libxml
-     *
-     * @return mixed
-     */
-    public function loadXML($source, $options = 0)
-    {
-        $this->enableInternal(true);
-
-        $r = parent::loadXML($source, $options);
-
-        self::raise();
-
-        $this->enableInternal(false);
-
-        return $r;
-    }
-
-    /**
-     *
-     * @return bool
-     */
-    public function load($filename, $options = 0)
-    {
-        $this->enableInternal(true);
-
-        $r = parent::load($filename, $options);
-
-        self::raise();
-
-        $this->enableInternal(false);
-
-        return $r;
-    }
-
-    /**
-     * Get internal errors from libxml
-     *
-     * @return bool
-     */
-    public function loadHTML($source, $options = 0)
-    {
-        $this->enableInternal(true);
-
-        $r = parent::loadHTML($source, $options);
-
-        self::raise();
-
-        $this->enableInternal(false);
-
-        return $r;
-    }
-
-    /**
-     * Get internal errors from libxml
-     *
-     * @return bool
-     */
-    public function loadHTMLFile($filename, $options = 0)
-    {
-        $this->enableInternal(true);
-
-        $r = parent::loadHTMLFile($filename, $options);
-
-        self::raise();
-
-        $this->enableInternal(false);
-
-        return $r;
     }
 
     /**
@@ -224,29 +141,28 @@ class Dom extends \DOMDocument
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function save($path, $format = Dom::XML)
+    public function save($path, $format = Document::XML)
     {
         switch ($format) {
-            case Dom::XML:
+            case Document::XML:
                 $format = 'saveXML';
             break;
-            case Dom::HTML:
+            case Document::HTML:
                 $format = 'saveHTML';
             break;
-            case Dom::JSON:
+            case Document::JSON:
                 $format = 'toJson';
             break;
             default:
-                throw new Exception('Invalid format', 2);
-            break;
+                throw new DomException('Invalid format', 2);
         }
 
         $tmp = Storage::temp($this->$format(), 'tmp', '~xml-');
 
         if ($tmp === false) {
-            throw new Exception('Can\'t create tmp file', 2);
+            throw new DomException('Can\'t create tmp file', 2);
         } elseif (copy($tmp, $path) === false) {
-            throw new Exception('Cannot copy tmp file to ' . $path, 2);
+            throw new DomException('Can\'t copy tmp file to ' . $path, 2);
         } else {
             unlink($tmp);
         }
@@ -277,18 +193,89 @@ class Dom extends \DOMDocument
                     $ns[$node->nodeName] = $arr;
                 }
             }
+
+            $nodes = null;
         }
 
         return $ns;
     }
 
+    /**
+     * Load XML from a string
+     *
+     * @param string $source
+     * @param int    $options
+     * @throws \Inphinit\Experimental\Dom\DomException
+     * @return mixed
+     */
+    public function loadXML($source, $options = 0)
+    {
+        return $this->resource('loadXML', $filename, $options);
+    }
+
+    /**
+     * Load XML from a file
+     *
+     * @param string $filename
+     * @param int    $options
+     * @throws \Inphinit\Experimental\Dom\DomException
+     * @return mixed
+     */
+    public function load($filename, $options = 0)
+    {
+        return $this->resource('load', $filename, $options);
+    }
+
+    /**
+     * Load HTML from a string
+     *
+     * @param string $source
+     * @param int    $options
+     * @throws \Inphinit\Experimental\Dom\DomException
+     * @return mixed
+     */
+    public function loadHTML($source, $options = 0)
+    {
+        return $this->resource('loadHTML', $filename, $options);
+    }
+
+    /**
+     * Load HTML from a file
+     *
+     * @param string $filename
+     * @param int    $options
+     * @throws \Inphinit\Experimental\Dom\DomException
+     * @return mixed
+     */
+    public function loadHTMLFile($filename, $options = 0)
+    {
+        return $this->resource('loadHTMLFile', $filename, $options);
+    }
+
+    private function resource($function, $from, $options)
+    {
+        $this->enableInternal(true);
+
+        $resource = parent::$function($from, $options);
+
+        $err = \libxml_get_errors();
+
+        if (isset($err[0])) {
+            throw new DomException(null, 3);
+        }
+
+        $this->enableInternal(false);
+
+        return $resource;
+    }
+
     private function enableInternal($enable)
     {
+        \libxml_clear_errors();
+
         if ($enable) {
             $this->internalErr = \libxml_use_internal_errors(true);
-            \libxml_clear_errors();
         } else {
-            \libxml_clear_errors();
             \libxml_use_internal_errors($this->internalErr);
         }
     }
@@ -337,9 +324,9 @@ class Dom extends \DOMDocument
 
     private function getNodes($nodes, $toplevel = false)
     {
-        if ($nodes) {
-            $items = array();
+        $items = array();
 
+        if ($nodes) {
             foreach ($nodes as $node) {
                 if ($node->nodeType === XML_ELEMENT_NODE && ($this->complete || $this->simple || ctype_alnum($node->nodeName))) {
                     $items[$node->nodeName][] = $this->nodeContents($node);
@@ -348,9 +335,10 @@ class Dom extends \DOMDocument
 
             if (empty($items) === false) {
                 self::simplify($items);
-                return $items;
             }
         }
+
+        return $items;
     }
 
     private function nodeContents(\DOMElement $node)

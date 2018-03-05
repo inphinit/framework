@@ -9,6 +9,9 @@
 
 namespace Inphinit;
 
+use Inphinit\Http\Request;
+use Inphinit\Http\Response;
+
 class Cache
 {
     private $handle;

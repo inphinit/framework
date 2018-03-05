@@ -47,10 +47,10 @@ class Response
      * Get or set status code and return last status code
      *
      * @param int  $code
-     * @param bool $preventTrigger
+     * @param bool $trigger
      * @return int|bool
      */
-    public static function status($code = null, $preventTrigger = false)
+    public static function status($code = null, $trigger = true)
     {
         if (self::$httpCode === null) {
             self::$httpCode = \UtilsStatusCode();
@@ -67,7 +67,7 @@ class Response
         $lastCode = self::$httpCode;
         self::$httpCode = $code;
 
-        if (false === $preventTrigger) {
+        if ($trigger) {
             App::trigger('changestatus', array($code, null));
         }
 

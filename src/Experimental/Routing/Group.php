@@ -17,6 +17,16 @@ use Inphinit\Experimental\Exception;
 
 class Group extends Router
 {
+    /** Access with HTTP and HTTPS (default) */
+    const BOTH = 1;
+
+    /** Access only in HTTPS */
+    const SECURE = 2;
+
+    /** Access only without HTTPS */
+    const NONSECURE = 3;
+
+    private $levelSecure;
     private $ready = false;
     private $currentPrefixPath;
     private $callback;
@@ -85,6 +95,24 @@ class Group extends Router
     }
 
     /**
+     * Access only with HTTPS, or only HTTP, or both
+     *
+     * @param int $level
+     * @throws \Inphinit\Experimental\Exception
+     * @return \Inphinit\Experimental\Routing\Group
+     */
+    public function secure($level)
+    {
+        if ($level < 1 || $level > 3) {
+            throw new Exception('Invalid security level', 2);
+        }
+
+        $this->levelSecure = (int) $level;
+
+        return $this;
+    }
+
+    /**
      * Define callback for group, this callback is executed if the request meets the group
      * settings
      *
@@ -99,7 +127,7 @@ class Group extends Router
 
         $this->ready = true;
 
-        if ($this->checkDomain() === false || $this->checkPath() === false) {
+        if (!$this->checkDomain() || !$this->checkPath() || !$this->checkSecurity()) {
             return null;
         }
 
@@ -118,6 +146,23 @@ class Group extends Router
 
         parent::$prefixNS = $oNS;
         parent::$prefixPath = $oPP;
+    }
+
+    /**
+     * Method is used for check if HTTPS or HTTP or both
+     *
+     * @return bool
+     */
+    protected function checkSecurity()
+    {
+        if (!$this->levelSecure || $this->levelSecure === self::BOTH) {
+            return true;
+        }
+
+        $secure = Request::is('secure');
+
+        return ($this->levelSecure === self::SECURE && $secure) ||
+               ($this->levelSecure === self::NONSECURE && !$secure);
     }
 
     /**

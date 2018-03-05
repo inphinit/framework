@@ -89,12 +89,12 @@ class App
      * Return application state
      *
      * <ul>
-     * <li>0 - Unexecuted</li>
-     * <li>1 - Initiated</li>
-     * <li>2 - Interactive</li>
-     * <li>3 - Ready</li>
-     * <li>4 - Finished</li>
-     * <li>5 - Error</li>
+     * <li>0 - Unexecuted - `App::exec()` is not executed/li>
+     * <li>1 - Initiated - `App::exec()` is executed</li>
+     * <li>2 - Interactive - After dispatch headers and views</li>
+     * <li>3 - Ready - After show return in output</li>
+     * <li>4 - Finished - Defined after trigger finish event</li>
+     * <li>5 - Error - Defined after trigger an error event (by user or by script)</li>
      * </ul>
      *
      * @return int
@@ -177,7 +177,7 @@ class App
      */
     public static function exec()
     {
-        if (self::$state > 1) {
+        if (self::$state > 0) {
             return null;
         }
 
