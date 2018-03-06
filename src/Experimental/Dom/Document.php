@@ -258,11 +258,7 @@ class Document extends \DOMDocument
 
         $resource = parent::$function($from, $options);
 
-        $err = \libxml_get_errors();
-
-        if (isset($err[0])) {
-            throw new DomException(null, 3);
-        }
+        self::raise();
 
         $this->enableInternal(false);
 
@@ -277,6 +273,15 @@ class Document extends \DOMDocument
             $this->internalErr = \libxml_use_internal_errors(true);
         } else {
             \libxml_use_internal_errors($this->internalErr);
+        }
+    }
+
+    private function raise()
+    {
+        $err = \libxml_get_errors();
+
+        if (isset($err[0])) {
+            throw new DomException(null, 3);
         }
     }
 

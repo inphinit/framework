@@ -160,7 +160,7 @@ class App
      */
     public static function stop($code, $msg = null)
     {
-        Response::status($code, true) && self::trigger('changestatus', array($code, $msg));
+        Response::status($code, false) && self::trigger('changestatus', array($code, $msg));
 
         if (self::$state < 4) {
             self::$state = 4;

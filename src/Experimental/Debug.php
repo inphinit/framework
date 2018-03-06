@@ -131,7 +131,7 @@ class Debug
                 if (empty(self::$displayErrors)) {
                     self::$displayErrors = ini_get('display_errors');
 
-                    function_exists('init_set') && ini_set('display_errors', '0');
+                    function_exists('ini_set') && ini_set('display_errors', '0');
                 }
             break;
 
