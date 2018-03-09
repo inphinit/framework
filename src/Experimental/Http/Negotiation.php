@@ -102,7 +102,7 @@ class Negotiation
      */
     public function getLanguage($alternative = false)
     {
-        $headers = $this->languages();
+        $headers = $this->acceptLanguage();
         return $headers ? key($headers) : $alternative;
     }
 
@@ -117,7 +117,7 @@ class Negotiation
      */
     public function getCharset($alternative = false)
     {
-        $headers = $this->charsets();
+        $headers = $this->acceptCharset();
         return $headers ? key($headers) : $alternative;
     }
 
@@ -132,7 +132,7 @@ class Negotiation
      */
     public function getEncoding($alternative = false)
     {
-        $headers = $this->encodings();
+        $headers = $this->acceptEncoding();
         return $headers ? key($headers) : $alternative;
     }
 
@@ -147,7 +147,7 @@ class Negotiation
      */
     public function getAccept($alternative = false)
     {
-        $headers = $this->accept();
+        $headers = $this->acceptEncoding();
         return $headers ? key($headers) : $alternative;
     }
 
