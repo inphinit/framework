@@ -46,14 +46,14 @@ class Helper
     /**
      * Capitalize words using hyphen or a custom delimiter.
      *
-     * @param string $str
+     * @param string $text
      * @param string $delimiter
      * @param string $glue
      * @return string
      */
-    public static function capitalize($str, $delimiter = '-', $glue = '')
+    public static function capitalize($text, $delimiter = '-', $glue = '')
     {
-        return implode($glue, array_map('ucfirst', explode($delimiter, strtolower($str))));
+        return implode($glue, array_map('ucfirst', explode($delimiter, strtolower($text))));
     }
 
     /**
@@ -92,7 +92,7 @@ class Helper
     /**
      * Check if array is sequential, like ['foo', 'bar']
      *
-     * @param mixed $obj
+     * @param mixed $array
      * @return bool
      */
     public static function seq($array)
@@ -108,7 +108,7 @@ class Helper
     /**
      * Check if array is associative, like [ 'bar' => foo', 'baz' => 'bar']
      *
-     * @param mixed $obj
+     * @param mixed $array
      * @return bool
      */
     public static function assoc($array)

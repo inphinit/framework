@@ -69,6 +69,7 @@ class Redirect
     /**
      * Return to redirect to new path
      *
+     * @param bool $only
      * @param bool $trigger
      * @return bool|void
      */

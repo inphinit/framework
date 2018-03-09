@@ -113,7 +113,7 @@ class Quick extends Router
      * Define route format, `Quick::BOTH` for create routes like `/foo/` and `/foo`, `Quick::SLASH`
      * for create routes like `/foo/` and `Quick::NOSLASH` for create routes like `/foo`
      *
-     * @param int $slash define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
+     * @param int $slash Define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
      * @return \Inphinit\Experimental\Routing\Quick
      */
     public function canonical($slash = Quick::NOSLASH)

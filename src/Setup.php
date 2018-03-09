@@ -128,8 +128,8 @@ function SetupIIS($base)
 /**
  * Generate configs to nginx.conf and setup extensions used (eg. hh for HHVM)
  *
- * @param string $base      Define full path
- * @param array $extensions Define extensions used by server
+ * @param string $base       Define full path
+ * @param array  $extensions Define extensions used by server
  * @return void
  */
 function SetupNginx($base, array $extensions)
