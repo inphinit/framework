@@ -15,7 +15,6 @@ use Inphinit\Storage;
 class Document extends \DOMDocument
 {
     private $xpath;
-    private $logerrors = array();
     private $internalErr;
 
     private $complete = false;
@@ -34,11 +33,6 @@ class Document extends \DOMDocument
         parent::__construct($version, $encoding);
     }
 
-    public function __destruct()
-    {
-        $this->logerrors = null;
-    }
-
     /**
      * Convert array in node elements
      *
@@ -48,9 +42,11 @@ class Document extends \DOMDocument
      */
     public function fromArray(array $data)
     {
-        if (count($data) > 1) {
+        if (empty($data)) {
+            throw new DomException('Array is empty', 2);
+        } elseif (count($data) > 1) {
             throw new DomException('Root array accepts only a key', 2);
-        } elseif (count($data) === 1 && Helper::seq($data[key($data)])) {
+        } elseif (Helper::seq($data)) {
             throw new DomException('Document accpet only a node', 2);
         }
 
@@ -58,13 +54,13 @@ class Document extends \DOMDocument
             $this->removeChild($this->documentElement);
         }
 
-        $this->enableInternal(true);
+        $this->enableRestoreInternal(true);
 
         $this->generate($this, $data);
 
-        self::raise();
+        self::raise(3);
 
-        $this->enableInternal(false);
+        $this->enableRestoreInternal(false);
     }
 
     /**
@@ -104,7 +100,7 @@ class Document extends \DOMDocument
             break;
 
             default:
-                throw new Exception('Invalid type', 2);
+                throw new DomException('Invalid type', 2);
         }
 
         return $this->getNodes($this->childNodes, true);
@@ -210,7 +206,7 @@ class Document extends \DOMDocument
      */
     public function loadXML($source, $options = 0)
     {
-        return $this->resource('loadXML', $filename, $options);
+        return $this->resource('loadXML', $source, $options);
     }
 
     /**
@@ -236,7 +232,7 @@ class Document extends \DOMDocument
      */
     public function loadHTML($source, $options = 0)
     {
-        return $this->resource('loadHTML', $filename, $options);
+        return $this->resource('loadHTML', $source, $options);
     }
 
     /**
@@ -254,18 +250,18 @@ class Document extends \DOMDocument
 
     private function resource($function, $from, $options)
     {
-        $this->enableInternal(true);
+        $this->enableRestoreInternal(true);
 
         $resource = parent::$function($from, $options);
 
-        self::raise();
+        self::raise(4);
 
-        $this->enableInternal(false);
+        $this->enableRestoreInternal(false);
 
         return $resource;
     }
 
-    private function enableInternal($enable)
+    private function enableRestoreInternal($enable)
     {
         \libxml_clear_errors();
 
@@ -276,12 +272,12 @@ class Document extends \DOMDocument
         }
     }
 
-    private function raise()
+    private function raise($level)
     {
         $err = \libxml_get_errors();
 
         if (isset($err[0])) {
-            throw new DomException(null, 3);
+            throw new DomException(null, $level);
         }
     }
 

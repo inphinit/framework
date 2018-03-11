@@ -9,7 +9,7 @@
 
 namespace Inphinit\Experimental\Dom;
 
-class DomException extends Inphinit\Experimental\Exception
+class DomException extends \Inphinit\Experimental\Exception
 {
     /**
      * Raise an exception
@@ -33,6 +33,7 @@ class DomException extends Inphinit\Experimental\Exception
         if (empty($err[0]->file) === false && $err[0]->line > 0) {
             $this->file = preg_replace('#^file:/(\w+:)#i', '$1', $err[0]->file);
             $this->line = $err[0]->line;
+            $this->code = $err[0]->code;
             $trace = 0;
         }
 
