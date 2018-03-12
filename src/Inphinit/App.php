@@ -224,7 +224,7 @@ class App
 
         self::trigger('ready');
 
-        if ($output) {
+        if ($output || is_numeric($output)) {
             echo $output;
         }
 

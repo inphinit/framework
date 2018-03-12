@@ -65,7 +65,7 @@ class File extends \Inphinit\File
         }
 
         $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
-        $encode = finfo_buffer($finfo, file_get_contents($path, false, null, -1, 5012));
+        $encode = finfo_buffer($finfo, file_get_contents($path, false, null, 0, 5012));
         finfo_close($finfo);
 
         return strcasecmp($encode, 'binary') === 0;
