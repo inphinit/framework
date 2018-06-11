@@ -35,14 +35,16 @@ class View
      */
     public static function dispatch()
     {
+        if (self::$force) {
+            return null;
+        }
+
         self::forceRender();
 
         if (self::$views) {
-            foreach (self::$views as $value) {
+            foreach (self::$views as &$value) {
                 $value && self::render($value[0], $value[1]);
             }
-
-            self::$views = null;
         }
     }
 

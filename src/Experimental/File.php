@@ -18,6 +18,7 @@ class File extends \Inphinit\File
      * @param int    $init
      * @param int    $end
      * @param bool   $lines
+     * @throws \Inphinit\Experimental\Exception
      * @return string
      */
     public static function portion($path, $init = 0, $end = 1024, $lines = false)
@@ -52,6 +53,7 @@ class File extends \Inphinit\File
      * Determines whether the file is binary
      *
      * @param string $path
+     * @throws \Inphinit\Experimental\Exception
      * @return bool
      */
     public static function isBinary($path)
@@ -76,6 +78,7 @@ class File extends \Inphinit\File
      * Return `false` if file is not found
      *
      * @param string $path
+     * @throws \Inphinit\Experimental\Exception
      * @return string|bool
      */
     public static function size($path)
@@ -93,8 +96,8 @@ class File extends \Inphinit\File
 
         $ch = null;
 
-        if (preg_match('#content-length:\s+?(\d+)#i', $headers, $matches)) {
-            return $matches[1];
+        if (preg_match('#content-length:(\s+?|)(\d+)#i', $headers, $matches)) {
+            return $matches[2];
         }
 
         return false;
