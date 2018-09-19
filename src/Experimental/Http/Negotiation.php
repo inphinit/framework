@@ -137,7 +137,7 @@ class Negotiation
     }
 
     /**
-     * Get the first language with with the greatest q-factor,
+     * Get the first "document type" with the greatest q-factor,
      * if it does not exist then return the value of `$alternative`
      *
      * @param mixed $alternative Define alternative value, this value will be
@@ -147,7 +147,7 @@ class Negotiation
      */
     public function getAccept($alternative = false)
     {
-        $headers = $this->acceptEncoding();
+        $headers = $this->accept();
         return $headers ? key($headers) : $alternative;
     }
 

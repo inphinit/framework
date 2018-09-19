@@ -248,6 +248,17 @@ class Document extends \DOMDocument
         return $this->resource('loadHTMLFile', $filename, $options);
     }
 
+    /**
+     * Use query-selector like CSS, jQuery, querySelectorAll
+     *
+     * @param string $selector
+     * @return mixed
+     */
+    public function query($selector)
+    {
+        return (new Query($this))->get($selector);
+    }
+
     private function resource($function, $from, $options)
     {
         $this->enableRestoreInternal(true);
