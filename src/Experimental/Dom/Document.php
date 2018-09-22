@@ -252,18 +252,57 @@ class Document extends \DOMDocument
      * Use query-selector like CSS, jQuery, querySelectorAll
      *
      * @param string $selector
-     * @return mixed
+     * @param \DOMNode $context
+     * @return \DOMNodeList
      */
-    public function query($selector)
+    public function query($selector, \DOMNode $context = null)
     {
-        return (new Query($this))->get($selector);
+        $this->enableRestoreInternal(true);
+
+        $query = new Selector($this);
+
+        $nodes = $query->get($selector, $context);
+
+        self::raise(3);
+
+        $query = null;
+
+        $this->enableRestoreInternal(false);
+
+        return $nodes;
+    }
+
+    /**
+     * Use query-selector like CSS, jQuery, querySelector
+     *
+     * @param string $selector
+     * @param \DOMNode $context
+     * @return \DOMNode
+     */
+    public function first($selector, \DOMNode $context = null)
+    {
+        $this->enableRestoreInternal(true);
+
+        $query = new Selector($this);
+
+        $nodes = $query->get($selector, $context);
+
+        self::raise(3);
+
+        $node = $nodes->length ? $nodes->item(0) : null;
+
+        $query = $nodes = null;
+
+        $this->enableRestoreInternal(false);
+
+        return $node;
     }
 
     private function resource($function, $from, $options)
     {
         $this->enableRestoreInternal(true);
 
-        $resource = parent::$function($from, $options);
+        $resource = PHP_VERSION_ID >= 50400 ? parent::$function($from, $options) : parent::$function($from);
 
         self::raise(4);
 

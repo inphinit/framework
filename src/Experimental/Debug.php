@@ -241,12 +241,12 @@ class Debug
      *
      * @param string $file
      * @param int    $line
-     * @return array|bool
+     * @return array|null
      */
     public static function source($file, $line)
     {
         if ($line <= 0 || is_file($file) === false) {
-            return false;
+            return null;
         } elseif ($line > 5) {
             $init = $line - 5;
             $end  = $line + 5;
@@ -269,7 +269,7 @@ class Debug
      * Get caller
      *
      * @param int $level
-     * @return array|bool
+     * @return array|null
      */
     public static function caller($level = 0)
     {
@@ -278,7 +278,7 @@ class Debug
         if ($level < 0) {
             return $trace;
         } elseif (empty($trace[$level])) {
-            return false;
+            return null;
         } elseif (empty($trace[$level]['file'])) {
             $level = 1;
         }
