@@ -14,34 +14,37 @@ class Selector extends \DOMXPath
     private $prevent;
     private $rules;
     private $qxs = array(
-        array( '/^([^a-z*])/', '*\\1' ),
-        array( '/([>\+~])([^a-z*])/', '\\1*\\2' ),
-        array( '/\[(.*?)\]/', '[@\\1]' ),
-        array( '/#(\w+)/', '[@id="\\1"]' ),
-        array( '/\:empty/', '[count(*)=0]'),
-        array( '/\:last-child/', '[last()]' ),
-        array( '/^(.*?)\:first-child $/', 'descendant::\\1' ),
+        array( '/^([^a-zA-Z*])/', '*\\1' ),
+        array( '/\[([^@])(.*?)\]/', '[@\\1\\2]' ),
+        array( '/([>+~]|^)\:nth-(last-)?(child|of-type)\(n\)/', '\\1*' ),
         array( '/\:nth-(last-)?(child|of-type)\(n\)/', '' ),
         array( '/\:nth-child\(odd\)/', ':nth-child(2n+1)' ),
         array( '/\:nth-child\(even\)/', ':nth-child(2n)' ),
-        array( '/\:nth-child\((\d+)\)/', '[position() mod \\1 = 1]' ),
-        array( '/\:nth-child\((\d+)n\)/', '[position() mod \\1 = 0]' ),
-        array( '/\:nth-child\((\d+)n\+(\d+)\)/', '[position() mod \\1 = \\2]' ),
-        array( '/\:nth-last-child\(odd\)/', ':nth-last-child(2n+1)' ),
-        array( '/\:nth-last-child\(even\)/', ':nth-last-child(2n)' ),
-        array( '/\:nth-last-child\((\d+)\)/', '[(count() - position()) mod \\1 = 1]' ),
-        array( '/\:nth-last-child\((\d+)n\)/', '[(count() - position()) mod \\1 = 0]' ),
-        array( '/\:nth-last-child\((\d+)n\+(\d+)\)/', '[(count() - position()) mod \\1 = \\2]' ),
+        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\)/', '\\1*[position() mod \\4=0]\\3' ),
+        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/', '\\1*[position() mod \\4=\\5]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\)/', '\\1*[name()="\\2" and position() mod \\4=0]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/', '\\1*[name()="\\2" and position() mod \\4=\\5]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-of-type\((\d+)n\)/', '\\1\\2[position() mod \\4=0]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-of-type\((\d+)n\+(\d+)\)/', '\\1\\2[position() mod \\4=\\5]\\3' ),
+        array( '/([>+~])?\*([^>+~]+)?\:only-child/', '\\1*[last()=1]\\2'),
+        array( '/([>+~])?\*([^>+~]+)?\:last-child/', '\\1*[position()=last()]\\2' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:only-child/', '\\1*[name()="\\2" and last()=1]\\3'),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:last-child/', '\\1*[name()="\\2" and position()=last()]\\3' ),
+        array( '/([>+~])([^\w*\s])/', '\\1*\\2' ),
         array( '/\.(\w+)/', '[@class~="\\1"]' ),
+        array( '/#(\w+)/', '[@id="\\1"]' ),
         array( '/\:lang\(([\w\-]+)\)/', '[@lang|="\\1"]' ),
+        array( '/\:empty/', '[not(text())]'),
+        array( '/^(.*?)\:first-child $/', 'descendant::\\1' ),
         array( '/\[(@\w+)\^=(["\'])(.*?)\\2\]/', '[starts-with(\\1,\\2\\3\\2)]' ),
         array( '/\[(@\w+)\*=(["\'])(.*?)\\2\]/', '[contains(\\1,\\2\\3\\2)]' ),
         array( '/\[(@\w+)\~=(["\'])(.*?)\\2\]/', '[contains(concat(" ",\\1," "),\\2 \\3 \\2)]' ),
         array( '/\[(@\w+)\|=(["\'])(.*?)\\2\]/', '[starts-with(concat(\\1,"-"),concat(\\2\\3\\2,"-"))]' ),
         array( '/\[(@\w+)\$=(["\'])(.*?)\\2\]/', '[substring(\\1,string-length(\\1)-2)=\\2\\3\\2]' ),
         array( '/\:contains\((.*?)\)/', '[contains(text(),\\1)]' ),
-        array( '/[~]([*\w]+)/', '/following-sibling::*[count(\\1)]' ),
-        array( '/\+/', '/following-sibling::' ),
+        array( '/\+(\*)/', '/following-sibling::*[position()=1]' ),
+        array( '/\+(\w+)/', '/following-sibling::*[name()="\\1" and position()=1]' ),
+        array( '/[~](\*|\w+)/', '/following-sibling::\\1' ),
         array( '/[>]/', '/' )
     );
 
@@ -127,8 +130,6 @@ class Selector extends \DOMXPath
 
         $queries = explode(',', $query);
 
-        $restore = array_combine(array_values($this->prevent), array_keys($this->prevent));
-
         foreach ($queries as &$descendants) {
 
             $descendants = explode(' ', trim($descendants));
@@ -138,8 +139,6 @@ class Selector extends \DOMXPath
                     $r = strtr($qx[1], $this->rules);
 
                     $descendant = trim(preg_replace($qx[0], $r, $descendant));
-
-                    var_dump( strtr($descendant, $restore) . ' => ' . $qx[0] );
                 }
             }
 
