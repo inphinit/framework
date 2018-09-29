@@ -13,39 +13,37 @@ class Selector extends \DOMXPath
 {
     private $prevent;
     private $rules;
+    private $allSiblingsToken;
     private $qxs = array(
-        array( '/^([^a-zA-Z*])/', '*\\1' ),
-        array( '/\[([^@])(.*?)\]/', '[@\\1\\2]' ),
-        array( '/([>+~]|^)\:nth-(last-)?(child|of-type)\(n\)/', '\\1*' ),
-        array( '/\:nth-(last-)?(child|of-type)\(n\)/', '' ),
-        array( '/\:nth-child\(odd\)/', ':nth-child(2n+1)' ),
-        array( '/\:nth-child\(even\)/', ':nth-child(2n)' ),
-        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\)/', '\\1*[position() mod \\4=0]\\3' ),
-        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/', '\\1*[position() mod \\4=\\5]\\3' ),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\)/', '\\1*[name()="\\2" and position() mod \\4=0]\\3' ),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/', '\\1*[name()="\\2" and position() mod \\4=\\5]\\3' ),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-of-type\((\d+)n\)/', '\\1\\2[position() mod \\4=0]\\3' ),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-of-type\((\d+)n\+(\d+)\)/', '\\1\\2[position() mod \\4=\\5]\\3' ),
-        array( '/([>+~])?\*([^>+~]+)?\:only-child/', '\\1*[last()=1]\\2'),
-        array( '/([>+~])?\*([^>+~]+)?\:last-child/', '\\1*[position()=last()]\\2' ),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:only-child/', '\\1*[name()="\\2" and last()=1]\\3'),
-        array( '/([>+~])?(\w+)([^>+~]+)?\:last-child/', '\\1*[name()="\\2" and position()=last()]\\3' ),
+        array( '/^([^a-z*])/i', '*\\1' ),
         array( '/([>+~])([^\w*\s])/', '\\1*\\2' ),
-        array( '/\.(\w+)/', '[@class~="\\1"]' ),
-        array( '/#(\w+)/', '[@id="\\1"]' ),
-        array( '/\:lang\(([\w\-]+)\)/', '[@lang|="\\1"]' ),
-        array( '/\:empty/', '[not(text())]'),
-        array( '/^(.*?)\:first-child $/', 'descendant::\\1' ),
-        array( '/\[(@\w+)\^=(["\'])(.*?)\\2\]/', '[starts-with(\\1,\\2\\3\\2)]' ),
-        array( '/\[(@\w+)\*=(["\'])(.*?)\\2\]/', '[contains(\\1,\\2\\3\\2)]' ),
-        array( '/\[(@\w+)\~=(["\'])(.*?)\\2\]/', '[contains(concat(" ",\\1," "),\\2 \\3 \\2)]' ),
-        array( '/\[(@\w+)\|=(["\'])(.*?)\\2\]/', '[starts-with(concat(\\1,"-"),concat(\\2\\3\\2,"-"))]' ),
-        array( '/\[(@\w+)\$=(["\'])(.*?)\\2\]/', '[substring(\\1,string-length(\\1)-2)=\\2\\3\\2]' ),
-        array( '/\:contains\((.*?)\)/', '[contains(text(),\\1)]' ),
-        array( '/\+(\*)/', '/following-sibling::*[position()=1]' ),
-        array( '/\+(\w+)/', '/following-sibling::*[name()="\\1" and position()=1]' ),
-        array( '/[~](\*|\w+)/', '/following-sibling::\\1' ),
-        array( '/[>]/', '/' )
+        array( '/\[(.*?)\]/', '[@\\1\\2]' ),
+        array( '/\.(\w+)/', '[@class~="\\1" i]' ),
+        array( '/#(\w+)/', '[@id="\\1" i]' ),
+        array( '/\:lang\(([\w\-]+)\)/i', '[@lang|="\\1" i]' ),
+        array( '/([>+~]|^)\:nth-(last-)?(child|of-type)\(n\)/i', '\\1*' ),
+        array( '/\:nth-(last-)?(child|of-type)\(n\)/i', '' ),
+        array( '/\:first-child/', ':nth-child(1)'),
+        array( '/\:nth-child\(odd\)/i', ':nth-child(2n+1)' ),
+        array( '/\:nth-child\(even\)/i', ':nth-child(2n)' ),
+        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)\)/i', '\\1*[position()=\\3]\\2' ),
+        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\)/i', '\\1*[(position() mod \\3=0)]\\2' ),
+        array( '/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/i', '\\1*[(position() mod \\3=\\4)]\\2' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)\)/i', '\\1*[name()="\\2" and position()=\\4]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\)/i', '\\1*[name()="\\2" and (position() mod \\4=0)]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/i', '\\1*[name()="\\2" and (position() mod \\4=\\5)]\\3' ),
+        array( '/([>+~])?\*([^>+~]+)?\:only-child/i', '\\1*[last()=1]\\2' ),
+        array( '/([>+~])?\*([^>+~]+)?\:last-child/i', '\\1*[position()=last()]\\2' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:only-child/i', '\\1*[name()="\\2" and last()=1]\\3' ),
+        array( '/([>+~])?(\w+)([^>+~]+)?\:last-child/i', '\\1*[name()="\\2" and position()=last()]\\3' ),
+        array( '/\:empty/i', '[not(text())]'),
+        array( '/\[(@\w+)(.)?=(.*?) i]/', '[lower-case(\\1)\\2=lower-case(\\3)]' ),
+        array( '/\[(@\w+|lower-case\(@\w+\))\*=(.*?)\]/', '[contains(\\1,\\2)]' ),
+        array( '/\[(@\w+|lower-case\(@\w+\))\^=(.*?)\]/', '[starts-with(\\1,\\2)]' ),
+        array( '/\[(@\w+|lower-case\(@\w+\))\~=(.*?)\]/', '[contains(concat(" ",\\1," "),concat(" ",\\2," "))]' ),
+        array( '/\[(@\w+|lower-case\(@\w+\))\|=(.*?)\]/', '[starts-with(concat(\\1,"-"),concat(\\2,"-"))]' ),
+        array( '/\[(@\w+|lower-case\(@\w+\))\$=(.*?)\]/', '[substring(\\1,string-length(\\1)-2)=\\2]' ),
+        array( '/\:contains\((.*?)\)/i', '[contains(text(),\\1)]' )
     );
 
     /**
@@ -81,12 +79,13 @@ class Selector extends \DOMXPath
         $spaces = self::uniqueToken($query, 'space');
         $commas = self::uniqueToken($query, 'comma');
         $child = self::uniqueToken($query, 'child');
+        $sibling = self::uniqueToken($query, 'sibling');
         $adjacent = self::uniqueToken($query, 'adjacent');
-        $sibling  = self::uniqueToken($query, 'sibling');
         $lbracket = self::uniqueToken($query, 'lbracket');
         $rbracket = self::uniqueToken($query, 'rbracket');
         $lparenthesis = self::uniqueToken($query, 'lparenthesis');
         $rparenthesis = self::uniqueToken($query, 'rparenthesis');
+        $lowercasefunction = self::uniqueToken($query, 'lowercase');
 
         $this->prevent = array(
             '.' => $dot,
@@ -94,18 +93,21 @@ class Selector extends \DOMXPath
             ' ' => $spaces,
             ',' => $commas,
             '>' => $child,
-            '+' => $adjacent,
             '~' => $sibling,
+            '+' => $adjacent,
             '[' => $lbracket,
             ']' => $rbracket,
             '(' => $lparenthesis,
-            ')' => $rparenthesis
+            ')' => $rparenthesis,
+            'lower-case' => $lowercasefunction
         );
 
         $this->rules = array(
             ' ' => $spaces,
             ',' => $commas
         );
+
+        $this->allSiblingsToken = self::uniqueToken($query, 'allSiblings');
 
         $query = $this->toXPath($query);
 
@@ -121,6 +123,12 @@ class Selector extends \DOMXPath
     private function toXPath($query)
     {
         $query = preg_replace_callback('#\[(\w+)(.)?[=]([^"\'])(.*?)\]#', array($this, 'putQuotes'), $query);
+
+        $preventToken = $this->prevent[' '];
+
+        $caseinsensitive = '[\\1\\2=\\3' . $preventToken . 'i]';
+
+        $query = preg_replace('#\[(\w+)(.)?[=](.*?) i\]#', $caseinsensitive, $query);
 
         $query = preg_replace_callback('#\:contains\(([^"\'])(.*?)\)#', array($this, 'putQuotes'), $query);
 
@@ -138,14 +146,31 @@ class Selector extends \DOMXPath
                 foreach ($this->qxs as &$qx) {
                     $r = strtr($qx[1], $this->rules);
 
+                    $descendant = str_replace($preventToken . 'i]', ' i]', $descendant);
                     $descendant = trim(preg_replace($qx[0], $r, $descendant));
                 }
+
+                $childs = explode('>', $descendant);
+
+                foreach ($childs as &$child) {
+                    $child = $this->siblingConvert($child);
+                }
+
+                $descendant = implode('/', $childs);
             }
 
             $descendants = implode('//', $descendants);
         }
 
         $query = implode('|', $queries);
+
+        $query = preg_replace('#\[(\d+)\]#', $this->prevent['['] . '\\1' . $this->prevent[']'], $query);
+
+        $query = str_replace('][', ' and ', $query);
+
+        $query = preg_replace('#( and |\[)(preceding-sibling::(\*|\w+))\[1 and #', '\\1\\2[1][', $query);
+
+        $query = preg_replace('#lower-case\((.*?)\)#', 'translate(\\1,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")', $query);
 
         $queries = null;
 
@@ -181,6 +206,33 @@ class Selector extends \DOMXPath
         $inValue = 'concat(' . $quote . implode($glue, explode($quote, $inValue)) . $quote . ')';
 
         return strtr($inValue, $this->prevent);
+    }
+
+    private function siblingConvert($query)
+    {
+        $query = preg_replace('/([+~])([^+~]+)/', '\\1' . $this->allSiblingsToken . '\\2', $query);
+
+        $siblings = explode($this->allSiblingsToken, $query);
+
+        $last = array_pop($siblings);
+
+        $preceding = '';
+
+        foreach ($siblings as $sibling) {
+            $i = substr($sibling, -1) === '+' ? '[1]' : '';
+
+            $sibling = substr($sibling, 0, -1);
+
+            $sibling = preg_replace('/^\*(.*)$/', '[(preceding-sibling::*' . $i . '\\1' . $preceding . ')]', $sibling);
+
+            $sibling = preg_replace('/^(\w+)(.*)$/', '[(preceding-sibling::*' . $i . '[name()="\\1"])\\2' . $preceding . ']', $sibling);
+
+            $preceding = $sibling;
+        }
+
+        $siblings = null;
+
+        return $last . $preceding;
     }
 
     private static function uniqueToken($query, $key, $token = null)
