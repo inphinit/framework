@@ -48,16 +48,22 @@ if (!function_exists('finfo_file')) {
                      '"finfo" is disabled in php (if needed for you)';
 }
 
+$ini_raw_post_data = ini_get('always_populate_raw_post_data');
+
+if ($ini_raw_post_data !== false && $ini_raw_post_data != -1) {
+    $warn[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
+}
+
 if ($definedpath) {
     $systemConfigs = require INPHINIT_PATH . 'application/Config/config.php';
 
     if ($systemConfigs['development'] === false) {
         if (extension_loaded('xdebug')) {
-            $warn[] = 'xdebug is enabled, is recommended disable this in "production mode"';
+            $warn[] = 'xdebug is enabled, is recommended disable this in "production mode" (php.ini)';
         }
 
         if (extension_loaded('xhprof')) {
-            $warn[] = 'xhprof is enabled, is recommended disable this in "production mode"';
+            $warn[] = 'xhprof is enabled, is recommended disable this in "production mode" (php.ini)';
         }
 
         $generators = array(
@@ -73,23 +79,23 @@ if ($definedpath) {
         }
     } else {
         if (function_exists('xcache_get') && ini_enabled('xcache.cacher')) {
-            $warn[] = 'Disable xcache.cacher in "development mode"';
+            $warn[] = 'Disable xcache.cacher in "development mode" (php.ini)';
         }
 
         if (function_exists('opcache_get_status') && ini_enabled('opcache.enable')) {
-            $warn[] = 'Disable opcache.enable in "development mode"';
+            $warn[] = 'Disable opcache.enable in "development mode" (php.ini)';
         }
 
         if (function_exists('wincache_ocache_meminfo') && ini_enabled('wincache.ocenabled')) {
-            $warn[] = 'Disable wincache.ocenabled in "development mode"';
+            $warn[] = 'Disable wincache.ocenabled in "development mode" (php.ini)';
         }
 
         if (function_exists('apc_compile_file') && ini_enabled('apc.enabled')) {
-            $warn[] = 'Disable apc.ocenabled in "development mode"';
+            $warn[] = 'Disable apc.ocenabled in "development mode" (php.ini)';
         }
 
         if (function_exists('eaccelerator_get') && ini_enabled('eaccelerator.enable')) {
-            $warn[] = 'Disable eaccelerator.ocenabled in "development mode"';
+            $warn[] = 'Disable eaccelerator.ocenabled in "development mode" (php.ini)';
         }
     }
 }
