@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -31,11 +31,9 @@ class Redirector extends \Inphinit\Routing\Router
         $to = false;
 
         foreach ($verbs as $verb) {
-            if (preg_match('#^(GET|ANY) (/|/[\s\S]+)$#', $verb, $out)) {
-                if ($out[2] === $verb) {
-                    $to = $verb;
-                    break;
-                }
+            if (preg_match('#^(GET|ANY) /(|[\s\S]+)$#', $verb, $out) && $out[2] === $verb) {
+                $to = $verb;
+                break;
             }
         }
 

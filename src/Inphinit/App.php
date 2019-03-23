@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.0.1';
+    const VERSION = '0.1.4';
 
     private static $events = array();
     private static $configs = array();
@@ -89,7 +89,7 @@ class App
      * Return application state
      *
      * <ul>
-     * <li>0 - Unexecuted - `App::exec()` is not executed/li>
+     * <li>0 - Unexecuted - `App::exec()` is not executed</li>
      * <li>1 - Initiated - `App::exec()` is executed</li>
      * <li>2 - Interactive - After dispatch headers and views</li>
      * <li>3 - Ready - After show return in output</li>
@@ -194,9 +194,9 @@ class App
 
         $route = Route::get();
 
-        if ($route === false) {
+        if (is_integer($route)) {
             self::$state = 5;
-            self::stop(404, 'Invalid route');
+            self::stop($route, 'Invalid route');
         }
 
         $callback = $route['callback'];

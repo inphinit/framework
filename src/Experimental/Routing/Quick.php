@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -123,7 +123,7 @@ class Quick extends Router
             case self::SLASH:
             case self::NOSLASH:
                 $this->format = $slash;
-            break;
+                break;
 
             default:
                 throw new Exception('Invalid type', 2);

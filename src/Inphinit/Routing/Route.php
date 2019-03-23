@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -50,7 +50,8 @@ class Route extends Router
             return self::$current;
         }
 
-        $func = $verb = false;
+        $verb = false;
+        $resp = 404;
 
         $args = array();
 
@@ -62,24 +63,29 @@ class Route extends Router
         $http = $httpMethod . ' ' . $pathinfo;
 
         if (isset($routes[$verb])) {
-            $func = $routes[$verb];
+            $resp = $routes[$verb];
         } elseif (isset($routes[$http])) {
-            $func = $routes[$http];
+            $resp = $routes[$http];
         } else {
             foreach ($routes as $route => $action) {
                 if (parent::find($httpMethod, $route, $pathinfo, $args)) {
-                    $func = $action;
+                    $resp = $action;
+                    break;
+                }
+
+                if (substr($route, strpos($route, ' ') + 1) === $pathinfo) {
+                    $resp = 405;
                     break;
                 }
             }
         }
 
-        if ($func !== false) {
-            self::$current = array(
-                'callback' => $func, 'args' => $args
-            );
+        if (is_numeric($resp)) {
+            self::$current = $resp;
         } else {
-            self::$current = false;
+            self::$current = array(
+                'callback' => $resp, 'args' => $args
+            );
         }
 
         $routes = null;

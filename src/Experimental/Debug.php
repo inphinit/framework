@@ -2,7 +2,7 @@
 /*
  * Experimental
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -133,17 +133,17 @@ class Debug
 
                     function_exists('ini_set') && ini_set('display_errors', '0');
                 }
-            break;
+                break;
 
             case 'classes':
             case 'performance':
                 self::$views[$type] = $view;
                 App::on('terminate', $callRender);
-            break;
+                break;
 
             case 'before':
                 self::$views[$type] = $view;
-            break;
+                break;
 
             default:
                 throw new Exception($type . ' is not valid event', 2);
@@ -169,26 +169,26 @@ class Debug
         switch ($type) {
             case E_PARSE:
                 $message = 'Parse error: ' . $message;
-            break;
+                break;
 
             case E_DEPRECATED:
                 $message = 'Deprecated: ' . $message;
-            break;
+                break;
 
             case E_ERROR:
             case E_USER_ERROR:
                 $message = 'Fatal error: ' . $message;
-            break;
+                break;
 
             case E_WARNING:
             case E_USER_WARNING:
                 $message = 'Warning: ' . $message;
-            break;
+                break;
 
             case E_NOTICE:
             case E_USER_NOTICE:
                 $message = 'Notice: ' . $message;
-            break;
+                break;
         }
 
         return array(

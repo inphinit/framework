@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2018 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -15,26 +15,72 @@ use Inphinit\Storage;
 class Document extends \DOMDocument
 {
     private $xpath;
+    private $selector;
+
     private $internalErr;
+    private $exceptionlevel = 3;
 
     private $complete = false;
     private $simple = false;
 
+    /**
+     * Used with `Document::reporting` method or in extended classes
+     *
+     * @var array
+     */
+    protected $levels = array(\LIBXML_ERR_WARNING, \LIBXML_ERR_ERROR, \LIBXML_ERR_FATAL);
+
+    /** Used with `Document::save` method to save document in XML format */
     const XML = 1;
+
+    /** Used with `Document::save` method to save document in HTML format */
     const HTML = 2;
+
+    /** Used with `Document::save` method to convert and save document in JSON format */
     const JSON = 3;
 
+    /** Used with `Document::toArray` method to convert document in a simple array */
     const SIMPLE = 4;
+
+    /** Used with `Document::toArray` method to convert document in a minimal array */
     const MININAL = 5;
+
+    /** Used with `Document::toArray` method to convert document in a array with all properties */
     const COMPLETE = 6;
 
+    /**
+     * Create a Document instance
+     *
+     * @param string $version  The version number of the document as part of the XML declaration
+     * @param string $encoding The encoding of the document as part of the XML declaration
+     * @return void
+     */
     public function __construct($version = '1.0', $encoding = 'UTF-8')
     {
         parent::__construct($version, $encoding);
     }
 
     /**
-     * Convert array in node elements
+     * Set level error for exception, set `LIBXML_ERR_NONE` (or `0` - zero) for disable exceptions.
+     * For disable only warnings use like this `$dom->reporting(LIBXML_ERR_FATAL, LIBXML_ERR_ERROR)`
+     *
+     * <ul>
+     * <li>0 - `LIBXML_ERR_NONE` - Disable erros</li>
+     * <li>1 - `LIBXML_ERR_WARNING` - Show warnings in DOM</li>
+     * <li>2 - `LIBXML_ERR_ERROR` - Show recoverable erros in DOM</li>
+     * <li>3 - `LIBXML_ERR_FATAL` - Show DOM fatal erros</li>
+     * </ul>
+     *
+     * @param int $args,...
+     * @return void
+     */
+    public function reporting()
+    {
+        $this->levels = func_get_args();
+    }
+
+    /**
+     * Convert a array in node elements
      *
      * @param array|\Traversable $data
      * @throws \Inphinit\Experimental\Exception
@@ -58,13 +104,13 @@ class Document extends \DOMDocument
 
         $this->generate($this, $data);
 
-        self::raise(3);
+        $this->raise($this->exceptionlevel);
 
         $this->enableRestoreInternal(false);
     }
 
     /**
-     * Convert Dom to json string
+     * Convert DOM to JSON string
      *
      * @param bool $format
      * @param int  $options `JSON_HEX_QUOT`, `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_NUMERIC_CHECK`, `JSON_PRETTY_PRINT`, `JSON_UNESCAPED_SLASHES`, `JSON_FORCE_OBJECT`, `JSON_PRESERVE_ZERO_FRACTION`, `JSON_UNESCAPED_UNICODE`, `JSON_PARTIAL_OUTPUT_ON_ERROR`. The behaviour of these constants is described in http://php.net/manual/en/json.constants.php
@@ -73,11 +119,17 @@ class Document extends \DOMDocument
      */
     public function toJson($format = Document::MININAL, $options = 0)
     {
-        return json_encode($this->toArray($format), $options);
+        $this->exceptionlevel = 4;
+
+        $json = json_encode($this->toArray($format), $options);
+
+        $this->exceptionlevel = 3;
+
+        return $json;
     }
 
     /**
-     * Convert Dom to json string
+     * Convert DOM to Array
      *
      * @param int $type
      * @throws \Inphinit\Experimental\Exception
@@ -89,15 +141,15 @@ class Document extends \DOMDocument
             case Document::MININAL:
                 $this->simple = false;
                 $this->complete = false;
-            break;
+                break;
 
             case Document::SIMPLE:
                 $this->simple = true;
-            break;
+                break;
 
             case Document::COMPLETE:
                 $this->complete = true;
-            break;
+                break;
 
             default:
                 throw new DomException('Invalid type', 2);
@@ -133,7 +185,7 @@ class Document extends \DOMDocument
      * Save file to location
      *
      * @param string $path
-     * @param int    $format Support xml, html, and json
+     * @param int    $format Support XML, HTML, and JSON
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
@@ -142,13 +194,13 @@ class Document extends \DOMDocument
         switch ($format) {
             case Document::XML:
                 $format = 'saveXML';
-            break;
+                break;
             case Document::HTML:
                 $format = 'saveHTML';
-            break;
+                break;
             case Document::JSON:
                 $format = 'toJson';
-            break;
+                break;
             default:
                 throw new DomException('Invalid format', 2);
         }
@@ -165,19 +217,23 @@ class Document extends \DOMDocument
     }
 
     /**
-     * Get namespace attributes from element
+     * Get namespace attributes from root element or specific element
      *
      * @param \DOMElement $element
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function getNamespaces(\DOMElement $element)
+    public function getNamespaces(\DOMElement $element = null)
     {
         if ($this->xpath === null) {
             $this->xpath = new \DOMXPath($this);
         }
 
-        $nodes = $this->xpath->query('namespace::*', $element);
+        if ($element === null) {
+            $nodes = $this->xpath->query('namespace::*');
+        } else {
+            $nodes = $this->xpath->query('namespace::*', $element);
+        }
 
         $ns = array();
 
@@ -259,13 +315,13 @@ class Document extends \DOMDocument
     {
         $this->enableRestoreInternal(true);
 
-        $query = new Selector($this);
+        if ($this->selector === null) {
+            $this->selector = new Selector($this);
+        }
 
-        $nodes = $query->get($selector, $context);
+        $nodes = $this->selector->get($selector, $context);
 
-        self::raise(3);
-
-        $query = null;
+        $this->raise($this->exceptionlevel);
 
         $this->enableRestoreInternal(false);
 
@@ -281,19 +337,15 @@ class Document extends \DOMDocument
      */
     public function first($selector, \DOMNode $context = null)
     {
-        $this->enableRestoreInternal(true);
+        $this->exceptionlevel = 4;
 
-        $query = new Selector($this);
+        $nodes = $this->query($selector, $context);
 
-        $nodes = $query->get($selector, $context);
-
-        self::raise(3);
+        $this->exceptionlevel = 3;
 
         $node = $nodes->length ? $nodes->item(0) : null;
 
-        $query = $nodes = null;
-
-        $this->enableRestoreInternal(false);
+        $nodes = null;
 
         return $node;
     }
@@ -304,7 +356,7 @@ class Document extends \DOMDocument
 
         $resource = PHP_VERSION_ID >= 50400 ? parent::$function($from, $options) : parent::$function($from);
 
-        self::raise(4);
+        $this->raise(4);
 
         $this->enableRestoreInternal(false);
 
@@ -326,9 +378,11 @@ class Document extends \DOMDocument
     {
         $err = \libxml_get_errors();
 
-        if (isset($err[0])) {
+        if (isset($err[0]->level) && in_array($level, $this->levels, true)) {
             throw new DomException(null, $level);
         }
+
+        \libxml_clear_errors();
     }
 
     private function generate(\DOMNode $node, $data)
@@ -379,7 +433,7 @@ class Document extends \DOMDocument
 
         if ($nodes) {
             foreach ($nodes as $node) {
-                if ($node->nodeType === XML_ELEMENT_NODE && ($this->complete || $this->simple || ctype_alnum($node->nodeName))) {
+                if ($node->nodeType === \XML_ELEMENT_NODE && ($this->complete || $this->simple || ctype_alnum($node->nodeName))) {
                     $items[$node->nodeName][] = $this->nodeContents($node);
                 }
             }
