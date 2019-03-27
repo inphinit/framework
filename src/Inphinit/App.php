@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.1.4';
+    const VERSION = '0.2.0';
 
     private static $events = array();
     private static $configs = array();
@@ -192,14 +192,14 @@ class App
 
         self::trigger('changestatus', array(\UtilsStatusCode(), null));
 
-        $route = Route::get();
+        $resp = Route::get();
 
-        if (is_integer($route)) {
+        if (is_integer($resp)) {
             self::$state = 5;
-            self::stop($route, 'Invalid route');
+            self::stop($resp, 'Invalid route');
         }
 
-        $callback = $route['callback'];
+        $callback = $resp['callback'];
 
         if (!$callback instanceof \Closure) {
             $parsed = explode(':', $callback, 2);
@@ -208,7 +208,7 @@ class App
             $callback = array(new $callback, $parsed[1]);
         }
 
-        $output = call_user_func_array($callback, $route['args']);
+        $output = call_user_func_array($callback, $resp['args']);
 
         if (class_exists('\\Inphinit\\Http\\Response', false)) {
             Response::dispatch();

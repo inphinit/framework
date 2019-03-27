@@ -37,23 +37,16 @@ abstract class Router
     /**
      * Get params from routes using regex
      *
-     * @param string $httpMethod
      * @param string $route
-     * @param string $pathinfo
+     * @param string $path
      * @param array  $matches
      * @return bool
      */
-    protected static function find($httpMethod, $route, $pathinfo, array &$matches)
+    protected static function find($route, $path, array &$matches)
     {
-        $match = explode(' ', $route, 2);
+        $re = Regex::parse($route);
 
-        if ($match[0] !== 'ANY' && $match[0] !== $httpMethod) {
-            return false;
-        }
-
-        $re = Regex::parse($match[1]);
-
-        if ($re !== false && preg_match('#^' . $re . '$#', $pathinfo, $matches)) {
+        if ($re !== false && preg_match('#^' . $re . '$#', $path, $matches)) {
             array_shift($matches);
             return true;
         }

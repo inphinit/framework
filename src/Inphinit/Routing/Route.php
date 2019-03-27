@@ -34,8 +34,15 @@ class Route extends Router
                 return null;
             }
 
-            $verb = strtoupper(trim($method)) . ' ' . parent::$prefixPath . $path;
-            parent::$httpRoutes[$verb] = $action;
+            $method = strtoupper(trim($method));
+
+            $path = parent::$prefixPath . $path;
+
+            if (!isset(parent::$httpRoutes[$path])) {
+                parent::$httpRoutes[$path] = array();
+            }
+
+            parent::$httpRoutes[$path][$method] = $action;
         }
     }
 
@@ -50,34 +57,32 @@ class Route extends Router
             return self::$current;
         }
 
-        $verb = false;
         $resp = 404;
 
         $args = array();
 
-        $routes = array_filter(parent::$httpRoutes);
-        $pathinfo = \UtilsPath();
-        $httpMethod = $_SERVER['REQUEST_METHOD'];
+        $routes = parent::$httpRoutes;
+        $path = \UtilsPath();
+        $method = $_SERVER['REQUEST_METHOD'];
 
-        $verb = 'ANY ' . $pathinfo;
-        $http = $httpMethod . ' ' . $pathinfo;
-
-        if (isset($routes[$verb])) {
-            $resp = $routes[$verb];
-        } elseif (isset($routes[$http])) {
-            $resp = $routes[$http];
+        //...
+        if (isset($routes[$path])) {
+            $verbs = $routes[$path];
         } else {
-            foreach ($routes as $route => $action) {
-                if (parent::find($httpMethod, $route, $pathinfo, $args)) {
-                    $resp = $action;
-                    break;
-                }
-
-                if (substr($route, strpos($route, ' ') + 1) === $pathinfo) {
-                    $resp = 405;
+            foreach ($routes as $route => $actions) {
+                if (parent::find($route, $path, $args)) {
+                    $verbs = $actions;
                     break;
                 }
             }
+        }
+
+        if (isset($verbs[$method])) {
+            $resp = $verbs[$method];
+        } elseif (isset($verbs['ANY'])) {
+            $resp = $verbs['ANY'];
+        } elseif (isset($verbs)) {
+            $resp = 405;
         }
 
         if (is_numeric($resp)) {
