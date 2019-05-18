@@ -36,7 +36,9 @@ class Debug
         App::off('terminate', array( $nc, 'renderClasses' ));
 
         if (false === empty(self::$displayErrors)) {
-            function_exists('init_set') && ini_set('display_errors', self::$displayErrors);
+            if (function_exists('init_set')) {
+                ini_set('display_errors', self::$displayErrors);
+            }
 
             self::$displayErrors = null;
         }
@@ -131,7 +133,9 @@ class Debug
                 if (empty(self::$displayErrors)) {
                     self::$displayErrors = ini_get('display_errors');
 
-                    function_exists('ini_set') && ini_set('display_errors', '0');
+                    if (function_exists('ini_set')) {
+                        ini_set('display_errors', '0');
+                    }
                 }
                 break;
 

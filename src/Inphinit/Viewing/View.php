@@ -43,7 +43,9 @@ class View
 
         if (self::$views) {
             foreach (self::$views as &$value) {
-                $value && self::render($value[0], $value[1]);
+                if ($value) {
+                    self::render($value[0], $value[1]);
+                }
             }
         }
     }

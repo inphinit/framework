@@ -171,7 +171,6 @@ function UtilsAutoload()
  * @param array  $details
  * @return bool
  */
-
 function UtilsError($type, $message, $file, $line, $details = null)
 {
     static $preventDuplicate = '';
@@ -205,7 +204,10 @@ function UtilsConfig()
     $dev = App::env('development');
 
     error_reporting($dev ? E_ALL|E_STRICT : E_ALL & ~E_STRICT & ~E_DEPRECATED);
-    function_exists('init_set') && ini_set('display_errors', $dev ? 1 : 0);
+
+    if (function_exists('init_set')) {
+        ini_set('display_errors', $dev ? 1 : 0);
+    }
 
     register_shutdown_function('UtilsShutDown');
     set_error_handler('UtilsError', E_ALL|E_STRICT);

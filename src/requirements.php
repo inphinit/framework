@@ -25,7 +25,7 @@ if (version_compare(PHP_VERSION, '5.3.0', '<')) {
 if ($definedpath) {
     $folder = INPHINIT_PATH . 'storage';
 
-    if (!is_writable($folder)) {
+    if (is_dir($folder) && !is_writable($folder)) {
         $error[] = 'Folder ' . $folder . ' requires write permissions, use chmod';
     }
 }
@@ -50,7 +50,7 @@ if (!function_exists('finfo_file')) {
 
 $ini_raw_post_data = ini_get('always_populate_raw_post_data');
 
-if ($ini_raw_post_data !== false && $ini_raw_post_data != -1) {
+if ($ini_raw_post_data != -1) {
     $warn[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
 }
 

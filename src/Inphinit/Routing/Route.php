@@ -58,14 +58,12 @@ class Route extends Router
         }
 
         $resp = 404;
-
         $args = array();
 
         $routes = parent::$httpRoutes;
         $path = \UtilsPath();
         $method = $_SERVER['REQUEST_METHOD'];
 
-        //...
         if (isset($routes[$path])) {
             $verbs = $routes[$path];
         } else {

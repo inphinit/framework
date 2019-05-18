@@ -91,7 +91,9 @@ class Cache
         $this->expires = $expires;
         $this->modified = $modified === 0 ? REQUEST_TIME : $modified;
 
-        ob_get_level() > 0 && ob_end_clean();
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
 
         if (ob_start(array($this, 'write'), 1024)) {
             $this->noStarted = false;
@@ -127,12 +129,19 @@ class Cache
 
         $this->finished = true;
 
-        ob_get_level() > 0 && ob_end_clean();
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
 
-        $this->handle && fclose($this->handle);
+        if ($this->handle) {
+            fclose($this->handle);
+        }
 
-        if (App::state() === 4) {
-            is_file($this->cacheTmp) && unlink($this->cacheTmp);
+        if (App::state() > 3) {
+            if (is_file($this->cacheTmp)) {
+                unlink($this->cacheTmp);
+            }
+
             return null;
         }
 
@@ -174,9 +183,7 @@ class Cache
     {
         $modifiedsince = Request::header('If-Modified-Since');
 
-        if ($modifiedsince &&
-            preg_match('#^[a-z]{3}[,] \d{2} [a-z]{3} \d{4} \d{2}[:]\d{2}[:]\d{2} GMT$#i', $modifiedsince) !== 0 &&
-            strtotime($modifiedsince) == $modified) {
+        if ($modifiedsince && strtotime($modifiedsince) == $modified) {
             return true;
         }
 
@@ -204,7 +211,10 @@ class Cache
      */
     public function write($data)
     {
-        $this->handle && fwrite($this->handle, $data);
+        if ($this->handle) {
+            fwrite($this->handle, $data);
+        }
+
         return '';
     }
 
