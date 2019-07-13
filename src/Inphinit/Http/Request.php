@@ -90,8 +90,12 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function get($key, $alternative = false)
+    public static function get($key = null, $alternative = false)
     {
+        if ($key == null) {
+            return $_GET;
+        }
+
         return self::data($_GET, $key, $alternative);
     }
 
@@ -103,8 +107,12 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function post($key, $alternative = false)
+    public static function post($key = null, $alternative = false)
     {
+        if ($key == null) {
+            return $_POST;
+        }
+
         return self::data($_POST, $key, $alternative);
     }
 
