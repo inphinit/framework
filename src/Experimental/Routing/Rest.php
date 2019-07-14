@@ -65,16 +65,29 @@ class Rest extends Router
     }
 
     /**
-     * Define routes
+     * Define the Content-Type header
      *
      * @param string $contentType
+     * @return void
+     */
+    public function type($contentType)
+    {
+        $this->contentType = $contentType;
+
+        return $this;
+    }
+
+    /**
+     * Define the charset of Content-Type header
+     *
      * @param string $charset
      * @return void
      */
-    public function type($contentType, $charset = 'UTF-8')
+    public function charset($charset)
     {
-        $this->contentType = $contentType;
         $this->charset = $charset;
+
+        return $this;
     }
 
     /**
