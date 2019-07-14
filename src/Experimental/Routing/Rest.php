@@ -35,11 +35,12 @@ class Rest extends Router
      * Create REST routes based in a \Controller
      *
      * @param string $controller
+     * @param string $path
      * @return void
      */
-    public static function create($controller)
+    public static function create($controller, $path = null)
     {
-        $rest = new static($controller);
+        $rest = new static($controller, $path);
         $rest->prepare();
         $rest = null;
     }
@@ -48,10 +49,11 @@ class Rest extends Router
      * Create REST routes based in a \Controller
      *
      * @param string $controller
+     * @param string $path
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function __construct($controller)
+    public function __construct($controller, $path = null)
     {
         $fullController = parent::$prefixNS . strtr($controller, '.', '\\');
         $fullController = '\\Controller\\' . $fullController;
@@ -62,6 +64,8 @@ class Rest extends Router
 
         $this->controller = $controller;
         $this->fullController = $fullController;
+
+        $this->path = $path !== null ? $path : strtolower('/' . parent::$prefixNS . strtr($controller, '.', '/'));
     }
 
     /**
@@ -108,7 +112,7 @@ class Rest extends Router
             $route = empty(self::$valids[$method]) ? false : self::$valids[$method];
 
             if ($route) {
-                Route::set($route[0], $route[1], function ()
+                Route::set($route[0], $this->path.$route[1], function ()
                 use ($method, $contentType, $controller) {
                     header('Content-Type: ' . $contentType);
 
