@@ -27,14 +27,16 @@ class App
      *
      * @param string                $key
      * @param string|bool|int|float $value
-     * @return string|bool|int|float|void
+     * @return string|bool|int|float|array|void
      */
-    public static function env($key, $value = null)
+    public static function env($key = null, $value = null)
     {
         if (is_string($value) || is_bool($value) || is_numeric($value)) {
             self::$configs[$key] = $value;
         } elseif ($value === null && isset(self::$configs[$key])) {
             return self::$configs[$key];
+        } elseif ($key === null && $value === null) {
+            return self::$configs;
         }
     }
 
