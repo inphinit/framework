@@ -65,6 +65,29 @@ class Rest extends Router
     }
 
     /**
+     * Add route to execute
+     *
+     * @param string|array $method
+     * @param string $route
+     * @param string $function
+     * @return void
+     */
+    public function extend($method, $route, $function)
+    {
+        if ($this->ready) {
+            throw new Exception('REST instance already executed', 2);
+        }
+
+        if (isset(self::$valids[$function])) {
+            throw new Exception('Function in use', 2);
+        } else {
+            self::$valids[$function] = array($method, $route);
+        }
+
+        return $this;
+    }
+
+    /**
      * Define routes
      *
      * @param string $contentType
