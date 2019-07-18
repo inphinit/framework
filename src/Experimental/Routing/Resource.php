@@ -130,6 +130,8 @@ class Resource extends Router
 
             if ($route) {
                 Route::set($route[0], $this->path.$route[1], function () use ($method, $controller) {
+                    header('Content-Type: text/html; charset=UTF-8');
+
                     return call_user_func_array(array(new $controller, $method), func_get_args());
                 });
             }
