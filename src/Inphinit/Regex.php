@@ -26,8 +26,11 @@ class Regex
         }
 
         $str = preg_replace('#' . self::$rearg . '#', '\\\$0', $str);
-        return preg_replace_callback('#\\\{:.*?:\\\}#',
-                    array( '\\' . get_called_class(), 'args' ), $str);
+        return preg_replace_callback(
+            '#\\\{:.*?:\\\}#',
+            array( '\\' . get_called_class(), 'args' ),
+            $str
+        );
     }
 
     /**

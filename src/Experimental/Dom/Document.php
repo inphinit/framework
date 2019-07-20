@@ -65,10 +65,10 @@ class Document extends \DOMDocument
      * For disable only warnings use like this `$dom->reporting(LIBXML_ERR_FATAL, LIBXML_ERR_ERROR)`
      *
      * <ul>
-     * <li>0 - `LIBXML_ERR_NONE` - Disable erros</li>
+     * <li>0 - `LIBXML_ERR_NONE` - Disable errors</li>
      * <li>1 - `LIBXML_ERR_WARNING` - Show warnings in DOM</li>
-     * <li>2 - `LIBXML_ERR_ERROR` - Show recoverable erros in DOM</li>
-     * <li>3 - `LIBXML_ERR_FATAL` - Show DOM fatal erros</li>
+     * <li>2 - `LIBXML_ERR_ERROR` - Show recoverable errors in DOM</li>
+     * <li>3 - `LIBXML_ERR_FATAL` - Show DOM fatal errors</li>
      * </ul>
      *
      * @param int $args,...
@@ -321,7 +321,11 @@ class Document extends \DOMDocument
 
         $nodes = $this->selector->get($selector, $context);
 
-        $this->raise($this->exceptionlevel);
+        $level = $this->exceptionlevel;
+
+        $this->exceptionlevel = 3;
+
+        $this->raise($level);
 
         $this->enableRestoreInternal(false);
 
@@ -341,11 +345,7 @@ class Document extends \DOMDocument
 
         $nodes = $this->query($selector, $context);
 
-        $this->exceptionlevel = 3;
-
-        $node = $nodes->length ? $nodes->item(0) : null;
-
-        $nodes = null;
+        $node = $nodes ? $nodes->item(0) : null;
 
         return $node;
     }

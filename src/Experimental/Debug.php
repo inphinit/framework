@@ -13,11 +13,12 @@ use Inphinit\App;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
 use Inphinit\Viewing\View;
+use Inphinit\Experimental\Config;
 
 class Debug
 {
-    private static $loadConfigs = false;
     private static $showBeforeView = false;
+    private static $linkSearchError;
     private static $displayErrors;
     private static $views = array();
     private static $fatal = array(E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR, E_RECOVERABLE_ERROR);
@@ -31,7 +32,7 @@ class Debug
     {
         $nc = '\\' . get_called_class();
 
-        App::off('error',     array( $nc, 'renderError' ));
+        App::off('error', array( $nc, 'renderError' ));
         App::off('terminate', array( $nc, 'renderPerformance' ));
         App::off('terminate', array( $nc, 'renderClasses' ));
 
@@ -263,8 +264,9 @@ class Debug
 
         return array(
             'breakpoint' => $breakpoint,
-            'preview' => preg_split('#\r\n|\n#',
-                trim( File::portion($file, $init, $end, true), "\r\n")
+            'preview' => preg_split(
+                '#\r\n|\n#',
+                trim(File::portion($file, $init, $end, true), "\r\n")
             )
         );
     }
@@ -306,19 +308,17 @@ class Debug
      */
     public static function searcherror($message)
     {
-        if (self::$loadConfigs === false) {
-            App::config('debug');
-            self::$loadConfigs = true;
+        if (self::$linkSearchError === null) {
+            self::$linkSearchError = Config::load('debug')->get('searcherror');
         }
 
-        $link = App::env('searcherror');
+        $link = self::$linkSearchError;
 
         if (strpos($link, '%error%') === -1) {
             return $message;
         }
 
-        return preg_replace_callback('#^([\s\S]+?)\s+in\s+([\s\S]+?:\d+)|^([\s\S]+?)$#', function ($matches) use ($link)
-        {
+        return preg_replace_callback('#^([\s\S]+?)\s+in\s+([\s\S]+?:\d+)|^([\s\S]+?)$#', function ($matches) use ($link) {
             $error = empty($matches[3]) ? $matches[1] : $matches[3];
 
             $url = str_replace('%error%', urlencode($error), $link);
@@ -326,7 +326,6 @@ class Debug
 
             return '<a target="_blank" href="' . $url . '">' . $error . '</a>' .
                     (empty($matches[2]) ? '' : (' in ' . $matches[2]));
-
         }, $message);
     }
 

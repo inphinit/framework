@@ -39,23 +39,6 @@ class App
     }
 
     /**
-     * Set environment variables by config files
-     *
-     * @param string $path
-     * @return void
-     */
-    public static function config($path)
-    {
-        $data = \UtilsSandboxLoader('application/Config/' . strtr($path, '.', '/') . '.php');
-
-        foreach ($data as $key => $value) {
-            self::env($key, $value);
-        }
-
-        $data = null;
-    }
-
-    /**
      * Trigger registered event
      *
      * @param string $name

@@ -50,6 +50,7 @@ class Redirect
     public static function to($path, $code = 302, $trigger = true)
     {
         $debuglvl = self::$debuglvl;
+
         self::$debuglvl = 2;
 
         if (headers_sent()) {

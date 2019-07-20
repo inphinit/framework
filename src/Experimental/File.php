@@ -92,11 +92,12 @@ class File extends \Inphinit\File
         curl_setopt($ch, CURLOPT_NOBODY, true);
 
         $headers = curl_exec($ch);
+
         curl_close($ch);
 
         $ch = null;
 
-        if (preg_match('#content-length:(\s+?|)(\d+)#i', $headers, $matches)) {
+        if (preg_match('#\bcontent-length:(\s+?|)(\d+)#i', $headers, $matches)) {
             return $matches[2];
         }
 

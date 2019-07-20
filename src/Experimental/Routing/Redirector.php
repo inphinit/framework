@@ -55,7 +55,7 @@ class Redirector extends \Inphinit\Routing\Router
 
         if ($verb === false) {
             throw new Exception('Controller or method is not defined', 2);
-        } else if (strpos($verb, 'GET /') !== 0 && strpos($verb, 'ANY /') !== 0) {
+        } elseif (strpos($verb, 'GET /') !== 0 && strpos($verb, 'ANY /') !== 0) {
             throw new Exception('Method not allowed', 2);
         }
 

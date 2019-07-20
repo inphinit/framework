@@ -126,7 +126,6 @@ function UtilsAutoload()
     }
 
     spl_autoload_register(function ($class) use ($prefixes) {
-
         $class = ltrim($class, '\\');
 
         $isfile = $base = false;
@@ -199,7 +198,9 @@ function UtilsConfig()
     define('REQUEST_TIME', time());
     define('EOL', chr(10));
 
-    App::config('config');
+    foreach (\UtilsSandboxLoader('application/Config/config.php') as $key => $value) {
+        App::env($key, $value);
+    }
 
     $dev = App::env('development');
 

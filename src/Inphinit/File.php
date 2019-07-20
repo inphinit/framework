@@ -97,7 +97,6 @@ class File
                         ($perms & 0x0200 ? 'T' : '-');
 
         return $info;
-
     }
 
     /**
