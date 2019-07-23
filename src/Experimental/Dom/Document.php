@@ -347,6 +347,8 @@ class Document extends \DOMDocument
 
         $node = $nodes ? $nodes->item(0) : null;
 
+        $nodes = null;
+
         return $node;
     }
 

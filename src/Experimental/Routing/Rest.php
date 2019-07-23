@@ -29,7 +29,7 @@ class Rest extends Router
         'show'    => array( 'GET',  '/{:[^/]+:}' ),
         'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
         'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
-        'destroy' => array( 'DELETE', '/{:[^/]+:}' ),
+        'destroy' => array( 'DELETE', '/{:[^/]+:}' )
     );
 
     /**
@@ -52,12 +52,11 @@ class Rest extends Router
      *
      * @param string $controller
      * @throws \Inphinit\Experimental\Exception
-     * @return void
+     * @return \Inphinit\Experimental\Rest
      */
     public function __construct($controller)
     {
-        $fullController = parent::$prefixNS . strtr($controller, '.', '\\');
-        $fullController = '\\Controller\\' . $fullController;
+        $fullController = '\\Controller\\' . parent::$prefixNS . strtr($controller, '.', '\\');
 
         if (class_exists($fullController) === false) {
             $level = self::$debuglvl;
@@ -69,13 +68,7 @@ class Rest extends Router
 
         $this->fullController = $fullController;
 
-        $path = preg_replace('#([A-Z]+?)#', '-$1', strtr($controller, '.', '/'));
-
-        $path = str_replace('//', '/', $path);
-
-        $path = preg_replace('#//+|/-+|-+/#', '/', $path);
-
-        $path = strtolower(preg_replace('#^-|-$#', '', $path));
+        $path = strtolower(preg_replace('#([a-z])([A-Z])#', '$1-$2', strtr($controller, '.', '/')));
 
         $this->path = '/' . trim($path, '/');
     }
@@ -84,7 +77,7 @@ class Rest extends Router
      * Define the Content-Type header
      *
      * @param string $contentType
-     * @return void
+     * @return \Inphinit\Experimental\Rest
      */
     public function type($contentType)
     {
@@ -97,7 +90,7 @@ class Rest extends Router
      * Define the Content-Type charset
      *
      * @param string $charset
-     * @return void
+     * @return \Inphinit\Experimental\Rest
      */
     public function charset($charset)
     {
@@ -110,11 +103,11 @@ class Rest extends Router
      * Define the Content-Type charset
      *
      * @param string $prefix
-     * @return void
+     * @return \Inphinit\Experimental\Rest
      */
     public function path($path)
     {
-        if (empty($path)) {
+        if ($path === '') {
             $this->path = '';
         } else {
             $this->path = '/' . trim(str_replace('//', '/', $path), '/');
@@ -156,9 +149,9 @@ class Rest extends Router
         $path = $this->path;
 
         foreach ($classMethods as $method) {
-            $route = empty(self::$valids[$method]) ? false : self::$valids[$method];
+            if (false === empty(self::$valids[$method])) {
+                $route = self::$valids[$method];
 
-            if ($route) {
                 Route::set($route[0], $path . $route[1], function () use ($method, $contentType, $controller) {
                     header('Content-Type: ' . $contentType);
 
