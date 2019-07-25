@@ -17,7 +17,7 @@ class Session implements \IteratorAggregate
     private $handle;
     private $iterator;
     private $savepath;
-    private $prefix = '~sess_';
+    private $prefix = 'sess_';
     private $data = array();
     private $insertions = array();
     private $deletions = array();
@@ -36,7 +36,9 @@ class Session implements \IteratorAggregate
      */
     public function __construct($name = 'inphinit', $id = null, array $opts = array())
     {
-        self::raise();
+        if (headers_sent()) {
+            throw new Exception('Cannot modify header information - headers already sent', 2);
+        }
 
         $this->savepath = Storage::resolve('session');
 
@@ -69,11 +71,8 @@ class Session implements \IteratorAggregate
         }
 
         $opts = $opts + array(
-            'path' => '/',
-            'expire' => 0,
-            'domain' => '',
-            'secure' => false,
-            'httponly' => false
+            'expire' => 0, 'path' => '/', 'domain' => '',
+            'secure' => false, 'httponly' => false
         );
 
         $this->opts = (object) $opts;
@@ -97,10 +96,20 @@ class Session implements \IteratorAggregate
             return null;
         }
 
-        $data = $this->getData();
+        $this->lock();
+
+        $data = '';
+
+        rewind($this->handle);
+
+        $data = trim(stream_get_contents($this->handle));
 
         if ($data !== '') {
+            $data = unserialize($data);
+
             $this->data = $this->insertions + $data;
+
+            $data = null;
 
             foreach ($this->deletions as $key => $value) {
                 unset($this->data[$key]);
@@ -131,7 +140,9 @@ class Session implements \IteratorAggregate
      */
     public function regenerate($id = null, $trydeleteold = false)
     {
-        self::raise();
+        if (headers_sent()) {
+            throw new Exception('Cannot modify header information - headers already sent', 2);
+        }
 
         $old = $this->savepath . '/' . $this->prefix . $this->currentId;
 
@@ -174,15 +185,8 @@ class Session implements \IteratorAggregate
      */
     private function cookie()
     {
-        if (!setcookie(
-            $this->currentName,
-            $this->currentId,
-            $this->opts->expire,
-            $this->opts->path,
-            $this->opts->domain,
-            $this->opts->secure,
-            $this->opts->httponly
-        )
+        if (!setcookie($this->currentName, $this->currentId, $this->opts->expire,
+                $this->opts->path, $this->opts->domain, $this->opts->secure, $this->opts->httponly)
         ) {
             throw new Exception('Failed to set HTTP cookie', 3);
         }
@@ -195,31 +199,22 @@ class Session implements \IteratorAggregate
      */
     private function read()
     {
-        $data = $this->getData();
+        $this->lock();
 
-        if ($data) {
-            $this->data = $data;
+        $data = '';
+
+        rewind($this->handle);
+
+        $data = trim(stream_get_contents($this->handle));
+
+        if ($data !== '') {
+            $this->data = unserialize($data);
             $data = null;
         }
 
         flock($this->handle, LOCK_UN);
 
         $this->iterator = new \ArrayIterator($this->data);
-    }
-
-    private function getData()
-    {
-        $this->lock();
-
-        rewind($this->handle);
-
-        $data = trim(stream_get_contents($this->handle));
-
-        if ($data) {
-            return unserialize($data);
-        }
-
-        return '';
     }
 
     /**
@@ -246,13 +241,6 @@ class Session implements \IteratorAggregate
         rewind($this->handle);
 
         fwrite($this->handle, serialize($this->data));
-    }
-
-    private static function raise()
-    {
-        if (headers_sent($filename, $line)) {
-            throw new Exception("HTTP headers already sent by $filename:$line", 3);
-        }
     }
 
     /**

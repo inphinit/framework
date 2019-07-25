@@ -62,21 +62,13 @@ class Quick extends Router
         $fc = '\\Controller\\' . $controller;
 
         if (class_exists($fc) === false) {
-            $level = self::$debuglvl;
-
-            self::$debuglvl = 2;
-
-            throw new Exception('Invalid class ' . $fc, $level);
+            throw new Exception('Invalid class ' . $fc, self::$debuglvl);
         }
 
         $cm = self::verbs(get_class_methods($fc));
 
         if (empty($cm)) {
-            $level = self::$debuglvl;
-
-            self::$debuglvl = 2;
-
-            throw new Exception($this->fullController . ' is empty ', $level);
+            throw new Exception($this->fullController . ' is empty ', self::$debuglvl);
         }
 
         $this->classMethods = $cm;

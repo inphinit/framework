@@ -14,7 +14,6 @@ class Selector extends \DOMXPath
     private $prevent;
     private $rules;
     private $allSiblingsToken;
-    private static $cache = array();
     private $qxs = array(
         array( '/^([^a-z*])/i', '*\\1' ),
         array( '/([>+~])([^\w*\s])/', '\\1*\\2' ),
@@ -75,19 +74,6 @@ class Selector extends \DOMXPath
 
     private function exec($method, $query, $context, $registerNodeNS)
     {
-        $query = $this->toXPath($query);
-
-        if (PHP_VERSION_ID >= 50303) {
-            return $this->$method($query, $context, $registerNodeNS);
-        } elseif ($context !== null) {
-            return $this->$method($query, $context);
-        }
-
-        return $this->$method($query);
-    }
-
-    private function tokens($query)
-    {
         $dot = self::uniqueToken($query, 'dot');
         $hash = self::uniqueToken($query, 'hash');
         $spaces = self::uniqueToken($query, 'space');
@@ -122,16 +108,20 @@ class Selector extends \DOMXPath
         );
 
         $this->allSiblingsToken = self::uniqueToken($query, 'allSiblings');
+
+        $query = $this->toXPath($query);
+
+        if (PHP_VERSION_ID >= 50303) {
+            return $this->$method($query, $context, $registerNodeNS);
+        } else if ($context !== null) {
+            return $this->$method($query, $context);
+        }
+
+        return $this->$method($query);
     }
 
     private function toXPath($query)
     {
-        if (isset(self::$cache[$query])) {
-            return self::$cache[$query];
-        }
-
-        $this->tokens($query);
-
         $query = preg_replace_callback('#\[(\w+)(.)?[=]([^"\'])(.*?)\]#', array($this, 'putQuotes'), $query);
 
         $preventToken = $this->prevent[' '];
@@ -149,6 +139,7 @@ class Selector extends \DOMXPath
         $queries = explode(',', $query);
 
         foreach ($queries as &$descendants) {
+
             $descendants = explode(' ', trim($descendants));
 
             foreach ($descendants as &$descendant) {
@@ -185,7 +176,7 @@ class Selector extends \DOMXPath
 
         $restore = array_combine(array_values($this->prevent), array_keys($this->prevent));
 
-        return $cache[$query] = '//' . strtr($query, $restore);
+        return '//' . strtr($query, $restore);
     }
 
     private function putQuotes($arg)

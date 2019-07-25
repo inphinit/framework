@@ -101,10 +101,7 @@ class Shell
         }
 
         $this->io = $callback;
-        
-        if ($exitCicle) {
-            $this->ec = $exitCicle;
-        }
+        $this->ec = $exitCicle ? $exitCicle : $this->ec;
 
         if ($this->started) {
             return true;

@@ -42,15 +42,23 @@ class Maintenance
      */
     protected static function enable($enable)
     {
-        $config = Config::load('config');
+        $data = include INPHINIT_PATH . 'application/Config/config.php';
 
-        if ($config->get('maintenance') === $enable) {
+        if ($data['maintenance'] === $enable) {
             return true;
         }
 
-        $config->set('maintenance', $enable);
+        $data['maintenance'] = $enable;
 
-        return $config->save();
+        $wd = preg_replace('#,(\s+|)\)#', '$1)', var_export($data, true));
+
+        $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL);
+
+        $response = copy($path, INPHINIT_PATH . 'application/Config/config.php');
+
+        unlink($path);
+
+        return $response;
     }
 
     /**
