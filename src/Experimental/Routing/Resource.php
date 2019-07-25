@@ -66,41 +66,6 @@ class Resource extends Router
     }
 
     /**
-     * Add route to execute
-     *
-     * @param string|array $method
-     * @param string $route
-     * @param string $function
-     * @return void
-     */
-    public function extend($method, $route, $function)
-    {
-        if ($this->ready) {
-            throw new Exception('Resource instance already executed', 2);
-        }
-
-        if (!is_array($method)) {
-            $method = strcasecmp($method, 'ANY') === 0 ? array('GET', 'POST') : array($method);
-        }
-
-        foreach ($method as &$m) {
-            $m = strtoupper($m);
-
-            if (!in_array($m, array('GET', 'POST'))) {
-                throw new Exception('Resource allow POST and GET method only', 2);
-            }
-        }
-
-        if (isset(self::$valids[$function])) {
-            throw new Exception('Function in use', 2);
-        } else {
-            self::$valids[$function] = array($method, $route);
-        }
-
-        return $this;
-    }
-
-    /**
      * Define routes
      *
      * @throws \Inphinit\Experimental\Exception
