@@ -184,7 +184,7 @@ class Config implements \IteratorAggregate
      * Example:
      * <pre>
      * <code>
-     * $foo = new Session;
+     * $foo = new Config('file'); //or Config::load('file')
      *
      * foreach ($foo as $key => $value) {
      *     var_dump($key, $value);
