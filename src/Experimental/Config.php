@@ -93,18 +93,16 @@ class Config implements \IteratorAggregate
      * Get all values like array or get specific item by level (multidimensional) using path
      *
      * @param string $path (optional) Path with "dots"
-     * @param string $alternative (optional) alternative value does not find the selected value, default is false
+     * @param string $alternative (optional) alternative value does not find the selected value, default is null
      * @return mixed
      */
-    public function get($path = null, $alternative = false)
+    public function get($path = null, $alternative = null)
     {
         if ($path === null) {
             return $this->data;
         }
 
-        $data = Helper::extract($path, $this->data);
-
-        return $data === false ? $alternative : $data;
+        return Helper::extract($path, $this->data, $alternative);
     }
 
     /**

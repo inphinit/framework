@@ -45,7 +45,7 @@ class Negotiation
      * @param int $level Sorts languages using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Experimental\Exception
-     * @return array|bool
+     * @return array|null
      */
     public function acceptLanguage($level = self::HIGH)
     {
@@ -58,7 +58,7 @@ class Negotiation
      * @param int $level Sorts charsets using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Experimental\Exception
-     * @return array
+     * @return array|null
      */
     public function acceptCharset($level = self::HIGH)
     {
@@ -71,7 +71,7 @@ class Negotiation
      * @param string $level Sorts encodings using `LOW` or `HIGH` constants,
      *                      or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Experimental\Exception
-     * @return array|bool
+     * @return array|null
      */
     public function acceptEncoding($level = self::HIGH)
     {
@@ -84,7 +84,7 @@ class Negotiation
      * @param int $level Sorts types using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Experimental\Exception
-     * @return array|bool
+     * @return array|null
      */
     public function accept($level = self::HIGH)
     {
@@ -100,7 +100,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getLanguage($alternative = false)
+    public function getLanguage($$alternative = null)
     {
         $headers = $this->acceptLanguage();
         return $headers ? key($headers) : $alternative;
@@ -115,7 +115,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getCharset($alternative = false)
+    public function getCharset($$alternative = null)
     {
         $headers = $this->acceptCharset();
         return $headers ? key($headers) : $alternative;
@@ -130,7 +130,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getEncoding($alternative = false)
+    public function getEncoding($$alternative = null)
     {
         $headers = $this->acceptEncoding();
         return $headers ? key($headers) : $alternative;
@@ -145,7 +145,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getAccept($alternative = false)
+    public function getAccept($$alternative = null)
     {
         $headers = $this->accept();
         return $headers ? key($headers) : $alternative;
@@ -157,14 +157,14 @@ class Negotiation
      * @param string $header
      * @param int    $level
      * @throws \Inphinit\Experimental\Exception
-     * @return array|bool
+     * @return array|null
      */
     public function header($header, $level = self::HIGH)
     {
         $header = strtolower($header);
 
         if (empty($this->headers[$header])) {
-            return false;
+            return null;
         }
 
         return self::qFactor($this->headers[$header], $level);

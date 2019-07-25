@@ -51,7 +51,7 @@ class Request
      * Get HTTP headers from current request
      *
      * @param string $name
-     * @return string|array|bool
+     * @return string|array|null
      */
     public static function header($name = null)
     {
@@ -61,7 +61,7 @@ class Request
 
         if (is_string($name)) {
             $name = strtolower($name);
-            return isset(self::$reqHeadersLower[$name]) ? self::$reqHeadersLower[$name] : false;
+            return isset(self::$reqHeadersLower[$name]) ? self::$reqHeadersLower[$name] : null;
         }
 
         return self::$reqHeaders;
@@ -70,12 +70,12 @@ class Request
     /**
      * Get querystring, this method is useful for anyone who uses IIS.
      *
-     * @return string|bool
+     * @return string|null
      */
     public static function query()
     {
         if (empty($_GET['RESERVED_IISREDIRECT']) === false) {
-            return false;
+            return null;
         }
 
         return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : false;
@@ -90,7 +90,7 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function get($key, $alternative = false)
+    public static function get($key, $alternative = null)
     {
         return self::data($_GET, $key, $alternative);
     }
@@ -103,7 +103,7 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function post($key, $alternative = false)
+    public static function post($key, $alternative = null)
     {
         return self::data($_POST, $key, $alternative);
     }
@@ -115,7 +115,7 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function cookie($key, $alternative = false)
+    public static function cookie($key, $alternative = null)
     {
         return self::data($_COOKIE, $key, $alternative);
     }
@@ -136,7 +136,7 @@ class Request
             $firstKey = substr($key, 0, $pos);
             $restKey  = substr($key, $pos + 1);
         } elseif (isset($_FILES[$firstKey]['name']) === false) {
-            return false;
+            return null;
         } elseif ($restKey === null) {
             return $_FILES[$firstKey];
         }
@@ -144,7 +144,7 @@ class Request
         $tmpName = Helper::extract($restKey, $_FILES[$firstKey]['tmp_name']);
 
         if ($tmpName === false) {
-            return false;
+            return null;
         }
 
         return array(
@@ -160,12 +160,12 @@ class Request
      * Get a value input handler
      *
      * @param bool $binary
-     * @return resource|bool
+     * @return resource|null
      */
     public static function raw($binary = true)
     {
         if (is_readable('php://input')) {
-            return false;
+            return null;
         }
 
         $mode = $binary ? 'rb' : 'r';
@@ -176,10 +176,10 @@ class Request
 
         $tmp = Storage::temp();
 
-        return copy('php://input', $tmp) ? fopen($tmp, $mode) : false;
+        return copy('php://input', $tmp) ? fopen($tmp, $mode) : null;
     }
 
-    private static function data(&$data, $key, $alternative = false)
+    private static function data(&$data, $key, $alternative = null)
     {
         if (empty($data)) {
             return $alternative;
@@ -187,8 +187,7 @@ class Request
             return isset($data[$key]) ? $data[$key] : $alternative;
         }
 
-        $data = Helper::extract($key, $data);
-        return $data === false ? $alternative : $data;
+        return Helper::extract($key, $data, $alternative);
     }
 
     private static function generate()

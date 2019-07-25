@@ -61,9 +61,10 @@ class Helper
      *
      * @param string             $path
      * @param array|\Traversable $items
+     * @param mixed              $alternative
      * @return mixed
      */
-    public static function extract($path, $items)
+    public static function extract($path, $items, $alternative = null)
     {
         $paths = explode('.', $path);
 
@@ -71,7 +72,7 @@ class Helper
             if (self::iterable($items) && array_key_exists($value, $items)) {
                 $items = $items[$value];
             } else {
-                return null;
+                return $alternative;
             }
         }
 
