@@ -43,7 +43,7 @@ class Document extends \DOMDocument
     const SIMPLE = 4;
 
     /** Used with `Document::toArray` method to convert document in a minimal array */
-    const MININAL = 5;
+    const MINIMAL = 5;
 
     /** Used with `Document::toArray` method to convert document in a array with all properties */
     const COMPLETE = 6;
@@ -117,7 +117,7 @@ class Document extends \DOMDocument
      *
      * @return string
      */
-    public function toJson($format = Document::MININAL, $options = 0)
+    public function toJson($format = Document::MINIMAL, $options = 0)
     {
         $this->exceptionlevel = 4;
 
@@ -138,7 +138,7 @@ class Document extends \DOMDocument
     public function toArray($type = Document::SIMPLE)
     {
         switch ($type) {
-            case Document::MININAL:
+            case Document::MINIMAL:
                 $this->simple = false;
                 $this->complete = false;
                 break;
