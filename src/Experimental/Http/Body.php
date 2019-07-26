@@ -61,9 +61,13 @@ class Body
             return self::fromJson();
         } elseif (self::contentTypeCompare('application/xml', self::$contentType) || self::contentTypeCompare('text/xml', self::$contentType)) {
             return self::fromXml();
+        } elseif (self::contentTypeCompare('multipart/form-data', self::$contentType) || self::contentTypeCompare('application/x-www-form-urlencoded', self::$contentType)) {
+            return self::fromFormData();
+        } elseif (self::contentTypeCompare('text/plain', self::$contentType)) {
+            return self::fromPlainText();
         }
 
-        return null;
+        return false;
     }
 
     public static function fromJson()
@@ -86,6 +90,29 @@ class Body
         $body->parsed = $document->toArray($type);
 
         return $body;
+    }
+
+    public static function fromPlainText()
+    {
+        $body = new Body();
+
+        parse_str($body->content, $body->parsed);
+
+        return $body;
+    }
+
+    public static function fromFormData()
+    {
+        $body = new Body();
+
+        $body->parsed = $_POST;
+
+        return $body;
+    }
+
+    public static function fromFormUrlEncoded()
+    {
+        return self::fromFormData();
     }
 
     public function get($key, $alternative = null)
