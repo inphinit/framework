@@ -128,6 +128,21 @@ class Body
         return $data === null ? $alternative : $data;
     }
 
+    public function filter($keys = array(), $alternatives = array())
+    {
+        if (count($alternatives) !== 0 && count($keys) !== count($alternatives)) {
+            return false;
+        }
+
+        $data = array();
+
+        foreach ($keys as $index => $key) {
+            $data[$key] = $this->get($key, isset($alternatives[$index]) ? $alternatives[$index] : null);
+        }
+
+        return $data;
+    }
+
     public function save($path)
     {
         Storage::write($path, $this->content);
