@@ -90,7 +90,7 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function get($key = null, $alternative = false)
+    public static function get($key = null, $alternative = null)
     {
         if ($key == null) {
             return $_GET;
@@ -107,7 +107,7 @@ class Request
      * @param mixed  $alternative
      * @return mixed
      */
-    public static function post($key = null, $alternative = false)
+    public static function post($key = null, $alternative = null)
     {
         if ($key == null) {
             return $_POST;
