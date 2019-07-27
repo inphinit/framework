@@ -28,12 +28,18 @@ function UtilsCaseSensitivePath($path)
  */
 function UtilsSandboxLoader($utilsSandBoxPath, array $utilsSandBoxData = array())
 {
+    $utilsSandBoxPath = INPHINIT_PATH . $utilsSandBoxPath;
+
+    if (UtilsCaseSensitivePath($utilsSandBoxPath) === false) {
+        return false;
+    }
+
     if (empty($utilsSandBoxData) === false) {
         extract($utilsSandBoxData, EXTR_SKIP);
         $utilsSandBoxData = null;
     }
 
-    return include INPHINIT_PATH . $utilsSandBoxPath;
+    return include $utilsSandBoxPath;
 }
 
 /**
@@ -198,7 +204,7 @@ function UtilsConfig()
     define('REQUEST_TIME', time());
     define('EOL', chr(10));
 
-    foreach (\UtilsSandboxLoader('application/Config/config.php') as $key => $value) {
+    foreach (UtilsSandboxLoader('application/Config/config.php') as $key => $value) {
         App::env($key, $value);
     }
 
