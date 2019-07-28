@@ -155,7 +155,7 @@ class Document extends \DOMDocument
                 throw new DomException('Invalid type', 2);
         }
 
-        return $this->getNodes($this->childNodes, true);
+        return $this->getNodes($this->childNodes);
     }
 
     /**
@@ -429,7 +429,7 @@ class Document extends \DOMDocument
         }
     }
 
-    private function getNodes($nodes, $toplevel = false)
+    private function getNodes($nodes)
     {
         $items = array();
 

@@ -36,7 +36,7 @@ class Form
      */
     public static function setup($byType, array $attributes)
     {
-        if (0 !== preg_match('#^(' . self::$alloweds . '|select|form)$#', $type)) {
+        if (0 !== preg_match('#^(' . self::$alloweds . '|select|form)$#', $byType)) {
             self::$preAttrs[$byType] = $attributes;
         }
     }

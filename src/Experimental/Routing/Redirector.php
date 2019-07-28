@@ -28,10 +28,11 @@ class Redirector extends \Inphinit\Routing\Router
     public static function route($route, array $args = array(), $code = 302)
     {
         $verbs = array_keys(parent::$httpRoutes);
+        $route = '/' . ltrim($route, '/');
         $to = false;
 
         foreach ($verbs as $verb) {
-            if (preg_match('#^(GET|ANY) /(|[\s\S]+)$#', $verb, $out) && $out[2] === $verb) {
+            if (preg_match('#^(GET|ANY) (/|/[\s\S]+)$#', $verb, $out) && $out[2] === $route) {
                 $to = $verb;
                 break;
             }
@@ -64,7 +65,7 @@ class Redirector extends \Inphinit\Routing\Router
 
     private static function redirect($verb, $args, $code)
     {
-        if (!$verb) {
+        if ($verb === false) {
             throw new Exception('Route or Action not defined in route', 3);
         }
 

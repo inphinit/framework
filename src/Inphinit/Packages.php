@@ -11,11 +11,12 @@ namespace Inphinit;
 
 class Packages implements \IteratorAggregate
 {
+    private static $composerLock;
     private $composerPath;
     private $classmapName = 'autoload_classmap.php';
     private $psrZeroName = 'autoload_namespaces.php';
     private $psrFourName = 'autoload_psr4.php';
-    private $logs = array();
+    private $log = array();
     private $libs;
 
     /**
@@ -63,7 +64,6 @@ class Packages implements \IteratorAggregate
     public function inAutoload()
     {
         $path = INPHINIT_PATH . 'boot/namespaces.php';
-        $i = 0;
 
         if (is_file($path)) {
             $data = include $path;
@@ -171,7 +171,7 @@ class Packages implements \IteratorAggregate
         foreach ($this->libs as $key => $value) {
             $value = self::relativePath($value);
 
-            fwrite($handle, ($first ? '' : ',') . $eol . "    '" . $key . "' => '" . $value . "'");
+            fwrite($handle, ($first ? '' : ',') . "$eol    '$key' => '$value'");
 
             $first = false;
         }
@@ -224,11 +224,18 @@ class Packages implements \IteratorAggregate
      */
     public static function version($name)
     {
-        $file = INPHINIT_ROOT . 'composer.lock';
-        $data = is_file($file) ? json_decode(file_get_contents($file)) : false;
+        if (self::$composerLock === null) {
+            $file = INPHINIT_ROOT . 'composer.lock';
+
+            if (is_file($file)) {
+                self::$composerLock = json_decode(file_get_contents($file));
+            }
+        }
+
+        $data = self::$composerLock;
 
         if (empty($data->packages)) {
-            return null;
+            return $name === 'inphinit/framework' ? App::VERSION : null;
         }
 
         $version = null;

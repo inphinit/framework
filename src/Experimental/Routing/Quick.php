@@ -170,7 +170,5 @@ class Quick extends Router
                 Route::set($value[0], $route, $controller . ':' . $value[2]);
             }
         }
-
-        $controller = $classMethods = null;
     }
 }

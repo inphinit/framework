@@ -100,7 +100,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getLanguage($$alternative = null)
+    public function getLanguage($alternative = null)
     {
         $headers = $this->acceptLanguage();
         return $headers ? key($headers) : $alternative;
@@ -115,7 +115,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getCharset($$alternative = null)
+    public function getCharset($alternative = null)
     {
         $headers = $this->acceptCharset();
         return $headers ? key($headers) : $alternative;
@@ -130,7 +130,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getEncoding($$alternative = null)
+    public function getEncoding($alternative = null)
     {
         $headers = $this->acceptEncoding();
         return $headers ? key($headers) : $alternative;
@@ -145,7 +145,7 @@ class Negotiation
      * @throws \Inphinit\Experimental\Exception
      * @return mixed
      */
-    public function getAccept($$alternative = null)
+    public function getAccept($alternative = null)
     {
         $headers = $this->accept();
         return $headers ? key($headers) : $alternative;

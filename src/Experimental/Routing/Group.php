@@ -29,7 +29,6 @@ class Group extends Router
     private $levelSecure;
     private $ready = false;
     private $currentPrefixPath;
-    private $callback;
     private $domain;
     private $path;
     private $ns;

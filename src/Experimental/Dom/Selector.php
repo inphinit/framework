@@ -185,7 +185,7 @@ class Selector extends \DOMXPath
 
         $restore = array_combine(array_values($this->prevent), array_keys($this->prevent));
 
-        return $cache[$query] = '//' . strtr($query, $restore);
+        return self::$cache[$query] = '//' . strtr($query, $restore);
     }
 
     private function putQuotes($arg)
