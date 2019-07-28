@@ -44,7 +44,7 @@ if (!function_exists('iconv')) {
 }
 
 if (!function_exists('finfo_file')) {
-    $error[] = 'Class Inphinit\Files (mimeType method) not work, ' .
+    $error[] = 'Class Inphinit\File::mime method not work, ' .
                      '"finfo" is disabled in php (if needed for you)';
 }
 

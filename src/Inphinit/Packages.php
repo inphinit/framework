@@ -220,7 +220,7 @@ class Packages implements \IteratorAggregate
      * Get package version from composer.lock file
      *
      * @param string $name set package for detect version
-     * @return bool|string
+     * @return string|null
      */
     public static function version($name)
     {
@@ -228,10 +228,10 @@ class Packages implements \IteratorAggregate
         $data = is_file($file) ? json_decode(file_get_contents($file)) : false;
 
         if (empty($data->packages)) {
-            return false;
+            return null;
         }
 
-        $version = false;
+        $version = null;
 
         foreach ($data->packages as $package) {
             if ($package->name === $name) {

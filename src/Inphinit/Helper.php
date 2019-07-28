@@ -15,7 +15,7 @@ class Helper
      * Parse version format
      *
      * @param string $version
-     * @return array|bool
+     * @return stdClass|null
      */
     public static function parseVersion($version)
     {
@@ -28,7 +28,7 @@ class Helper
             );
         }
 
-        return false;
+        return null;
     }
 
     /**

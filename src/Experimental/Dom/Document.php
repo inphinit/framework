@@ -376,12 +376,12 @@ class Document extends \DOMDocument
         }
     }
 
-    private function raise($level)
+    private function raise($debuglvl)
     {
         $err = \libxml_get_errors();
 
-        if (isset($err[0]->level) && in_array($level, $this->levels, true)) {
-            throw new DomException(null, $level);
+        if (isset($err[0]->level) && in_array($err[0]->level, $this->levels, true)) {
+            throw new DomException(null, $debuglvl);
         }
 
         \libxml_clear_errors();
