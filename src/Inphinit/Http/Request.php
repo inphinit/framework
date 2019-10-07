@@ -9,6 +9,8 @@
 
 namespace Inphinit\Http;
 
+use Inphinit\Helper;
+
 class Request
 {
     private static $reqHeaders;
