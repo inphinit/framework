@@ -9,8 +9,6 @@
 
 namespace Inphinit\Experimental;
 
-use Inphinit\File;
-
 class Dir implements \IteratorAggregate
 {
     private $iterator;
@@ -85,7 +83,7 @@ class Dir implements \IteratorAggregate
      */
     public static function root()
     {
-        return new self(INPHINIT_ROOT);
+        return new static(INPHINIT_ROOT);
     }
 
     /**
@@ -95,7 +93,7 @@ class Dir implements \IteratorAggregate
      */
     public static function storage()
     {
-        return new self(INPHINIT_PATH . 'storage/');
+        return new static(INPHINIT_PATH . 'storage/');
     }
 
     /**
@@ -105,7 +103,7 @@ class Dir implements \IteratorAggregate
      */
     public static function application()
     {
-        return new self(INPHINIT_PATH . 'application/');
+        return new static(INPHINIT_PATH . 'application/');
     }
 
     public function __destruct()

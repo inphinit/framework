@@ -9,7 +9,6 @@
 
 namespace Inphinit\Experimental\Routing;
 
-use Inphinit\App;
 use Inphinit\Regex;
 use Inphinit\Http\Request;
 use Inphinit\Routing\Router;

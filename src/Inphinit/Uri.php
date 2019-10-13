@@ -9,8 +9,6 @@
 
 namespace Inphinit;
 
-use Inphinit\Helper;
-
 class Uri
 {
     /** Use with `Uri::encodepath` for allow path with ascii characters */
@@ -187,7 +185,7 @@ class Uri
             return '';
         }
 
-        ksort($args);
+        Helper::ksort($args);
         return $prefix . http_build_query($args);
     }
 }

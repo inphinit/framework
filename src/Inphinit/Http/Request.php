@@ -10,6 +10,7 @@
 namespace Inphinit\Http;
 
 use Inphinit\Helper;
+use Inphinit\Storage;
 
 class Request
 {

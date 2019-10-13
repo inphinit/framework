@@ -9,7 +9,6 @@
 
 namespace Inphinit\Experimental\Routing;
 
-use Inphinit\App;
 use Inphinit\Routing\Route;
 use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;

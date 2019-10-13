@@ -94,16 +94,20 @@ class Response
     }
 
     /**
-     * Remove registered header
+     * Remove registered (or setted) header
      *
      * @param string $name
      * @return void
      */
     public static function removeHeader($name)
     {
-        self::$headers = array_filter(self::$headers, function ($header) use ($name) {
-            return strcasecmp($header[0], $name) !== 0;
-        });
+        if (self::$dispatchedHeaders || App::state() > 2) {
+            header_remove($name);
+        } else {
+            self::$headers = array_filter(self::$headers, function ($header) use ($name) {
+                return strcasecmp($header[0], $name) !== 0;
+            });
+        }
     }
 
     /**

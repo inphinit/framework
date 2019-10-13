@@ -10,7 +10,6 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\Storage;
-use Inphinit\Http\Response;
 
 class Session implements \IteratorAggregate
 {

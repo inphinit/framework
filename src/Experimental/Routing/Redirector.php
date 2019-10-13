@@ -9,7 +9,6 @@
 
 namespace Inphinit\Experimental\Routing;
 
-use Inphinit\Uri;
 use Inphinit\Regex;
 use Inphinit\Experimental\Exception;
 use Inphinit\Experimental\Http\Redirect;

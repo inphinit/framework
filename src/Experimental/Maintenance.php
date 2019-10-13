@@ -10,7 +10,6 @@
 namespace Inphinit\Experimental;
 
 use Inphinit\App;
-use Inphinit\Storage;
 
 class Maintenance
 {

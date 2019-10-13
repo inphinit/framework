@@ -116,4 +116,22 @@ class Helper
     {
         return false === self::seq($array);
     }
+
+    /**
+     * Check if array is associative, like [ 'bar' => foo', 'baz' => 'bar']
+     *
+     * @param array $array
+     * @param int $flags   See details in https://www.php.net/manual/en/function.sort.php#refsect1-function.sort-parameters
+     * @return null
+     */
+    public static function ksort(array &$array, $flags = \SORT_REGULAR)
+    {
+        foreach ($array as &$item) {
+            if (is_array($item)) {
+                self::ksort($item, $flags);
+            }
+        }
+
+        ksort($array, $flags);
+    }
 }
