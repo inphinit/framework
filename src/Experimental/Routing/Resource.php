@@ -15,20 +15,20 @@ use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
 use Inphinit\Experimental\Dom\Document;
 
-class Rest extends Router
+class Resource extends Router
 {
     private static $debuglvl = 2;
-    private $contentType = 'application/json';
-    private $charset = 'UTF-8';
     private $path = '';
     private $fullController;
     private $ready = false;
     private static $valids = array(
         'index'   => array( 'GET',  '/' ),
+        'create'  => array( 'GET',  '/create' ),
         'store'   => array( 'POST', '/' ),
         'show'    => array( 'GET',  '/{:[^/]+:}' ),
-        'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
-        'destroy' => array( 'DELETE', '/{:[^/]+:}' )
+        'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
+        'update'  => array( 'POST', '/{:[^/]+:}/update' ),
+        'destroy' => array( 'POST', '/{:[^/]+:}/destroy' ),
     );
 
     /**
@@ -70,32 +70,6 @@ class Rest extends Router
         $path = strtolower(preg_replace('#([a-z])([A-Z])#', '$1-$2', strtr($controller, '.', '/')));
 
         $this->path = '/' . trim($path, '/');
-    }
-
-    /**
-     * Define the Content-Type header
-     *
-     * @param string $contentType
-     * @return \Inphinit\Experimental\Rest
-     */
-    public function type($contentType)
-    {
-        $this->contentType = $contentType;
-
-        return $this;
-    }
-
-    /**
-     * Define the Content-Type charset
-     *
-     * @param string $charset
-     * @return \Inphinit\Experimental\Rest
-     */
-    public function charset($charset)
-    {
-        $this->charset = $charset;
-
-        return $this;
     }
 
     /**
@@ -152,25 +126,9 @@ class Rest extends Router
                 $route = self::$valids[$method];
 
                 Route::set($route[0], $path . $route[1], function () use ($method, $contentType, $controller) {
-                    header('Content-Type: ' . $contentType);
+                    header('Content-Type: text/html; charset=UTF-8');
 
-                    $response = call_user_func_array(array(new $controller, $method), func_get_args());
-
-                    if (is_array($response) || is_object($response)) {
-                        $doc = new Document;
-
-                        $doc->fromArray(array(
-                            'root' => $response
-                        ));
-
-                        if (strcasecmp($contentType, 'application/json')) {
-                            $response = $doc->toJson();
-                        } elseif (strcasecmp($contentType, 'text/xml') || strcasecmp($contentType, 'application/xml')) {
-                            $response = $doc->toString();
-                        }
-                    }
-
-                    return $response;
+                    return call_user_func_array(array(new $controller, $method), func_get_args());
                 });
             }
         }
