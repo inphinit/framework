@@ -178,3 +178,77 @@ function SetupNginx($base, array $extensions)
         echo $data;
     }
 }
+
+/**
+ * Generate server.bat or server.sh
+ *
+ * @param string $defaultHost
+ * @param string $defaultPort
+ * @return void
+ */
+function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
+{
+    if (PHP_SAPI !== 'cli') {
+        echo 'Warning: Use this script only with CLI', PHP_EOL;
+        exit;
+    } elseif (defined('PHP_BINARY') === false) {
+        echo 'Warning: versions older than PHP-5.4 don\'t support "Built-in web server"', PHP_EOL;
+        return;
+    }
+
+    $php = PHP_BINARY;
+    $ini = php_ini_loaded_file();
+    $windows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+
+    if ($windows) {
+        $data = '@echo off
+
+        :: Setup PHP and PORT
+        set PHP_BIN="' . $php . '"
+        set PHP_INI="' . $ini . '"
+        set HOST_HOST="' . $defaultHost . '"
+        set HOST_PORT=' . $defaultPort . '
+
+        :: Current path
+        set CURRENT_PATH=%~dp0
+        set CURRENT_PATH=%CURRENT_PATH:~0,-1%
+
+        :: Router path
+        set ROUTER="%CURRENT_PATH%\system\boot\server.php"
+
+        :: Start built in server
+        %PHP_BIN% -S %HOST_HOST%:%HOST_PORT% -t %CURRENT_PATH% %ROUTER%
+
+        :: Prevent close if PHP failed to start
+        pause
+        ';
+    } else {
+        $data = '#!/bin/bash
+
+        # Setup PHP and PORT
+        PHP_BIN="' . $php . '"
+        PHP_INI="' . $ini . '"
+        HOST_HOST="' . $defaultHost . '"
+        HOST_PORT=' . $defaultPort . '
+
+        # Used to restore current dir if using command line
+        BASEDIR=$(dirname "${0}")
+
+        # Router path
+        ROUTER="$BASEDIR/system/boot/server.php"
+
+        # Start built in server
+        $PHP_BIN -S $HOST_HOST:$HOST_PORT -c $PHP_INI -t $BASEDIR $ROUTER
+        ';
+    }
+
+    $data = str_replace("\n        ", "\n", $data);
+    $script = 'server.sh';
+
+    if ($windows) {
+        $script = 'server.bat';
+        $data = str_replace("\n", "\r\n", $data);
+    }
+
+    file_put_contents($script, $data);
+}

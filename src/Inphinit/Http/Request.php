@@ -163,23 +163,23 @@ class Request
      * Get a value input handler
      *
      * @param bool $binary
-     * @return resource|null
+     * @return resource|bool
      */
     public static function raw($binary = true)
     {
-        if (is_readable('php://input')) {
-            return null;
-        }
-
         $mode = $binary ? 'rb' : 'r';
 
-        if (PHP_VERSION_ID >= 50600) {
+        if (PHP_VERSION_ID >= 70224) {
             return fopen('php://input', $mode);
         }
 
-        $tmp = Storage::temp();
+        $temp = Storage::temp(null, 'tmp', '~raw-');
 
-        return copy('php://input', $tmp) ? fopen($tmp, $mode) : null;
+        if ($temp === false) {
+            return false;
+        }
+
+        return copy('php://input', $temp) ? fopen($temp, $mode) : false;
     }
 
     private static function data(&$data, $key, $alternative = null)

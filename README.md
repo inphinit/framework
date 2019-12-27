@@ -28,7 +28,22 @@ To start the framework see the wiki:
 
 ## TODO
 
+- [ ] Move `system/boot` folder to `inphinit/framework` package
+- [ ] Move `system/View/debug/*` (views) to `inphinit/framework` package
+- [ ] Move from `Inphinit\Experimental\` to `Inphinit\` namespace:
+    - `Inphinit\Experimental\Config`
+    - `Inphinit\Experimental\Debug`
+    - `Inphinit\Experimental\Dom\*`
+    - `Inphinit\Experimental\Exception`
+    - `Inphinit\Experimental\Http\Negotiation`
+    - `Inphinit\Experimental\Http\Status`
+    - `Inphinit\Experimental\Routing\Group`
+    - `Inphinit\Experimental\Routing\Quick`
+    - `Inphinit\Experimental\Routing\Rest`
+- [ ] Create CLI with features:
+    - Maintenance mode (change up or down server)
+    - Generate `.htaccess`
+    - Builtin webserver (start, stop and restart, like httpd2 commands)
 - [ ] Auth
-- [x] Redirect
 - [ ] ORM
 - [ ] Unit testing

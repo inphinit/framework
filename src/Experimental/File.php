@@ -12,23 +12,32 @@ namespace Inphinit\Experimental;
 class File extends \Inphinit\File
 {
     /**
-     * Read a script excerpt
+     * Read excerpt from a file
      *
      * @param string $path
-     * @param int    $init
-     * @param int    $end
-     * @param bool   $lines
+     * @param int    $offset
+     * @param int    $max
      * @throws \Inphinit\Experimental\Exception
      * @return string
      */
-    public static function portion($path, $init = 0, $end = 1024, $lines = false)
+    public static function portion($path, $offset = 0, $max = 1024)
     {
         self::fullpath($path);
 
-        if ($lines !== true) {
-            return file_get_contents($path, false, null, $init, $end);
-        }
+        return file_get_contents($path, false, null, $offset, $max);
+    }
 
+    /**
+     * Read lines from a file
+     *
+     * @param string $path
+     * @param int    $offset
+     * @param int    $maxLines
+     * @throws \Inphinit\Experimental\Exception
+     * @return string
+     */
+    public static function lines($path, $offset = 0, $maxLines = 1024)
+    {
         $i = 1;
         $output = '';
 

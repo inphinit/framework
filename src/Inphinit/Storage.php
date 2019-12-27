@@ -81,25 +81,32 @@ class Storage
      * @param string $data
      * @param string $path
      * @param string $prefix
-     * @param string $sulfix
      * @return bool|string
      */
-    public static function temp($data = null, $path = 'tmp', $prefix = '~', $sulfix = '.tmp')
+    public static function temp($data = null, $dir = 'tmp', $prefix = '~', $sulfix = '.tmp')
     {
-        $fullpath = self::resolve($path);
+        $fullpath = self::resolve($dir);
 
         if ($fullpath === false) {
             return false;
         }
 
-        $fullpath .= '/' . $prefix . base_convert(microtime(true), 10, 36);
-        $fullpath .= rand(1, 1000) . $sulfix;
+        $path = $fullpath . '/' . $prefix . mt_rand(1, 1000) . $sulfix;
 
-        if (is_file($fullpath) || self::put($fullpath, $data, LOCK_EX) === false) {
-            return self::temp($data, $path, $prefix, $sulfix);
+        if ($handler = fopen($path, 'x')) {
+            if (!$data) {
+                return $path;
+            } elseif (flock($handler, LOCK_EX)) {
+                fwrite($handler, $data);
+                flock($handler, LOCK_UN);
+
+                return $path;
+            } else {
+                return false;
+            }
+        } else {
+            return self::temp($data, $dir, $prefix, $sulfix);
         }
-
-        return $fullpath;
     }
 
     /**

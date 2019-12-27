@@ -59,9 +59,9 @@ class Helper
     /**
      * Read array by path using dot
      *
-     * @param string             $path
-     * @param array|\Traversable $items
-     * @param mixed              $alternative
+     * @param string          $path
+     * @param array|stdClass  $items
+     * @param mixed           $alternative
      * @return mixed
      */
     public static function extract($path, $items, $alternative = null)
@@ -69,8 +69,10 @@ class Helper
         $paths = explode('.', $path);
 
         foreach ($paths as $value) {
-            if (self::iterable($items) && array_key_exists($value, $items)) {
+            if (is_array($items) && array_key_exists($value, $items)) {
                 $items = $items[$value];
+            } elseif (is_object($items) && property_exists($items, $value)) {
+                $items = $items->$value;
             } else {
                 return $alternative;
             }

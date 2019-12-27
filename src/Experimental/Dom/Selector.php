@@ -44,7 +44,7 @@ class Selector extends \DOMXPath
         array( '/\[(@\w+|lower-case\(@\w+\))\~=(.*?)\]/', '[contains(concat(" ",\\1," "),concat(" ",\\2," "))]' ),
         array( '/\[(@\w+|lower-case\(@\w+\))\|=(.*?)\]/', '[starts-with(concat(\\1,"-"),concat(\\2,"-"))]' ),
         array( '/\[(@\w+|lower-case\(@\w+\))\$=(.*?)\]/', '[substring(\\1,string-length(\\1)-2)=\\2]' ),
-        array( '/\:contains\((.*?)\)/i', '[contains(text(),\\1)]' )
+        array( '/\:contains\((.*?)\)/i', '[contains(.,\\1)]' )
     );
 
     /**
@@ -252,6 +252,6 @@ class Selector extends \DOMXPath
 
         $rt = "`{$key}:{$token}`";
 
-        return strpos($query, $token) === false ? preg_quote($rt) : self::uniqueToken($query, $key, ++$token);
+        return strpos($query, (string) $token) === false ? preg_quote($rt) : self::uniqueToken($query, $key, ++$token);
     }
 }
