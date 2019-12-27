@@ -217,7 +217,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         set ROUTER="%CURRENT_PATH%\system\boot\server.php"
 
         :: Start built in server
-        %PHP_BIN% -S %HOST_HOST%:%HOST_PORT% -t %CURRENT_PATH% %ROUTER%
+        %PHP_BIN% -S %HOST_HOST%:%HOST_PORT% -c %PHP_INI% -t %CURRENT_PATH% %ROUTER%
 
         :: Prevent close if PHP failed to start
         pause
