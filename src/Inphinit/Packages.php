@@ -96,7 +96,7 @@ class Packages implements \IteratorAggregate
             foreach ($data as $key => $value) {
                 if (false === empty($value)) {
                     $this->libs[addcslashes($key, '\\')] = $value;
-                    $i++;
+                    ++$i;
                 }
             }
 
@@ -266,7 +266,7 @@ class Packages implements \IteratorAggregate
         foreach ($data as $key => $value) {
             if (isset($value[0]) && is_string($value[0])) {
                 $this->libs[addcslashes($key, '\\')] = $value[0];
-                $i++;
+                ++$i;
             }
         }
 

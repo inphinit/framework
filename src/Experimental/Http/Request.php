@@ -13,9 +13,6 @@ use Inphinit\Experimental\Exception;
 use Inphinit\Experimental\Dom\Document;
 use Inphinit\Experimental\Dom\DomException;
 
-/**
- * Constant with the most common HTTP codes
- */
 class Request extends \Inphinit\Http\Request
 {
     /**
@@ -27,15 +24,16 @@ class Request extends \Inphinit\Http\Request
      */
     public static function json($array = false)
     {
-        $data = file_get_contents('php://input');
-        
-        if (!$data) return null;
+        $handle = self::raw();
 
-        $json = json_decode($data, $array);
+        if (!$handle) return null;
+
+        $json = json_decode(stream_get_contents($handle), $array);
+
+        fclose($handle);
 
         switch (json_last_error()) {
             case JSON_ERROR_NONE:
-                $data = null;
                 return $json;
 
             case JSON_ERROR_DEPTH:
@@ -57,13 +55,25 @@ class Request extends \Inphinit\Http\Request
      * Get a value input handler
      *
      * @throws \Inphinit\Experimental\Dom\DomException
-     * @return \Inphinit\Experimental\Dom\Document
+     * @return \Inphinit\Experimental\Dom\Document|null
      */
     public static function xml()
     {
+        $handle = self::raw();
+
+        if (!$handle) return null;
+
         $doc = new Document;
 
-        $doc->load('php://input');
+        $data = stream_get_contents($handle);
+
+        fclose($handle);
+
+        try {
+            $doc->loadXML($data);
+        } catch (DomException $ee) {
+            throw new DomException($ee->getMessage(), 2);
+        }
 
         $data = null;
 

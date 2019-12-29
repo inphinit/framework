@@ -209,7 +209,11 @@ class Document extends \DOMDocument
                 throw new DomException('Invalid format', 2);
         }
 
-        $tmp = Storage::temp($this->$format(), 'tmp', '~xml-');
+        if (Storage::createFolder('tmp/dom')) {
+            $tmp = Storage::temp($this->$format(), 'tmp/dom');
+        } else {
+            $tmp = false;
+        }
 
         if ($tmp === false) {
             throw new DomException('Can\'t create tmp file', 2);

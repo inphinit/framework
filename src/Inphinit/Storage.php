@@ -86,7 +86,7 @@ class Storage
     {
         $fullpath = self::resolve($dir);
 
-        if ($fullpath === false) {
+        if ($fullpath === false || is_dir($fullpath) === false) {
             return false;
         }
 
@@ -136,15 +136,17 @@ class Storage
             return false;
         }
 
-        $data = is_numeric($data) === false && !$data ? '' : $data;
+        //Allow int(0) and empty string("")
+        if ($data !== '' && is_numeric($data) === false && !$data) {
+            $data = null;
+        }
 
-        if (is_file($path) && !$data) {
+        //if the file already exists then will not try to create again
+        if ($data === null && is_file($path)) {
             return true;
         }
 
-        $flags = $flags ? $flags : FILE_APPEND|LOCK_EX;
-
-        return self::createFolder(dirname($path)) && file_put_contents($path, $data, $flags) !== false;
+        return file_put_contents($path, $data, $flags ? $flags : FILE_APPEND|LOCK_EX) !== false;
     }
 
     /**

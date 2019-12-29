@@ -73,20 +73,26 @@ class Config implements \IteratorAggregate
     /**
      * Reload configuration from file
      *
-     * @param string $path
      * @return bool
      */
     public function save()
     {
+        if (Storage::createFolder('tmp/cfg') === false) {
+            return false;
+        }
+
         $wd = preg_replace('#,(\s+|)\)#', '$1)', var_export($this->data, true));
+        $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL, 'tmp/cfg');
 
-        $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL);
+        if ($path) {
+            $response = copy($path, INPHINIT_PATH . $this->path);
 
-        $response = copy($path, INPHINIT_PATH . $this->path);
+            unlink($path);
 
-        unlink($path);
+            return $response;
+        }
 
-        return $response;
+        return false;
     }
 
     /**

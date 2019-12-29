@@ -153,7 +153,7 @@ class Quick extends Router
 
         $this->ready = true;
 
-        $format     = $this->format;
+        $format = $this->format;
         $controller = $this->controller;
 
         foreach ($this->classMethods as $value) {

@@ -74,10 +74,10 @@ class Redirector extends \Inphinit\Routing\Router
         $ac = $j > 0 || $i > 0;
 
         if ($ac && $j === $i) {
-            $i = 0;
+            $i = -1;
 
             $to = preg_replace_callback('#\{:.*?:\}#', function () use ($args, &$i) {
-                return $args[$i++];
+                return $args[++$i];
             }, $url);
 
             if (!preg_match('#' . Regex::parse($url) . '#', $to)) {

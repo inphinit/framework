@@ -41,13 +41,17 @@ class Session implements \IteratorAggregate
 
         if ($id === null) {
             if (empty($_COOKIE[$name])) {
-                $tmpname = Storage::temp(null, 'session', $this->prefix, '');
+                if (Storage::createFolder('session')) {
+                    $tmpname = Storage::temp(null, 'session', $this->prefix, '');
+                } else {
+                    $tmpname = false;
+                }
 
                 if ($tmpname === false) {
                     throw new Exception('Failed to create session file', 2);
                 }
 
-                $cid = substr(basename($tmpname), 5);
+                $cid = $this->getFileId($tmpname);
             } else {
                 $cid = $_COOKIE[$name];
             }
@@ -98,7 +102,7 @@ class Session implements \IteratorAggregate
 
         $data = $this->getData();
 
-        if ($data !== '') {
+        if ($data) {
             $this->data = $this->insertions + $data;
 
             foreach ($this->deletions as $key => $value) {
@@ -143,27 +147,27 @@ class Session implements \IteratorAggregate
                 throw new Exception('Failed to create new session file', 2);
             }
 
-            $id = substr(basename($tmpname), 5);
+            $id = $this->getFileId($tmpname);
         } else {
             $tmpname = $this->savepath . '/' . $this->prefix . $id;
         }
 
-        if (copy($this->handle, $tmpname) === false) {
+        if (copy($old, $tmpname) === false) {
             throw new Exception('Failed to copy new old session', 2);
         }
 
         flock($this->handle, LOCK_UN);
         fclose($this->handle);
 
-        if ($trydeleteold) {
-            unlink($old);
-        }
-
         $this->handle = fopen($tmpname, 'a+');
 
         $this->currentId = $id;
 
         $this->cookie();
+
+        if ($trydeleteold) {
+            unlink($old);
+        }
     }
 
     /**
@@ -182,8 +186,7 @@ class Session implements \IteratorAggregate
             $this->opts->domain,
             $this->opts->secure,
             $this->opts->httponly
-        )
-        ) {
+        )) {
             throw new Exception('Failed to set HTTP cookie', 3);
         }
     }
@@ -219,7 +222,7 @@ class Session implements \IteratorAggregate
             return unserialize($data);
         }
 
-        return '';
+        return null;
     }
 
     /**
@@ -246,6 +249,11 @@ class Session implements \IteratorAggregate
         rewind($this->handle);
 
         fwrite($this->handle, serialize($this->data));
+    }
+
+    private function getFileId($tmpname)
+    {
+        return substr(basename($tmpname), strlen($this->prefix));
     }
 
     private static function raise()

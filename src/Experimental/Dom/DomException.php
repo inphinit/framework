@@ -22,7 +22,7 @@ class DomException extends \Inphinit\Experimental\Exception
     {
         $err = \libxml_get_errors();
 
-        $trace++;
+        ++$trace;
 
         if ($message) {
             $message = $message;

@@ -16,6 +16,7 @@ class Request
 {
     private static $reqHeaders;
     private static $reqHeadersLower;
+    private static $rawInput;
 
     /**
      * Get current HTTP path or route path
@@ -171,15 +172,23 @@ class Request
 
         if (PHP_VERSION_ID >= 70224) {
             return fopen('php://input', $mode);
+        } else if (self::$rawInput) {
+            return fopen(self::$rawInput, $mode);
         }
 
-        $temp = Storage::temp(null, 'tmp', '~raw-');
-
-        if ($temp === false) {
+        if (Storage::createFolder('tmp/raw') === false) {
             return false;
         }
 
-        return copy('php://input', $temp) ? fopen($temp, $mode) : false;
+        $temp = Storage::temp(null, 'tmp/raw');
+
+        if ($temp === false || copy('php://input', $temp) === false) {
+            return false;
+        }
+
+        self::$rawInput = $temp;
+
+        return fopen($temp, $mode);
     }
 
     private static function data(&$data, $key, $alternative = null)
