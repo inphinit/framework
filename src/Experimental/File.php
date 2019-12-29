@@ -32,21 +32,21 @@ class File extends \Inphinit\File
      *
      * @param string $path
      * @param int    $offset
-     * @param int    $maxLines
+     * @param int    $maxLine
      * @throws \Inphinit\Experimental\Exception
      * @return string
      */
-    public static function lines($path, $offset = 0, $maxLines = 1024)
+    public static function lines($path, $offset = 0, $maxLine = 32)
     {
-        $i = 1;
+        $i = 0;
         $output = '';
 
         $handle = fopen($path, 'rb');
 
-        while (false === feof($handle) && $i <= $end) {
+        while (false === feof($handle) && $i < $maxLine) {
             $data = fgets($handle);
 
-            if ($i >= $init) {
+            if ($i >= $offset) {
                 $output .= $data;
             }
 

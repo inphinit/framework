@@ -22,6 +22,7 @@ class Request extends \Inphinit\Http\Request
      * Get a value input handler
      *
      * @param bool $array
+     * @throws \Inphinit\Experimental\Exception
      * @return array|stdClass|null
      */
     public static function json($array = false)
@@ -55,6 +56,7 @@ class Request extends \Inphinit\Http\Request
     /**
      * Get a value input handler
      *
+     * @throws \Inphinit\Experimental\Dom\DomException
      * @return \Inphinit\Experimental\Dom\Document
      */
     public static function xml()

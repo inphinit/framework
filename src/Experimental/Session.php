@@ -169,6 +169,7 @@ class Session implements \IteratorAggregate
     /**
      * Set cookie
      *
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     private function cookie()
@@ -284,6 +285,7 @@ class Session implements \IteratorAggregate
      *
      * @param string $name
      * @param mixed  $value
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public function __set($name, $value)

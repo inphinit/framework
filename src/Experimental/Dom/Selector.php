@@ -44,7 +44,8 @@ class Selector extends \DOMXPath
         array( '/\[(@\w+|lower-case\(@\w+\))\~=(.*?)\]/', '[contains(concat(" ",\\1," "),concat(" ",\\2," "))]' ),
         array( '/\[(@\w+|lower-case\(@\w+\))\|=(.*?)\]/', '[starts-with(concat(\\1,"-"),concat(\\2,"-"))]' ),
         array( '/\[(@\w+|lower-case\(@\w+\))\$=(.*?)\]/', '[substring(\\1,string-length(\\1)-2)=\\2]' ),
-        array( '/\:contains\((.*?)\)/i', '[contains(.,\\1)]' )
+        array( '/\:contains\((.*?)\)/i', '[contains(.,\\1)]' ),
+        array( '/\:contains-child\((.*?)\)/i', '[text()[contains(.,\\1)]]' )
     );
 
     /**

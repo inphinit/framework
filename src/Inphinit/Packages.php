@@ -23,6 +23,7 @@ class Packages implements \IteratorAggregate
      * Create a `Inphinit\Packages` instance.
      *
      * @param string $path Setup composer path, like `./vendor/composer`
+     * @throws \InvalidArgumentException
      * @return void
      */
     public function __construct($path)
@@ -149,6 +150,7 @@ class Packages implements \IteratorAggregate
      * Save imported packages path to file in PHP format
      *
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
+     * @throws \InvalidArgumentException
      * @return bool
      */
     public function save($path)

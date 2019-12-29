@@ -34,12 +34,13 @@ class Storage
         }
 
         $path = Uri::canonpath($path);
+        $currentPath = self::path();
 
-        if ($path . '/' === self::path() || strpos($path, self::path()) === 0) {
+        if ($path . '/' === $currentPath || strpos($path, $currentPath) === 0) {
             return $path;
         }
 
-        return self::path() . $path;
+        return $currentPath . $path;
     }
 
     /**
@@ -53,7 +54,7 @@ class Storage
     {
         $path = self::resolve($path);
 
-        if ($path !== false && is_dir($path) && ($dh = opendir($path))) {
+        if ($path !== false && is_dir($path) && ($handle = opendir($path))) {
             if ($time < 0) {
                 $time = App::env('appdata_expires');
             }
@@ -61,7 +62,7 @@ class Storage
             $expires = REQUEST_TIME - $time;
             $path .= '/';
 
-            while (false !== ($file = readdir($dh))) {
+            while ($file = readdir($handle)) {
                 $current = $path . $file;
 
                 if (is_file($current) && filemtime($current) < $expires) {
@@ -69,9 +70,7 @@ class Storage
                 }
             }
 
-            closedir($dh);
-
-            $dh = null;
+            closedir($handle);
         }
     }
 
@@ -91,21 +90,21 @@ class Storage
             return false;
         }
 
-        $path = $fullpath . '/' . $prefix . mt_rand(1, 1000) . $sulfix;
+        $rand = mt_rand();
 
-        if ($handler = fopen($path, 'x')) {
-            if (!$data) {
-                return $path;
-            } elseif (flock($handler, LOCK_EX)) {
-                fwrite($handler, $data);
-                flock($handler, LOCK_UN);
+        while (true) {
+            $path = $fullpath . '/' . $prefix . $rand . $sulfix;
 
+            if ($handle = fopen($path, 'x')) {
+                if ($data !== null) {
+                    fwrite($handle, $data);
+                }
+
+                fclose($handle);
                 return $path;
-            } else {
-                return false;
             }
-        } else {
-            return self::temp($data, $dir, $prefix, $sulfix);
+
+            ++$rand;
         }
     }
 

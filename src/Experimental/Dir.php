@@ -34,14 +34,14 @@ class Dir implements \IteratorAggregate
         $handle = opendir($path);
 
         if ($handle) {
-            while (($name = readdir($handle)) !== false) {
-                if ($name !== '.' && $name !== '..') {
-                    $current = $path . $name;
+            while ($file = readdir($handle)) {
+                if ($file !== '.' && $file !== '..') {
+                    $current = $path . $file;
 
                     $data[] = (object) array(
                         'type' => filetype($current),
                         'path' => $current,
-                        'name' => $name
+                        'name' => $file
                     );
                 }
             }

@@ -83,7 +83,7 @@ class Document extends \DOMDocument
      * Convert a array in node elements
      *
      * @param array|\Traversable $data
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Dom\DomException
      * @return void
      */
     public function fromArray(array $data)
@@ -92,8 +92,12 @@ class Document extends \DOMDocument
             throw new DomException('Array is empty', 2);
         } elseif (count($data) > 1) {
             throw new DomException('Root array accepts only a key', 2);
-        } elseif (Helper::seq($data)) {
-            throw new DomException('Document accpet only a node', 2);
+        }
+
+        $root = key($data);
+
+        if (self::validTag($root) === false) {
+            throw new DomException('Invalid root <' . $root . '> tag', 2);
         }
 
         if ($this->documentElement) {
@@ -102,7 +106,7 @@ class Document extends \DOMDocument
 
         $this->enableRestoreInternal(true);
 
-        $this->generate($this, $data);
+        $this->generate($this, $data, 2);
 
         $this->raise($this->exceptionlevel);
 
@@ -132,7 +136,7 @@ class Document extends \DOMDocument
      * Convert DOM to Array
      *
      * @param int $type
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Dom\DomException
      * @return array
      */
     public function toArray($type = Document::SIMPLE)
@@ -186,7 +190,7 @@ class Document extends \DOMDocument
      *
      * @param string $path
      * @param int    $format Support XML, HTML, and JSON
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Experimental\Dom\DomException
      * @return void
      */
     public function save($path, $format = Document::XML)
@@ -220,7 +224,6 @@ class Document extends \DOMDocument
      * Get namespace attributes from root element or specific element
      *
      * @param \DOMElement $element
-     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public function getNamespaces(\DOMElement $element = null)
@@ -387,32 +390,41 @@ class Document extends \DOMDocument
         \libxml_clear_errors();
     }
 
-    private function generate(\DOMNode $node, $data)
+    private function generate(\DOMNode $node, $data, $errorLevel)
     {
         if (is_array($data) === false) {
             $node->textContent = $data;
             return;
         }
 
+        $nextLevel = $errorLevel + 1;
+
         foreach ($data as $key => $value) {
             if ($key === '@comments') {
                 continue;
             } elseif ($key === '@contents') {
-                $this->generate($node, $value);
+                $this->generate($node, $value, $nextLevel);
             } elseif ($key === '@attributes') {
                 $this->attrs($node, $value);
-            } elseif (preg_match('#^([a-z]|[a-z][\w:])+$#i', $key)) {
+            } elseif (self::validTag($key)) {
                 if (Helper::seq($value)) {
                     foreach ($value as $subvalue) {
-                        $this->generate($node, array($key => $subvalue));
+                        $this->generate($node, array($key => $subvalue), $nextLevel);
                     }
                 } elseif (is_array($value)) {
-                    $this->generate($this->add($key, '', $node), $value);
+                    $this->generate($this->add($key, '', $node), $value, $nextLevel);
                 } else {
                     $this->add($key, $value, $node);
                 }
+            } else {
+                throw new DomException('Invalid root <' . $key . '> tag', $nextLevel);
             }
         }
+    }
+
+    private function validTag($tagName)
+    {
+        return preg_match('#^([a-z_](\w+|)|[a-z_](\w+|):[a-z_](\w+|))$#i', $tagName) > 0;
     }
 
     private function add($name, $value, \DOMNode $node)

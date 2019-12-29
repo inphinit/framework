@@ -115,7 +115,7 @@ class Debug
      *
      * @param string $type
      * @param string $view
-     *
+     * @throws \Inphinit\Experimental\Exception
      * @return void
      */
     public static function view($type, $view)
@@ -153,55 +153,6 @@ class Debug
             default:
                 throw new Exception($type . ' is not valid event', 2);
         }
-    }
-
-    private static function details($type, $message, $file, $line)
-    {
-        $match = array();
-        $oFile = $file;
-
-        if (preg_match('#called in ([\s\S]+?) on line (\d+)#', $message, $match)) {
-            $file = $match[1];
-            $line = (int) $match[2];
-        }
-
-        if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code$#', trim($file), $match)) {
-            $oFile = $match[1] . ' : eval():' . $line;
-            $file  = $match[1];
-            $line  = (int) $match[2];
-        }
-
-        switch ($type) {
-            case E_PARSE:
-                $message = 'Parse error: ' . $message;
-                break;
-
-            case E_DEPRECATED:
-                $message = 'Deprecated: ' . $message;
-                break;
-
-            case E_ERROR:
-            case E_USER_ERROR:
-                $message = 'Fatal error: ' . $message;
-                break;
-
-            case E_WARNING:
-            case E_USER_WARNING:
-                $message = 'Warning: ' . $message;
-                break;
-
-            case E_NOTICE:
-            case E_USER_NOTICE:
-                $message = 'Notice: ' . $message;
-                break;
-        }
-
-        return array(
-            'message' => $message,
-            'file'    => $oFile,
-            'line'    => $line,
-            'source'  => $line > -1 ? self::source($file, $line) : null
-        );
     }
 
     /**
@@ -253,7 +204,7 @@ class Debug
         if ($line <= 0 || is_file($file) === false) {
             return null;
         } elseif ($line > 5) {
-            $init = $line - 5;
+            $init = $line - 6;
             $end  = $line + 5;
             $breakpoint = 6;
         } else {
@@ -262,17 +213,20 @@ class Debug
             $breakpoint = $line;
         }
 
+        $preview = preg_split('#\r\n|\n#', File::lines($file, $init, $end));
+
+        if (count($preview) !== $breakpoint && trim(end($preview)) === '') {
+            array_pop($preview);
+        }
+
         return array(
             'breakpoint' => $breakpoint,
-            'preview' => preg_split(
-                '#\r\n|\n#',
-                trim(File::portion($file, $init, $end, true), "\r\n")
-            )
+            'preview' => $preview
         );
     }
 
     /**
-     * Get caller
+     * Get backtrace php scripts
      *
      * @param int $level
      * @return array|null
@@ -281,23 +235,23 @@ class Debug
     {
         $trace = debug_backtrace(0);
 
+        foreach ($trace as $key => &$value) {
+            if (isset($value['file']) === false) {
+                unset($trace[$key]);
+            } else {
+                self::evalFileLocation($value['file'], $value['line']);
+            }
+        }
+
+        $trace = array_values($trace);
+
         if ($level < 0) {
             return $trace;
         } elseif (empty($trace[$level])) {
             return null;
-        } elseif (empty($trace[$level]['file'])) {
-            $level = 1;
         }
 
-        $file = $trace[$level]['file'];
-        $line = $trace[$level]['line'];
-
-        $trace = null;
-
-        return array(
-            'file' => $file,
-            'line' => $line
-        );
+        return $trace = $trace[$level];
     }
 
     /**
@@ -337,5 +291,60 @@ class Debug
         }
 
         View::render($view, $data);
+    }
+
+    private static function details($type, $message, $file, $line)
+    {
+        $match = array();
+        //$oFile = $file;
+
+        if (preg_match('#called in ([\s\S]+?) on line (\d+)#', $message, $match)) {
+            $file = $match[1];
+            $line = (int) $match[2];
+        }
+
+        self::evalFileLocation($file, $line);
+
+        switch ($type) {
+            case E_PARSE:
+                $message = 'Parse error: ' . $message;
+                break;
+
+            case E_DEPRECATED:
+            case E_USER_DEPRECATED:
+                $message = 'Deprecated: ' . $message;
+                break;
+
+            case E_ERROR:
+            case E_USER_ERROR:
+            case E_RECOVERABLE_ERROR:
+                $message = 'Fatal error: ' . $message;
+                break;
+
+            case E_WARNING:
+            case E_USER_WARNING:
+                $message = 'Warning: ' . $message;
+                break;
+
+            case E_NOTICE:
+            case E_USER_NOTICE:
+                $message = 'Notice: ' . $message;
+                break;
+        }
+
+        return array(
+            'message' => $message,
+            'file'    => $file,
+            'line'    => $line,
+            'source'  => $line > -1 ? self::source($file, $line) : null
+        );
+    }
+
+    private static function evalFileLocation(&$file, &$line)
+    {
+        if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code#', $file, $match)) {
+            $file  = $match[1];
+            $line  = (int) $match[2];
+        }
     }
 }
