@@ -125,6 +125,8 @@ class File
 
         if ($mime !== false && strpos($mime, 'application/') === 0) {
             $size = filesize($path);
+
+            //Note: $size >= 0 prevents negative numbers for big files (in x86)
             $mime = $size >= 0 && $size < 2 ? 'text/plain' : $mime;
         }
 
@@ -132,7 +134,7 @@ class File
     }
 
     /**
-     * Show file in output, if use ob_start is auto used ob_flush. You can set delay for cycles
+     * Show file in output, if use ob_start is auto used ob_flush. You can set delay in microseconds for cycles
      *
      * @param string $path
      * @param int    $length

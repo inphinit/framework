@@ -148,8 +148,8 @@ class App
         }
 
         if (self::$state < 4) {
-            self::$state = 4;
             self::trigger('finish');
+            self::$state = 4;
         }
 
         exit;
@@ -171,7 +171,6 @@ class App
         self::trigger('init');
 
         if (self::env('maintenance')) {
-            self::$state = 4;
             self::stop(503);
         }
 
@@ -209,7 +208,7 @@ class App
 
         self::trigger('ready');
 
-        if ($output || is_numeric($output)) {
+        if ($output !== false && $output !== null) {
             echo $output;
         }
 

@@ -48,9 +48,7 @@ if (!function_exists('finfo_file')) {
                      '"finfo" is disabled in php (if needed for you)';
 }
 
-$ini_raw_post_data = ini_get('always_populate_raw_post_data');
-
-if ($ini_raw_post_data != -1) {
+if (version_compare(PHP_VERSION, '7.0.0', '<') && ini_get('always_populate_raw_post_data') != -1) {
     $warn[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
 }
 

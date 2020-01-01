@@ -57,7 +57,7 @@ class Helper
     }
 
     /**
-     * Read array by path using dot
+     * Read array or object by path using dot
      *
      * @param string          $path
      * @param array|stdClass  $items

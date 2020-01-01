@@ -192,7 +192,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         echo 'Warning: Use this script only with CLI', PHP_EOL;
         exit;
     } elseif (defined('PHP_BINARY') === false) {
-        echo 'Warning: versions older than PHP-5.4 don\'t support "Built-in web server"', PHP_EOL;
+        echo 'Warning: versions older than PHP-5.4 don\'t support "Built-in web server", for PHP 5.3.x use Apache or Nginx', PHP_EOL;
         return;
     }
 
@@ -206,7 +206,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         :: Setup PHP and PORT
         set PHP_BIN="' . $php . '"
         set PHP_INI="' . $ini . '"
-        set HOST_HOST="' . $defaultHost . '"
+        set HOST_HOST=' . $defaultHost . '
         set HOST_PORT=' . $defaultPort . '
 
         :: Current path
@@ -217,7 +217,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         set ROUTER="%CURRENT_PATH%\system\boot\server.php"
 
         :: Start built in server
-        %PHP_BIN% -S %HOST_HOST%:%HOST_PORT% -c %PHP_INI% -t %CURRENT_PATH% %ROUTER%
+        %PHP_BIN% -S "%HOST_HOST%:%HOST_PORT%" -c %PHP_INI% -t "%CURRENT_PATH%" %ROUTER%
 
         :: Prevent close if PHP failed to start
         pause
@@ -228,7 +228,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         # Setup PHP and PORT
         PHP_BIN="' . $php . '"
         PHP_INI="' . $ini . '"
-        HOST_HOST="' . $defaultHost . '"
+        HOST_HOST=' . $defaultHost . '
         HOST_PORT=' . $defaultPort . '
 
         # Used to restore current dir if using command line
@@ -238,7 +238,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         ROUTER="$BASEDIR/system/boot/server.php"
 
         # Start built in server
-        $PHP_BIN -S $HOST_HOST:$HOST_PORT -c $PHP_INI -t $BASEDIR $ROUTER
+        $PHP_BIN -S "$HOST_HOST:$HOST_PORT" -c $PHP_INI -t "$BASEDIR" $ROUTER
         ';
     }
 

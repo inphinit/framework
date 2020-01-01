@@ -57,10 +57,9 @@ class Route extends Router
             return self::$current;
         }
 
-        $resp = 404;
         $args = array();
 
-        $routes = parent::$httpRoutes;
+        $routes = &parent::$httpRoutes;
         $path = \UtilsPath();
         $method = $_SERVER['REQUEST_METHOD'];
 
@@ -80,19 +79,13 @@ class Route extends Router
         } elseif (isset($verbs['ANY'])) {
             $resp = $verbs['ANY'];
         } elseif (isset($verbs)) {
-            $resp = 405;
-        }
-
-        if (is_numeric($resp)) {
-            self::$current = $resp;
+            return self::$current = 405;
         } else {
-            self::$current = array(
-                'callback' => $resp, 'args' => $args
-            );
+            return self::$current = 404;
         }
 
-        $routes = null;
-
-        return self::$current;
+        return self::$current = array(
+            'callback' => $resp, 'args' => $args
+        );
     }
 }
