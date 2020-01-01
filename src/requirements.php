@@ -30,7 +30,7 @@ if ($definedpath) {
     }
 }
 
-if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+if (version_compare(PHP_VERSION, '7.4.0', '<') && function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
     $error[] = 'magic_quotes_gpc is enabled';
 }
 
