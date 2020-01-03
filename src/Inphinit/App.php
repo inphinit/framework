@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.3';
+    const VERSION = '0.5.4';
 
     private static $events = array();
     private static $configs = array();
@@ -55,7 +55,7 @@ class App
             return null;
         }
 
-        $listen = self::$events[$name];
+        $listen = &self::$events[$name];
 
         usort($listen, function ($a, $b) {
             return $b[1] >= $a[1];
@@ -64,8 +64,6 @@ class App
         foreach ($listen as $callback) {
             call_user_func_array($callback[0], $args);
         }
-
-        $listen = null;
     }
 
     /**
@@ -122,16 +120,13 @@ class App
             return null;
         }
 
-        $evts = self::$events[$name];
+        $evts = &self::$events[$name];
 
         foreach ($evts as $key => $value) {
             if ($value[0] === $callback) {
                 unset($evts[$key]);
             }
         }
-
-        self::$events[$name] = $evts;
-        $evts = null;
     }
 
     /**
@@ -171,21 +166,23 @@ class App
         self::trigger('init');
 
         if (self::env('maintenance')) {
-            self::stop(503);
+            $resp = 503;
+        } else {
+            $resp = \UtilsStatusCode();
         }
 
-        self::trigger('changestatus', array(\UtilsStatusCode(), null));
-
-        $resp = Route::get();
+        //200 is initial value in commons webservers
+        if ($resp === 200) {
+            $resp = Route::get();
+        }
 
         if (is_integer($resp)) {
-            self::$state = 5;
-            self::stop($resp, 'Invalid route');
+            self::stop($resp);
         }
 
         $callback = $resp['callback'];
 
-        if (!$callback instanceof \Closure) {
+        if (is_string($callback)) {
             $parsed = explode(':', $callback, 2);
 
             $callback = '\\Controller\\' . strtr($parsed[0], '.', '\\');
@@ -216,9 +213,8 @@ class App
             self::$state = 3;
         }
 
-        self::trigger('finish');
-
         if (self::$state < 4) {
+            self::trigger('finish');
             self::$state = 4;
         }
     }
