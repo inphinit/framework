@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.5';
+    const VERSION = '0.5.7';
 
     private static $events = array();
     private static $configs = array();
