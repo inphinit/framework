@@ -173,10 +173,14 @@ class App
 
         //200 is initial value in commons webservers
         if ($resp === 200) {
-            $resp = Route::get();
+            $resp = 403;//Route::get();
         }
 
         if (is_integer($resp)) {
+            if (ob_get_level() === 0) {
+                ob_start();
+            }
+
             \UtilsSandboxLoader('error.php', array( 'status' => $resp ));
             self::stop($resp);
         }
