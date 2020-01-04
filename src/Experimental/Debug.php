@@ -2,7 +2,7 @@
 /*
  * Experimental
  *
- * Copyright (c) 2019 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
