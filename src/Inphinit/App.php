@@ -173,7 +173,7 @@ class App
 
         //200 is initial value in commons webservers
         if ($resp === 200) {
-            $resp = 403;//Route::get();
+            $resp = Route::get();
         }
 
         if (is_integer($resp)) {
