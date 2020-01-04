@@ -93,19 +93,20 @@ function UtilsPath()
 {
     static $pathinfo;
 
-    if ($pathinfo !== null) {
-        return $pathinfo;
-    }
+    if ($pathinfo === null) {
+        $requri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $sname = $_SERVER['SCRIPT_NAME'];
 
-    $requri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-    $sname = $_SERVER['SCRIPT_NAME'];
+        if ($requri !== $sname && $sname !== '/index.php') {
+            $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
+            $pathinfo = substr(urldecode($requri), strlen($pathinfo));
 
-    if ($requri !== $sname && $sname !== '/index.php') {
-        $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
-        $pathinfo = substr(urldecode($requri), strlen($pathinfo));
-        $pathinfo = $pathinfo === false ? '/' : $pathinfo;
-    } else {
-        $pathinfo = urldecode($requri);
+            if ($pathinfo === false) {
+                $pathinfo = '/';
+            }
+        } else {
+            $pathinfo = urldecode($requri);
+        }
     }
 
     return $pathinfo;
@@ -155,13 +156,13 @@ function UtilsAutoload()
 
         $path = preg_match('#^([a-z0-9]+:|/)#i', $base) ? $base : INPHINIT_PATH . $base;
 
-        $files = $isfile ? array( $path ) : array( $path . '.php', $path . '.hh' );
+        if ($isfile === false) {
+            $files = array_filter(array( $path . '.php', $path . '.hh' ), 'is_file');
+            $path = array_shift($files);
+        }
 
-        $files = array_filter($files, 'is_file');
-        $files = array_shift($files);
-
-        if ($files && UtilsCaseSensitivePath($files)) {
-            include_once $files;
+        if ($path && UtilsCaseSensitivePath($path)) {
+            include_once $path;
         }
     });
 }
@@ -198,7 +199,10 @@ function UtilsError($type, $message, $file, $line, $details = null)
 function UtilsConfig()
 {
     $url = dirname($_SERVER['SCRIPT_NAME']);
-    $url = $url === '\\' ? '' : $url;
+    
+    if ($url === '\\') {
+        $url = '';
+    }
 
     define('INPHINIT_URL', $url . '/');
     define('REQUEST_TIME', time());
@@ -209,15 +213,16 @@ function UtilsConfig()
     }
 
     $dev = App::env('development');
+    $reporting = $dev ? E_ALL|E_STRICT : E_ALL & ~E_STRICT & ~E_DEPRECATED;
 
-    error_reporting($dev ? E_ALL|E_STRICT : E_ALL & ~E_STRICT & ~E_DEPRECATED);
+    error_reporting($reporting);
 
     if (function_exists('init_set')) {
         ini_set('display_errors', $dev ? 1 : 0);
     }
 
     register_shutdown_function('UtilsShutDown');
-    set_error_handler('UtilsError', E_ALL|E_STRICT);
+    set_error_handler('UtilsError', $reporting);
 
     header_remove('X-Powered-By');
 }

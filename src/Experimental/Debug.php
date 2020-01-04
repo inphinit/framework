@@ -185,9 +185,9 @@ class Debug
             if (false === $cname->isInternal()) {
                 $objs[$value] = $cname->getDefaultProperties();
             }
-
-            $cname = null;
         }
+
+        $cname = null;
 
         return $objs;
     }
@@ -236,10 +236,10 @@ class Debug
         $trace = debug_backtrace(0);
 
         foreach ($trace as $key => &$value) {
-            if (isset($value['file']) === false) {
-                unset($trace[$key]);
-            } else {
+            if (isset($value['file'])) {
                 self::evalFileLocation($value['file'], $value['line']);
+            } else {
+                unset($trace[$key]);
             }
         }
 

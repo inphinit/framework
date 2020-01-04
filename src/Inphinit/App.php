@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.4';
+    const VERSION = '0.5.5';
 
     private static $events = array();
     private static $configs = array();
@@ -177,6 +177,7 @@ class App
         }
 
         if (is_integer($resp)) {
+            \UtilsSandboxLoader('error.php', array( 'status' => $resp ));
             self::stop($resp);
         }
 

@@ -238,6 +238,7 @@ class Document extends \DOMDocument
 
         if ($element === null) {
             $nodes = $this->xpath->query('namespace::*');
+            $element = $this->documentElement;
         } else {
             $nodes = $this->xpath->query('namespace::*', $element);
         }
@@ -421,7 +422,7 @@ class Document extends \DOMDocument
                     $this->add($key, $value, $node);
                 }
             } else {
-                throw new DomException('Invalid root <' . $key . '> tag', $nextLevel);
+                throw new DomException('Invalid tag: <' . $key . '>', $nextLevel);
             }
         }
     }

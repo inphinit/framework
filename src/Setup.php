@@ -35,6 +35,7 @@ function SetupApache($base)
     # Redirect page errors to route system
     ErrorDocument 401 ' . $base . '401.html
     ErrorDocument 403 ' . $base . '403.html
+    ErrorDocument 500 ' . $base . '500.html
     ErrorDocument 501 ' . $base . '501.html
 
     RewriteEngine On
@@ -87,6 +88,7 @@ function SetupIIS($base)
             <httpErrors>
                 <remove statusCode="401" subStatusCode="-1" />
                 <remove statusCode="403" subStatusCode="-1" />
+                <remove statusCode="500" subStatusCode="-1" />
                 <remove statusCode="501" subStatusCode="-1" />
                 <error statusCode="401"
                        responseMode="ExecuteURL"
@@ -157,6 +159,8 @@ function SetupNginx($base, array $extensions)
 
         error_page 403 /index.php/RESERVED.INPHINIT-403.html;
         error_page 404 /index.php/RESERVED.INPHINIT-404.html;
+        error_page 500 /index.php/RESERVED.INPHINIT-500.html;
+        error_page 501 /index.php/RESERVED.INPHINIT-501.html;
 
         try_files $uri $uri/ /index.php?$query_string;
     }
@@ -192,7 +196,7 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         echo 'Warning: Use this script only with CLI', PHP_EOL;
         exit;
     } elseif (defined('PHP_BINARY') === false) {
-        echo 'Warning: versions older than PHP-5.4 don\'t support "Built-in web server", for PHP 5.3.x use Apache or Nginx', PHP_EOL;
+        echo 'Warning: versions older than PHP 5.4 don\'t support "Built-in web server", for PHP 5.3.x use Apache or Nginx', PHP_EOL;
         return;
     }
 
