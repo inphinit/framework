@@ -44,11 +44,13 @@ abstract class Router
      */
     protected static function find($route, $path, array &$matches)
     {
-        $re = Regex::parse($route);
+        if (strpos($route, '{:') !== false) {
+            $re = Regex::parse($route);
 
-        if ($re !== false && preg_match('#^' . $re . '$#', $path, $matches)) {
-            array_shift($matches);
-            return true;
+            if ($re !== false && preg_match('#^' . $re . '$#', $path, $matches)) {
+                array_shift($matches);
+                return true;
+            }
         }
 
         return false;

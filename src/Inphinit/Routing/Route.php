@@ -49,7 +49,7 @@ class Route extends Router
     /**
      * Get action controller from current route
      *
-     * @return array|bool
+     * @return array|int
      */
     public static function get()
     {
@@ -58,7 +58,6 @@ class Route extends Router
         }
 
         $args = array();
-
         $routes = &parent::$httpRoutes;
         $path = \UtilsPath();
         $method = $_SERVER['REQUEST_METHOD'];
@@ -78,7 +77,7 @@ class Route extends Router
             $resp = $verbs[$method];
         } elseif (isset($verbs['ANY'])) {
             $resp = $verbs['ANY'];
-        } elseif (isset($verbs)) {
+        } elseif (isset($verbs) && array_filter($verbs)) {
             return self::$current = 405;
         } else {
             return self::$current = 404;
