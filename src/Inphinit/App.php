@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.7';
+    const VERSION = '0.5.8';
 
     private static $events = array();
     private static $configs = array();
@@ -142,10 +142,13 @@ class App
             self::trigger('changestatus', array($code, $msg));
         }
 
+        self::trigger('finish');
+
         if (self::$state < 4) {
-            self::trigger('finish');
             self::$state = 4;
         }
+
+        self::dispatch();
 
         exit;
     }
@@ -161,9 +164,9 @@ class App
             return null;
         }
 
-        self::$state = 1;
-
         self::trigger('init');
+
+        self::$state = 1;
 
         if (self::env('maintenance')) {
             $resp = 503;
@@ -177,15 +180,14 @@ class App
         }
 
         if (is_integer($resp)) {
-            if (ob_get_level() === 0) {
-                ob_start();
-            }
-
-            \UtilsSandboxLoader('error.php', array( 'status' => $resp ));
+            self::on('finish', function () use ($resp) {
+                \UtilsSandboxLoader('error.php', array( 'status' => $resp ));
+            });
+            
             self::stop($resp);
         }
 
-        $callback = $resp['callback'];
+        $callback = &$resp['callback'];
 
         if (is_string($callback)) {
             $parsed = explode(':', $callback, 2);
@@ -196,13 +198,7 @@ class App
 
         $output = call_user_func_array($callback, $resp['args']);
 
-        if (class_exists('\\Inphinit\\Http\\Response', false)) {
-            Response::dispatch();
-        }
-
-        if (class_exists('\\Inphinit\\Viewing\\View', false)) {
-            View::dispatch();
-        }
+        self::dispatch();
 
         if (self::$state < 2) {
             self::$state = 2;
@@ -217,10 +213,26 @@ class App
         if (self::$state < 3) {
             self::$state = 3;
         }
+        
+        self::trigger('finish');
 
         if (self::$state < 4) {
-            self::trigger('finish');
             self::$state = 4;
+        }
+    }
+
+    /**
+     * Dispatch before ready event if exec is Ok,
+     * or dispatch after finish event if stop() is executed
+     */
+    private static function dispatch()
+    {
+        if (class_exists('\\Inphinit\\Http\\Response', false)) {
+            Response::dispatch();
+        }
+
+        if (class_exists('\\Inphinit\\Viewing\\View', false)) {
+            View::dispatch();
         }
     }
 }

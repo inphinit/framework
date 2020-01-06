@@ -151,7 +151,7 @@ final class Status
      *
      * @param int    $code
      * @param string $alternative
-     * @return void
+     * @return mixed
      */
     public static function message($code, $alternative = null)
     {
