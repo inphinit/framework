@@ -177,11 +177,9 @@ class Group extends Router
         if (self::$cachehost !== null) {
             $host = self::$cachehost;
         } else {
-            $fhost = Request::header('Host');
-            $host = strstr($fhost, ':', true);
-            $host = $host ? $host : $fhost;
+            $host = Request::header('Host');
 
-            self::$cachehost = $host;
+            self::$cachehost = $host ? strtok($host, ':') : '';
         }
 
         if ($host === $this->domain) {

@@ -94,18 +94,14 @@ function UtilsPath()
     static $pathinfo;
 
     if ($pathinfo === null) {
-        $requri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $sname = $_SERVER['SCRIPT_NAME'];
+        $requri = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+        $sname = dirname($_SERVER['SCRIPT_NAME']);
 
-        if ($requri !== $sname && $sname !== '/index.php') {
-            $pathinfo = rtrim(strtr(dirname($sname), '\\', '/'), '/');
-            $pathinfo = substr(urldecode($requri), strlen($pathinfo));
-
-            if ($pathinfo === false) {
-                $pathinfo = '/';
-            }
-        } else {
-            $pathinfo = urldecode($requri);
+        if ($sname === '\\' || $sname === '/') {
+            $pathinfo = $requri;
+        } elseif ($requri !== $sname) {
+            $pathinfo = rtrim($sname, '/');
+            $pathinfo = substr($requri, strlen($pathinfo));
         }
     }
 
