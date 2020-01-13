@@ -9,9 +9,13 @@
 
 namespace Inphinit\Experimental;
 
-class Dir implements \IteratorAggregate
+class Dir implements \Iterator, \Countable
 {
-    private $iterator;
+    private $position = 0;
+    private $item = false;
+    private $path = '';
+    private $handle;
+    private $size = -1;
 
     /**
      * Return items from a folder
@@ -22,57 +26,21 @@ class Dir implements \IteratorAggregate
      */
     public function __construct($path)
     {
-        $data = array();
-
-        if (false === is_dir($path)) {
+        if (is_dir($path) === false) {
             throw new Exception('Folder not found', 2);
         }
 
-        $path = strtr(realpath($path), '\\', '/');
-        $path = rtrim($path, '/') . '/';
+        $this->handle = opendir($path);
 
-        $handle = opendir($path);
-
-        if ($handle) {
-            while ($file = readdir($handle)) {
-                if ($file !== '.' && $file !== '..') {
-                    $current = $path . $file;
-
-                    $data[] = (object) array(
-                        'type' => filetype($current),
-                        'path' => $current,
-                        'name' => $file
-                    );
-                }
-            }
-
-            closedir($handle);
-
-            $this->iterator = new \ArrayIterator($data);
-            $data = null;
+        if ($this->handle === false) {
+            throw new Exception('Failed to open folder', 2);
         }
-    }
 
-    /**
-     * Allow iteration with `for`, `foreach` and `while`
-     *
-     * Example:
-     * <pre>
-     * <code>
-     * $foo = new Dir('/home/foo/bar/baz/');
-     *
-     * foreach ($foo as $value) {
-     *      var_dump($value);
-     *      echo EOL;
-     * }
-     * </code>
-     * </pre>
-     *
-     * @return \ArrayIterator
-     */
-    public function getIterator()
-    {
-        return $this->iterator;
+        $path = strtr(realpath($path), '\\', '/');
+
+        $this->path = rtrim($path, '/') . '/';
+
+        $this->find(0);
     }
 
     /**
@@ -93,7 +61,7 @@ class Dir implements \IteratorAggregate
      */
     public static function storage()
     {
-        return new static(INPHINIT_PATH . 'storage/');
+        return new static(INPHINIT_PATH . 'storage');
     }
 
     /**
@@ -103,11 +71,121 @@ class Dir implements \IteratorAggregate
      */
     public static function application()
     {
-        return new static(INPHINIT_PATH . 'application/');
+        return new static(INPHINIT_PATH . 'application');
+    }
+
+    /**
+     *  Resets the directory stream to the beginning of the directory
+     *
+     * @return void
+     */
+    public function rewind()
+    {
+        $this->position = $this->find(0);
+    }
+
+    /**
+     * Get current file with type, path and filename
+     * The entries are returned in the order in which they are stored by the filesystem. 
+     *
+     * @return stdClass|null
+     */
+    public function current()
+    {
+        if ($this->item !== false) {
+            $current = $this->path . $this->item;
+
+            return (object) array(
+                'type' => filetype($current),
+                'path' => $current,
+                'name' => $this->item,
+                'position' => $this->position
+            );
+        }
+    }
+
+    /**
+     *  Get current position in handle
+     *
+     * @return int
+     */
+    public function key()
+    {
+        return $this->position;
+    }
+
+    /**
+     * Move forward to next file
+     *
+     * @return void
+     */
+    public function next()
+    {
+        $this->item = readdir($this->handle);
+
+        if ($this->item !== false) {
+            ++$this->position;
+        }
+    }
+
+    /**
+     *  Check if pointer is valid
+     *
+     * @return bool
+     */
+    public function valid()
+    {
+        return $this->item !== false;
+    }
+
+    /**
+     * Count files in folder, can br used by `count($instance)` funciton
+     *
+     * @return int
+     */
+    public function count()
+    {
+        if ($this->size === -1) {
+            $this->size = $this->find(-1);
+
+            //Restore position
+            if ($this->position > 0) {
+                $this->find($this->position);
+            }
+        }
+
+        return $this->size;
+    }
+
+    private function find($pos)
+    {
+        rewinddir($this->handle);
+
+        $current = 0;
+        $break = $pos !== -1;
+
+        while (false !== ($item = readdir($this->handle))) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            } elseif ($current === $pos) {
+                $this->item = $item;
+                
+                if ($break) {
+                    break;
+                }
+            }
+
+            ++$current;
+        }
+
+        return $current !== $pos ? $current : 0;
     }
 
     public function __destruct()
     {
-        $this->iterator = null;
+        if ($this->handle) {
+            closedir($this->handle);
+            $this->handle = null;
+        }
     }
 }

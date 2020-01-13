@@ -64,7 +64,7 @@ class Debug
 
         $data = self::details($type, $message, $file, $line);
 
-        if (!headers_sent() && strcasecmp(Request::header('accept'), 'application/json') === 0) {
+        if (!headers_sent() && strpos(Request::header('accept'), 'application/json') === 0) {
             ob_start();
 
             self::unregister();
@@ -91,7 +91,7 @@ class Debug
      */
     public static function renderPerformance()
     {
-        if (!empty(self::$views['performance'])) {
+        if (isset(self::$views['performance'])) {
             self::render(self::$views['performance'], self::performance());
         }
     }
@@ -103,7 +103,7 @@ class Debug
      */
     public static function renderClasses()
     {
-        if (!empty(self::$views['classes'])) {
+        if (isset(self::$views['classes'])) {
             self::render(self::$views['classes'], array(
                 'classes' => self::classes()
             ));
@@ -128,7 +128,6 @@ class Debug
 
         switch ($type) {
             case 'error':
-                self::$views[$type] = $view;
                 App::on('error', $callRender);
 
                 if (empty(self::$displayErrors)) {
@@ -142,17 +141,17 @@ class Debug
 
             case 'classes':
             case 'performance':
-                self::$views[$type] = $view;
                 App::on('terminate', $callRender);
                 break;
 
             case 'before':
-                self::$views[$type] = $view;
                 break;
 
             default:
                 throw new Exception($type . ' is not valid event', 2);
         }
+
+        self::$views[$type] = $view;
     }
 
     /**
@@ -205,15 +204,15 @@ class Debug
             return null;
         } elseif ($line > 5) {
             $init = $line - 6;
-            $end  = $line + 5;
+            $max = 10;
             $breakpoint = 6;
         } else {
             $init = 0;
-            $end  = 5;
+            $max = 5;
             $breakpoint = $line;
         }
 
-        $preview = preg_split('#\r\n|\n#', File::lines($file, $init, $end));
+        $preview = preg_split('#\r\n|\n#', File::lines($file, $init, $max));
 
         if (count($preview) !== $breakpoint && trim(end($preview)) === '') {
             array_pop($preview);
@@ -247,11 +246,9 @@ class Debug
 
         if ($level < 0) {
             return $trace;
-        } elseif (empty($trace[$level])) {
-            return null;
+        } elseif (isset($trace[$level])) {
+            return $trace = $trace[$level];
         }
-
-        return $trace = $trace[$level];
     }
 
     /**
@@ -285,7 +282,7 @@ class Debug
 
     private static function render($view, $data)
     {
-        if (!self::$showBeforeView && !empty(self::$views['before'])) {
+        if (!self::$showBeforeView && isset(self::$views['before'])) {
             self::$showBeforeView = true;
             View::render(self::$views['before']);
         }
@@ -296,7 +293,6 @@ class Debug
     private static function details($type, $message, $file, $line)
     {
         $match = array();
-        //$oFile = $file;
 
         if (preg_match('#called in ([\s\S]+?) on line (\d+)#', $message, $match)) {
             $file = $match[1];

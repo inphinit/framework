@@ -71,14 +71,12 @@ function UtilsStatusCode()
 {
     static $initial;
 
-    if ($initial !== null) {
-        return $initial;
-    }
+    if ($initial === null) {
+        $initial = 200;
 
-    $initial = 200;
-
-    if (preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match)) {
-        $initial = (int) $match[1];
+        if (preg_match('#/RESERVED\.INPHINIT\-(\d{3})\.html$#', $_SERVER['PHP_SELF'], $match)) {
+            $initial = (int) $match[1];
+        }
     }
 
     return $initial;
@@ -196,7 +194,7 @@ function UtilsConfig()
 {
     $url = dirname($_SERVER['SCRIPT_NAME']);
     
-    if ($url === '\\') {
+    if ($url === '\\' || $url === '/') {
         $url = '';
     }
 

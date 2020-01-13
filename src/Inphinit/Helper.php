@@ -24,7 +24,7 @@ class Helper
                 'major' => $match[1],
                 'minor' => $match[2],
                 'patch' => $match[3],
-                'extra' => empty($match[5]) ? null : $match[5]
+                'extra' => isset($match[5][0]) ? $match[5] : null
             );
         }
 
@@ -59,9 +59,9 @@ class Helper
     /**
      * Read array or object by path using dot
      *
-     * @param string          $path
-     * @param array|stdClass  $items
-     * @param mixed           $alternative
+     * @param string         $path
+     * @param array|stdClass $items
+     * @param mixed          $alternative
      * @return mixed
      */
     public static function extract($path, $items, $alternative = null)
@@ -123,7 +123,7 @@ class Helper
      * Check if array is associative, like [ 'bar' => foo', 'baz' => 'bar']
      *
      * @param array $array
-     * @param int $flags   See details in https://www.php.net/manual/en/function.sort.php#refsect1-function.sort-parameters
+     * @param int   $flags See details in https://www.php.net/manual/en/function.sort.php#refsect1-function.sort-parameters
      * @return null
      */
     public static function ksort(array &$array, $flags = \SORT_REGULAR)

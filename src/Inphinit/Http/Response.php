@@ -24,7 +24,7 @@ class Response
      */
     public static function dispatch()
     {
-        if (empty(self::$headers) === false) {
+        if (self::$dispatchedHeaders === false) {
             self::$dispatchedHeaders = true;
 
             foreach (self::$headers as $value) {

@@ -75,7 +75,7 @@ class Quick extends Router
 
             self::$debuglvl = 2;
 
-            throw new Exception($this->fullController . ' is empty ', $level);
+            throw new Exception($this->fullController . ' is empty', $level);
         }
 
         $this->classMethods = $cm;

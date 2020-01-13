@@ -108,26 +108,28 @@ class File
     public static function mime($path)
     {
         $mime = false;
+        $size = 0;
 
         if (is_readable($path)) {
             if (function_exists('finfo_open')) {
-                $buffer = file_get_contents($path, false, null, -1, 5012);
+                $buffer = file_get_contents($path, false, null, 0, 5012);
 
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mime = finfo_buffer($finfo, $buffer);
                 finfo_close($finfo);
 
+                $size = strlen($buffer);
+
                 $buffer = null;
             } elseif (function_exists('mime_content_type')) {
                 $mime = mime_content_type($path);
+                $size = filesize($path);
             }
         }
 
-        if ($mime !== false && strpos($mime, 'application/') === 0) {
-            $size = filesize($path);
-
-            //Note: $size >= 0 prevents negative numbers for big files (in x86)
-            $mime = $size >= 0 && $size < 2 ? 'text/plain' : $mime;
+        //Note: $size >= 0 prevents negative numbers for big files (in x86)
+        if ($mime !== false && strpos($mime, 'application/') === 0 && $size >= 0 && $size < 2) {
+            return 'text/plain';
         }
 
         return $mime;

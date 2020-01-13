@@ -62,7 +62,7 @@ class Storage
             $expires = REQUEST_TIME - $time;
             $path .= '/';
 
-            while ($file = readdir($handle)) {
+            while (false !== ($file = readdir($handle))) {
                 $current = $path . $file;
 
                 if (is_file($current) && filemtime($current) < $expires) {
@@ -93,7 +93,7 @@ class Storage
         $rand = mt_rand();
 
         while (true) {
-            $path = $fullpath . '/' . $prefix . $rand . $sulfix;
+            $path = $fullpath . '/' . $prefix . REQUEST_TIME . '-' . $rand . $sulfix;
 
             if ($handle = fopen($path, 'x')) {
                 if ($data !== null) {
@@ -104,7 +104,9 @@ class Storage
                 return $path;
             }
 
-            ++$rand;
+            if (++$rand === 1000) {
+                return false;
+            }
         }
     }
 
@@ -137,12 +139,12 @@ class Storage
         }
 
         //Allow int(0) and empty string("")
-        if ($data !== '' && is_numeric($data) === false && !$data) {
-            $data = null;
+        if ($data === null && $data === false) {
+            $data = '';
         }
 
         //if the file already exists then will not try to create again
-        if ($data === null && is_file($path)) {
+        if ($data === '' && is_file($path)) {
             return true;
         }
 

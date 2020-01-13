@@ -16,9 +16,9 @@ class Route extends Router
     /**
      * Register or remove a action from controller for a route
      *
-     * @param string|array    $method
-     * @param string          $path
-     * @param string|\Closure $action
+     * @param string|array         $method
+     * @param string               $path
+     * @param string|\Closure|null $action
      * @return void
      */
     public static function set($method, $path, $action)
@@ -34,15 +34,13 @@ class Route extends Router
                 return null;
             }
 
-            $method = strtoupper(trim($method));
-
             $path = parent::$prefixPath . $path;
 
             if (!isset(parent::$httpRoutes[$path])) {
                 parent::$httpRoutes[$path] = array();
             }
 
-            parent::$httpRoutes[$path][$method] = $action;
+            parent::$httpRoutes[$path][ strtoupper(trim($method)) ] = $action;
         }
     }
 

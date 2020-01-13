@@ -63,7 +63,7 @@ class Request
             self::generate();
         }
 
-        if (is_string($name)) {
+        if ($name !== null) {
             $name = strtolower($name);
             return isset(self::$reqHeadersLower[$name]) ? self::$reqHeadersLower[$name] : null;
         }
@@ -82,7 +82,7 @@ class Request
             return null;
         }
 
-        return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : false;
+        return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
     }
 
     /**

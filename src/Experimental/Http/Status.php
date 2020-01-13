@@ -11,6 +11,8 @@ namespace Inphinit\Experimental\Http;
 
 /**
  * Constant with the most common HTTP codes
+ *
+ * @deprecated
  */
 final class Status
 {

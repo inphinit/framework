@@ -30,7 +30,7 @@ class DomException extends \Inphinit\Experimental\Exception
             $message = trim($err[0]->message);
         }
 
-        if (empty($err[0]->file) === false && $err[0]->line > 0) {
+        if (isset($err[0]->file) && $err[0]->line > 0) {
             $this->file = preg_replace('#^file:/(\w+:)#i', '$1', $err[0]->file);
             $this->line = $err[0]->line;
             $this->code = $err[0]->code;

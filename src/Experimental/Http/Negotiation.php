@@ -34,9 +34,46 @@ class Negotiation
      */
     public function __construct(array $headers = null)
     {
-        $this->headers = array_change_key_case($headers ? $headers : Request::header(), CASE_LOWER);
+        $headers = array_change_key_case(empty($headers) ? Request::header() : $headers, CASE_LOWER);
 
-        self::filter($this->headers);
+        foreach ($headers as $key => $value) {
+            if ($key === 'accept-ranges' || strpos($key, 'accept-control-') === 0 || (
+                $key !=='accept' && strpos($key, 'accept-') !== 0
+            )) {
+                unset($headers[$key]);
+            }
+        }
+
+        $this->headers = $headers;
+
+        $headers = null;
+    }
+
+    /**
+     * Create a Negotiation instance based in string (eg.: `curl_opt(..., CURL_OPT_HEADER, true)`)
+     *
+     * @param string $str
+     * @return void
+     */
+    public static function fromString($str)
+    {
+        $str = preg_replace('#(\r)?\n(\r)?\n[\s\S]+#', '', $str);
+
+        $headers = array();
+
+        foreach (preg_split("#(\r)?\n#", $str) as $line) {
+            if ($str && strpos($line, ':') !== false) {
+                list($key, $value) = explode(':', trim($line), 2);
+
+                $headers[$key] = ltrim($value);
+            }
+        }
+
+        $instance = new static($headers);
+
+        $headers = null;
+
+        return $instance;
     }
 
     /**
@@ -163,11 +200,9 @@ class Negotiation
     {
         $header = strtolower($header);
 
-        if (empty($this->headers[$header])) {
-            return null;
+        if (isset($this->headers[$header])) {
+            return self::qFactor($this->headers[$header], $level);
         }
-
-        return self::qFactor($this->headers[$header], $level);
     }
 
     /**
@@ -190,10 +225,10 @@ class Negotiation
 
             $current = explode(';', $hvalues, 2);
 
-            if (empty($current[1])) {
-                $qvalue = 1.0;
-            } else {
+            if (isset($current[1])) {
                 $qvalue = self::parseQValue($current[1]);
+            } else {
+                $qvalue = 1.0;
             }
 
             $headers[ trim($current[0]) ] = $qvalue;
@@ -214,15 +249,6 @@ class Negotiation
         return $headers;
     }
 
-    private static function filter(&$headers)
-    {
-        foreach ($headers as $key => &$value) {
-            if ($key !== 'te' && $key !== 'accept-ranges' && strpos($key, 'accept-') === 0 && strpos($key, 'accept-control-') !== 0) {
-                unset($value);
-            }
-        }
-    }
-
     private static function parseQValue($value)
     {
         $qvalue = str_replace('q=', '', $value);
@@ -233,6 +259,6 @@ class Negotiation
             throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0.0 to 1.0): "' . $value . '"', 3);
         }
 
-        return floatval($qvalue);
+        return (float) $qvalue;
     }
 }

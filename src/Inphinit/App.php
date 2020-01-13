@@ -16,7 +16,7 @@ use Inphinit\Routing\Route;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.10';
+    const VERSION = '0.5.11';
 
     private static $events = array();
     private static $configs = array();
@@ -51,18 +51,16 @@ class App
             self::$state = 5;
         }
 
-        if (empty(self::$events[$name])) {
-            return null;
-        }
+        if (isset(self::$events[$name])) {
+            $listen = &self::$events[$name];
 
-        $listen = &self::$events[$name];
+            usort($listen, function ($a, $b) {
+                return $b[1] >= $a[1];
+            });
 
-        usort($listen, function ($a, $b) {
-            return $b[1] >= $a[1];
-        });
-
-        foreach ($listen as $callback) {
-            call_user_func_array($callback[0], $args);
+            foreach ($listen as $callback) {
+                call_user_func_array($callback[0], $args);
+            }
         }
     }
 
@@ -113,18 +111,18 @@ class App
      */
     public static function off($name, $callback = null)
     {
-        if (empty(self::$events[$name])) {
-            return null;
-        } elseif ($callback === null) {
-            self::$events[$name] = array();
-            return null;
-        }
+        if (empty(self::$events[$name]) === false) {
+            if ($callback === null) {
+                self::$events[$name] = array();
+                return null;
+            }
 
-        $evts = &self::$events[$name];
+            $evts = &self::$events[$name];
 
-        foreach ($evts as $key => $value) {
-            if ($value[0] === $callback) {
-                unset($evts[$key]);
+            foreach ($evts as $key => $value) {
+                if ($value[0] === $callback) {
+                    unset($evts[$key]);
+                }
             }
         }
     }
@@ -224,6 +222,8 @@ class App
     /**
      * Dispatch before ready event if exec is Ok,
      * or dispatch after finish event if stop() is executed
+     *
+     * @param bool $views
      */
     private static function dispatch()
     {

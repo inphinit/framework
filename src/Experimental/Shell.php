@@ -69,7 +69,7 @@ class Shell
      */
     public static function isCli()
     {
-        return php_sapi_name() === 'cli';
+        return PHP_SAPI === 'cli';
     }
 
     /**
@@ -125,17 +125,15 @@ class Shell
     {
         $response = rtrim(self::input(), PHP_EOL);
 
-        if (strcasecmp($response, $this->ec) === 0) {
-            return null;
+        if (strcasecmp($response, $this->ec) !== 0) {
+            $callback = $this->io;
+
+            $callback($response);
+
+            usleep(100);
+
+            $this->fireInputObserver();
         }
-
-        $callback = $this->io;
-
-        $callback($response);
-
-        usleep(100);
-
-        $this->fireInputObserver();
     }
 
     public function __destruct()

@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental\Http;
 
+use Inphinit\App;
 use Inphinit\Uri;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
@@ -35,6 +36,8 @@ class Redirect
 
         Response::dispatch();
 
+        App::trigger('finish');
+
         exit;
     }
 
@@ -53,11 +56,11 @@ class Redirect
 
         self::$debuglvl = 2;
 
-        if (headers_sent()) {
-            throw new Exception('Headers already sent', $debuglvl);
+        if (headers_sent($filename, $line)) {
+            throw new Exception("HTTP headers already sent by $filename:$line", $debuglvl);
         } elseif ($code < 300 || $code > 399) {
             throw new Exception('Invalid redirect HTTP status', $debuglvl);
-        } elseif (empty($path)) {
+        } elseif (isset($path[0]) === false) {
             throw new Exception('Path is not defined', $debuglvl);
         } elseif (strpos($path, '/') === 0) {
             $path = Uri::root($path);
@@ -78,7 +81,7 @@ class Redirect
     {
         $referer = Request::header('referer');
 
-        if ($referer === false) {
+        if ($referer === null) {
             return false;
         }
 

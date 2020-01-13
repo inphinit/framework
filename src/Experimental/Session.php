@@ -37,17 +37,17 @@ class Session implements \IteratorAggregate
     {
         self::raise();
 
+        $tmpname = null;
+
         $this->savepath = Storage::resolve('session');
 
         if ($id === null) {
             if (empty($_COOKIE[$name])) {
                 if (Storage::createFolder('session')) {
                     $tmpname = Storage::temp(null, 'session', $this->prefix, '');
-                } else {
-                    $tmpname = false;
                 }
 
-                if ($tmpname === false) {
+                if ($tmpname === null) {
                     throw new Exception('Failed to create session file', 2);
                 }
 
@@ -61,7 +61,7 @@ class Session implements \IteratorAggregate
             $this->currentId = $id;
         }
 
-        if (empty($tmpname)) {
+        if ($tmpname === null) {
             $tmpname = $this->savepath . '/' . $this->prefix . $this->currentId;
         }
 
@@ -132,7 +132,7 @@ class Session implements \IteratorAggregate
      * @throws \Inphinit\Experimental\Exception
      * @return void
      */
-    public function regenerate($id = null, $trydeleteold = false)
+    public function regenerate($id = null, $deleteold = false)
     {
         self::raise();
 
@@ -140,7 +140,9 @@ class Session implements \IteratorAggregate
 
         $this->commit(false);
 
-        if (empty($id)) {
+        if (isset($id[0])) {
+            $tmpname = $this->savepath . '/' . $this->prefix . $id;
+        } else {
             $tmpname = Storage::temp(null, 'session', $this->prefix, '');
 
             if ($tmpname === false) {
@@ -148,8 +150,6 @@ class Session implements \IteratorAggregate
             }
 
             $id = $this->getFileId($tmpname);
-        } else {
-            $tmpname = $this->savepath . '/' . $this->prefix . $id;
         }
 
         if (copy($old, $tmpname) === false) {
@@ -165,7 +165,7 @@ class Session implements \IteratorAggregate
 
         $this->cookie();
 
-        if ($trydeleteold) {
+        if ($deleteold) {
             unlink($old);
         }
     }

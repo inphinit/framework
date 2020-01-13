@@ -18,8 +18,18 @@ $definedpath = defined('INPHINIT_PATH');
 $error = array();
 $warn  = array();
 
+if (php_ini_loaded_file() === false) {
+    $phpiniError = 'php.ini file is not setted';
+
+    if (isset($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') !== false) {
+        $phpiniError .= ', in Apache you can set PHPIniDir, like this: PHPIniDir "c:\php"';
+    }
+
+    $error[] = $phpiniError;
+}
+
 if (version_compare(PHP_VERSION, '5.3.0', '<')) {
-    $error[] = 'Requires PHP5.3 or major, your current version of PHP is ' . PHP_VERSION;
+    $error[] = 'Requires PHP 5.3 or major, your current version of PHP is ' . PHP_VERSION;
 }
 
 if ($definedpath) {
@@ -49,7 +59,7 @@ if (!function_exists('finfo_file')) {
 }
 
 if (version_compare(PHP_VERSION, '7.0.0', '<') && ini_get('always_populate_raw_post_data') != -1) {
-    $warn[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
+    $error[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
 }
 
 if ($definedpath) {

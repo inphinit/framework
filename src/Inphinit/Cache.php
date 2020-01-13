@@ -43,7 +43,7 @@ class Cache
 
         $name = '';
 
-        if (false === empty($prefix)) {
+        if (isset($prefix[0])) {
             $name = strlen($prefix) . '.' . sha1($prefix) . '/';
         }
 
@@ -144,6 +144,8 @@ class Cache
 
             return null;
         }
+
+        Storage::createFolder(dirname($this->cacheName));
 
         Storage::put($this->cacheName);
 

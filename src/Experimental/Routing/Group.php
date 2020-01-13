@@ -65,7 +65,7 @@ class Group extends Router
      */
     public function domain($domain)
     {
-        if (empty($domain) || trim($domain) !== $domain) {
+        if (isset($domain[0]) === false || trim($domain) !== $domain) {
             throw new Exception('Invalid domain "' . $domain . '"', 2);
         } else {
             $this->domain = $domain;

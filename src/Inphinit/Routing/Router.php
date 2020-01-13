@@ -18,7 +18,8 @@ abstract class Router
      *
      * @var array
      */
-    protected static $httpRoutes = array();
+    //protected static $httpRoutes = array();
+    public static $httpRoutes = array();
 
     /**
      * Define namespace prefix to Controllers

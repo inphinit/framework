@@ -38,26 +38,26 @@ class Uri
     /**
      * Convert text to URL format
      *
-     * @param string $text
+     * @param string $path
      * @param int    $type
      * @return string
      */
-    public static function encodepath($text, $type = null)
+    public static function encodepath($path, $type = null)
     {
-        $text = preg_replace('#[`\'"\^~{}\[\]()]#', '', $text);
-        $text = preg_replace('#[\n\s\/\p{P}]#u', '-', $text);
+        $path = preg_replace('#[`\'"\^~{}\[\]()]#', '', $path);
+        $path = preg_replace('#[\n\s\/\p{P}]#u', '-', $path);
 
         if ($type === self::UNICODE) {
-            $text = preg_replace('#[^\d\p{L}\p{N}\-]#u', '', $text);
+            $path = preg_replace('#[^\d\p{L}\p{N}\-]#u', '', $path);
         } elseif ($type === self::ASCII) {
-            $text = preg_replace('#[^\d\p{L}\-]#u', '', $text);
-            $text = self::encodepath($text);
+            $path = preg_replace('#[^\d\p{L}\-]#u', '', $path);
+            $path = self::encodepath($path);
         } else {
-            $text = Helper::toAscii($text);
-            $text = preg_replace('#[^a-z\d\-]#i', '', $text);
+            $path = Helper::toAscii($path);
+            $path = preg_replace('#[^a-z\d\-]#i', '', $path);
         }
 
-        return trim(preg_replace('#--+#', '-', $text), '-');
+        return trim(preg_replace('#--+#', '-', $path), '-');
     }
 
     /**
@@ -107,15 +107,15 @@ class Uri
             return $url;
         }
 
-        if (empty($u['scheme'])) {
+        if (isset($u['scheme']) === false) {
             $u = null;
             return false;
         }
 
-        $scheme = strtolower($u['scheme']);
+        $scheme = $u['scheme'];
 
-        if (strlen($scheme) > 1) {
-            $normalized = $scheme . '://';
+        if (isset($scheme[1])) {
+            $normalized = strtolower($scheme) . '://';
         } else {
             $normalized = strtoupper($scheme) . ':';
         }

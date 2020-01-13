@@ -148,7 +148,7 @@ class Rest extends Router
         $path = $this->path;
 
         foreach ($classMethods as $method) {
-            if (false === empty(self::$valids[$method])) {
+            if (isset(self::$valids[$method])) {
                 $route = self::$valids[$method];
 
                 Route::set($route[0], $path . $route[1], function () use ($method, $contentType, $controller) {
