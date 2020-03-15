@@ -22,22 +22,34 @@ class File
      */
     public static function exists($path)
     {
-        if (file_exists($path) === false) {
+        $rpath = realpath($path);
+
+        if ($rpath === false) {
             return false;
         }
 
-        $path = preg_replace('#^file:/+([a-z]:/|/)#i', '$1', $path);
-        $pinfo = pathinfo($path);
+        $path = preg_replace('#^file:/+([a-z]:/|/)#i', '$1', strtr($path, '\\', '/'));
+        $rpath = strtr($rpath, '\\', '/');
 
-        $rpath = strtr(realpath($path), '\\', '/');
+        if ($path !== $rpath) {
+            $dir = dirname($path);
 
-        if ($pinfo['dirname'] !== '.') {
-            $path = Uri::canonpath($pinfo['dirname']) . '/' . $pinfo['basename'];
+            if ($dir === '.') {
+                $dir = '';
+            } elseif (preg_match('#^[.a-z0-9]+(\/|$)#i', $dir)) {
+                $dir = getcwd() . '/' . $dir . '/';
+
+                if (preg_match('#^\.\.\/|\/\.\.\/|\/\.\.$#', $dir)) {
+                    $dir = Uri::canonpath($dir);
+                }
+            }
+
+            $path = $dir . basename($path);
+
+            return $rpath === $path || substr($rpath, strlen($rpath) - strlen($path)) === $path;
         }
 
-        $pinfo = null;
-
-        return $rpath === $path || substr($rpath, strlen($rpath) - strlen($path)) === $path;
+        return true;
     }
 
     /**
@@ -125,11 +137,11 @@ class File
                 $mime = mime_content_type($path);
                 $size = filesize($path);
             }
-        }
 
-        //Note: $size >= 0 prevents negative numbers for big files (in x86)
-        if ($mime !== false && strpos($mime, 'application/') === 0 && $size >= 0 && $size < 2) {
-            return 'text/plain';
+            //Note: $size >= 0 prevents negative numbers for big files (in x86)
+            if ($mime !== false && strpos($mime, 'application/') === 0 && $size >= 0 && $size < 2) {
+                return 'text/plain';
+            }
         }
 
         return $mime;

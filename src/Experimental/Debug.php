@@ -1,6 +1,6 @@
 <?php
 /*
- * Experimental
+ * Inphinit
  *
  * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
@@ -59,7 +59,7 @@ class Debug
         if (empty(self::$views['error'])) {
             return null;
         } elseif (preg_match('#allowed\s+memory\s+size\s+of\s+\d+\s+bytes\s+exhausted\s+\(tried\s+to\s+allocate\s+\d+\s+bytes\)#i', $message)) {
-            die('<br><strong>Fatal error:</strong> ' . $message . ' in <strong>' . $file . '</strong> on line <strong>' . $line . '</strong>');
+            die("<br><strong>Fatal error:</strong> $message in <strong>$file</strong> on line <strong>$line</strong>");
         }
 
         $data = self::details($type, $message, $file, $line);
@@ -126,29 +126,20 @@ class Debug
 
         $callRender = array( '\\' . get_called_class(), 'render' . ucfirst($type) );
 
-        switch ($type) {
-            case 'error':
-                App::on('error', $callRender);
+        if ($type === 'error') {
+            App::on('error', $callRender);
 
-                if (empty(self::$displayErrors)) {
-                    self::$displayErrors = ini_get('display_errors');
+            if (empty(self::$displayErrors)) {
+                self::$displayErrors = ini_get('display_errors');
 
-                    if (function_exists('ini_set')) {
-                        ini_set('display_errors', '0');
-                    }
+                if (function_exists('ini_set')) {
+                    //ini_set('display_errors', '0');
                 }
-                break;
-
-            case 'classes':
-            case 'performance':
-                App::on('terminate', $callRender);
-                break;
-
-            case 'before':
-                break;
-
-            default:
-                throw new Exception($type . ' is not valid event', 2);
+            }
+        } elseif ($type === 'classes' || $type === 'performance') {
+            App::on('terminate', $callRender);
+        } elseif ($type !== 'before') {
+            throw new Exception($type . ' is not valid event', 2);
         }
 
         self::$views[$type] = $view;
@@ -339,8 +330,8 @@ class Debug
     private static function evalFileLocation(&$file, &$line)
     {
         if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code#', $file, $match)) {
-            $file  = $match[1];
-            $line  = (int) $match[2];
+            $file = $match[1];
+            $line = (int) $match[2];
         }
     }
 }

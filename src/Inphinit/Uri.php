@@ -68,29 +68,10 @@ class Uri
      */
     public static function canonpath($path)
     {
-        $path = strtr($path, '\\', '/');
+        $path = preg_replace('#//+|\\\\+#', '/', $path);
+        $path = str_replace('/./', '/', $path);
 
-        if (preg_match('#\.\./|//|\./#', $path) === 0) {
-            return $path;
-        }
-
-        $path = preg_replace('#//+#', '/', $path);
-
-        $canonical = array();
-
-        foreach (explode('/', $path) as $item) {
-            if ($item === '..') {
-                array_pop($canonical);
-            } elseif ($item !== '.') {
-                $canonical[] = $item;
-            }
-        }
-
-        $path = implode('/', $canonical);
-
-        $canonical = null;
-
-        return $path;
+        return preg_replace('#^\.\./|(^|/)[^/]+/\.\./?#', '/', $path);
     }
 
     /**

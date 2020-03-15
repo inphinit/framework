@@ -11,10 +11,9 @@ namespace Inphinit\Experimental\Routing;
 
 use Inphinit\Regex;
 use Inphinit\Http\Request;
-use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
 
-class Group extends Router
+class Group extends \Inphinit\Routing\Router
 {
     /** Access with HTTP and HTTPS (default) */
     const BOTH = 1;
@@ -125,25 +124,23 @@ class Group extends Router
 
         $this->ready = true;
 
-        if (!$this->checkDomain() || !$this->checkPath() || !$this->checkSecurity()) {
-            return null;
+        if ($this->checkDomain() && $this->checkPath() && $this->checkSecurity()) {
+            $oNS = parent::$prefixNS;
+            $oPP = parent::$prefixPath;
+
+            if ($this->ns) {
+                parent::$prefixNS = $this->ns;
+            }
+
+            if ($this->path) {
+                parent::$prefixPath = rtrim($this->currentPrefixPath, '/');
+            }
+
+            call_user_func_array($callback, $this->arguments);
+
+            parent::$prefixNS = $oNS;
+            parent::$prefixPath = $oPP;
         }
-
-        $oNS = parent::$prefixNS;
-        $oPP = parent::$prefixPath;
-
-        if ($this->ns) {
-            parent::$prefixNS = $this->ns;
-        }
-
-        if ($this->path) {
-            parent::$prefixPath = rtrim($this->currentPrefixPath, '/');
-        }
-
-        call_user_func_array($callback, $this->arguments);
-
-        parent::$prefixNS = $oNS;
-        parent::$prefixPath = $oPP;
     }
 
     /**

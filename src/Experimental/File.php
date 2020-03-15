@@ -12,6 +12,8 @@ namespace Inphinit\Experimental;
 class File extends \Inphinit\File
 {
     private static $sizes = array();
+    private static $bin = array();
+
     /**
      * Read excerpt from a file
      *
@@ -39,6 +41,8 @@ class File extends \Inphinit\File
      */
     public static function lines($path, $offset = 0, $maxLines = 32)
     {
+        self::fullpath($path);
+
         $i = 0;
         $output = '';
         $max = $maxLines + $offset - 1;
@@ -75,17 +79,15 @@ class File extends \Inphinit\File
     {
         self::fullpath($path);
 
-        $size = filesize($path);
+        if (isset(self::$bin[$path]) === false) {
+            $finfo = finfo_open(FILEINFO_MIME_ENCODING);
+            $encode = finfo_buffer($finfo, file_get_contents($path, false, null, 0, 5012));
+            finfo_close($finfo);
 
-        if ($size >= 0 && $size < 2) {
-            return false;
+            self::$bin[$path] = strcasecmp($encode, 'binary') === 0;
         }
 
-        $finfo  = finfo_open(FILEINFO_MIME_ENCODING);
-        $encode = finfo_buffer($finfo, file_get_contents($path, false, null, 0, 5012));
-        finfo_close($finfo);
-
-        return strcasecmp($encode, 'binary') === 0;
+        return self::$bin[$path];
     }
 
     /**
@@ -94,25 +96,29 @@ class File extends \Inphinit\File
      *
      * @param string $path
      * @throws \Inphinit\Experimental\Exception
-     * @return string|bool
+     * @return float|bool
      */
     public static function size($path)
     {
-        $path = ltrim(self::fullpath($path), '/');
+        $path = self::fullpath($path);
 
         if (isset(self::$sizes[$path]) === false) {
-            $ch = curl_init('file://' . $path);
+            $ch = curl_init('file://' . rawurlencode($path));
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HEADER, true);
             curl_setopt($ch, CURLOPT_NOBODY, true);
 
-            $headers = curl_exec($ch);
+            if (curl_exec($ch) !== false) {
+                $size = curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+            } else {
+                $size = -1;
+            }
 
             curl_close($ch);
 
-            if (preg_match('#\bcontent-length:(\s+|)(\d+)#i', $headers, $matches)) {
-                self::$sizes[$path] = $matches[2];
+            if ($size > -1) {
+                self::$sizes[$path] = $size;
             } else {
                 self::$sizes[$path] = false;
             }

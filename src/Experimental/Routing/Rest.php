@@ -10,10 +10,9 @@
 namespace Inphinit\Experimental\Routing;
 
 use Inphinit\Routing\Route;
-use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
 
-class Rest extends Router
+class Rest extends \Inphinit\Routing\Router
 {
     private static $debuglvl = 2;
     private $contentType = 'application/json';

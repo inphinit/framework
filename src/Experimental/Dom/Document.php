@@ -410,7 +410,7 @@ class Document extends \DOMDocument
             } elseif ($key === '@contents') {
                 $this->generate($node, $value, $nextLevel);
             } elseif ($key === '@attributes') {
-                $this->attrs($node, $value);
+                self::setAttributes($node, $value);
             } elseif (self::validTag($key)) {
                 if (Helper::seq($value)) {
                     foreach ($value as $subvalue) {
@@ -427,7 +427,7 @@ class Document extends \DOMDocument
         }
     }
 
-    private function validTag($tagName)
+    private static function validTag($tagName)
     {
         return preg_match('#^([a-z_](\w+|)|[a-z_](\w+|):[a-z_](\w+|))$#i', $tagName) > 0;
     }
@@ -439,7 +439,7 @@ class Document extends \DOMDocument
         return $newdom;
     }
 
-    private function attrs(\DOMNode $node, array $attributes)
+    private static function setAttributes(\DOMNode $node, array &$attributes)
     {
         foreach ($attributes as $name => $value) {
             $node->setAttribute($name, $value);

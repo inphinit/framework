@@ -10,10 +10,9 @@
 namespace Inphinit\Experimental\Routing;
 
 use Inphinit\Routing\Route;
-use Inphinit\Routing\Router;
 use Inphinit\Experimental\Exception;
 
-class Quick extends Router
+class Quick extends \Inphinit\Routing\Router
 {
     private static $debuglvl = 2;
     private $classMethods = array();
@@ -22,7 +21,7 @@ class Quick extends Router
     private $format;
     private $ready = false;
 
-    /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo` */
+    /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo`, is not valid to Index method */
     const BOTH = 1;
 
     /** Create a route with slash at the end, like: `/foo/` */
@@ -56,19 +55,17 @@ class Quick extends Router
     {
         $this->format = Quick::BOTH;
 
-        $controller = strtr(parent::$prefixNS . $name, '.', '\\');
+        $controller = '\\Controller\\' . strtr(parent::$prefixNS . $name, '.', '\\');
 
-        $fc = '\\Controller\\' . $controller;
-
-        if (class_exists($fc) === false) {
+        if (class_exists($controller) === false) {
             $level = self::$debuglvl;
 
             self::$debuglvl = 2;
 
-            throw new Exception('Invalid class ' . $fc, $level);
+            throw new Exception('Invalid class ' . $controller, $level);
         }
 
-        $cm = self::verbs(get_class_methods($fc));
+        $cm = self::verbs($controller);
 
         if (empty($cm)) {
             $level = self::$debuglvl;
@@ -84,22 +81,16 @@ class Quick extends Router
 
         self::$debuglvl = 2;
 
-        $this->fullController = $fc;
+        $this->fullController = $controller;
         $this->controller = $name;
     }
 
-    /**
-     * Extract valid methods
-     *
-     * @param array $methods Methods of \Controller class
-     * @return array
-     */
-    private static function verbs(array $methods)
+    private static function verbs($controller)
     {
         $list = array();
         $reMatch = '#^(any|get|post|patch|put|head|delete|options|trace|connect)([A-Z0-9]\w+)$#';
 
-        foreach ($methods as $value) {
+        foreach (get_class_methods($controller) as $value) {
             $verb = array();
 
             if (preg_match($reMatch, $value, $verb)) {
@@ -158,13 +149,13 @@ class Quick extends Router
 
         foreach ($this->classMethods as $value) {
             if ($format === self::BOTH || $format === self::SLASH) {
-                $route = '/' . (empty($value[1]) ? '' : ($value[1] . '/'));
+                $route = '/' . ($value[1] === '' ? '' : ($value[1] . '/'));
 
                 Route::set($value[0], $route, $controller . ':' . $value[2]);
             }
 
             if ($format === self::BOTH || $format === self::NOSLASH) {
-                $route = empty($value[1]) ? '' : ('/' . $value[1]);
+                $route = $value[1] === '' ? '' : ('/' . $value[1]);
 
                 Route::set($value[0], $route, $controller . ':' . $value[2]);
             }

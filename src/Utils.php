@@ -148,15 +148,17 @@ function UtilsAutoload()
             return null;
         }
 
-        $path = preg_match('#^([a-z0-9]+:|/)#i', $base) ? $base : INPHINIT_PATH . $base;
-
-        if ($isfile === false) {
-            $files = array_filter(array( $path . '.php', $path . '.hh' ), 'is_file');
-            $path = array_shift($files);
+        if (preg_match('#^([a-z0-9]+:|/)#i', $base) === 0) {
+            $base = INPHINIT_PATH . $base;
         }
 
-        if ($path && UtilsCaseSensitivePath($path)) {
-            include_once $path;
+        if ($isfile === false) {
+            $files = array_filter(array( $base . '.php', $base . '.hh' ), 'is_file');
+            $base = array_shift($files);
+        }
+
+        if ($base && UtilsCaseSensitivePath($base)) {
+            include_once $base;
         }
     });
 }
@@ -193,7 +195,7 @@ function UtilsError($type, $message, $file, $line, $details = null)
 function UtilsConfig()
 {
     $url = dirname($_SERVER['SCRIPT_NAME']);
-    
+
     if ($url === '\\' || $url === '/') {
         $url = '';
     }
@@ -207,6 +209,7 @@ function UtilsConfig()
     }
 
     $dev = App::env('development');
+
     $reporting = $dev ? E_ALL|E_STRICT : E_ALL & ~E_STRICT & ~E_DEPRECATED;
 
     error_reporting($reporting);

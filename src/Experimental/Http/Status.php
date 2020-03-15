@@ -12,7 +12,8 @@ namespace Inphinit\Experimental\Http;
 /**
  * Constant with the most common HTTP codes
  *
- * @deprecated
+ * @deprecated 0.5.11 Moved to Inphinit namespace, in future Inphinit\Experimental\Http\Status will be removed
+ * @see        Replace by \Inphinit\Http\Status in your codes
  */
 final class Status
 {

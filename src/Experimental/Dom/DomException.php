@@ -24,9 +24,7 @@ class DomException extends \Inphinit\Experimental\Exception
 
         ++$trace;
 
-        if ($message) {
-            $message = $message;
-        } elseif (isset($err[0]->message)) {
+        if ($message === null && isset($err[0]->message)) {
             $message = trim($err[0]->message);
         }
 
