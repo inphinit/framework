@@ -133,7 +133,7 @@ class Debug
                 self::$displayErrors = ini_get('display_errors');
 
                 if (function_exists('ini_set')) {
-                    //ini_set('display_errors', '0');
+                    ini_set('display_errors', '0');
                 }
             }
         } elseif ($type === 'classes' || $type === 'performance') {
