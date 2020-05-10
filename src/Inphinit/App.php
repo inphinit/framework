@@ -10,13 +10,13 @@
 namespace Inphinit;
 
 use Inphinit\Http\Response;
-use Inphinit\Viewing\View;
 use Inphinit\Routing\Route;
+use Inphinit\Viewing\View;
 
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.12';
+    const VERSION = '0.5.13';
 
     private static $events = array();
     private static $configs = array();

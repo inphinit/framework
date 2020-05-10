@@ -14,7 +14,6 @@ use Inphinit\Storage;
 class Session implements \IteratorAggregate
 {
     private $handle;
-    private $iterator;
     private $savepath;
     private $prefix = '~sess_';
     private $data = array();
@@ -120,8 +119,6 @@ class Session implements \IteratorAggregate
         if ($unlock) {
             flock($this->handle, LOCK_UN);
         }
-
-        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -206,8 +203,6 @@ class Session implements \IteratorAggregate
         }
 
         flock($this->handle, LOCK_UN);
-
-        $this->iterator = new \ArrayIterator($this->data);
     }
 
     private function getData()
@@ -308,8 +303,6 @@ class Session implements \IteratorAggregate
 
         $this->insertions[$name] = $value;
         $this->data = $this->insertions + $this->data;
-
-        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -335,8 +328,6 @@ class Session implements \IteratorAggregate
         unset($this->data[$name], $this->insertions[$name]);
 
         $this->deletions[$name] = true;
-
-        $this->iterator = new \ArrayIterator($this->data);
     }
 
     /**
@@ -358,7 +349,7 @@ class Session implements \IteratorAggregate
      */
     public function getIterator()
     {
-        return $this->iterator;
+        return new \ArrayIterator($this->data);
     }
 
     public function __destruct()
@@ -371,7 +362,6 @@ class Session implements \IteratorAggregate
 
         $this->opts =
         $this->data =
-        $this->iterator =
         $this->deletions =
         $this->insertions =
         $this->handle = null;

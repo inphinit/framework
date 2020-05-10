@@ -12,6 +12,7 @@ namespace Inphinit\Routing;
 class Route extends Router
 {
     private static $current;
+    private static $hasParams = false;
 
     /**
      * Register or remove a action from controller for a route
@@ -32,6 +33,10 @@ class Route extends Router
                 $action = parent::$prefixNS . $action;
             } elseif ($action !== null && !$action instanceof \Closure) {
                 return null;
+            }
+
+            if (strpos($path, '<') !==false) {
+                self::$hasParams = true;
             }
 
             $path = parent::$prefixPath . $path;
@@ -62,7 +67,7 @@ class Route extends Router
 
         if (isset($routes[$path])) {
             $verbs = $routes[$path];
-        } else {
+        } elseif (self::$hasParams) {
             foreach ($routes as $route => $actions) {
                 if (parent::find($route, $path, $args)) {
                     $verbs = $actions;

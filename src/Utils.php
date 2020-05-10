@@ -113,12 +113,6 @@ function UtilsPath()
  */
 function UtilsAutoload()
 {
-    static $initiate;
-
-    if ($initiate) {
-        return null;
-    }
-
     $initiate = true;
     $prefixes = require INPHINIT_PATH . 'boot/namespaces.php';
 

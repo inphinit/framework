@@ -27,7 +27,7 @@ class File extends \Inphinit\File
     {
         self::fullpath($path);
 
-        return file_get_contents($path, false, null, $offset, $maxLen);
+        return parent::portion($path, $offset, $maxLen);
     }
 
     /**
@@ -43,29 +43,7 @@ class File extends \Inphinit\File
     {
         self::fullpath($path);
 
-        $i = 0;
-        $output = '';
-        $max = $maxLines + $offset - 1;
-
-        $handle = fopen($path, 'rb');
-
-        while (false === feof($handle)) {
-            $data = fgets($handle);
-
-            if ($i >= $offset) {
-                $output .= $data;
-
-                if ($i === $max) {
-                    break;
-                }
-            }
-
-            ++$i;
-        }
-
-        fclose($handle);
-
-        return $output;
+        return parent::lines($path, $offset, $maxLines);
     }
 
     /**

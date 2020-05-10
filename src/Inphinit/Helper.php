@@ -19,13 +19,17 @@ class Helper
      */
     public static function parseVersion($version)
     {
-        if (preg_match('#^(\d+)\.(\d+)\.(\d+)(\-([\w.\-]+)|)$#', $version, $match)) {
-            return (object) array(
-                'major' => $match[1],
-                'minor' => $match[2],
-                'patch' => $match[3],
-                'extra' => isset($match[5][0]) ? $match[5] : null
+        if (preg_match('#^(\d+)\.(\d+)\.(\d+)(-([\da-z]+(\.[\da-z]+)*)(\+([\da-z]+(\.[\da-z]+)*))?)?$#', $version, $match)) {
+            $matches = array(
+                'major' => $matches[1],
+                'minor' => $matches[2],
+                'patch' => $matches[3],
+                'extra' => $matches[4],
+                'release' => explode('.', $matches[5]),
+                'build' => explode('.', $matches[8])
             );
+
+            return (object) $matches;
         }
 
         return null;
@@ -124,7 +128,7 @@ class Helper
      *
      * @param array $array
      * @param int   $flags See details in https://www.php.net/manual/en/function.sort.php#refsect1-function.sort-parameters
-     * @return null
+     * @return void
      */
     public static function ksort(array &$array, $flags = \SORT_REGULAR)
     {

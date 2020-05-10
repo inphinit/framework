@@ -122,10 +122,10 @@ class File
         $mime = false;
         $size = 0;
 
-        if (is_readable($path)) {
-            if (function_exists('finfo_open')) {
-                $buffer = file_get_contents($path, false, null, 0, 5012);
+        if (function_exists('finfo_open')) {
+            $buffer = file_get_contents($path, false, null, 0, 5012);
 
+            if ($buffer) {
                 $finfo = finfo_open(FILEINFO_MIME_TYPE);
                 $mime = finfo_buffer($finfo, $buffer);
                 finfo_close($finfo);
@@ -133,15 +133,18 @@ class File
                 $size = strlen($buffer);
 
                 $buffer = null;
-            } elseif (function_exists('mime_content_type')) {
-                $mime = mime_content_type($path);
+            }
+        } elseif (function_exists('mime_content_type')) {
+            $mime = mime_content_type($path);
+
+            if ($mime) {
                 $size = filesize($path);
             }
+        }
 
-            //Note: $size >= 0 prevents negative numbers for big files (in x86)
-            if ($mime !== false && strpos($mime, 'application/') === 0 && $size >= 0 && $size < 2) {
-                return 'text/plain';
-            }
+        //Note: $size >= 0 prevents negative numbers for big files (in x86)
+        if ($mime !== false && $size >= 0 && $size < 2 && strpos($mime, 'application/') === 0) {
+            return 'text/plain';
         }
 
         return $mime;
@@ -157,15 +160,15 @@ class File
      */
     public static function output($path, $length = 102400, $delay = 0)
     {
-        if (is_readable($path) === false) {
+        if (false === ($handle = fopen($path, 'rb'))) {
             return false;
         }
 
         $buffer = ob_get_level() !== 0;
 
-        $handle = fopen($path, 'rb');
-
-        $length = is_int($length) && $length > 0 ? $length : 102400;
+        if (is_int($length) && $length > 0) {
+            $length = 102400;
+        }
 
         while (false === feof($handle)) {
             echo fread($handle, $length);
@@ -180,5 +183,57 @@ class File
 
             flush();
         }
+    }
+
+    /**
+     * Read excerpt from a file
+     *
+     * @param string $path
+     * @param int    $offset
+     * @param int    $maxLen
+     * @throws \Inphinit\Exception
+     * @return string|bool
+     */
+    public static function portion($path, $offset = 0, $maxLen = 1024)
+    {
+        return file_get_contents($path, false, null, $offset, $maxLen);
+    }
+
+    /**
+     * Read lines from a file
+     *
+     * @param string $path
+     * @param int    $offset
+     * @param int    $maxLine
+     * @throws \Inphinit\Exception
+     * @return string|bool
+     */
+    public static function lines($path, $offset = 0, $maxLines = 32)
+    {
+        if (false === ($handle = fopen($path, 'rb'))) {
+            return false;
+        }
+
+        $i = 0;
+        $output = '';
+        $max = $maxLines + $offset - 1;
+
+        while (false === feof($handle)) {
+            $data = fgets($handle);
+
+            if ($i >= $offset) {
+                $output .= $data;
+
+                if ($i === $max) {
+                    break;
+                }
+            }
+
+            ++$i;
+        }
+
+        fclose($handle);
+
+        return $output;
     }
 }

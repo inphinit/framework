@@ -16,8 +16,8 @@ class Packages implements \IteratorAggregate
     private $classmapName = 'autoload_classmap.php';
     private $psrZeroName = 'autoload_namespaces.php';
     private $psrFourName = 'autoload_psr4.php';
+    private $libs = array();
     private $log = array();
-    private $libs;
 
     /**
      * Create a `Inphinit\Packages` instance.
@@ -33,7 +33,6 @@ class Packages implements \IteratorAggregate
         }
 
         $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
-        $this->libs = new \ArrayIterator(array());
     }
 
     /**
@@ -70,7 +69,7 @@ class Packages implements \IteratorAggregate
             $data = include $path;
 
             if (is_array($data)) {
-                $this->libs = new \ArrayIterator($data + $this->libs->getArrayCopy());
+                $this->libs = $data + $this->libs;
             }
 
             return count($this->libs);
@@ -204,7 +203,7 @@ class Packages implements \IteratorAggregate
      */
     public function getIterator()
     {
-        return $this->libs;
+        return new \ArrayIterator($this->libs);
     }
 
     private static function relativePath($path)

@@ -46,6 +46,9 @@ class Request
 
             case 'pjax':
                 return strcasecmp(self::header('X-Pjax'), 'true') === 0;
+
+            case 'prefetch':
+                return strcasecmp(self::header('Purpose') || self::header('X-Moz') || self::header('X-Purpose'), 'prefetch') === 0;
         }
 
         return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
@@ -172,7 +175,7 @@ class Request
 
         if (PHP_VERSION_ID >= 70224) {
             return fopen('php://input', $mode);
-        } else if (self::$rawInput) {
+        } elseif (self::$rawInput) {
             return fopen(self::$rawInput, $mode);
         }
 
@@ -191,7 +194,7 @@ class Request
         return fopen($temp, $mode);
     }
 
-    private static function data(&$data, $key, $alternative = null)
+    private static function data(&$data, $key, $alternative)
     {
         if (empty($data)) {
             return $alternative;
