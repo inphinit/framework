@@ -16,7 +16,7 @@ use Inphinit\Viewing\View;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.13';
+    const VERSION = '0.5.14';
 
     private static $events = array();
     private static $configs = array();

@@ -217,15 +217,24 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         set CURRENT_PATH=%~dp0
         set CURRENT_PATH=%CURRENT_PATH:~0,-1%
 
-        :: Router path
-        set ROUTER="%CURRENT_PATH%\system\boot\server.php"
+        if not exist %PHP_BIN% (
+            echo.
+            echo ERROR: %PHP_BIN% not found
+            echo.
+        ) else if not exist %PHP_INI% (
+            echo.
+            echo ERROR: %PHP_INI% not found
+            echo.
+        ) else (
+            :: Router path
+            set ROUTER="%CURRENT_PATH%\system\boot\server.php"
 
-        :: Start built in server
-        %PHP_BIN% -S "%HOST_HOST%:%HOST_PORT%" -c %PHP_INI% -t "%CURRENT_PATH%" %ROUTER%
+            :: Start built in server
+            %PHP_BIN% -S "%HOST_HOST%:%HOST_PORT%" -c %PHP_INI% -t "%CURRENT_PATH%" %ROUTER%
+        )
 
         :: Prevent close if PHP failed to start
-        pause
-        ';
+        pause';
     } else {
         $data = '#!/bin/bash
 
@@ -236,14 +245,19 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
         HOST_PORT=' . $defaultPort . '
 
         # Used to restore current dir if using command line
-        BASEDIR=$(dirname "${0}")
+        CURRENT_PATH=$(dirname "${0}")
 
-        # Router path
-        ROUTER="$BASEDIR/system/boot/server.php"
+        if [ ! -f "$PHP_BIN" ]; then
+            echo "ERROR: $PHP_BIN not found"
+        elif [ ! -f "$PHP_INI" ]; then
+            echo "ERROR: $PHP_INI not found"
+        else
+            # Router path
+            ROUTER="$CURRENT_PATH/system/boot/server.php"
 
-        # Start built in server
-        $PHP_BIN -S "$HOST_HOST:$HOST_PORT" -c $PHP_INI -t "$BASEDIR" $ROUTER
-        ';
+            # Start built in server
+            $PHP_BIN -S "$HOST_HOST:$HOST_PORT" -c $PHP_INI -t "$CURRENT_PATH" $ROUTER
+        fi';
     }
 
     $data = str_replace("\n        ", "\n", $data);
