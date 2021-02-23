@@ -32,19 +32,15 @@ class Route extends Router
 
         if (strpos($path, '{:') !==false) {
             self::$hasParams = true;
-
-            $routes = &parent::$httpParamRoutes;
-        } else {
-            $routes = &parent::$httpRoutes;
         }
 
         $path = parent::$prefixPath . $path;
 
+        $routes = &parent::$httpRoutes;
+
         if (!isset($routes[$path])) {
             $routes[$path] = array();
         }
-
-        $routes[$path][ strtoupper(trim($method)) ] = $action;
 
         if (is_array($method)) {
             foreach ($method as $value) {
@@ -67,13 +63,14 @@ class Route extends Router
         }
 
         $args = array();
+        $routes = &parent::$httpRoutes;
         $path = \UtilsPath();
         $method = $_SERVER['REQUEST_METHOD'];
 
-        if (isset(parent::$httpRoutes[$path])) {
-            $verbs = parent::$httpRoutes[$path];
+        if (isset($routes[$path])) {
+            $verbs = $routes[$path];
         } elseif (self::$hasParams) {
-            foreach (parent::$httpParamRoutes as $route => $actions) {
+            foreach ($routes as $route => $actions) {
                 if (parent::find($route, $path, $args)) {
                     $verbs = $actions;
                     break;
