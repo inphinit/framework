@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -50,7 +50,7 @@ class Rest extends \Inphinit\Routing\Router
      *
      * @param string $controller
      * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Rest
+     * @return \Inphinit\Experimental\Routing\Rest
      */
     public function __construct($controller)
     {
@@ -75,7 +75,7 @@ class Rest extends \Inphinit\Routing\Router
      * Define the Content-Type header
      *
      * @param string $contentType
-     * @return \Inphinit\Experimental\Rest
+     * @return \Inphinit\Experimental\Routing\Rest
      */
     public function type($contentType)
     {
@@ -88,7 +88,7 @@ class Rest extends \Inphinit\Routing\Router
      * Define the Content-Type charset
      *
      * @param string $charset
-     * @return \Inphinit\Experimental\Rest
+     * @return \Inphinit\Experimental\Routing\Rest
      */
     public function charset($charset)
     {
@@ -98,17 +98,17 @@ class Rest extends \Inphinit\Routing\Router
     }
 
     /**
-     * Define the Content-Type charset
+     * Define prefix path for all routes in class
      *
      * @param string $prefix
-     * @return \Inphinit\Experimental\Rest
+     * @return \Inphinit\Experimental\Routing\Rest
      */
     public function path($path)
     {
-        if ($path === '') {
-            $this->path = '';
-        } else {
+        if ($path) {
             $this->path = '/' . trim(str_replace('//', '/', $path), '/');
+        } else {
+            $this->path = '';
         }
 
         return $this;

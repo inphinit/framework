@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -14,6 +14,8 @@ use Inphinit\App;
 class Response
 {
     private static $httpCode;
+    private static $httpType;
+    private static $httpCharset;
     private static $headers = array();
     private static $dispatchedHeaders = false;
 
@@ -29,6 +31,14 @@ class Response
 
             foreach (self::$headers as $value) {
                 self::putHeader($value[0], $value[1], $value[2]);
+            }
+
+            $httpType = self::$httpType;
+
+            if ($httpType || self::$httpCharset) {
+                if (!$httpType) $httpType = 'text/html';
+
+                header('Content-Type: ' . $httpType . '; charset=' . self::$httpCharset);
             }
         }
     }
@@ -157,13 +167,24 @@ class Response
     }
 
     /**
-     * Set mime-type
+     * Set content-type
      *
      * @param string $mime
      * @return void
      */
-    public static function type($mime)
+    public static function type($type)
     {
-        self::putHeader('Content-Type', $mime);
+        self::$httpType = trim($type);
+    }
+
+    /**
+     * Set charset in content-type
+     *
+     * @param string $mime
+     * @return void
+     */
+    public static function charset($charset)
+    {
+        self::$httpCharset = trim($charset);
     }
 }

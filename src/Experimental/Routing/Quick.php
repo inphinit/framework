@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -20,6 +20,7 @@ class Quick extends \Inphinit\Routing\Router
     private $controller;
     private $format;
     private $ready = false;
+    private $path = '/';
 
     /** Create two routes, one with slash at the end and other without, like: `/foo/` and `/foo`, is not valid to Index method */
     const BOTH = 1;
@@ -131,6 +132,23 @@ class Quick extends \Inphinit\Routing\Router
     }
 
     /**
+     * Define prefix path for all routes in class
+     *
+     * @param string $prefix
+     * @return \Inphinit\Experimental\Routing\Quick
+     */
+    public function path($path)
+    {
+        if ($path) {
+            $this->path = '/' . trim(str_replace('//', '/', $path), '/') . '/';
+        } else {
+            $this->path = '/';
+        }
+
+        return $this;
+    }
+
+    /**
      * Create routes by configurations
      *
      * @throws \Inphinit\Experimental\Exception
@@ -138,26 +156,27 @@ class Quick extends \Inphinit\Routing\Router
      */
     public function prepare()
     {
-        if ($this->ready) {
-            return null;
-        }
+        if ($this->ready === false) {
+            $this->ready = true;
 
-        $this->ready = true;
+            $path = $this->path;
+            $format = $this->format;
+            $controller = $this->controller;
 
-        $format = $this->format;
-        $controller = $this->controller;
+            foreach ($this->classMethods as $value) {
+                $route = null;
 
-        foreach ($this->classMethods as $value) {
-            if ($format === self::BOTH || $format === self::SLASH) {
-                $route = '/' . ($value[1] === '' ? '' : ($value[1] . '/'));
+                if ($format === self::BOTH || $format === self::SLASH) {
+                    $route = ($value[1] === '' ? '' : ($value[1] . '/'));
+                }
 
-                Route::set($value[0], $route, $controller . ':' . $value[2]);
-            }
+                if ($format === self::BOTH || $format === self::NOSLASH) {
+                    $route = $value[1] === '' ? '' : ('/' . $value[1]);
+                }
 
-            if ($format === self::BOTH || $format === self::NOSLASH) {
-                $route = $value[1] === '' ? '' : ('/' . $value[1]);
-
-                Route::set($value[0], $route, $controller . ':' . $value[2]);
+                if ($route !== null) {
+                    Route::set($value[0], $path . $route, $controller . ':' . $value[2]);
+                }
             }
         }
     }

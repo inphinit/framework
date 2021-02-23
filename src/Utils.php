@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -113,7 +113,6 @@ function UtilsPath()
  */
 function UtilsAutoload()
 {
-    $initiate = true;
     $prefixes = require INPHINIT_PATH . 'boot/namespaces.php';
 
     if (is_array($prefixes) === false) {

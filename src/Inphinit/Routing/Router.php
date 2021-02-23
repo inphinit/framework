@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -14,12 +14,18 @@ use Inphinit\Regex;
 abstract class Router
 {
     /**
-     * Store all routes
+     * Store normal routes
      *
      * @var array
      */
-    //protected static $httpRoutes = array();
-    public static $httpRoutes = array();
+    protected static $httpRoutes = array();
+
+    /**
+     * Store param routes
+     *
+     * @var array
+     */
+    protected static $httpParamRoutes = array();
 
     /**
      * Define namespace prefix to Controllers

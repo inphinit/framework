@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -31,7 +31,7 @@ class Group extends \Inphinit\Routing\Router
     private $path;
     private $ns;
     private $arguments = array();
-    private static $cachehost;
+    private static $cacheHost;
 
     /**
      * Create a new route group
@@ -82,8 +82,10 @@ class Group extends \Inphinit\Routing\Router
      */
     public function path($path)
     {
-        if ($path !== '/' . trim($path, '/') . '/') {
-            throw new Exception('Invalid path "' . $path . '", use like this /foo/', 2);
+        $path = trim($path, '/');
+
+        if ($path) {
+            $path = '/' . $path . '/';
         }
 
         $this->path = $path;
@@ -118,13 +120,9 @@ class Group extends \Inphinit\Routing\Router
      */
     public function then(\Closure $callback)
     {
-        if ($this->ready) {
-            return null;
-        }
+        if ($this->ready === false && $this->checkDomain() && $this->checkPath() && $this->checkSecurity()) {
+            $this->ready = true;
 
-        $this->ready = true;
-
-        if ($this->checkDomain() && $this->checkPath() && $this->checkSecurity()) {
             $oNS = parent::$prefixNS;
             $oPP = parent::$prefixPath;
 
@@ -171,12 +169,12 @@ class Group extends \Inphinit\Routing\Router
             return true;
         }
 
-        if (self::$cachehost !== null) {
-            $host = self::$cachehost;
+        if (self::$cacheHost !== null) {
+            $host = self::$cacheHost;
         } else {
             $host = Request::header('Host');
 
-            self::$cachehost = $host ? strtok($host, ':') : '';
+            self::$cacheHost = $host ? strtok($host, ':') : '';
         }
 
         if ($host === $this->domain) {

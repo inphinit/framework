@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2020 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -16,7 +16,7 @@ use Inphinit\Viewing\View;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.14';
+    const VERSION = '0.5.15';
 
     private static $events = array();
     private static $configs = array();
@@ -222,8 +222,6 @@ class App
     /**
      * Dispatch before ready event if exec is Ok,
      * or dispatch after finish event if stop() is executed
-     *
-     * @param bool $views
      */
     private static function dispatch()
     {
