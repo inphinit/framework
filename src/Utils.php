@@ -93,14 +93,15 @@ function UtilsPath()
 
     if ($pathinfo === null) {
         $requri = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
-        $sname = dirname($_SERVER['SCRIPT_NAME']);
+        $sname = $_SERVER['SCRIPT_NAME'];
+        $sdir = dirname($sname);
 
-        if ($sname === '\\' || $sname === '/') {
-            $pathinfo = $requri;
-        } elseif ($requri !== $sname) {
-            $pathinfo = rtrim($sname, '/');
-            $pathinfo = substr($requri, strlen($pathinfo));
+        if ($sdir !== '\\' && $sdir !== '/' && $requri !== $sname && $requri !== $sdir) {
+            $sdir = rtrim($sdir, '/');
+            $requri = substr($requri, strlen($sdir));
         }
+
+        $pathinfo = $requri;
     }
 
     return $pathinfo;
