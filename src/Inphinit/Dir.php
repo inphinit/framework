@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2021 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2022 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -75,6 +75,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->position = $this->find(0);
@@ -86,6 +87,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return stdClass|null
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         if ($this->item !== false) {
@@ -105,6 +107,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->position;
@@ -115,6 +118,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function next()
     {
         $this->item = readdir($this->handle);
@@ -129,6 +133,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return bool
      */
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return $this->item !== false;
@@ -139,6 +144,7 @@ class Dir implements \Iterator, \Countable
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     public function count()
     {
         if ($this->size === -1) {
@@ -161,10 +167,11 @@ class Dir implements \Iterator, \Countable
         $break = $pos !== -1;
 
         while (false !== ($item = readdir($this->handle))) {
-            // if ($item === '.' || $item === '..') {
-            //     continue;
-            // } elseif ($current === $pos) {
-            if ($item !== '.' && $item !== '..' && $current === $pos) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            if ($current === $pos) {
                 $this->item = $item;
                 
                 if ($break) {

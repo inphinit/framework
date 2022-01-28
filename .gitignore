@@ -42,3 +42,5 @@ Temporary Items
 
 # Logs
 *.log
+
+.phpintel/
