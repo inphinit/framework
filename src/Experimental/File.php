@@ -62,7 +62,7 @@ class File extends \Inphinit\File
             $encode = finfo_buffer($finfo, file_get_contents($path, false, null, 0, 5012));
             finfo_close($finfo);
 
-            self::$bin[$path] = strcasecmp($encode, 'binary') === 0;
+            self::$bin[$path] = $encode ? strcasecmp($encode, 'binary') === 0 : false;
         }
 
         return self::$bin[$path];

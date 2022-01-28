@@ -174,7 +174,7 @@ class Group extends \Inphinit\Routing\Router
         } else {
             $host = Request::header('Host');
 
-            self::$cacheHost = $host ? strtok($host, ':') : '';
+            $host = self::$cacheHost = $host ? strtok($host, ':') : '';
         }
 
         if ($host === $this->domain) {

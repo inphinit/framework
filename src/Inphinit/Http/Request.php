@@ -42,13 +42,23 @@ class Request
                 return empty($_SERVER['HTTPS']) === false && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
 
             case 'xhr':
-                return strcasecmp(self::header('X-Requested-With'), 'xmlhttprequest') === 0;
+                return strcasecmp((string) self::header('X-Requested-With'), 'xmlhttprequest') === 0;
 
             case 'pjax':
-                return strcasecmp(self::header('X-Pjax'), 'true') === 0;
+                return strcasecmp((string) self::header('X-Pjax') || '', 'true') === 0;
 
             case 'prefetch':
-                return strcasecmp(self::header('Purpose') || self::header('X-Moz') || self::header('X-Purpose'), 'prefetch') === 0;
+                if ($data = self::header('Purpose')) {
+                    $prop = $data;
+                } elseif ($data = self::header('X-Moz')) {
+                    $prop = $data;
+                } elseif ($data = self::header('X-Purpose')) {
+                    $prop = $data;
+                } else {
+                    return false;
+                }
+
+                return strcasecmp($prop, 'prefetch') === 0;
         }
 
         return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;

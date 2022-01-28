@@ -19,14 +19,16 @@ class Helper
      */
     public static function parseVersion($version)
     {
-        if (preg_match('#^(\d+)\.(\d+)\.(\d+)(-([\da-z]+(\.[\da-z]+)*)(\+([\da-z]+(\.[\da-z]+)*))?)?$#', $version, $match)) {
+        //if (preg_match('#^(\d+)\.(\d+)\.(\d+)(-([\da-z]+(\.[\da-z]+)*)(\+([\da-z]+(\.[\da-z]+)*))?)?$#', $version, $matches)) {
+
+        if (preg_match('#^(\d|[1-9]\d+)\.(\d|[1-9]\d+)\.(\d|[1-9]\d+)((?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$#', $version, $matches)) {
             $matches = array(
                 'major' => $matches[1],
                 'minor' => $matches[2],
                 'patch' => $matches[3],
-                'extra' => $matches[4],
-                'release' => explode('.', $matches[5]),
-                'build' => explode('.', $matches[8])
+                'extra' => isset($matches[4]) ? $matches[4] : null,
+                'release' => isset($matches[5]) && $matches[5] !== '' ? explode('.', $matches[5]) : null,
+                'build' => isset($matches[6]) && $matches[6] !== '' ? explode('.', $matches[6]) : null
             );
 
             return (object) $matches;

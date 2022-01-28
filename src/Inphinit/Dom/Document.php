@@ -193,6 +193,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return void
      */
+    #[\ReturnTypeWillChange]
     public function save($path, $format = Document::XML)
     {
         switch ($format) {
