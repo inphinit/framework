@@ -16,7 +16,6 @@ This repository is core code of the Inphinit framework, to build an application 
 Inhpinit is a minimalist framework based on the syntax of other popular frameworks, to make learning easier. The core of the framework is divided into two parts: [Inphinit](https://github.com/inphinit/framework/tree/master/src/Inphinit) and [Inphinit\Experimental](https://github.com/inphinit/framework/tree/master/src/Experimental).
 
 - `Inphinit` namespace contains all defined classes that will hardly change their behavior.
-
 - `Inphinit\Experimental` namespace contains classes that are being designed and tested, some of them already work very well, others are not yet fully defined, if the class has all its functionalities defined and tested in the future it will be moved to the `Inphinit` namespace.
 
 To start the framework see the wiki:
