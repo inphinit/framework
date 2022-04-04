@@ -40,8 +40,8 @@ function SetupApache($base)
 
     RewriteEngine On
 
-    # Disable access to folder and redirect ./system/* path to "routes"
-    RewriteRule ^(system/|system$) index.php [L]
+    # Disable protected folders and files
+    RewriteRule (^\.|\/\.|^system/|system$) index.php [L]
 
     # Check file or folders exists
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -102,8 +102,8 @@ function SetupIIS($base)
             </httpErrors>
             <rewrite>
                 <rules>
-                    <rule name="Ignore system folder" stopProcessing="true">
-                        <match url="^(system/|system$)" ignoreCase="false" />
+                    <rule name="Disable protected folders and files" stopProcessing="true">
+                        <match url="(^\.|\/\.|^system/|system$)" ignoreCase="true" />
                         <action type="Rewrite" url="index.php" />
                     </rule>
                     <rule name="Redirect to routes" stopProcessing="true">
@@ -147,8 +147,8 @@ function SetupNginx($base, array $extensions)
     $data = '
     root "' . $base . '/";
 
-    # Disable access to folder and redirect ./system/* path to "routes"
-    location ~ ^/(system/|system$) {
+    # Disable protected folders and files
+    location ~ ^/(^\.|.*\/\.|system/|system$) {
         rewrite ^ /index.php last;
     }
 
