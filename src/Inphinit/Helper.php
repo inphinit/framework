@@ -19,8 +19,6 @@ class Helper
      */
     public static function parseVersion($version)
     {
-        //if (preg_match('#^(\d+)\.(\d+)\.(\d+)(-([\da-z]+(\.[\da-z]+)*)(\+([\da-z]+(\.[\da-z]+)*))?)?$#', $version, $matches)) {
-
         if (preg_match('#^(\d|[1-9]\d+)\.(\d|[1-9]\d+)\.(\d|[1-9]\d+)((?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$#', $version, $matches)) {
             $matches = array(
                 'major' => $matches[1],
