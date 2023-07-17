@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2022 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2023 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
