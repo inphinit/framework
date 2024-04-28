@@ -207,56 +207,49 @@ function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
     if ($windows) {
         $data = '@echo off
 
-        :: Setup PHP and PORT
-        set PHP_BIN="' . $php . '"
-        set PHP_INI="' . $ini . '"
+        rem Setup PHP and PORT
+        set PHP_BIN=' . $php . '
+        set PHP_INI=' . $ini . '
         set HOST_HOST=' . $defaultHost . '
         set HOST_PORT=' . $defaultPort . '
 
-        :: Current path
-        set CURRENT_PATH=%~dp0
-        set CURRENT_PATH=%CURRENT_PATH:~0,-1%
+        rem Sets the project path so you can call the "server" command from any location
+        set DOCUMENT_ROOT=%~dp0
+        set DOCUMENT_ROOT=%DOCUMENT_ROOT:~0,-1%
+
+        rem Router path
+        set ROUTER=%DOCUMENT_ROOT%\system\boot\server.php
 
         if not exist %PHP_BIN% (
-            echo.
-            echo ERROR: %PHP_BIN% not found
-            echo.
+            echo ERROR: %PHP_BIN% not found & pause
         ) else if not exist %PHP_INI% (
-            echo.
-            echo ERROR: %PHP_INI% not found
-            echo.
+            echo ERROR: %PHP_INI% not found & pause
         ) else (
-            :: Router path
-            set ROUTER="%CURRENT_PATH%\system\boot\server.php"
-
-            :: Start built in server
-            %PHP_BIN% -S "%HOST_HOST%:%HOST_PORT%" -c %PHP_INI% -t "%CURRENT_PATH%" %ROUTER%
-        )
-
-        :: Prevent close if PHP failed to start
-        pause';
+            rem Start built in server
+            "%PHP_BIN%" -S %HOST_HOST%:%HOST_PORT% -c "%PHP_INI%" -t "%DOCUMENT_ROOT%" "%ROUTER%" || pause
+        )';
     } else {
-        $data = '#!/bin/bash
+        $data = '#!/usr/bin/env bash
 
         # Setup PHP and PORT
-        PHP_BIN="' . $php . '"
-        PHP_INI="' . $ini . '"
+        PHP_BIN=' . $php . '
+        PHP_INI=' . $ini . '
         HOST_HOST=' . $defaultHost . '
         HOST_PORT=' . $defaultPort . '
 
-        # Used to restore current dir if using command line
-        CURRENT_PATH=$(dirname "${0}")
+        # Sets the project path so you can call the "./server" command from any location
+        DOCUMENT_ROOT=$(cd -- $(dirname ${BASH_SOURCE:-$0}) && pwd -P)
+
+        # Router path
+        ROUTER=$DOCUMENT_ROOT/system/boot/server.php
 
         if [ ! -f "$PHP_BIN" ]; then
-            echo "ERROR: $PHP_BIN not found"
+            echo ERROR: $PHP_BIN not found
         elif [ ! -f "$PHP_INI" ]; then
-            echo "ERROR: $PHP_INI not found"
+            echo ERROR: $PHP_INI not found
         else
-            # Router path
-            ROUTER="$CURRENT_PATH/system/boot/server.php"
-
             # Start built in server
-            $PHP_BIN -S "$HOST_HOST:$HOST_PORT" -c $PHP_INI -t "$CURRENT_PATH" $ROUTER
+            "$PHP_BIN" -S $HOST_HOST:$HOST_PORT -c "$PHP_INI" -t "$DOCUMENT_ROOT" "$ROUTER"
         fi';
     }
 
