@@ -2,7 +2,7 @@
 /*
  * Inphinit
  *
- * Copyright (c) 2023 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ * Copyright (c) 2024 Guilherme Nascimento (brcontainer@yahoo.com.br)
  *
  * Released under the MIT license
  */
@@ -11,9 +11,10 @@
  * Generate .htaccess
  *
  * @param string $base Define path equivalent "HTTP path"
+ * @param string $dest Location to write .htaccess
  * @return void
  */
-function SetupApache($base)
+function SetupApache($base, $dest)
 {
     if (
         empty($_SERVER['SERVER_SOFTWARE']) ||
@@ -23,8 +24,7 @@ function SetupApache($base)
         exit;
     }
 
-    $base = dirname($_SERVER['PHP_SELF']);
-    $base = rtrim(strtr($base, '\\', '/'), '/') . '/index.php/RESERVED.INPHINIT-';
+    $base = $base . '/index.php/RESERVED.INPHINIT-';
 
     $data = '<IfModule mod_negotiation.c>
         Options -MultiViews
@@ -34,26 +34,24 @@ function SetupApache($base)
 
     # Redirect page errors to route system
     ErrorDocument 401 ' . $base . '401.html
-    ErrorDocument 403 ' . $base . '403.html
-    ErrorDocument 500 ' . $base . '500.html
-    ErrorDocument 501 ' . $base . '501.html
+    ErrorDocument 401 ' . $base . '403.html
+    ErrorDocument 401 ' . $base . '500.html
+    ErrorDocument 401 ' . $base . '501.html
 
     RewriteEngine On
 
-    # Disable protected folders and files
-    RewriteRule (^\.|\/\.|^system/|system$) index.php [L]
+    # Redirect to public folder
+    RewriteCond %{REQUEST_URI} !(^$|system/public/|index\.php(/|$))
+    RewriteRule ^(.*)$ system/public/$1 [L]
 
-    # Check file or folders exists
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # Redirect all urls to index.php if no exits files
     RewriteCond %{REQUEST_FILENAME} !-f
-
-    # Redirect all urls to index.php if no exits files/folder
     RewriteRule ^ index.php [L]
     ';
 
     $data = str_replace("\n    ", "\n", $data);
 
-    file_put_contents('.htaccess', $data);
+    file_put_contents($dest . '/.htaccess', $data);
 
     echo '<pre>', htmlspecialchars($data), '</pre>';
 }
@@ -62,9 +60,10 @@ function SetupApache($base)
  * Generate web.config for IIS
  *
  * @param string $base Define path equivalent "HTTP path"
+ * @param string $dest Location to write web.config
  * @return void
  */
-function SetupIIS($base)
+function SetupIIS($base, $dest)
 {
     if (
         empty($_SERVER['SERVER_SOFTWARE']) ||
@@ -74,11 +73,12 @@ function SetupIIS($base)
         exit;
     }
 
-    $base = rtrim(strtr($base, '\\', '/'), '/') . '/index.php/RESERVED.INPHINIT-';
+    $base = $base . '/index.php/RESERVED.INPHINIT-';
 
     $data = '<?xml version="1.0" encoding="UTF-8"?>
     <configuration>
         <system.webServer>
+            <directoryBrowse enabled="false" />
             <defaultDocument>
                 <files>
                     <clear />
@@ -88,7 +88,6 @@ function SetupIIS($base)
             <httpErrors>
                 <remove statusCode="401" subStatusCode="-1" />
                 <remove statusCode="403" subStatusCode="-1" />
-                <remove statusCode="500" subStatusCode="-1" />
                 <remove statusCode="501" subStatusCode="-1" />
                 <error statusCode="401"
                        responseMode="ExecuteURL"
@@ -102,16 +101,15 @@ function SetupIIS($base)
             </httpErrors>
             <rewrite>
                 <rules>
-                    <rule name="Disable protected folders and files" stopProcessing="true">
-                        <match url="(^\.|\/\.|^system/|system$)" ignoreCase="true" />
-                        <action type="Rewrite" url="index.php" />
+                    <rule name="Redirect to public folder" stopProcessing="false">
+                        <match url="^(.*)" />
+                        <action type="Rewrite" url="system/public/{R:1}" />
                     </rule>
-                    <rule name="Redirect to routes" stopProcessing="true">
+                    <rule name="Redirect all urls to index.php if no exits files" stopProcessing="true">
                         <conditions>
                             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
-                            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
                         </conditions>
-                        <match url="^" ignoreCase="false" />
+                        <match url="^system/public/" />
                         <action type="Rewrite" url="index.php" />
                     </rule>
                 </rules>
@@ -122,7 +120,7 @@ function SetupIIS($base)
 
     $data = str_replace("\n    ", "\n", $data);
 
-    file_put_contents('web.config', $data);
+    file_put_contents($dest . '/web.config', $data);
 
     echo '<pre>', htmlspecialchars($data), '</pre>';
 }
@@ -136,130 +134,49 @@ function SetupIIS($base)
  */
 function SetupNginx($base, array $extensions)
 {
-    $base = rtrim(strtr($base, '\\', '/'), '/');
+    $base = realpath($base);
 
-    $exts = implode('|', $extensions);
-
-    if (count($extensions) > 1) {
-        $exts = '(' . $exts . ')';
-    }
-
-    $data = '
-    root "' . $base . '/";
-
-    # Disable protected folders and files
-    location ~ ^/(^\.|.*\/\.|system/|system$) {
-        rewrite ^ /index.php last;
-    }
-
-    location / {
-        autoindex on;
-
-        index  index.html index.htm index.php;
-
-        error_page 403 /index.php/RESERVED.INPHINIT-403.html;
-        error_page 404 /index.php/RESERVED.INPHINIT-404.html;
-        error_page 500 /index.php/RESERVED.INPHINIT-500.html;
-        error_page 501 /index.php/RESERVED.INPHINIT-501.html;
-
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    # Option, your server may have already been configured
-    location ~ \.' . $exts . '$ {
-        fastcgi_pass   127.0.0.1:9000; # Replace by your fastcgi
-        fastcgi_index  index.php;
-        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
-        include        fastcgi_params;
-    }
-    ';
-
-    $data = str_replace("\n    ", "\n", $data);
-
-    if (PHP_SAPI !== 'cli') {
-        echo '<pre>', htmlspecialchars($data), '</pre>';
+    if ($base === false) {
+        echo 'Warning: Invaid root path for Nginx';
     } else {
-        echo $data;
+        $base = rtrim(strtr($base, '\\', '/'), '/');
+
+        $exts = implode('|', $extensions);
+
+        if (count($extensions) > 1) {
+            $exts = '(' . $exts . ')';
+        }
+
+        $data = '
+        location / {
+            root  ' . $base . ';
+            index index.html index.htm index.php;
+
+            # Redirect page errors to route system
+            error_page 401 /index.php/RESERVED.INPHINIT-401.html;
+            error_page 403 /index.php/RESERVED.INPHINIT-403.html;
+            error_page 500 /index.php/RESERVED.INPHINIT-500.html;
+            error_page 501 /index.php/RESERVED.INPHINIT-501.html;
+
+            try_files /system/public/$uri /index.php?$query_string;
+
+            location ~ \.' . $exts . '$ {
+                include       fastcgi_params;
+                fastcgi_index index.php;
+                fastcgi_param INPHINIT_ROOT   $document_root
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
+                fastcgi_pass  127.0.0.1:9000; # Replace by your fastcgi
+            }
+        }
+        ';
+
+        $data = str_replace("\n        ", "\n", $data);
+
+        if (PHP_SAPI !== 'cli') {
+            echo '<pre>', htmlspecialchars($data), '</pre>';
+        } else {
+            echo $data;
+        }
     }
-}
-
-/**
- * Generate server.bat or server.sh
- *
- * @param string $defaultHost
- * @param string $defaultPort
- * @return void
- */
-function SetupBuiltIn($defaultHost = 'localhost', $defaultPort = '9000')
-{
-    if (PHP_SAPI !== 'cli') {
-        echo 'Warning: Use this script only with CLI', PHP_EOL;
-        exit;
-    } elseif (defined('PHP_BINARY') === false) {
-        echo 'Warning: versions older than PHP 5.4 don\'t support "Built-in web server", for PHP 5.3.x use Apache or Nginx', PHP_EOL;
-        return;
-    }
-
-    $php = PHP_BINARY;
-    $ini = php_ini_loaded_file();
-    $windows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-
-    if ($windows) {
-        $data = '@echo off
-
-        rem Setup PHP and PORT
-        set PHP_BIN=' . $php . '
-        set PHP_INI=' . $ini . '
-        set HOST_HOST=' . $defaultHost . '
-        set HOST_PORT=' . $defaultPort . '
-
-        rem Sets the project path so you can call the "server" command from any location
-        set DOCUMENT_ROOT=%~dp0
-        set DOCUMENT_ROOT=%DOCUMENT_ROOT:~0,-1%
-
-        rem Router path
-        set ROUTER=%DOCUMENT_ROOT%\system\boot\server.php
-
-        if not exist %PHP_BIN% (
-            echo ERROR: %PHP_BIN% not found & pause
-        ) else if not exist %PHP_INI% (
-            echo ERROR: %PHP_INI% not found & pause
-        ) else (
-            rem Start built in server
-            "%PHP_BIN%" -S %HOST_HOST%:%HOST_PORT% -c "%PHP_INI%" -t "%DOCUMENT_ROOT%" "%ROUTER%" || pause
-        )';
-    } else {
-        $data = '#!/usr/bin/env bash
-
-        # Setup PHP and PORT
-        PHP_BIN=' . $php . '
-        PHP_INI=' . $ini . '
-        HOST_HOST=' . $defaultHost . '
-        HOST_PORT=' . $defaultPort . '
-
-        # Sets the project path so you can call the "./server" command from any location
-        DOCUMENT_ROOT=$(cd -- $(dirname ${BASH_SOURCE:-$0}) && pwd -P)
-
-        # Router path
-        ROUTER=$DOCUMENT_ROOT/system/boot/server.php
-
-        if [ ! -f "$PHP_BIN" ]; then
-            echo ERROR: $PHP_BIN not found
-        elif [ ! -f "$PHP_INI" ]; then
-            echo ERROR: $PHP_INI not found
-        else
-            # Start built in server
-            "$PHP_BIN" -S $HOST_HOST:$HOST_PORT -c "$PHP_INI" -t "$DOCUMENT_ROOT" "$ROUTER"
-        fi';
-    }
-
-    $data = str_replace("\n        ", "\n", $data);
-    $script = 'server.sh';
-
-    if ($windows) {
-        $script = 'server.bat';
-        $data = str_replace("\n", "\r\n", $data);
-    }
-
-    file_put_contents($script, $data);
 }

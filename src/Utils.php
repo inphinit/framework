@@ -217,3 +217,22 @@ function UtilsConfig()
 
     header_remove('X-Powered-By');
 }
+
+/**
+ * Check if file exists in public folder when using built-in server
+ *
+ * @param string $publicPath
+ * @return bool
+ */
+function UtilsFileFromBuiltIn($publicPath)
+{
+    $path = UtilsPath();
+
+    return (
+        $path !== '/' &&
+        strpos($path, '.') !== 0 &&
+        strpos($path, '/.') === false &&
+        PHP_SAPI === 'cli-server' &&
+        is_file($publicPath . $path)
+    );
+}

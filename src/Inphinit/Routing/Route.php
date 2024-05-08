@@ -58,38 +58,45 @@ class Route extends Router
      */
     public static function get()
     {
-        if (self::$current !== null) {
-            return self::$current;
-        }
+        if (self::$current === null) {
+            $args = array();
+            $routes = &parent::$httpRoutes;
+            $path = \UtilsPath();
+            $method = $_SERVER['REQUEST_METHOD'];
 
-        $args = array();
-        $routes = &parent::$httpRoutes;
-        $path = \UtilsPath();
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        if (isset($routes[$path])) {
-            $verbs = $routes[$path];
-        } elseif (self::$hasParams) {
-            foreach ($routes as $route => $actions) {
-                if (parent::find($route, $path, $args)) {
-                    $verbs = $actions;
-                    break;
+            if (isset($routes[$path])) {
+                $verbs = $routes[$path];
+            } elseif (self::$hasParams) {
+                foreach ($routes as $route => $actions) {
+                    if (parent::find($route, $path, $args)) {
+                        $verbs = $actions;
+                        break;
+                    }
                 }
+            }
+
+            $resp = null;
+
+            if (isset($verbs[$method])) {
+                $resp = $verbs[$method];
+            } elseif (isset($verbs['ANY'])) {
+                $resp = $verbs['ANY'];
+            } elseif (isset($verbs) && array_filter($verbs)) {
+                $resp = 405;
+            } else {
+                $resp = 404;
+            }
+
+            if (is_int($resp)) {
+                self::$current = $resp;
+            } else {
+                self::$current = array(
+                    'callback' => $resp,
+                    'args' => $args
+                );
             }
         }
 
-        if (isset($verbs[$method])) {
-            $resp = $verbs[$method];
-        } elseif (isset($verbs['ANY'])) {
-            $resp = $verbs['ANY'];
-        } elseif (isset($verbs) && array_filter($verbs)) {
-            return self::$current = 405;
-        } else {
-            return self::$current = 404;
-        }
-
-        return self::$current = array(
-            'callback' => $resp, 'args' => $args
-        );
+        return self::$current;
     }
 }
