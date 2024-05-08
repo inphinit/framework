@@ -35,13 +35,9 @@ class View
      */
     public static function dispatch()
     {
-        if (self::$force) {
-            return null;
-        }
+        if (self::$force === false) {
+            self::forceRender();
 
-        self::forceRender();
-
-        if (self::$views) {
             foreach (self::$views as &$value) {
                 if ($value) {
                     self::render($value[0], $value[1]);
@@ -87,13 +83,15 @@ class View
      */
     public static function render($view, array $data = array())
     {
+        $view = strtr($view, '.', '/');
+
         if (self::$force || App::state() > 2) {
-            \UtilsSandboxLoader('application/View/' . strtr($view, '.', '/') . '.php', self::$shared + $data);
+            \UtilsSandboxLoader('application/View/' . $view . '.php', self::$shared + $data);
 
             return $data = null;
         }
 
-        return array_push(self::$views, array(strtr($view, '.', '/'), $data)) - 1;
+        return array_push(self::$views, array($view, $data)) - 1;
     }
 
     /**

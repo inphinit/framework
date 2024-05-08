@@ -34,9 +34,9 @@ function SetupApache($base, $dest)
 
     # Redirect page errors to route system
     ErrorDocument 401 ' . $base . '401.html
-    ErrorDocument 401 ' . $base . '403.html
-    ErrorDocument 401 ' . $base . '500.html
-    ErrorDocument 401 ' . $base . '501.html
+    ErrorDocument 403 ' . $base . '403.html
+    ErrorDocument 500 ' . $base . '500.html
+    ErrorDocument 501 ' . $base . '501.html
 
     RewriteEngine On
 
