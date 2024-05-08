@@ -13,12 +13,13 @@ function ini_enabled($key)
     return in_array($value, array( 'on', '1' ));
 }
 
-$definedpath = defined('INPHINIT_PATH');
+$definedPath = defined('INPHINIT_PATH');
+$iniPath = php_ini_loaded_file();
 
 $error = array();
 $warn  = array();
 
-if (php_ini_loaded_file() === false) {
+if ($iniPath === false) {
     $phpiniError = 'php.ini file is not setted';
 
     if (isset($_SERVER['SERVER_SOFTWARE']) && stripos($_SERVER['SERVER_SOFTWARE'], 'apache') !== false) {
@@ -32,7 +33,7 @@ if (version_compare(PHP_VERSION, '5.3.0', '<')) {
     $error[] = 'Requires PHP 5.3 or major, your current version of PHP is ' . PHP_VERSION;
 }
 
-if ($definedpath) {
+if ($definedPath) {
     $folder = INPHINIT_PATH . 'storage';
 
     if (is_dir($folder) && !is_writable($folder)) {
@@ -59,19 +60,19 @@ if (!function_exists('finfo_file')) {
 }
 
 if (version_compare(PHP_VERSION, '7.0.0', '<') && ini_get('always_populate_raw_post_data') != -1) {
-    $error[] = 'Set -1 to always_populate_raw_post_data (php.ini)';
+    $error[] = 'Set -1 to always_populate_raw_post_data (' . $iniPath . ')';
 }
 
-if ($definedpath) {
+if ($definedPath) {
     $systemConfigs = require INPHINIT_PATH . 'application/Config/config.php';
 
     if ($systemConfigs['development'] === false) {
         if (extension_loaded('xdebug')) {
-            $warn[] = 'xdebug is enabled, is recommended disable this in "production mode" (php.ini)';
+            $warn[] = 'xdebug is enabled, is recommended disable this in "production mode" (' . $iniPath . ')';
         }
 
         if (extension_loaded('xhprof')) {
-            $warn[] = 'xhprof is enabled, is recommended disable this in "production mode" (php.ini)';
+            $warn[] = 'xhprof is enabled, is recommended disable this in "production mode" (' . $iniPath . ')';
         }
 
         $generators = array(
@@ -87,23 +88,23 @@ if ($definedpath) {
         }
     } else {
         if (function_exists('xcache_get') && ini_enabled('xcache.cacher')) {
-            $warn[] = 'Disable xcache.cacher in "development mode" (php.ini)';
+            $warn[] = 'Disable xcache.cacher in "development mode" (' . $iniPath . ')';
         }
 
         if (function_exists('opcache_get_status') && ini_enabled('opcache.enable')) {
-            $warn[] = 'Disable opcache.enable in "development mode" (php.ini)';
+            $warn[] = 'Disable opcache.enable in "development mode" (' . $iniPath . ')';
         }
 
         if (function_exists('wincache_ocache_meminfo') && ini_enabled('wincache.ocenabled')) {
-            $warn[] = 'Disable wincache.ocenabled in "development mode" (php.ini)';
+            $warn[] = 'Disable wincache.ocenabled in "development mode" (' . $iniPath . ')';
         }
 
         if (function_exists('apc_compile_file') && ini_enabled('apc.enabled')) {
-            $warn[] = 'Disable apc.ocenabled in "development mode" (php.ini)';
+            $warn[] = 'Disable apc.ocenabled in "development mode" (' . $iniPath . ')';
         }
 
         if (function_exists('eaccelerator_get') && ini_enabled('eaccelerator.enable')) {
-            $warn[] = 'Disable eaccelerator.ocenabled in "development mode" (php.ini)';
+            $warn[] = 'Disable eaccelerator.ocenabled in "development mode" (' . $iniPath . ')';
         }
     }
 }
