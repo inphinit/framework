@@ -42,7 +42,7 @@ function SetupApache($base, $dest)
 
     # Redirect to public folder
     RewriteCond %{REQUEST_URI} !(^$|system/public/|index\.php(/|$))
-    RewriteRule ^(.*)$ system/public/$1 [L]
+    RewriteRule ^(.*)$ system/public/$1
 
     # Redirect all urls to index.php if no exits files
     RewriteCond %{REQUEST_FILENAME} !-f
