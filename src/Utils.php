@@ -89,22 +89,17 @@ function UtilsStatusCode()
  */
 function UtilsPath()
 {
-    static $pathinfo;
+    static $pathInfo;
 
-    if ($pathinfo === null) {
-        $requri = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
-        $sname = $_SERVER['SCRIPT_NAME'];
-        $sdir = dirname($sname);
+    if ($pathInfo === null) {
+        $pathInfo = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
 
-        if ($sdir !== '\\' && $sdir !== '/' && $requri !== $sname && $requri !== $sdir) {
-            $sdir = rtrim($sdir, '/');
-            $requri = substr($requri, strlen($sdir));
+        if (PHP_SAPI !== 'cli-server') {
+            $pathInfo = substr($pathInfo, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
         }
-
-        $pathinfo = $requri;
     }
 
-    return $pathinfo;
+    return $pathInfo;
 }
 
 /**

@@ -16,7 +16,7 @@ use Inphinit\Viewing\View;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.5.15';
+    const VERSION = '0.6.0';
 
     private static $events = array();
     private static $configs = array();
@@ -166,11 +166,7 @@ class App
 
         self::$state = 1;
 
-        if (self::env('maintenance')) {
-            $resp = 503;
-        } else {
-            $resp = \UtilsStatusCode();
-        }
+        $resp = self::env('maintenance') ? 503 : \UtilsStatusCode();
 
         //200 is initial value in commons webservers
         if ($resp === 200) {
