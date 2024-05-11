@@ -7,7 +7,9 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Experimental;
+
+use Inphinit\Exception;
 
 class Dir implements \Iterator, \Countable
 {
