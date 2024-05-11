@@ -7,12 +7,11 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Routing;
+namespace Inphinit\Routing;
 
-use Inphinit\Routing\Route;
-use Inphinit\Experimental\Exception;
+use Inphinit\Exception;
 
-class Rest extends \Inphinit\Routing\Router
+class Rest extends Router
 {
     private static $debuglvl = 2;
     private $contentType = 'application/json';
@@ -21,13 +20,13 @@ class Rest extends \Inphinit\Routing\Router
     private $fullController;
     private $ready = false;
     private static $valids = array(
-        'index'   => array( 'GET',  '/' ),
-        'create'  => array( 'GET',  '/create' ),
-        'store'   => array( 'POST', '/' ),
-        'show'    => array( 'GET',  '/{:[^/]+:}' ),
-        'edit'    => array( 'GET',  '/{:[^/]+:}/edit' ),
-        'update'  => array( array('PUT', 'PATCH'), '/{:[^/]+:}' ),
-        'destroy' => array( 'DELETE', '/{:[^/]+:}' )
+        'index'   => array('GET',  '/'),
+        'create'  => array('GET',  '/create'),
+        'store'   => array('POST', '/'),
+        'show'    => array('GET',  '/{:[^/]+:}'),
+        'edit'    => array('GET',  '/{:[^/]+:}/edit'),
+        'update'  => array(array('PUT', 'PATCH'), '/{:[^/]+:}'),
+        'destroy' => array('DELETE', '/{:[^/]+:}')
     );
 
     /**
@@ -49,8 +48,8 @@ class Rest extends \Inphinit\Routing\Router
      * Create REST routes based in a \Controller
      *
      * @param string $controller
-     * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Routing\Rest
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Routing\Rest
      */
     public function __construct($controller)
     {
@@ -75,7 +74,7 @@ class Rest extends \Inphinit\Routing\Router
      * Define the Content-Type header
      *
      * @param string $contentType
-     * @return \Inphinit\Experimental\Routing\Rest
+     * @return \Inphinit\Routing\Rest
      */
     public function type($contentType)
     {
@@ -88,7 +87,7 @@ class Rest extends \Inphinit\Routing\Router
      * Define the Content-Type charset
      *
      * @param string $charset
-     * @return \Inphinit\Experimental\Routing\Rest
+     * @return \Inphinit\Routing\Rest
      */
     public function charset($charset)
     {
@@ -101,7 +100,7 @@ class Rest extends \Inphinit\Routing\Router
      * Define prefix path for all routes in class
      *
      * @param string $prefix
-     * @return \Inphinit\Experimental\Routing\Rest
+     * @return \Inphinit\Routing\Rest
      */
     public function path($path)
     {
@@ -117,7 +116,7 @@ class Rest extends \Inphinit\Routing\Router
     /**
      * Define routes
      *
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function prepare()

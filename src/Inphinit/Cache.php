@@ -37,7 +37,7 @@ class Cache
     {
         $filename = INPHINIT_PATH . 'storage/cache/output/';
 
-        $path = \UtilsPath();
+        $path = INPHINIT_PATHINFO;
 
         $filename .= strlen($path) . '/' . sha1($path) . '/';
 

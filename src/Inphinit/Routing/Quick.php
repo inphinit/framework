@@ -7,12 +7,11 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Routing;
+namespace Inphinit\Routing;
 
-use Inphinit\Routing\Route;
-use Inphinit\Experimental\Exception;
+use Inphinit\Exception;
 
-class Quick extends \Inphinit\Routing\Router
+class Quick extends Router
 {
     private static $debuglvl = 2;
     private $classMethods = array();
@@ -35,8 +34,8 @@ class Quick extends \Inphinit\Routing\Router
      * Create routes based in a \Controller
      *
      * @param string $name Define Controller class name
-     * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Routing\Quick
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Routing\Quick
      */
     public static function create($name)
     {
@@ -49,7 +48,7 @@ class Quick extends \Inphinit\Routing\Router
      * Create routes based in a \Controller
      *
      * @param string $name Define controllers class name
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function __construct($name)
@@ -113,7 +112,7 @@ class Quick extends \Inphinit\Routing\Router
      * for create routes like `/foo/` and `Quick::NOSLASH` for create routes like `/foo`
      *
      * @param int $slash Define path format, choose `Quick::BOTH`, `Quick::SLASH` or `Quick::NOSLASH`
-     * @return \Inphinit\Experimental\Routing\Quick
+     * @return \Inphinit\Routing\Quick
      */
     public function canonical($slash = Quick::NOSLASH)
     {
@@ -135,7 +134,7 @@ class Quick extends \Inphinit\Routing\Router
      * Define prefix path for all routes in class
      *
      * @param string $prefix
-     * @return \Inphinit\Experimental\Routing\Quick
+     * @return \Inphinit\Routing\Quick
      */
     public function path($path)
     {
@@ -151,7 +150,7 @@ class Quick extends \Inphinit\Routing\Router
     /**
      * Create routes by configurations
      *
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function prepare()

@@ -7,11 +7,12 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental;
+namespace Inphinit;
 
+use Inphinit\Exception;
 use Inphinit\Storage;
 
-class Session implements \IteratorAggregate
+class Session
 {
     private $handle;
     private $savepath;
@@ -29,7 +30,7 @@ class Session implements \IteratorAggregate
      * @param string      $name
      * @param string|null $id
      * @param array       $opts
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function __construct($name = 'inphinit', $id = null, array $opts = array())
@@ -126,7 +127,7 @@ class Session implements \IteratorAggregate
      *
      * @param string|null $id
      * @param bool        $trydeleteold
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function regenerate($id = null, $deleteold = false)
@@ -170,7 +171,7 @@ class Session implements \IteratorAggregate
     /**
      * Set cookie
      *
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     private function cookie()
@@ -259,9 +260,25 @@ class Session implements \IteratorAggregate
     }
 
     /**
+     * Get all values like array or get specific item by level (multidimensional) using path
+     *
+     * @param string $path (optional) Path with "dots"
+     * @param string $alternative (optional) alternative value does not find the selected value, default is null
+     * @return mixed
+     */
+    public function get($path = null, $alternative = null)
+    {
+        if ($path === null) {
+            return $this->data;
+        }
+
+        return Helper::extract($path, $this->data, $alternative);
+    }
+
+    /**
      * Prevent clone session object
      *
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function __clone()
@@ -288,7 +305,7 @@ class Session implements \IteratorAggregate
      *
      * @param string $name
      * @param mixed  $value
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function __set($name, $value)
@@ -328,29 +345,6 @@ class Session implements \IteratorAggregate
         unset($this->data[$name], $this->insertions[$name]);
 
         $this->deletions[$name] = true;
-    }
-
-    /**
-     * Allow iteration with `for`, `foreach` and `while`
-     *
-     * Example:
-     * <pre>
-     * <code>
-     * $foo = new Session;
-     *
-     * foreach ($foo as $key => $value) {
-     *     var_dump($key, $value);
-     *     echo EOL;
-     * }
-     * </code>
-     * </pre>
-     *
-     * @return \ArrayIterator
-     */
-    #[\ReturnTypeWillChange]
-    public function getIterator()
-    {
-        return new \ArrayIterator($this->data);
     }
 
     public function __destruct()

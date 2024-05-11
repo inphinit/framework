@@ -14,7 +14,7 @@
  * @param string $dest Location to write .htaccess
  * @return void
  */
-function SetupApache($base, $dest)
+function setup_apache($base, $dest)
 {
     if (
         empty($_SERVER['SERVER_SOFTWARE']) ||
@@ -63,7 +63,7 @@ function SetupApache($base, $dest)
  * @param string $dest Location to write web.config
  * @return void
  */
-function SetupIIS($base, $dest)
+function setup_iis($base, $dest)
 {
     if (
         empty($_SERVER['SERVER_SOFTWARE']) ||
@@ -88,6 +88,7 @@ function SetupIIS($base, $dest)
             <httpErrors>
                 <remove statusCode="401" subStatusCode="-1" />
                 <remove statusCode="403" subStatusCode="-1" />
+                <remove statusCode="500" subStatusCode="-1" />
                 <remove statusCode="501" subStatusCode="-1" />
                 <error statusCode="401"
                        responseMode="ExecuteURL"
@@ -95,21 +96,28 @@ function SetupIIS($base, $dest)
                 <error statusCode="403"
                        responseMode="ExecuteURL"
                        path="' . $base . '403.html?RESERVED_IISREDIRECT=1" />
+                <error statusCode="500"
+                       responseMode="ExecuteURL"
+                       path="' . $base . '501.html?RESERVED_IISREDIRECT=1" />
                 <error statusCode="501"
                        responseMode="ExecuteURL"
                        path="' . $base . '501.html?RESERVED_IISREDIRECT=1" />
             </httpErrors>
             <rewrite>
                 <rules>
+                    <rule name="Ignore hidden files" stopProcessing="true">
+                        <match url="(^\.|/\.)" />
+                        <action type="Rewrite" url="index.php" />
+                    </rule>
                     <rule name="Redirect to public folder" stopProcessing="false">
                         <match url="^(.*)" />
-                        <action type="Rewrite" url="system/public/{R:1}" />
+                        <action type="Rewrite" url="public/{R:1}" />
                     </rule>
                     <rule name="Redirect all urls to index.php if no exits files" stopProcessing="true">
                         <conditions>
                             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
                         </conditions>
-                        <match url="^system/public/" />
+                        <match url="^public/" />
                         <action type="Rewrite" url="index.php" />
                     </rule>
                 </rules>
@@ -126,13 +134,13 @@ function SetupIIS($base, $dest)
 }
 
 /**
- * Generate configs to nginx.conf and setup extensions used (eg. hh for HHVM)
+ * Display a example for nginx.conf
  *
  * @param string $base       Define full path
- * @param array  $extensions Define extensions used by server
+ * @param string $extensions Define fastcgi pass, eg.: unix:php-fpm.sock, 127.0.0.1:9000
  * @return void
  */
-function SetupNginx($base, array $extensions)
+function setup_nginx($base, $fastcgi)
 {
     $base = realpath($base);
 
@@ -168,6 +176,33 @@ function SetupNginx($base, array $extensions)
                 fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
                 fastcgi_pass  127.0.0.1:9000; # Replace by your fastcgi
             }
+        }
+
+
+        location / {
+            root  ' . $base . ';
+            index index.html index.htm index.php;
+
+            location ~ /\. {
+                return 404;
+            }
+
+            location ~ \.php$ {
+                fastcgi_pass  ' . $fastcgi . '; # Replace by your FastCGI or FPM
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
+                include       fastcgi_params;
+            }
+
+            # Redirect page errors to route system
+            error_page 401 /index.php/RESERVED.TEENY-401.html;
+            error_page 403 /index.php/RESERVED.TEENY-403.html;
+            error_page 404 /index.php/RESERVED.TEENY-404.html;
+            error_page 500 /index.php/RESERVED.TEENY-500.html;
+            error_page 501 /index.php/RESERVED.TEENY-501.html;
+
+            try_files /public/$uri /index.php;
         }
         ';
 

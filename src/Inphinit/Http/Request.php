@@ -9,6 +9,9 @@
 
 namespace Inphinit\Http;
 
+use Inphinit\Dom\Document;
+use Inphinit\Dom\DomException;
+
 use Inphinit\Helper;
 use Inphinit\Storage;
 
@@ -17,6 +20,7 @@ class Request
     private static $reqHeaders;
     private static $reqHeadersLower;
     private static $rawInput;
+    private static $headerTokens = array('-' => '_', ' ' => '_');
 
     /**
      * Get current HTTP path or route path
@@ -26,7 +30,7 @@ class Request
      */
     public static function path($info = false)
     {
-        return $info ? \UtilsPath() : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        return $info ? INPHINIT_PATHINFO : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     }
 
     /**
@@ -39,26 +43,21 @@ class Request
     {
         switch ($check) {
             case 'secure':
-                return empty($_SERVER['HTTPS']) === false && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
+                return strpos(INPHINIT_URL, 'https') === 0;
 
             case 'xhr':
-                return strcasecmp((string) self::header('X-Requested-With'), 'xmlhttprequest') === 0;
+                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
 
             case 'pjax':
-                return strcasecmp((string) self::header('X-Pjax') || '', 'true') === 0;
+                return strcasecmp(self::header('x-pjax', ''), 'true') === 0;
 
             case 'prefetch':
-                if ($data = self::header('Purpose')) {
-                    $prop = $data;
-                } elseif ($data = self::header('X-Moz')) {
-                    $prop = $data;
-                } elseif ($data = self::header('X-Purpose')) {
-                    $prop = $data;
-                } else {
-                    return false;
-                }
-
-                return strcasecmp($prop, 'prefetch') === 0;
+                return (
+                    strcasecmp(self::header('sec-purpose', ''), 'prefetch') === 0 ||
+                    strcasecmp(self::header('x-purpose', ''), 'preview') === 0 ||
+                    strcasecmp(self::header('purpose', ''), 'preview') === 0 ||
+                    strcasecmp(self::header('x-moz', ''), 'prefetch') === 0
+                );
         }
 
         return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
@@ -68,20 +67,12 @@ class Request
      * Get HTTP headers from current request
      *
      * @param string $name
-     * @return string|array|null
+     * @return string|null
      */
-    public static function header($name = null)
+    public static function header($name, $alternative = null)
     {
-        if (self::$reqHeaders === null) {
-            self::generate();
-        }
-
-        if ($name !== null) {
-            $name = strtolower($name);
-            return isset(self::$reqHeadersLower[$name]) ? self::$reqHeadersLower[$name] : null;
-        }
-
-        return self::$reqHeaders;
+        $name = 'HTTP_' . strtoupper(strtr($name, self::$headerTokens));
+        return isset($_SERVER[$name]) ? $_SERVER[$name] : $alternative;
     }
 
     /**
@@ -204,6 +195,71 @@ class Request
         return fopen($temp, $mode);
     }
 
+    /**
+     * Get a value input handler
+     *
+     * @param bool $array
+     * @throws \Inphinit\Exception
+     */
+    public static function json($array = false)
+    {
+        $handle = self::raw();
+
+        if ($handle) {
+            $data = json_decode(stream_get_contents($handle), $array);
+
+            fclose($handle);
+
+            switch (json_last_error()) {
+                case JSON_ERROR_NONE:
+                    return $json;
+
+                case JSON_ERROR_DEPTH:
+                    throw new Exception('The maximum stack depth has been exceeded', 2);
+
+                case JSON_ERROR_STATE_MISMATCH:
+                    throw new Exception('Invalid or malformed JSON', 2);
+
+                case JSON_ERROR_CTRL_CHAR:
+                    throw new Exception('Control character error, possibly incorrectly encoded', 2);
+
+                case JSON_ERROR_SYNTAX:
+                default:
+                    throw new Exception('Syntax error', 2);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Create a Document instance from HTTP request
+     *
+     * @return \Inphinit\Dom\Document
+     */
+    public static function xml()
+    {
+        $handle = Request::raw();
+
+        if ($handle) {
+            $data = stream_get_contents($handle);
+
+            fclose($handle);
+
+            $dom = new Document;
+
+            try {
+                $dom->loadXML($data);
+            } catch (DomException $ee) {
+                throw new DomException($ee->getMessage(), 2);
+            }
+
+            $data = null;
+
+            return $doc;
+        }
+    }
+
     private static function data(&$data, $key, $alternative)
     {
         if (empty($data)) {
@@ -213,26 +269,5 @@ class Request
         }
 
         return Helper::extract($key, $data, $alternative);
-    }
-
-    private static function generate()
-    {
-        $headers = array();
-
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-        } else {
-            foreach ($_SERVER as $key => $value) {
-                if (strpos($key, 'HTTP_') === 0) {
-                    $current = Helper::capitalize(substr($key, 5), '_', '-');
-                    $headers[$current] = $value;
-                }
-            }
-        }
-
-        self::$reqHeaders = $headers;
-        self::$reqHeadersLower = array_change_key_case($headers, CASE_LOWER);
-
-        $headers = null;
     }
 }

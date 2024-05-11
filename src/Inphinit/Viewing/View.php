@@ -71,7 +71,7 @@ class View
     public static function exists($view)
     {
         $path = INPHINIT_PATH . 'application/View/' . strtr($view, '.', '/') . '.php';
-        return is_file($path) && \UtilsCaseSensitivePath($path);
+        return is_file($path) && \inphinit_path_check($path);
     }
 
     /**
@@ -86,7 +86,7 @@ class View
         $view = strtr($view, '.', '/');
 
         if (self::$force || App::state() > 2) {
-            \UtilsSandboxLoader('application/View/' . $view . '.php', self::$shared + $data);
+            \inphinit_sandbox('application/View/' . $view . '.php', self::$shared + $data);
 
             return $data = null;
         }

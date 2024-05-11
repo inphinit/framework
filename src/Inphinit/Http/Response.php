@@ -63,7 +63,7 @@ class Response
     public static function status($code = null, $trigger = true)
     {
         if (self::$httpCode === null) {
-            self::$httpCode = \UtilsStatusCode();
+            self::$httpCode = http_response_code();
         }
 
         if ($code === null || self::$httpCode === $code) {

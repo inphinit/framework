@@ -7,16 +7,12 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental;
+namespace Inphinit;
 
 class Shell
 {
-    private $io;
-    private $ec;
-
     private $argc = 0;
     private $argv = array();
-    private $started = false;
 
     /**
      * Create a Shell instance for use CLI interface
@@ -91,53 +87,27 @@ class Shell
      * Add callback event to input
      *
      * @param callable $callback
-     * @param string   $exitCicle
      * @return bool
      */
-    public function inputObserver($callback, $exitCicle = null)
+    public function observer($callback)
     {
         if (self::isCli() === false || is_callable($callback) === false) {
             return false;
         }
 
-        $this->io = $callback;
-        
-        if ($exitCicle) {
-            $this->ec = $exitCicle;
-        }
+        while ($response = rtrim(self::input(), PHP_EOL)) {
+            if ($callback($response) === false) {
+                break;
+            }
 
-        if ($this->started) {
-            return true;
+            usleep(100);
         }
-
-        $this->started = true;
-        $this->fireInputObserver();
 
         return true;
     }
 
-    /**
-     * Trigger observer input
-     *
-     * @return void
-     */
-    protected function fireInputObserver()
-    {
-        $response = rtrim(self::input(), PHP_EOL);
-
-        if (strcasecmp($response, $this->ec) !== 0) {
-            $callback = $this->io;
-
-            $callback($response);
-
-            usleep(100);
-
-            $this->fireInputObserver();
-        }
-    }
-
     public function __destruct()
     {
-        $this->argv = $this->io = null;
+        $this->argv = null;
     }
 }

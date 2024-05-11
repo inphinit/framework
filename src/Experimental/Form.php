@@ -9,6 +9,8 @@
 
 namespace Inphinit\Experimental;
 
+use Inphinit\Exception;
+
 class Form
 {
     private static $useXhtml = '';

@@ -7,13 +7,13 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Routing;
+namespace Inphinit\Routing;
 
-use Inphinit\Regex;
+use Inphinit\Exception;
 use Inphinit\Http\Request;
-use Inphinit\Experimental\Exception;
+use Inphinit\Regex;
 
-class Group extends \Inphinit\Routing\Router
+class Group extends Router
 {
     /** Access with HTTP and HTTPS (default) */
     const BOTH = 1;
@@ -36,7 +36,7 @@ class Group extends \Inphinit\Routing\Router
     /**
      * Create a new route group
      *
-     * @return \Inphinit\Experimental\Routing\Group
+     * @return \Inphinit\Routing\Group
      */
     public static function create()
     {
@@ -47,7 +47,7 @@ class Group extends \Inphinit\Routing\Router
      * Define namespace prefix for group
      *
      * @param string $namespace
-     * @return \Inphinit\Experimental\Routing\Group
+     * @return \Inphinit\Routing\Group
      */
     public function prefixNS($namespace)
     {
@@ -59,8 +59,8 @@ class Group extends \Inphinit\Routing\Router
      * Define domain for group
      *
      * @param string $domain
-     * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Routing\Group
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Routing\Group
      */
     public function domain($domain)
     {
@@ -77,8 +77,8 @@ class Group extends \Inphinit\Routing\Router
      * Define path for group
      *
      * @param string $path
-     * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Routing\Group
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Routing\Group
      */
     public function path($path)
     {
@@ -97,8 +97,8 @@ class Group extends \Inphinit\Routing\Router
      * Access only with HTTPS, or only HTTP, or both
      *
      * @param int $level
-     * @throws \Inphinit\Experimental\Exception
-     * @return \Inphinit\Experimental\Routing\Group
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Routing\Group
      */
     public function secure($level)
     {
@@ -207,7 +207,7 @@ class Group extends \Inphinit\Routing\Router
             return true;
         }
 
-        $pathinfo = \UtilsPath();
+        $pathinfo = INPHINIT_PATHINFO;
 
         if (strpos($pathinfo, $this->path) === 0) {
             $this->currentPrefixPath = $this->path;

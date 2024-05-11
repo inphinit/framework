@@ -166,7 +166,7 @@ class App
 
         self::$state = 1;
 
-        $resp = self::env('maintenance') ? 503 : \UtilsStatusCode();
+        $resp = self::env('maintenance') ? 503 : http_response_code();
 
         //200 is initial value in commons webservers
         if ($resp === 200) {
@@ -175,7 +175,7 @@ class App
 
         if (is_integer($resp)) {
             self::on('finish', function () use ($resp) {
-                \UtilsSandboxLoader('error.php', array( 'status' => $resp ));
+                \inphinit_sandbox('error.php', array( 'status' => $resp ));
             });
             
             self::stop($resp);

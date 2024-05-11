@@ -7,13 +7,13 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Routing;
+namespace Inphinit\Routing;
 
 use Inphinit\Regex;
-use Inphinit\Experimental\Exception;
-use Inphinit\Experimental\Http\Redirect;
+use Inphinit\Exception;
+use Inphinit\Http\Redirect;
 
-class Redirector extends \Inphinit\Routing\Router
+class Redirector extends Router
 {
     /**
      * Redirect to route based
@@ -21,7 +21,7 @@ class Redirector extends \Inphinit\Routing\Router
      * @param string $route
      * @param array  $args
      * @param int    $code
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public static function route($route, array $args = array(), $code = 302)
@@ -50,7 +50,7 @@ class Redirector extends \Inphinit\Routing\Router
      * @param string $name
      * @param array  $args
      * @param int    $code
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public static function action($name, array $args = array(), $code = 302)

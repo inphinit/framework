@@ -13,6 +13,10 @@ use Inphinit\Uri;
 
 class File
 {
+    private static $infos = array();
+    private static $sizes = array();
+    private static $handleFinfo;
+
     /**
      * Check if file exists using case-sensitive,
      * For help developers who using Windows OS and using unix-like for production
@@ -62,9 +66,7 @@ class File
      */
     public static function permission($path, $full = false)
     {
-        if (self::exists($path) === false) {
-            return false;
-        }
+        self::checkInDevMode();
 
         $perms = fileperms($path);
 
@@ -119,35 +121,47 @@ class File
      */
     public static function mime($path)
     {
-        $mime = false;
-        $size = 0;
+        $info = self::fileInfo($path);
+        return $info && strtok($info, 'charset=');
+    }
 
-        if (function_exists('finfo_open')) {
-            $buffer = file_get_contents($path, false, null, 0, 5012);
+    /**
+     * Determines whether the file is binary
+     *
+     * @param string $path
+     * @throws \Inphinit\Exception
+     * @return bool
+     */
+    public static function encoding($path)
+    {
+        $info = self::fileInfo($path);
 
-            if ($buffer) {
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime = finfo_buffer($finfo, $buffer);
-                finfo_close($finfo);
+        if ($info) {
+            $pos = strpos($info, 'charset=');
 
-                $size = strlen($buffer);
-
-                $buffer = null;
-            }
-        } elseif (function_exists('mime_content_type')) {
-            $mime = mime_content_type($path);
-
-            if ($mime) {
-                $size = filesize($path);
+            if ($pos === false) {
+                $info = false;
+            } else {
+                $info = substr($info, -$pos);
             }
         }
 
-        //Note: $size >= 0 prevents negative numbers for big files (in x86)
-        if ($mime !== false && $size >= 0 && $size < 2 && strpos($mime, 'application/') === 0) {
-            return 'text/plain';
+        return $info;
+    }
+
+    private static function fileInfo($path)
+    {
+        self::checkInDevMode();
+
+        if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
+            if (self::$handleFinfo === null) {
+                self::$handleFinfo = finfo_open(FILEINFO_MIME);
+            }
+
+            self::$infos[$path] = finfo_buffer(self::$handleFinfo, $buffer);
         }
 
-        return $mime;
+        return self::$infos[$path];
     }
 
     /**
@@ -158,9 +172,13 @@ class File
      * @param int    $delay
      * @return void|bool
      */
-    public static function output($path, $length = 102400, $delay = 0)
+    public static function output($path, $length = 262144, $delay = 0)
     {
-        if (false === ($handle = fopen($path, 'rb'))) {
+        self::checkInDevMode();
+
+        $handle = fopen($path, 'rb');
+
+        if ($handle === false) {
             return false;
         }
 
@@ -196,6 +214,8 @@ class File
      */
     public static function portion($path, $offset = 0, $maxLen = 1024)
     {
+        self::checkInDevMode();
+
         return file_get_contents($path, false, null, $offset, $maxLen);
     }
 
@@ -210,30 +230,92 @@ class File
      */
     public static function lines($path, $offset = 0, $maxLines = 32)
     {
-        if (false === ($handle = fopen($path, 'rb'))) {
-            return false;
-        }
+        self::checkInDevMode();
 
-        $i = 0;
-        $output = '';
-        $max = $maxLines + $offset - 1;
+        $handle = fopen($path, 'rb');
 
-        while (false === feof($handle)) {
-            $data = fgets($handle);
+        if ($handle) {
+            $i = 0;
+            $output = '';
+            $max = $maxLines + $offset - 1;
 
-            if ($i >= $offset) {
-                $output .= $data;
+            while (false === feof($handle)) {
+                $data = fgets($handle);
 
-                if ($i === $max) {
-                    break;
+                if ($i >= $offset) {
+                    $output .= $data;
+
+                    if ($i === $max) {
+                        break;
+                    }
                 }
+
+                ++$i;
             }
 
-            ++$i;
+            fclose($handle);
+
+            return $output;
         }
 
-        fclose($handle);
+        return false;
+    }
 
-        return $output;
+    /**
+     * Get file size, support for read files with more of 2GB in 32bit.
+     * Return `false` if file is not found
+     *
+     * @param string $path
+     * @throws \Inphinit\Exception
+     * @return float|bool
+     */
+    public static function size($path)
+    {
+        if (isset(self::$sizes[$path]) === false) {
+            self::checkInDevMode();
+
+            self::$sizes[$path] = false;
+
+            $path = realpath($path);
+
+            if ($path) {
+                $handle = curl_init('file://' . rawurlencode($path));
+
+                curl_setopt($handle, CURLOPT_NOBODY, true);
+                curl_setopt($handle, CURLOPT_RETURNTRANSFER, false);
+                curl_setopt($handle, CURLOPT_HEADER, false);
+
+                if (curl_exec($handle)) {
+                    self::$sizes[$path] = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+                }
+
+                curl_close($handle);
+            }
+        }
+
+        return self::$sizes[$path];
+    }
+
+    /**
+     * Clear state files and clear size files in `Inphinit\File::size`
+     *
+     * @param string $path
+     * @throws \Inphinit\Exception
+     * @return string|bool
+     */
+    public static function clearstat()
+    {
+        self::$infos = array();
+
+        finfo_close(self::$handleFinfo);
+
+        clearstatcache();
+    }
+
+    private static function checkInDevMode()
+    {
+        if (App::env('development') && self::exists($path) === false) {
+            throw new Exception($path . ' not found (check case-sensitive)', 3);
+        }
     }
 }

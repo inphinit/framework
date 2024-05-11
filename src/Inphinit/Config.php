@@ -9,7 +9,7 @@
 
 namespace Inphinit;
 
-class Config implements \IteratorAggregate
+class Config
 {
     private static $exceptionlevel = 3;
     private $data = array();
@@ -56,11 +56,11 @@ class Config implements \IteratorAggregate
 
         self::$exceptionlevel = 2;
 
-        if (false === \Inphinit\File::exists(INPHINIT_PATH . $this->path)) {
+        if (false === File::exists(INPHINIT_PATH . $this->path)) {
             throw new Exception('File not found ' . $this->path, $level);
         }
 
-        foreach (\UtilsSandboxLoader($this->path) as $key => $value) {
+        foreach (\inphinit_sandbox($this->path) as $key => $value) {
             $this->data[$key] = $value;
         }
 
@@ -177,29 +177,6 @@ class Config implements \IteratorAggregate
     public function __unset($name)
     {
         unset($this->data[$name]);
-    }
-
-    /**
-     * Allow iteration with `for`, `foreach` and `while`
-     *
-     * Example:
-     * <pre>
-     * <code>
-     * $foo = new Config('file'); //or Config::load('file')
-     *
-     * foreach ($foo as $key => $value) {
-     *     var_dump($key, $value);
-     *     echo EOL;
-     * }
-     * </code>
-     * </pre>
-     *
-     * @return \ArrayIterator
-     */
-    #[\ReturnTypeWillChange]
-    public function getIterator()
-    {
-        return new \ArrayIterator($this->data);
     }
 
     public function __destruct()

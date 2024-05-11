@@ -7,13 +7,13 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Http;
+namespace Inphinit\Http;
 
 use Inphinit\App;
-use Inphinit\Uri;
+use Inphinit\Exception;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
-use Inphinit\Experimental\Exception;
+use Inphinit\Uri;
 
 class Redirect
 {
@@ -25,7 +25,7 @@ class Redirect
      * @param string $path
      * @param int    $code
      * @param bool   $trigger
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public static function only($path, $code = 302, $trigger = true)
@@ -47,7 +47,7 @@ class Redirect
      * @param string $path
      * @param int    $code
      * @param bool   $trigger
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return void
      */
     public static function to($path, $code = 302, $trigger = true)
@@ -75,7 +75,7 @@ class Redirect
      *
      * @param bool $only
      * @param bool $trigger
-     * @return bool|void
+     * @return bool
      */
     public static function back($only = false, $trigger = true)
     {
@@ -92,5 +92,7 @@ class Redirect
         } else {
             static::to($referer, 302, $trigger);
         }
+
+        return true;
     }
 }

@@ -44,10 +44,10 @@ class Route extends Router
 
         if (is_array($method)) {
             foreach ($method as $value) {
-                $routes[$path][ strtoupper(trim($value)) ] = $action;
+                $routes[$path][strtoupper($value)] = $action;
             }
         } else {
-            $routes[$path][ strtoupper(trim($method)) ] = $action;
+            $routes[$path][strtoupper($method)] = $action;
         }
     }
 
@@ -61,7 +61,7 @@ class Route extends Router
         if (self::$current === null) {
             $args = array();
             $routes = &parent::$httpRoutes;
-            $path = \UtilsPath();
+            $path = INPHINIT_PATHINFO;
             $method = $_SERVER['REQUEST_METHOD'];
 
             if (isset($routes[$path])) {

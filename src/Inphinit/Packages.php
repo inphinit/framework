@@ -9,7 +9,7 @@
 
 namespace Inphinit;
 
-class Packages implements \IteratorAggregate
+class Packages
 {
     private static $composerLock;
     private $composerPath;
@@ -184,26 +184,13 @@ class Packages implements \IteratorAggregate
     }
 
     /**
-     * Allow iteration with `for`, `foreach` and `while`
+     * Get libs
      *
-     * Example:
-     * <pre>
-     * <code>
-     * $foo = new Packages;
-     * $foo->inAutoload(); //Get imported classes
-     *
-     * foreach ($foo as $namespace => $path) {
-     *     var_dump($namespace, $path);
-     *     echo EOL;
-     * }
-     * </code>
-     * </pre>
-     *
-     * @return \ArrayIterator
+     * @return array
      */
-    public function getIterator()
+    public function get()
     {
-        return new \ArrayIterator($this->libs);
+        return $this->libs;
     }
 
     private static function relativePath($path)

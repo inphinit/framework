@@ -7,10 +7,10 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Http;
+namespace Inphinit\Http;
 
+use Inphinit\Exception;
 use Inphinit\Http\Request;
-use Inphinit\Experimental\Exception;
 
 class Negotiation
 {
@@ -34,13 +34,19 @@ class Negotiation
      */
     public function __construct(array $headers = null)
     {
-        $headers = array_change_key_case(empty($headers) ? Request::header() : $headers, CASE_LOWER);
-
-        foreach ($headers as $key => $value) {
-            if ($key === 'accept-ranges' || strpos($key, 'accept-control-') === 0 || (
-                $key !=='accept' && strpos($key, 'accept-') !== 0
-            )) {
-                unset($headers[$key]);
+        if (empty($headers)) {
+            $headers = array_change_key_case($headers, CASE_LOWER);
+        } else {
+            foreach ($_SERVER as $header => $value) {
+                if (
+                    $header === 'HTTP_ACCEPT' &&
+                    $header !== 'HTTP_ACCEPT_RANGES' &&
+                    strpos($header, 'HTTP_ACCEPT_') === 0 &&
+                    strpos($header, 'HTTP_ACCEPT_CONTROL_') !== 0
+                ) {
+                    $header = strtr(substr($header, 5), '_', '-');
+                    $headers[strtolower($header)] = $value;
+                }
             }
         }
 
@@ -81,7 +87,7 @@ class Negotiation
      *
      * @param int $level Sorts languages using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array|null
      */
     public function acceptLanguage($level = self::HIGH)
@@ -94,7 +100,7 @@ class Negotiation
      *
      * @param int $level Sorts charsets using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array|null
      */
     public function acceptCharset($level = self::HIGH)
@@ -107,7 +113,7 @@ class Negotiation
      *
      * @param string $level Sorts encodings using `LOW` or `HIGH` constants,
      *                      or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array|null
      */
     public function acceptEncoding($level = self::HIGH)
@@ -120,7 +126,7 @@ class Negotiation
      *
      * @param int $level Sorts types using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array|null
      */
     public function accept($level = self::HIGH)
@@ -134,7 +140,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return mixed
      */
     public function getLanguage($alternative = null)
@@ -149,7 +155,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return mixed
      */
     public function getCharset($alternative = null)
@@ -164,7 +170,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return mixed
      */
     public function getEncoding($alternative = null)
@@ -179,7 +185,7 @@ class Negotiation
      *
      * @param mixed $alternative Define alternative value, this value will be
      *                           used does not have the "header"
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return mixed
      */
     public function getAccept($alternative = null)
@@ -193,7 +199,7 @@ class Negotiation
      *
      * @param string $header
      * @param int    $level
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array|null
      */
     public function header($header, $level = self::HIGH)
@@ -210,7 +216,7 @@ class Negotiation
      *
      * @param string $value
      * @param int    $level
-     * @throws \Inphinit\Experimental\Exception
+     * @throws \Inphinit\Exception
      * @return array
      */
     public static function qFactor($value, $level = self::HIGH)
