@@ -33,16 +33,18 @@ function setup_apache($base, $dest)
     IndexIgnore *
 
     # Redirect page errors to route system
-    ErrorDocument 401 ' . $base . '401.html
     ErrorDocument 403 ' . $base . '403.html
     ErrorDocument 500 ' . $base . '500.html
     ErrorDocument 501 ' . $base . '501.html
 
     RewriteEngine On
 
+    # Ignore hidden files
+    RewriteRule ^\.|/\. index.php [L]
+
     # Redirect to public folder
-    RewriteCond %{REQUEST_URI} !(^$|system/public/|index\.php(/|$))
-    RewriteRule ^(.*)$ system/public/$1
+    RewriteCond %{REQUEST_URI} !(^$|public/|index\.php(/|$))
+    RewriteRule ^(.*)$ public/$1
 
     # Redirect all urls to index.php if no exits files
     RewriteCond %{REQUEST_FILENAME} !-f

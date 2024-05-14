@@ -94,7 +94,7 @@ class Quick extends Router
             $verb = array();
 
             if (preg_match($reMatch, $value, $verb)) {
-                if (strcasecmp('index', $verb[2]) === 0) {
+                if ($verb[2] === 'Index') {
                     $verb[2] = '';
                 } else {
                     $verb[2] = strtolower(preg_replace('#([a-z])([A-Z])#', '$1-$2', $verb[2]));
