@@ -66,7 +66,7 @@ class File
      */
     public static function permission($path, $full = false)
     {
-        self::checkInDevMode();
+        self::checkInDevMode($path);
 
         $perms = fileperms($path);
 
@@ -151,7 +151,7 @@ class File
 
     private static function fileInfo($path)
     {
-        self::checkInDevMode();
+        self::checkInDevMode($path);
 
         if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
             if (self::$handleFinfo === null) {
@@ -174,7 +174,7 @@ class File
      */
     public static function output($path, $length = 262144, $delay = 0)
     {
-        self::checkInDevMode();
+        self::checkInDevMode($path);
 
         $handle = fopen($path, 'rb');
 
@@ -214,7 +214,7 @@ class File
      */
     public static function portion($path, $offset = 0, $maxLen = 1024)
     {
-        self::checkInDevMode();
+        self::checkInDevMode($path);
 
         return file_get_contents($path, false, null, $offset, $maxLen);
     }
@@ -230,7 +230,7 @@ class File
      */
     public static function lines($path, $offset = 0, $maxLines = 32)
     {
-        self::checkInDevMode();
+        self::checkInDevMode($path);
 
         $handle = fopen($path, 'rb');
 
@@ -272,7 +272,7 @@ class File
     public static function size($path)
     {
         if (isset(self::$sizes[$path]) === false) {
-            self::checkInDevMode();
+            self::checkInDevMode($path);
 
             self::$sizes[$path] = false;
 
@@ -312,7 +312,7 @@ class File
         clearstatcache();
     }
 
-    private static function checkInDevMode()
+    private static function checkInDevMode($path)
     {
         if (App::env('development') && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 3);

@@ -26,7 +26,7 @@ class Route extends Router
     {
         if (is_string($action)) {
             $action = parent::$prefixNS . $action;
-        } elseif ($action !== null && !$action instanceof \Closure) {
+        } elseif ($action !== null && !is_callable($action)) {
             return null;
         }
 
