@@ -116,25 +116,6 @@ function inphinit_error($type, $message, $file, $line, $details = null)
     return false;
 }
 
-/**
- * Check if file exists in public folder when using built-in server
- *
- * @param string $publicPath
- * @return bool
- */
-function inphinit_file_builtin($publicPath)
-{
-    $path = INPHINIT_PATHINFO;
-
-    return (
-        $path !== '/' &&
-        strpos($path, '.') !== 0 &&
-        strpos($path, '/.') === false &&
-        PHP_SAPI === 'cli-server' &&
-        is_file($publicPath . $path)
-    );
-}
-
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_PATH . 'vendor/autoload.php';
 } else {
