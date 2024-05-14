@@ -24,6 +24,10 @@ function setup_apache($base, $dest)
         exit;
     }
 
+    if ($base === '/' || $base === '\\') {
+        $base = '';
+    }
+
     $base = $base . '/index.php/RESERVED.INPHINIT-';
 
     $data = '<IfModule mod_negotiation.c>
@@ -88,13 +92,9 @@ function setup_iis($base, $dest)
                 </files>
             </defaultDocument>
             <httpErrors>
-                <remove statusCode="401" subStatusCode="-1" />
                 <remove statusCode="403" subStatusCode="-1" />
                 <remove statusCode="500" subStatusCode="-1" />
                 <remove statusCode="501" subStatusCode="-1" />
-                <error statusCode="401"
-                       responseMode="ExecuteURL"
-                       path="' . $base . '401.html?RESERVED_IISREDIRECT=1" />
                 <error statusCode="403"
                        responseMode="ExecuteURL"
                        path="' . $base . '403.html?RESERVED_IISREDIRECT=1" />
@@ -138,8 +138,8 @@ function setup_iis($base, $dest)
 /**
  * Display a example for nginx.conf
  *
- * @param string $base       Define full path
- * @param string $extensions Define fastcgi pass, eg.: unix:php-fpm.sock, 127.0.0.1:9000
+ * @param string $base    Define full path
+ * @param string $fastcgi Define fastcgi pass, eg.: unix:php-fpm.sock, 127.0.0.1:9000
  * @return void
  */
 function setup_nginx($base, $fastcgi)
@@ -147,64 +147,44 @@ function setup_nginx($base, $fastcgi)
     $base = realpath($base);
 
     if ($base === false) {
-        echo 'Warning: Invaid root path for Nginx';
+        echo 'Warning: Invaid root path for NGINX';
     } else {
         $base = rtrim(strtr($base, '\\', '/'), '/');
 
-        $exts = implode('|', $extensions);
-
-        if (count($extensions) > 1) {
-            $exts = '(' . $exts . ')';
-        }
-
         $data = '
         location / {
-            root  ' . $base . ';
-            index index.html index.htm index.php;
+            root ' . $base . ';
 
             # Redirect page errors to route system
-            error_page 401 /index.php/RESERVED.INPHINIT-401.html;
-            error_page 403 /index.php/RESERVED.INPHINIT-403.html;
-            error_page 500 /index.php/RESERVED.INPHINIT-500.html;
-            error_page 501 /index.php/RESERVED.INPHINIT-501.html;
-
-            try_files /system/public/$uri /index.php?$query_string;
-
-            location ~ \.' . $exts . '$ {
-                include       fastcgi_params;
-                fastcgi_index index.php;
-                fastcgi_param INPHINIT_ROOT   $document_root
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-                fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
-                fastcgi_pass  127.0.0.1:9000; # Replace by your fastcgi
-            }
-        }
-
-
-        location / {
-            root  ' . $base . ';
-            index index.html index.htm index.php;
-
-            location ~ /\. {
-                return 404;
-            }
-
-            location ~ \.php$ {
-                fastcgi_pass  ' . $fastcgi . '; # Replace by your FastCGI or FPM
-                fastcgi_index index.php;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-                fastcgi_param SCRIPT_NAME     $fastcgi_script_name;
-                include       fastcgi_params;
-            }
-
-            # Redirect page errors to route system
-            error_page 401 /index.php/RESERVED.TEENY-401.html;
             error_page 403 /index.php/RESERVED.TEENY-403.html;
-            error_page 404 /index.php/RESERVED.TEENY-404.html;
             error_page 500 /index.php/RESERVED.TEENY-500.html;
             error_page 501 /index.php/RESERVED.TEENY-501.html;
 
-            try_files /public/$uri /index.php;
+            try_files /public$uri /index.php?$query_string;
+
+            location = / {
+                try_files $uri /index.php?$query_string;
+            }
+
+            location ~ /\. {
+                try_files /index.php$uri /index.php?$query_string;
+            }
+
+            location ~ \.php$ {
+                # Replace by your FPM or FastCGI
+                fastcgi_pass ' . $fastcgi . ';
+
+                fastcgi_index index.php;
+                include fastcgi_params;
+
+                set $teeny_suffix "";
+
+                if ($uri != "/index.php") {
+                    set $teeny_suffix "/public";
+                }
+
+                fastcgi_param SCRIPT_FILENAME $realpath_root$teeny_suffix$fastcgi_script_name;
+            }
         }
         ';
 
