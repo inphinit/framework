@@ -113,16 +113,15 @@ class App
     {
         if (empty(self::$events[$name]) === false) {
             if ($callback === null) {
-                self::$events[$name] = array();
-                return null;
-            }
+                $evts = &self::$events[$name];
 
-            $evts = &self::$events[$name];
-
-            foreach ($evts as $key => $value) {
-                if ($value[0] === $callback) {
-                    unset($evts[$key]);
+                foreach ($evts as $key => $value) {
+                    if ($value[0] === $callback) {
+                        unset($evts[$key]);
+                    }
                 }
+            } else {
+                self::$events[$name] = array();
             }
         }
     }
@@ -175,7 +174,8 @@ class App
 
         if (is_integer($resp)) {
             self::on('finish', function () use ($resp) {
-                \inphinit_sandbox('error.php', array( 'status' => $resp ));
+                $data = array( 'status' => $resp );
+                inphinit_sandbox('error.php', $data);
             });
             
             self::stop($resp);
@@ -219,7 +219,7 @@ class App
      * Dispatch before ready event if exec is Ok,
      * or dispatch after finish event if stop() is executed
      */
-    private static function dispatch()
+    public static function dispatch()
     {
         if (class_exists('\\Inphinit\\Http\\Response', false)) {
             Response::dispatch();

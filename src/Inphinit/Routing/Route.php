@@ -19,15 +19,13 @@ class Route extends Router
      *
      * @param string|array         $method
      * @param string               $path
-     * @param string|\Closure|null $action
+     * @param string|callable|null $action
      * @return void
      */
     public static function set($method, $path, $action)
     {
         if (is_string($action)) {
             $action = parent::$prefixNS . $action;
-        } elseif ($action !== null && !is_callable($action)) {
-            return null;
         }
 
         if (strpos($path, '{:') !==false) {

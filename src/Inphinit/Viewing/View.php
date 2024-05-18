@@ -83,10 +83,9 @@ class View
      */
     public static function render($view, array $data = array())
     {
-        $view = strtr($view, '.', '/');
-
         if (self::$force || App::state() > 2) {
-            \inphinit_sandbox('application/View/' . $view . '.php', self::$shared + $data);
+            $data = $data + self::$shared;
+            inphinit_sandbox('application/View/' . strtr($view, '.', '/') . '.php', $data);
 
             return $data = null;
         }
