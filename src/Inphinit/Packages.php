@@ -22,14 +22,18 @@ class Packages
     /**
      * Create a `Inphinit\Packages` instance.
      *
-     * @param string $path Setup composer path, like `./vendor/composer`
+     * @param string $path Define composer path, like `./vendor/composer` (if null or not defined, assume `./system/vender`)
      * @throws \InvalidArgumentException
      * @return void
      */
-    public function __construct($path)
+    public function __construct($path = null)
     {
-        if (empty($path) || is_dir($path) === false) {
-            throw new \InvalidArgumentException(empty($path) ? 'Path is empty' : 'Composer path is not accessible: ' . $path);
+        if (empty($path)) {
+            $path = INPHINIT_PATH . 'vendor';
+        }
+
+        if (is_dir($path) === false) {
+            throw new Exception('Composer path is not accessible: ' . $path, 0, 2);
         }
 
         $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
@@ -93,7 +97,7 @@ class Packages
             $data = include $path;
 
             foreach ($data as $key => $value) {
-                if (false === empty($value)) {
+                if (empty($value) === false) {
                     $this->libs[addcslashes($key, '\\')] = $value;
                     ++$i;
                 }
@@ -104,6 +108,7 @@ class Packages
         }
 
         $this->log[] = 'Warn: classmap not found';
+
         return false;
     }
 
@@ -123,6 +128,7 @@ class Packages
         }
 
         $this->log[] = 'Warn: psr0 not found';
+
         return false;
     }
 
@@ -142,6 +148,7 @@ class Packages
         }
 
         $this->log[] = 'Warn: psr4 not found';
+
         return false;
     }
 
@@ -161,7 +168,7 @@ class Packages
         $handle = fopen($path, 'w');
 
         if ($handle === false) {
-            throw new \InvalidArgumentException('This path is not writabled: ' . $path);
+            throw new Exception('This path is not writabled: ' . $path, 0, 2);
         }
 
         $first = true;
@@ -184,21 +191,21 @@ class Packages
     }
 
     /**
-     * Get libs
+     * Return array of libs
      *
      * @return array
      */
-    public function get()
+    public function getLibs()
     {
         return $this->libs;
     }
 
     private static function relativePath($path)
     {
-        $path = strtr($path, '\\', '/');
+        $path = str_replace('\\', '/', $path);
 
-        if (defined('INPHINIT_PATH') && strpos($path, INPHINIT_PATH) === 0) {
-            $path = substr($path, strlen(INPHINIT_PATH));
+        if (strpos($path, INPHINIT_PATH . '/') === 0) {
+            $path = substr($path, strlen(INPHINIT_PATH . '/'));
         }
 
         return $path;
@@ -212,8 +219,12 @@ class Packages
      */
     public static function version($name)
     {
+        if ($name === 'inphinit/framework') {
+            return App::VERSION;
+        }
+
         if (self::$composerLock === null) {
-            $file = INPHINIT_ROOT . 'composer.lock';
+            $file = INPHINIT_ROOT . '/composer.lock';
 
             if (is_file($file)) {
                 self::$composerLock = json_decode(file_get_contents($file));
@@ -223,7 +234,7 @@ class Packages
         $data = self::$composerLock;
 
         if (empty($data->packages)) {
-            return $name === 'inphinit/framework' ? App::VERSION : null;
+            return null;
         }
 
         $version = null;
@@ -242,7 +253,7 @@ class Packages
 
     private function load($path)
     {
-        if (false === is_file($path)) {
+        if (is_file($path) === false) {
             return false;
         }
 
@@ -261,6 +272,6 @@ class Packages
 
     public function __destruct()
     {
-        $this->logs = $this->libs = null;
+        $this->log = $this->libs = null;
     }
 }

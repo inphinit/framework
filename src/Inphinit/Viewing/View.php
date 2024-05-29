@@ -70,27 +70,27 @@ class View
      */
     public static function exists($view)
     {
-        $path = INPHINIT_PATH . 'application/View/' . strtr($view, '.', '/') . '.php';
-        return is_file($path) && \inphinit_path_check($path);
+        return inphinit_path_check(INPHINIT_PATH . 'application/View/' . str_replace('.', '/', $view) . '.php');
     }
 
     /**
      * Register or render a View. If View is registered this method returns the index number from View
      *
      * @param string $view
-     * @param array $data
-     * @return int|null
+     * @param array  $data
+     * @return int
      */
     public static function render($view, array $data = array())
     {
-        if (self::$force || App::state() > 2) {
-            $data = $data + self::$shared;
-            inphinit_sandbox('application/View/' . strtr($view, '.', '/') . '.php', $data);
-
-            return $data = null;
+        if (!self::$force) {
+            return array_push(self::$views, array($view, $data)) - 1;
         }
 
-        return array_push(self::$views, array($view, $data)) - 1;
+        $data += self::$shared;
+
+        inphinit_sandbox('application/View/' . str_replace('.', '/', $view) . '.php', $data);
+
+        return -1;
     }
 
     /**
@@ -102,7 +102,7 @@ class View
     public static function remove($index)
     {
         if (isset(self::$views[$index])) {
-            self::$views[$index] = null;
+            unset(self::$views[$index]);
         }
     }
 }

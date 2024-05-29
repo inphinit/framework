@@ -43,7 +43,7 @@ class Request
     {
         switch ($check) {
             case 'secure':
-                return strpos(INPHINIT_URL, 'https') === 0;
+                return isset($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
 
             case 'xhr':
                 return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
@@ -71,7 +71,7 @@ class Request
      */
     public static function header($name, $alternative = null)
     {
-        $name = 'HTTP_' . strtoupper(strtr($name, self::$headerTokens));
+        $name = 'HTTP_' . strtoupper(str_replace(self::$headerTokens, '_', $name));
         return isset($_SERVER[$name]) ? $_SERVER[$name] : $alternative;
     }
 
@@ -82,11 +82,7 @@ class Request
      */
     public static function query()
     {
-        if (empty($_GET['RESERVED_IISREDIRECT']) === false) {
-            return null;
-        }
-
-        return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
+        return empty($_GET['INPHINIT_REDIRECT']) && isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
     }
 
     /**

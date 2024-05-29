@@ -19,7 +19,7 @@ header_remove('X-Powered-By');
  */
 function inphinit_path_check($path)
 {
-    return strtr($path, '\\', '/') === strtr(realpath($path), '\\', '/');
+    return str_replace('\\', '/', $path) === str_replace('\\', '/', realpath($path));
 }
 
 /**
@@ -67,17 +67,15 @@ function inphinit_error($type, $message, $file, $line, $context = null)
 }
 
 /**
- * Use with `register_shutdown_function` fatal errors and execute `App::trigger('terminate')`
- *
- * @return void
+ * Use with `register_shutdown_function` fatal errors and execute `done` event
  */
 function inphinit_shutdown()
 {
-    $e = error_get_last();
+    $last = error_get_last();
 
-    if ($e !== null) {
+    if ($last !== null && error_reporting() & $last['type']) {
         App::dispatch();
-        inphinit_error($e['type'], $e['message'], $e['file'], $e['line']);
+        inphinit_error($last['type'], $last['message'], $last['file'], $last['line']);
     }
 
     App::trigger('terminate');
@@ -99,8 +97,8 @@ if (INPHINIT_COMPOSER) {
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
-                    // substr($prefix, -1) = "\" (PSR-4) or "_" (PSR-0)
-                    $base = $path . '/' . strtr($class, substr($prefix, -1), '/') . '.php';
+                    // substr($prefix, -1) returns \ (PSR-4) or _ (PSR-0)
+                    $base = $path . '/' . str_replace(substr($prefix, -1), '/', $class) . '.php';
                     break;
                 }
             }

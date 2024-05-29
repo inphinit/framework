@@ -186,7 +186,7 @@ class App
         if (is_string($callback)) {
             $parsed = explode(':', $callback, 2);
 
-            $callback = '\\Controller\\' . strtr($parsed[0], '.', '\\');
+            $callback = '\\Controller\\' . str_replace('.', '\\', $parsed[0]);
             $callback = array(new $callback, $parsed[1]);
         }
 
