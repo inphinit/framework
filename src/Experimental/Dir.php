@@ -31,7 +31,7 @@ class Dir implements \Iterator, \Countable
         $this->handle = opendir($path);
 
         if ($this->handle === false) {
-            throw new Exception('Failed to open folder', 2);
+            throw new Exception('Failed to open folder', 0, 2);
         }
 
         $path = strtr(realpath($path), '\\', '/');
@@ -168,7 +168,7 @@ class Dir implements \Iterator, \Countable
         $current = 0;
         $break = $pos !== -1;
 
-        while (false !== ($item = readdir($this->handle))) {
+        while (($item = readdir($this->handle)) !== false) {
             if ($item === '.' || $item === '..') {
                 continue;
             }

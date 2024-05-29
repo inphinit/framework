@@ -57,27 +57,13 @@ class Response
      * Get or set status code and return last status code
      *
      * @param int  $code
-     * @param bool $trigger
      * @return int|bool
      */
-    public static function status($code = null, $trigger = true)
+    public static function status($code = null)
     {
-        if (self::$httpCode === null) {
-            self::$httpCode = http_response_code();
-        }
+        $lastCode = http_response_code($code);
 
-        if ($code === null || self::$httpCode === $code) {
-            return self::$httpCode;
-        } elseif (headers_sent() || $code < 100 || $code > 599) {
-            return false;
-        }
-
-        header('X-PHP-Response-Code: ' . $code, true, $code);
-
-        $lastCode = self::$httpCode;
-        self::$httpCode = $code;
-
-        if ($trigger) {
+        if ($lastCode && $lastCode !== $code && class_exists('\\Inphinit\\Event', false)) {
             App::trigger('changestatus', array($code, null));
         }
 
@@ -147,22 +133,18 @@ class Response
      * Force download current page
      *
      * @param string $name
-     * @param int    $contentLength
+     * @param int    $length
      * @return void
      */
-    public static function download($name = null, $contentLength = 0)
+    public static function download($name, $length = 0)
     {
-        if ($name) {
-            $name = '; filename="' . strtr($name, '"', '-') . '"';
-        } else {
-            $name = '';
-        }
+        $name = '; filename="' . rawurlencode($name) . '"';
 
         self::putHeader('Content-Transfer-Encoding', 'Binary');
         self::putHeader('Content-Disposition', 'attachment' . $name);
 
-        if ($contentLength > 0) {
-            self::putHeader('Content-Length', $contentLength);
+        if ($length > 0) {
+            self::putHeader('Content-Length', $length);
         }
     }
 

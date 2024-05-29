@@ -48,7 +48,7 @@ class Session
                 }
 
                 if ($tmpname === null) {
-                    throw new Exception('Failed to create session file', 2);
+                    throw new Exception('Failed to create session file', 0, 2);
                 }
 
                 $cid = $this->getFileId($tmpname);
@@ -68,7 +68,7 @@ class Session
         $this->handle = fopen($tmpname, 'a+');
 
         if ($this->handle === false) {
-            throw new Exception('Failed to write session data', 2);
+            throw new Exception('Failed to write session data', 0, 2);
         }
 
         $opts = $opts + array(
@@ -144,14 +144,14 @@ class Session
             $tmpname = Storage::temp(null, 'session', $this->prefix, '');
 
             if ($tmpname === false) {
-                throw new Exception('Failed to create new session file', 2);
+                throw new Exception('Failed to create new session file', 0, 2);
             }
 
             $id = $this->getFileId($tmpname);
         }
 
         if (copy($old, $tmpname) === false) {
-            throw new Exception('Failed to copy new old session', 2);
+            throw new Exception('Failed to copy new old session', 0, 2);
         }
 
         flock($this->handle, LOCK_UN);
@@ -185,7 +185,7 @@ class Session
             $this->opts->secure,
             $this->opts->httponly
         )) {
-            throw new Exception('Failed to set HTTP cookie', 3);
+            throw new Exception('Failed to set HTTP cookie', 0, 3);
         }
     }
 
@@ -255,7 +255,7 @@ class Session
     private static function raise()
     {
         if (headers_sent($filename, $line)) {
-            throw new Exception("HTTP headers already sent by $filename:$line", 3);
+            throw new Exception("HTTP headers already sent by $filename:$line", 0, 3);
         }
     }
 
@@ -283,7 +283,7 @@ class Session
      */
     public function __clone()
     {
-        throw new Exception('Can\'t clone object', 2);
+        throw new Exception('Can\'t clone object', 0, 2);
     }
 
     /**
@@ -313,7 +313,7 @@ class Session
         try {
             serialize($value);
         } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), 2);
+            throw new Exception($e->getMessage(), 0, 2);
         }
 
         unset($this->deletions[$name]);

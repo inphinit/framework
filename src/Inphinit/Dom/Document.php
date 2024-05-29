@@ -89,15 +89,15 @@ class Document extends \DOMDocument
     public function fromArray(array $data)
     {
         if (empty($data)) {
-            throw new DomException('Array is empty', 2);
+            throw new DomException('Array is empty', 0, 2);
         } elseif (count($data) > 1) {
-            throw new DomException('Root array accepts only a key', 2);
+            throw new DomException('Root array accepts only a key', 0, 2);
         }
 
         $root = key($data);
 
         if (self::validTag($root) === false) {
-            throw new DomException('Invalid root <' . $root . '> tag', 2);
+            throw new DomException('Invalid root <' . $root . '> tag', 0, 2);
         }
 
         if ($this->documentElement) {
@@ -423,7 +423,7 @@ class Document extends \DOMDocument
                     $this->add($key, $value, $node);
                 }
             } else {
-                throw new DomException('Invalid tag: <' . $key . '>', $nextLevel);
+                throw new DomException('Invalid tag: <' . $key . '>', 0, $nextLevel);
             }
         }
     }

@@ -33,8 +33,8 @@ class App
     {
         if (is_string($value) || is_bool($value) || is_numeric($value)) {
             self::$configs[$key] = $value;
-        } elseif ($value === null && isset(self::$configs[$key])) {
-            return self::$configs[$key];
+        } else {
+            return isset(self::$configs[$key]) ? self::$configs[$key] : null;
         }
     }
 
@@ -91,9 +91,9 @@ class App
      * @param int      $priority
      * @return void
      */
-    public static function on($name, $callback, $priority = 0)
+    public static function on($name, callable $callback, $priority = 0)
     {
-        if (is_string($name) && is_callable($callback)) {
+        if (is_string($name)) {
             if (isset(self::$events[$name]) === false) {
                 self::$events[$name] = array();
             }
@@ -109,7 +109,7 @@ class App
      * @param callable $callback
      * @return void
      */
-    public static function off($name, $callback = null)
+    public static function off($name, callable $callback = null)
     {
         if (empty(self::$events[$name]) === false) {
             if ($callback === null) {

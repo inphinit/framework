@@ -57,7 +57,7 @@ class Config
         self::$exceptionlevel = 2;
 
         if (false === File::exists(INPHINIT_PATH . $this->path)) {
-            throw new Exception('File not found ' . $this->path, $level);
+            throw new Exception('File not found ' . $this->path, 0, $level);
         }
 
         foreach (\inphinit_sandbox($this->path) as $key => $value) {

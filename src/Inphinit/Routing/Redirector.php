@@ -72,7 +72,7 @@ class Redirector extends Router
     private static function redirect($path, $args, $code)
     {
         if ($path === false) {
-            throw new Exception('Route or Action not defined in route', 3);
+            throw new Exception('Route or Action not defined in route', 0, 3);
         }
 
         $j = preg_match_all('#\{:.*?:\}#', $path);
@@ -88,10 +88,10 @@ class Redirector extends Router
             }, $path);
 
             if (!preg_match('#' . Regex::parse($path) . '#', $to)) {
-                throw new Exception('Invalid URL from regex: ' . $verb, 3);
+                throw new Exception('Invalid URL from regex: ' . $verb, 0, 3);
             }
         } elseif ($ac) {
-            throw new Exception('Invalid number of arguments', 3);
+            throw new Exception('Invalid number of arguments', 0, 3);
         }
 
         Redirect::to($to, $code);

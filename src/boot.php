@@ -11,36 +11,6 @@ use Inphinit\App;
 
 header_remove('X-Powered-By');
 
-if (false === function_exists('http_response_code')) {
-    /** Fallback for PHP 5.3 */
-    function http_response_code($code = null)
-    {
-        static $current;
-
-        if ($current === null) {
-            if (preg_match('#/RESERVED\.INPHINIT-(\d{3})\.html#', $_SERVER['PHP_SELF'], $match)) {
-                $current = (int) $match[1];
-            } else {
-                $current = 200;
-            }
-        }
-
-        if ($code === null || $code === $current) {
-            return $current;
-        } elseif (headers_sent() || $code < 100 || $code > 599) {
-            return false;
-        }
-
-        header('X-PHP-Response-Code: ' . $code, true, $code);
-
-        $lastCode = $current;
-
-        $current = $code;
-
-        return $lastCode;
-    }
-}
-
 /**
  * Return normalized path (for checking case-sensitive in Windows OS)
  *
@@ -72,23 +42,24 @@ function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
 }
 
 /**
- * Function used from `set_error_handler` and trigger `App::trigger('error')`
+ * Function used from `set_error_handler` and trigger `Event::trigger('error')`
  *
  * @param int    $type
  * @param string $message
  * @param string $file
  * @param int    $line
- * @param array  $details
+ * @param array  $context
  * @return bool
  */
-function inphinit_error($type, $message, $file, $line, $details = null)
+function inphinit_error($type, $message, $file, $line, $context = null)
 {
-    static $preventDuplicate = array();
+    static $collectedErrors = array();
 
-    $file  = $file . ':' . $line;
+    $collect = $file . ':' . $line;
 
-    if (strpos($preventDuplicate, $str) === false) {
-        $preventDuplicate[] = $str;
+    if (in_array($collect, $collectedErrors) === false) {
+        $collectedErrors[] = $collect;
+
         App::trigger('error', array($type, $message, $file, $line));
     }
 
@@ -128,7 +99,7 @@ if (INPHINIT_COMPOSER) {
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
-                    // About substr($prefix, -1), if it returns "\" it is PSR 4, otherwise it returns "_" it is PSR 0
+                    // substr($prefix, -1) = "\" (PSR-4) or "_" (PSR-0)
                     $base = $path . '/' . strtr($class, substr($prefix, -1), '/') . '.php';
                     break;
                 }
@@ -174,14 +145,12 @@ foreach (inphinit_sandbox('application/Config/config.php') as $key => $value) {
 
 $dev = App::env('development');
 
+set_error_handler('inphinit_error', error_reporting());
+
 register_shutdown_function('inphinit_shutdown');
 
-set_error_handler('inphinit_error', $dev ? E_ALL|E_STRICT : error_reporting());
-
 if ($dev) {
-    require_once INPHINIT_PATH . 'dev.php';
+    require 'development.php';
 }
 
-require_once INPHINIT_PATH . 'main.php';
-
-App::exec();
+require INPHINIT_PATH . 'main.php';

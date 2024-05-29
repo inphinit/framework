@@ -57,11 +57,11 @@ class Redirect
         self::$debuglvl = 2;
 
         if (headers_sent($filename, $line)) {
-            throw new Exception("HTTP headers already sent by $filename:$line", $debuglvl);
+            throw new Exception("HTTP headers already sent by $filename:$line", 0, $debuglvl);
         } elseif ($code < 300 || $code > 399) {
-            throw new Exception('Invalid redirect HTTP status', $debuglvl);
+            throw new Exception('Invalid redirect HTTP status', 0, $debuglvl);
         } elseif (isset($path[0]) === false) {
-            throw new Exception('Path is not defined', $debuglvl);
+            throw new Exception('Path is not defined', 0, $debuglvl);
         } elseif (strpos($path, '/') === 0) {
             $path = Uri::root($path);
         }

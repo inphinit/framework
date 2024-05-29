@@ -65,7 +65,7 @@ class Group extends Router
     public function domain($domain)
     {
         if (isset($domain[0]) === false || trim($domain) !== $domain) {
-            throw new Exception('Invalid domain "' . $domain . '"', 2);
+            throw new Exception('Invalid domain "' . $domain . '"', 0, 2);
         } else {
             $this->domain = $domain;
         }
@@ -103,7 +103,7 @@ class Group extends Router
     public function secure($level)
     {
         if ($level < 1 || $level > 3) {
-            throw new Exception('Invalid security level', 2);
+            throw new Exception('Invalid security level', 0, 2);
         }
 
         $this->levelSecure = (int) $level;

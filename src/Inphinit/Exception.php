@@ -15,11 +15,11 @@ class Exception extends \Exception
      * Raise an exception
      *
      * @param string $message
-     * @param int    $trace
      * @param int    $code
+     * @param int    $trace
      * @return void
      */
-    public function __construct($message = null, $trace = 0, $code = 0)
+    public function __construct($message = null, $code = 0, $trace = 0)
     {
         if ($trace > 0) {
             $data = Debug::caller($trace);

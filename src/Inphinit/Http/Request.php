@@ -215,17 +215,17 @@ class Request
                     return $json;
 
                 case JSON_ERROR_DEPTH:
-                    throw new Exception('The maximum stack depth has been exceeded', 2);
+                    throw new Exception('The maximum stack depth has been exceeded', 0, 2);
 
                 case JSON_ERROR_STATE_MISMATCH:
-                    throw new Exception('Invalid or malformed JSON', 2);
+                    throw new Exception('Invalid or malformed JSON', 0, 2);
 
                 case JSON_ERROR_CTRL_CHAR:
-                    throw new Exception('Control character error, possibly incorrectly encoded', 2);
+                    throw new Exception('Control character error, possibly incorrectly encoded', 0, 2);
 
                 case JSON_ERROR_SYNTAX:
                 default:
-                    throw new Exception('Syntax error', 2);
+                    throw new Exception('Syntax error', 0, 2);
             }
         }
 
@@ -251,7 +251,7 @@ class Request
             try {
                 $dom->loadXML($data);
             } catch (DomException $ee) {
-                throw new DomException($ee->getMessage(), 2);
+                throw new DomException($ee->getMessage(), 0, 2);
             }
 
             $data = null;

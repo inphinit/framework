@@ -89,9 +89,9 @@ class Shell
      * @param callable $callback
      * @return bool
      */
-    public function observer($callback)
+    public function observer(callable $callback)
     {
-        if (self::isCli() === false || is_callable($callback) === false) {
+        if (self::isCli() === false) {
             return false;
         }
 

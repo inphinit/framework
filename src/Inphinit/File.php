@@ -315,7 +315,7 @@ class File
     private static function checkInDevMode($path)
     {
         if (App::env('development') && self::exists($path) === false) {
-            throw new Exception($path . ' not found (check case-sensitive)', 3);
+            throw new Exception($path . ' not found (check case-sensitive)', 0, 3);
         }
     }
 }

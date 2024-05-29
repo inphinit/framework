@@ -24,7 +24,7 @@ class Uri
      *
      * @var array
      */
-    protected static $defaultPorts = array( 'http:80', 'https:443', 'ftp:21', 'sftp:22' );
+    protected static $defaultPorts = array('http:80', 'https:443', 'ftp:21', 'sftp:22');
 
     /**
      * Define default schemes, you can customize in a extended class
@@ -33,7 +33,7 @@ class Uri
      *
      * @var array
      */
-    protected static $defaultSchemes = array( 'http', 'https', 'ftp', 'sftp' );
+    protected static $defaultSchemes = array('http', 'https', 'ftp', 'sftp');
 
     /**
      * Convert text to URL format

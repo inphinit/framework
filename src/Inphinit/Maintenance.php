@@ -58,16 +58,12 @@ class Maintenance
      * @param callable $callback
      * @return void
      */
-    public static function ignoreif($callback)
+    public static function ignoreif(callable $callback)
     {
-        if (is_callable($callback)) {
-            App::on('init', function () use ($callback) {
-                if ($callback()) {
-                    App::env('maintenance', false);
-                }
-            });
-        } else {
-            throw new Exception('Invalid callback');
-        }
+        App::on('init', function () use ($callback) {
+            if ($callback()) {
+                App::env('maintenance', false);
+            }
+        });
     }
 }

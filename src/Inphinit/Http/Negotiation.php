@@ -226,7 +226,7 @@ class Negotiation
 
         foreach ($multivalues as $hvalues) {
             if (substr_count($hvalues, ';') > 1) {
-                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 2);
+                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 0, 2);
             }
 
             $current = explode(';', $hvalues, 2);
@@ -260,9 +260,9 @@ class Negotiation
         $qvalue = str_replace('q=', '', $value);
 
         if (is_numeric($qvalue) === false) {
-            throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 3);
+            throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
         } elseif ($qvalue > 1) {
-            throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0.0 to 1.0): "' . $value . '"', 3);
+            throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0.0 to 1.0): "' . $value . '"', 0, 3);
         }
 
         return (float) $qvalue;

@@ -24,10 +24,6 @@ class Route extends Router
      */
     public static function set($method, $path, $action)
     {
-        if (is_string($action)) {
-            $action = parent::$prefixNS . $action;
-        }
-
         if (strpos($path, '{:') !==false) {
             self::$hasParams = true;
         }
@@ -88,6 +84,10 @@ class Route extends Router
             if (is_int($resp)) {
                 self::$current = $resp;
             } else {
+                if (is_string($resp)) {
+                    $resp = parent::$prefixNS . $resp;
+                }
+
                 self::$current = array(
                     'callback' => $resp,
                     'args' => $args

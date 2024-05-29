@@ -32,9 +32,9 @@ class Debug
     {
         $nc = '\\' . get_called_class();
 
-        App::off('error', array( $nc, 'renderError' ));
-        App::off('terminate', array( $nc, 'renderPerformance' ));
-        App::off('terminate', array( $nc, 'renderClasses' ));
+        App::off('error', array($nc, 'renderError'));
+        App::off('terminate', array($nc, 'renderPerformance'));
+        App::off('terminate', array($nc, 'renderClasses'));
 
         if (false === empty(self::$displayErrors)) {
             if (function_exists('init_set')) {
@@ -59,7 +59,7 @@ class Debug
         if (empty(self::$views['error'])) {
             return null;
         } elseif (preg_match('#allowed\s+memory\s+size\s+of\s+\d+\s+bytes\s+exhausted\s+\(tried\s+to\s+allocate\s+\d+\s+bytes\)#i', $message)) {
-            die("<br><strong>Fatal error:</strong> $message in <strong>$file</strong> on line <strong>$line</strong>");
+            die("<br><strong>Fatal error:</strong> {$message} in <strong>{$file}</strong> on line <strong>{$line}</strong>");
         }
 
         $data = self::details($type, $message, $file, $line);
@@ -121,10 +121,10 @@ class Debug
     public static function view($type, $view)
     {
         if ($view !== null && View::exists($view) === false) {
-            throw new Exception($view . ' view is not found', 2);
+            throw new Exception($view . ' view is not found', 0, 2);
         }
 
-        $callRender = array( '\\' . get_called_class(), 'render' . ucfirst($type) );
+        $callRender = array('\\' . get_called_class(), 'render' . ucfirst($type));
 
         if ($type === 'error') {
             App::on('error', $callRender);
@@ -139,7 +139,7 @@ class Debug
         } elseif ($type === 'classes' || $type === 'performance') {
             App::on('terminate', $callRender);
         } elseif ($type !== 'before') {
-            throw new Exception($type . ' is not valid event', 2);
+            throw new Exception($type . ' is not valid event', 0, 2);
         }
 
         self::$views[$type] = $view;
@@ -260,15 +260,17 @@ class Debug
             return $message;
         }
 
-        return preg_replace_callback('#^([\s\S]+?)\s+in\s+([\s\S]+?:\d+)|^([\s\S]+?)$#', function ($matches) use ($link) {
-            $error = empty($matches[3]) ? $matches[1] : $matches[3];
+        $pos = strrpos($message, ' in ');
 
-            $url = str_replace('%error%', urlencode($error), $link);
-            $url = htmlentities($url);
+        if ($pos !== false) {
+            $message = substr($message, 0, $pos);
+        }
 
-            return '<a target="_blank" href="' . $url . '">' . $error . '</a>' .
-                    (empty($matches[2]) ? '' : (' in ' . $matches[2]));
-        }, $message);
+        $link = str_replace('%error%', rawurlencode($message), $link);
+        $link = htmlentities($link);
+        $message = htmlentities($message);
+
+        return '<a rel="nofollow noreferrer" target="_blank" href="' . $link . '">' . $message . '</a>';
     }
 
     private static function render($view, $data)

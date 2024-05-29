@@ -131,7 +131,7 @@ class Form
 
             $input .= '"{{attr}}' . self::$useXhtml . '>';
         } else {
-            throw new Exception('Invalid type');
+            throw new Exception('Invalid type', 0, 2);
         }
 
         return self::setAttr($attributes, $input, $name, $type);
