@@ -9,8 +9,8 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Exception;
 use Inphinit\Http\Request;
+use Inphinit\Exception;
 
 class Negotiation
 {
@@ -34,25 +34,28 @@ class Negotiation
      */
     public function __construct(array $headers = null)
     {
-        if (empty($headers)) {
+        if (empty($headers) === false) {
             $headers = array_change_key_case($headers, CASE_LOWER);
-        } else {
-            foreach ($_SERVER as $header => $value) {
+
+            foreach ($headers as $key => $value) {
                 if (
-                    $header === 'HTTP_ACCEPT' &&
-                    $header !== 'HTTP_ACCEPT_RANGES' &&
-                    strpos($header, 'HTTP_ACCEPT_') === 0 &&
-                    strpos($header, 'HTTP_ACCEPT_CONTROL_') !== 0
+                    $key === 'accept-ranges' ||
+                    strpos($key, 'accept-control-') === 0 ||
+                    ($key !=='te' && $key !=='accept' && strpos($key, 'accept-') !== 0)
                 ) {
-                    $header = str_replace('_', '-', substr($header, 5));
-                    $headers[strtolower($header)] = $value;
+                    unset($headers[$key]);
                 }
             }
+
+            $this->headers = $headers;
+
+            $headers = null;
         }
+    }
 
-        $this->headers = $headers;
-
-        $headers = null;
+    public function __destruct()
+    {
+        $this->headers = null;
     }
 
     /**
@@ -63,11 +66,9 @@ class Negotiation
      */
     public static function fromString($str)
     {
-        $str = preg_replace('#(\r)?\n(\r)?\n[\s\S]+#', '', $str);
-
         $headers = array();
 
-        foreach (preg_split("#(\r)?\n#", $str) as $line) {
+        foreach (preg_split('#(\r)?\n#', $str) as $line) {
             if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
 
@@ -195,7 +196,7 @@ class Negotiation
     }
 
     /**
-     * Parse any header like `TE` header or headers with `Accepet-` prefix
+     * Parse any header with q-factor value
      *
      * @param string $header
      * @param int    $level
@@ -206,9 +207,17 @@ class Negotiation
     {
         $header = strtolower($header);
 
-        if (isset($this->headers[$header])) {
-            return self::qFactor($this->headers[$header], $level);
+        if ($header === 'accept-ranges' || strpos($header, 'accept-control-') === 0) {
+            return null;
         }
+
+        if ($this->headers) {
+            $value = $this->headers[$header];
+        } else {
+            $value = Request::header($header);
+        }
+
+        return self::qFactor($value, $level);
     }
 
     /**
@@ -221,10 +230,9 @@ class Negotiation
      */
     public static function qFactor($value, $level = self::HIGH)
     {
-        $multivalues = explode(',', $value);
         $headers = array();
 
-        foreach ($multivalues as $hvalues) {
+        foreach (explode(',', $value) as $hvalues) {
             if (substr_count($hvalues, ';') > 1) {
                 throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 0, 2);
             }
@@ -237,10 +245,8 @@ class Negotiation
                 $qvalue = 1.0;
             }
 
-            $headers[ trim($current[0]) ] = $qvalue;
+            $headers[trim($current[0])] = $qvalue;
         }
-
-        $multivalues = null;
 
         if ($level === self::ALL) {
             return array_keys($headers);
