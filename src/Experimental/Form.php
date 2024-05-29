@@ -155,11 +155,11 @@ class Form
         }
 
         if ($name !== null) {
-            $attributes = array( 'name' => $name ) + $attributes;
+            $attributes = array('name' => $name) + $attributes;
         }
 
         if ($type !== 'select' && $type !== 'textarea' && $type !== 'form') {
-            $attributes = array( 'type' => $type ) + $attributes;
+            $attributes = array('type' => $type) + $attributes;
         }
 
         foreach ($attributes as $key => $val) {

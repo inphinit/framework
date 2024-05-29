@@ -174,7 +174,7 @@ class App
 
         if (is_integer($resp)) {
             self::on('finish', function () use ($resp) {
-                $data = array( 'status' => $resp );
+                $data = array('status' => $resp);
                 inphinit_sandbox('error.php', $data);
             });
             

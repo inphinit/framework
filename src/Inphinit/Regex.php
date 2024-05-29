@@ -29,7 +29,7 @@ class Regex
 
         return preg_replace_callback(
             '#\\\{:.*?:\\\}#',
-            array( '\\' . get_called_class(), 'args' ),
+            array('\\' . get_called_class(), 'args'),
             $str
         );
     }

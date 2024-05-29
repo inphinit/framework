@@ -24,7 +24,7 @@ class Config
      */
     public function __construct($path)
     {
-        $this->path = 'application/Config/' . strtr($path, '.', '/') . '.php';
+        $this->path = 'application/Config/' . str_replace('.', '/', $path) . '.php';
 
         $this->reload();
     }

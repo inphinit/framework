@@ -33,7 +33,7 @@ class File
         }
 
         $path = preg_replace('#^file:/+([a-z]:/|/)#i', '$1', strtr($path, '\\', '/'));
-        $rpath = strtr($rpath, '\\', '/');
+        $rpath = str_replace('\\', '/', $rpath);
 
         if ($path !== $rpath) {
             $dir = dirname($path);

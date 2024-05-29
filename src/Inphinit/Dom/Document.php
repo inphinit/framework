@@ -468,7 +468,7 @@ class Document extends \DOMDocument
 
     private function nodeContents(\DOMElement $node)
     {
-        $extras = array( '@attributes' => array() );
+        $extras = array('@attributes' => array());
 
         if ($this->complete) {
             foreach ($node->attributes as $attribute) {

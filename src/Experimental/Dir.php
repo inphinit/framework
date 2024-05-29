@@ -34,7 +34,7 @@ class Dir implements \Iterator, \Countable
             throw new Exception('Failed to open folder', 0, 2);
         }
 
-        $path = strtr(realpath($path), '\\', '/');
+        $path = str_replace('\\', '/', realpath($path));
 
         $this->path = rtrim($path, '/') . '/';
 

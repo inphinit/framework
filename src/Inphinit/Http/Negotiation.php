@@ -44,7 +44,7 @@ class Negotiation
                     strpos($header, 'HTTP_ACCEPT_') === 0 &&
                     strpos($header, 'HTTP_ACCEPT_CONTROL_') !== 0
                 ) {
-                    $header = strtr(substr($header, 5), '_', '-');
+                    $header = str_replace('_', '-', substr($header, 5));
                     $headers[strtolower($header)] = $value;
                 }
             }
@@ -68,7 +68,7 @@ class Negotiation
         $headers = array();
 
         foreach (preg_split("#(\r)?\n#", $str) as $line) {
-            if ($str && strpos($line, ':') !== false) {
+            if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
 
                 $headers[$key] = ltrim($value);
