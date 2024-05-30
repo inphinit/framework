@@ -29,7 +29,7 @@ class App
      * @param string|bool|int|float $value
      * @return string|bool|int|float|void
      */
-    public static function env($key, $value = null)
+    public static function config($key, $value = null)
     {
         if (is_string($value) || is_bool($value) || is_numeric($value)) {
             self::$configs[$key] = $value;
@@ -165,7 +165,7 @@ class App
 
         self::$state = 1;
 
-        $resp = self::env('maintenance') ? 503 : http_response_code();
+        $resp = self::config('maintenance') ? 503 : http_response_code();
 
         //200 is initial value in commons webservers
         if ($resp === 200) {

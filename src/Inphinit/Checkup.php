@@ -25,7 +25,7 @@ class Checkup
      */
     public function __construct()
     {
-        $this->development = App::env('development');
+        $this->development = App::config('development');
 
         if (!function_exists('php_ini_loaded_file')) {
             $this->errors[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
@@ -66,7 +66,7 @@ class Checkup
             $this->errors[] = 'Set -1 to `always_populate_raw_post_data` in `' . $this->iniPath . '`';
         }
 
-        $folder = INPHINIT_PATH . 'storage';
+        $folder = INPHINIT_SYSTEM . '/storage';
 
         if (is_dir($folder) && !is_writable($folder)) {
             $this->errors[] = 'Folder ' . $folder . ' requires write permissions, use chmod';

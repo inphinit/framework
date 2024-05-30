@@ -35,9 +35,9 @@ class Cache
      */
     public function __construct($expires = 900, $modified = 0, $prefix = '', $querystring = false)
     {
-        $filename = INPHINIT_PATH . 'storage/cache/output/';
+        $filename = INPHINIT_SYSTEM . '/storage/cache/output/';
 
-        $path = INPHINIT_PATHINFO;
+        $path = INPHINIT_PATH;
 
         $filename .= strlen($path) . '/' . sha1($path) . '/';
 

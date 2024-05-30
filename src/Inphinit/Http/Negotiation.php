@@ -84,55 +84,55 @@ class Negotiation
     }
 
     /**
-     * Get all languages by `Accept-Language` header sorted by q-factor (defined by `$level`)
+     * Get all languages by `Accept-Language` header sorted by q-factor (defined by `$sort`)
      *
-     * @param int $level Sorts languages using `LOW` or `HIGH` constants,
+     * @param int $sort Sorts languages using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function acceptLanguage($level = self::HIGH)
+    public function acceptLanguage($sort = self::HIGH)
     {
-        return $this->header('accept-language', $level);
+        return $this->header('accept-language', $sort);
     }
 
     /**
-     * Get all languages by `Accept-Charset` header and sort by q-factor (defined by `$level`)
+     * Get all languages by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
      *
-     * @param int $level Sorts charsets using `LOW` or `HIGH` constants,
+     * @param int $sort Sorts charsets using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function acceptCharset($level = self::HIGH)
+    public function acceptCharset($sort = self::HIGH)
     {
-        return $this->header('accept-charset', $level);
+        return $this->header('accept-charset', $sort);
     }
 
     /**
-     * Get all languages by `Accept-Encoding` header and sort by q-factor (defined by `$level`)
+     * Get all languages by `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
      *
-     * @param string $level Sorts encodings using `LOW` or `HIGH` constants,
+     * @param string $sort Sorts encodings using `LOW` or `HIGH` constants,
      *                      or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function acceptEncoding($level = self::HIGH)
+    public function acceptEncoding($sort = self::HIGH)
     {
-        return $this->header('accept-encoding', $level);
+        return $this->header('accept-encoding', $sort);
     }
 
     /**
-     * Get all document types by `Accept` header and sorted by q-factor (defined by `$level`)
+     * Get all document types by `Accept` header and sorted by q-factor (defined by `$sort`)
      *
-     * @param int $level Sorts types using `LOW` or `HIGH` constants,
+     * @param int $sort Sorts types using `LOW` or `HIGH` constants,
      *                   or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function accept($level = self::HIGH)
+    public function accept($sort = self::HIGH)
     {
-        return $this->header('accept', $level);
+        return $this->header('accept', $sort);
     }
 
     /**
@@ -199,11 +199,11 @@ class Negotiation
      * Parse any header with q-factor value
      *
      * @param string $header
-     * @param int    $level
+     * @param int    $sort
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function header($header, $level = self::HIGH)
+    public function header($header, $sort = self::HIGH)
     {
         $header = strtolower($header);
 
@@ -217,18 +217,18 @@ class Negotiation
             $value = Request::header($header);
         }
 
-        return self::qFactor($value, $level);
+        return self::qFactor($value, $sort);
     }
 
     /**
      * Parse and sort a custom value with q-factor
      *
      * @param string $value
-     * @param int    $level
+     * @param int    $sort
      * @throws \Inphinit\Exception
      * @return array
      */
-    public static function qFactor($value, $level = self::HIGH)
+    public static function qFactor($value, $sort = self::HIGH)
     {
         $headers = array();
 
@@ -248,11 +248,11 @@ class Negotiation
             $headers[trim($current[0])] = $qvalue;
         }
 
-        if ($level === self::ALL) {
+        if ($sort === self::ALL) {
             return array_keys($headers);
         }
 
-        if ($level === self::LOW) {
+        if ($sort === self::LOW) {
             asort($headers, SORT_NUMERIC);
         } else {
             arsort($headers, SORT_NUMERIC);

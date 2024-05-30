@@ -55,7 +55,7 @@ class Route extends Router
         if (self::$current === null) {
             $args = array();
             $routes = &parent::$httpRoutes;
-            $path = INPHINIT_PATHINFO;
+            $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
 
             if (isset($routes[$path])) {

@@ -14,7 +14,6 @@ use Inphinit\Uri;
 class File
 {
     private static $infos = array();
-    private static $sizes = array();
     private static $handleFinfo;
 
     /**
@@ -32,28 +31,11 @@ class File
             return false;
         }
 
-        $path = preg_replace('#^file:/+([a-z]:/|/)#i', '$1', strtr($path, '\\', '/'));
-        $rpath = str_replace('\\', '/', $rpath);
-
-        if ($path !== $rpath) {
-            $dir = dirname($path);
-
-            if ($dir === '.') {
-                $dir = '';
-            } elseif (preg_match('#^[.a-z0-9]+(\/|$)#i', $dir)) {
-                $dir = getcwd() . '/' . $dir . '/';
-
-                if (preg_match('#^\.\.\/|\/\.\.\/|\/\.\.$#', $dir)) {
-                    $dir = Uri::canonpath($dir);
-                }
-            }
-
-            $path = $dir . basename($path);
-
-            return $rpath === $path || substr($rpath, strlen($rpath) - strlen($path)) === $path;
+        if (strpos($path, './') !== false || strpos($path, '//') !== false) {
+            $path = Uri::canonpath($path);
         }
 
-        return true;
+        return str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path) === realpath($path);
     }
 
     /**
@@ -64,7 +46,7 @@ class File
      * @param bool   $full
      * @return string|bool
      */
-    public static function permission($path, $full = false)
+    public static function permissions($path, $full = false)
     {
         self::checkInDevMode($path);
 
@@ -121,8 +103,8 @@ class File
      */
     public static function mime($path)
     {
-        $info = self::fileInfo($path);
-        return $info && strtok($info, 'charset=');
+        $info = self::info($path);
+        return $info ? strtok($info, ';') : false;
     }
 
     /**
@@ -134,22 +116,23 @@ class File
      */
     public static function encoding($path)
     {
-        $info = self::fileInfo($path);
+        $info = self::info($path);
 
         if ($info) {
-            $pos = strpos($info, 'charset=');
+            $pos = strpos($info, ';');
 
             if ($pos === false) {
                 $info = false;
             } else {
-                $info = substr($info, -$pos);
+                $info = explode('charset=', $info);
+                return $info[1];
             }
         }
 
         return $info;
     }
 
-    private static function fileInfo($path)
+    private static function info($path)
     {
         self::checkInDevMode($path);
 
@@ -188,7 +171,7 @@ class File
             $length = 102400;
         }
 
-        while (false === feof($handle)) {
+        while (feof($handle) === false) {
             echo fread($handle, $length);
 
             if ($delay > 0) {
@@ -208,15 +191,15 @@ class File
      *
      * @param string $path
      * @param int    $offset
-     * @param int    $maxLen
+     * @param int    $length
      * @throws \Inphinit\Exception
      * @return string|bool
      */
-    public static function portion($path, $offset = 0, $maxLen = 1024)
+    public static function portion($path, $offset = 0, $length = 1024)
     {
         self::checkInDevMode($path);
 
-        return file_get_contents($path, false, null, $offset, $maxLen);
+        return file_get_contents($path, false, null, $offset, $length);
     }
 
     /**
@@ -224,11 +207,11 @@ class File
      *
      * @param string $path
      * @param int    $offset
-     * @param int    $maxLine
+     * @param int    $max
      * @throws \Inphinit\Exception
      * @return string|bool
      */
-    public static function lines($path, $offset = 0, $maxLines = 32)
+    public static function lines($path, $offset = 0, $max = 32)
     {
         self::checkInDevMode($path);
 
@@ -237,9 +220,9 @@ class File
         if ($handle) {
             $i = 0;
             $output = '';
-            $max = $maxLines + $offset - 1;
+            $max = $max + $offset - 1;
 
-            while (false === feof($handle)) {
+            while (feof($handle) === false) {
                 $data = fgets($handle);
 
                 if ($i >= $offset) {
@@ -262,41 +245,6 @@ class File
     }
 
     /**
-     * Get file size, support for read files with more of 2GB in 32bit.
-     * Return `false` if file is not found
-     *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     * @return float|bool
-     */
-    public static function size($path)
-    {
-        if (isset(self::$sizes[$path]) === false) {
-            self::checkInDevMode($path);
-
-            self::$sizes[$path] = false;
-
-            $path = realpath($path);
-
-            if ($path) {
-                $handle = curl_init('file://' . rawurlencode($path));
-
-                curl_setopt($handle, CURLOPT_NOBODY, true);
-                curl_setopt($handle, CURLOPT_RETURNTRANSFER, false);
-                curl_setopt($handle, CURLOPT_HEADER, false);
-
-                if (curl_exec($handle)) {
-                    self::$sizes[$path] = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-                }
-
-                curl_close($handle);
-            }
-        }
-
-        return self::$sizes[$path];
-    }
-
-    /**
      * Clear state files and clear size files in `Inphinit\File::size`
      *
      * @param string $path
@@ -309,12 +257,14 @@ class File
 
         finfo_close(self::$handleFinfo);
 
+        self::$handleFinfo = null;
+
         clearstatcache();
     }
 
     private static function checkInDevMode($path)
     {
-        if (App::env('development') && self::exists($path) === false) {
+        if (App::config('development') && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 0, 3);
         }
     }

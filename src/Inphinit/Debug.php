@@ -21,7 +21,6 @@ class Debug
     private static $linkSearchError;
     private static $displayErrors;
     private static $views = array();
-    private static $fatal = array(E_ERROR, E_PARSE, E_COMPILE_ERROR, E_CORE_ERROR, E_RECOVERABLE_ERROR);
 
     /**
      * Unregister debug events
@@ -34,7 +33,7 @@ class Debug
 
         App::off('error', array($nc, 'renderError'));
         App::off('terminate', array($nc, 'renderPerformance'));
-        App::off('terminate', array($nc, 'renderClasses'));
+        App::off('terminate', array($nc, 'renderDefined'));
 
         if (false === empty(self::$displayErrors)) {
             if (function_exists('init_set')) {
@@ -77,9 +76,7 @@ class Debug
             App::stop(500);
         }
 
-        if (in_array($type, self::$fatal)) {
-            View::dispatch();
-        }
+        View::dispatch();
 
         self::render(self::$views['error'], $data);
     }
@@ -101,11 +98,13 @@ class Debug
      *
      * @return void
      */
-    public static function renderClasses()
+    public static function renderDefined()
     {
-        if (isset(self::$views['classes'])) {
-            self::render(self::$views['classes'], array(
-                'classes' => self::classes()
+        if (isset(self::$views['defined'])) {
+            self::render(self::$views['defined'], array(
+                'classes' => self::classes(),
+                'constants' => self::constants(),
+                'functions' => self::functions()
             ));
         }
     }
@@ -133,10 +132,10 @@ class Debug
                 self::$displayErrors = ini_get('display_errors');
 
                 if (function_exists('ini_set')) {
-                    ini_set('display_errors', '0');
+                    // ini_set('display_errors', '0');
                 }
             }
-        } elseif ($type === 'classes' || $type === 'performance') {
+        } elseif ($type === 'defined' || $type === 'performance') {
             App::on('terminate', $callRender);
         } elseif ($type !== 'before') {
             throw new Exception($type . ' is not valid event', 0, 2);
@@ -154,9 +153,9 @@ class Debug
     {
         return array(
             'usage' => memory_get_usage() / 1024,
-            'peak'  => memory_get_peak_usage() / 1024,
-            'real'  => memory_get_peak_usage(true) / 1024,
-            'time'  => microtime(true) - INPHINIT_START
+            'peak' => memory_get_peak_usage() / 1024,
+            'real' => memory_get_peak_usage(true) / 1024,
+            'time' => microtime(true) - INPHINIT_START
         );
     }
 
@@ -166,20 +165,48 @@ class Debug
      */
     public static function classes()
     {
-        $objs = array();
+        $data = get_declared_classes();
 
-        foreach (get_declared_classes() as $value) {
-            $value = ltrim($value, '\\');
-            $cname = new \ReflectionClass($value);
+        foreach ($data as $index => $current) {
+            $current = ltrim($current, '\\');
+            $cname = new \ReflectionClass($current);
 
-            if (false === $cname->isInternal()) {
-                $objs[$value] = $cname->getDefaultProperties();
+            if ($cname->isInternal()) {
+                unset($data[$index]);
             }
         }
 
-        $cname = null;
+        sort($data);
 
-        return $objs;
+        return $data;
+    }
+
+    /**
+     * Get declared functions
+     *
+     * @return array
+     */
+    public static function functions()
+    {
+        $data = get_defined_functions()['user'];
+
+        sort($data);
+
+        return $data;
+    }
+
+    /**
+     * Get defined constants
+     *
+     * @return array
+     */
+    public static function constants()
+    {
+        $data = get_defined_constants(true)['user'];
+
+        ksort($data);
+
+        return $data;
     }
 
     /**
@@ -323,9 +350,9 @@ class Debug
 
         return array(
             'message' => $message,
-            'file'    => $file,
-            'line'    => $line,
-            'source'  => $line > -1 ? self::source($file, $line) : null
+            'file' => $file,
+            'line' => $line,
+            'source' => $line > -1 ? self::source($file, $line) : null
         );
     }
 

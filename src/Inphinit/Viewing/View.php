@@ -70,7 +70,7 @@ class View
      */
     public static function exists($view)
     {
-        return inphinit_path_check(INPHINIT_PATH . 'application/View/' . str_replace('.', '/', $view) . '.php');
+        return inphinit_path_check(INPHINIT_SYSTEM . '/application/View/' . str_replace('.', '/', $view) . '.php');
     }
 
     /**

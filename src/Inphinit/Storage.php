@@ -18,7 +18,7 @@ class Storage
      */
     public static function path()
     {
-        return INPHINIT_PATH . 'storage/';
+        return INPHINIT_SYSTEM . '/storage/';
     }
 
     /**
@@ -56,7 +56,7 @@ class Storage
 
         if ($path !== false && is_dir($path) && ($handle = opendir($path))) {
             if ($time < 0) {
-                $time = App::env('appdata_expires');
+                $time = App::config('appdata_expires');
             }
 
             $expires = REQUEST_TIME - $time;

@@ -11,4 +11,4 @@ error_reporting(E_ALL|E_STRICT);
 
 set_error_handler('inphinit_error', error_reporting());
 
-require_once INPHINIT_PATH . 'dev.php';
+require_once INPHINIT_SYSTEM . '/dev.php';

@@ -62,7 +62,7 @@ class Maintenance
     {
         App::on('init', function () use ($callback) {
             if ($callback()) {
-                App::env('maintenance', false);
+                App::config('maintenance', false);
             }
         });
     }

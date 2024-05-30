@@ -30,7 +30,7 @@ function inphinit_path_check($path)
  */
 function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
 {
-    $sandbox_path = INPHINIT_PATH . $sandbox_path;
+    $sandbox_path = INPHINIT_SYSTEM . '/' . $sandbox_path;
 
     if (inphinit_path_check($sandbox_path)) {
         if ($sandbox_data) {
@@ -82,9 +82,9 @@ function inphinit_shutdown()
 }
 
 if (INPHINIT_COMPOSER) {
-    require_once INPHINIT_PATH . 'vendor/autoload.php';
+    require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
-    $prefixes = require INPHINIT_PATH . 'boot/namespaces.php';
+    $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
 
     spl_autoload_register(function ($class) use ($prefixes) {
         $class = ltrim($class, '\\');
@@ -107,7 +107,7 @@ if (INPHINIT_COMPOSER) {
         if ($base !== null) {
             // if starts with / or contains :, $base request a file
             if ($base[0] !== '/' && strpos($base, ':') === false) {
-                $base = INPHINIT_PATH . $base;
+                $base = INPHINIT_SYSTEM . '/' . $base;
             }
 
             if (inphinit_path_check($base)) {
@@ -117,20 +117,20 @@ if (INPHINIT_COMPOSER) {
     });
 }
 
-$pathInfo = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+$inphinit_path = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
 
 if (PHP_SAPI !== 'cli-server') {
-    $pathInfo = substr($pathInfo, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
+    $inphinit_path = substr($inphinit_path, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
 }
 
-$urlInfo = dirname($_SERVER['SCRIPT_NAME']);
+$inphinit_url = dirname($_SERVER['SCRIPT_NAME']);
 
-if ($urlInfo === '\\' || $urlInfo === '/') {
-    $urlInfo = '';
+if ($inphinit_url === '\\' || $inphinit_url === '/') {
+    $inphinit_url = '';
 }
 
-define('INPHINIT_PATHINFO', $pathInfo);
-define('INPHINIT_URL', $urlInfo . '/');
+define('INPHINIT_PATH', $inphinit_path);
+define('INPHINIT_URL', $inphinit_url . '/');
 define('REQUEST_TIME', time());
 define('EOL', chr(10));
 
@@ -138,17 +138,15 @@ require 'Inphinit/App.php';
 require 'Inphinit/Routing/Route.php';
 
 foreach (inphinit_sandbox('application/Config/config.php') as $key => $value) {
-    App::env($key, $value);
+    App::config($key, $value);
 }
-
-$dev = App::env('development');
 
 set_error_handler('inphinit_error', error_reporting());
 
 register_shutdown_function('inphinit_shutdown');
 
-if ($dev) {
+if (App::config('development')) {
     require 'development.php';
 }
 
-require INPHINIT_PATH . 'main.php';
+require INPHINIT_SYSTEM . '/main.php';

@@ -30,7 +30,7 @@ class Request
      */
     public static function path($info = false)
     {
-        return $info ? INPHINIT_PATHINFO : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        return $info ? INPHINIT_PATH : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     }
 
     /**

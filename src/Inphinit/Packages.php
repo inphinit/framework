@@ -29,7 +29,7 @@ class Packages
     public function __construct($path = null)
     {
         if (empty($path)) {
-            $path = INPHINIT_PATH . 'vendor';
+            $path = INPHINIT_SYSTEM . '/vendor';
         }
 
         if (is_dir($path) === false) {
@@ -67,7 +67,7 @@ class Packages
      */
     public function inAutoload()
     {
-        $path = INPHINIT_PATH . 'boot/namespaces.php';
+        $path = INPHINIT_SYSTEM . '/boot/namespaces.php';
 
         if (is_file($path)) {
             $data = include $path;
@@ -204,8 +204,8 @@ class Packages
     {
         $path = str_replace('\\', '/', $path);
 
-        if (strpos($path, INPHINIT_PATH . '/') === 0) {
-            $path = substr($path, strlen(INPHINIT_PATH . '/'));
+        if (strpos($path, INPHINIT_SYSTEM . '/') === 0) {
+            $path = substr($path, strlen(INPHINIT_SYSTEM . '/'));
         }
 
         return $path;

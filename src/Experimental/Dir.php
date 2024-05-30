@@ -59,7 +59,7 @@ class Dir implements \Iterator, \Countable
      */
     public static function storage()
     {
-        return new static(INPHINIT_PATH . 'storage');
+        return new static(INPHINIT_SYSTEM . '/storage');
     }
 
     /**
@@ -69,7 +69,7 @@ class Dir implements \Iterator, \Countable
      */
     public static function application()
     {
-        return new static(INPHINIT_PATH . 'application');
+        return new static(INPHINIT_SYSTEM . '/application');
     }
 
     /**

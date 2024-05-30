@@ -15,21 +15,14 @@ use Inphinit\Regex;
 
 class Group extends Router
 {
-    /** Access with HTTP and HTTPS (default) */
-    const BOTH = 1;
-
-    /** Access only in HTTPS */
-    const SECURE = 2;
-
-    /** Access only without HTTPS */
-    const NONSECURE = 3;
-
-    private $levelSecure;
     private $ready = false;
-    private $currentPrefixPath;
-    private $domain;
-    private $path;
-    private $ns;
+    private $pathPrefix;
+    private $namespacePrefix;
+
+    private $domainRequired;
+    private $pathRequired;
+    private $secureRequired;
+
     private $arguments = array();
     private static $cacheHost;
 
@@ -51,7 +44,7 @@ class Group extends Router
      */
     public function prefixNS($namespace)
     {
-        $this->ns = trim($namespace, '.\\') . '.';
+        $this->prefixNamespaceRequired = trim($namespace, '.\\') . '.';
         return $this;
     }
 
@@ -67,7 +60,7 @@ class Group extends Router
         if (isset($domain[0]) === false || trim($domain) !== $domain) {
             throw new Exception('Invalid domain "' . $domain . '"', 0, 2);
         } else {
-            $this->domain = $domain;
+            $this->domainRequired = $domain;
         }
 
         return $this;
@@ -88,25 +81,21 @@ class Group extends Router
             $path = '/' . $path . '/';
         }
 
-        $this->path = $path;
+        $this->pathRequired = $path;
 
         return $this;
     }
 
     /**
-     * Access only with HTTPS, or only HTTP, or both
+     * Access only with HTTPS or only HTTP
      *
-     * @param int $level
+     * @param bool $secure Define true for only accepet HTTPS, or define false for only HTTP
      * @throws \Inphinit\Exception
      * @return \Inphinit\Routing\Group
      */
-    public function secure($level)
+    public function secure($secure)
     {
-        if ($level < 1 || $level > 3) {
-            throw new Exception('Invalid security level', 0, 2);
-        }
-
-        $this->levelSecure = (int) $level;
+        $this->secureRequired = $secure;
 
         return $this;
     }
@@ -126,12 +115,12 @@ class Group extends Router
             $oNS = parent::$prefixNS;
             $oPP = parent::$prefixPath;
 
-            if ($this->ns) {
-                parent::$prefixNS = $this->ns;
+            if ($this->namespacePrefix) {
+                parent::$prefixNS = $this->namespacePrefix;
             }
 
-            if ($this->path) {
-                parent::$prefixPath = rtrim($this->currentPrefixPath, '/');
+            if ($this->pathRequired) {
+                parent::$prefixPath = rtrim($this->pathPrefix, '/');
             }
 
             call_user_func_array($callback, $this->arguments);
@@ -148,14 +137,17 @@ class Group extends Router
      */
     protected function checkSecurity()
     {
-        if (!$this->levelSecure || $this->levelSecure === self::BOTH) {
+        if ($this->secureRequired === null) {
             return true;
         }
 
         $secure = Request::is('secure');
 
-        return ($this->levelSecure === self::SECURE && $secure) ||
-               ($this->levelSecure === self::NONSECURE && !$secure);
+        if ($secure) {
+            return $this->secureRequired === true;
+        }
+
+        return $this->secureRequired === false;
     }
 
     /**
@@ -165,7 +157,7 @@ class Group extends Router
      */
     protected function checkDomain()
     {
-        if ($this->domain === null) {
+        if ($this->domainRequired === null) {
             return true;
         }
 
@@ -177,10 +169,10 @@ class Group extends Router
             $host = self::$cacheHost = $host ? strtok($host, ':') : '';
         }
 
-        if ($host === $this->domain) {
+        if ($host === $this->domainRequired) {
             return true;
         } elseif ($host) {
-            $re = Regex::parse($this->domain);
+            $re = Regex::parse($this->domainRequired);
 
             if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
                 return false;
@@ -203,20 +195,20 @@ class Group extends Router
      */
     protected function checkPath()
     {
-        if ($this->path === null) {
+        if ($this->pathRequired === null) {
             return true;
         }
 
-        $pathinfo = INPHINIT_PATHINFO;
+        $pathinfo = INPHINIT_PATH;
 
-        if (strpos($pathinfo, $this->path) === 0) {
-            $this->currentPrefixPath = $this->path;
+        if (strpos($pathinfo, $this->pathRequired) === 0) {
+            $this->pathPrefix = $this->pathRequired;
             return true;
         } else {
-            $re = Regex::parse($this->path);
+            $re = Regex::parse($this->pathRequired);
 
             if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches)) {
-                $this->currentPrefixPath = $matches[0];
+                $this->pathPrefix = $matches[0];
 
                 array_shift($matches);
 

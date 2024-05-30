@@ -56,7 +56,7 @@ class Config
 
         self::$exceptionlevel = 2;
 
-        if (false === File::exists(INPHINIT_PATH . $this->path)) {
+        if (false === File::exists(INPHINIT_SYSTEM . $this->path)) {
             throw new Exception('File not found ' . $this->path, 0, $level);
         }
 
@@ -79,7 +79,7 @@ class Config
             $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL, 'tmp/cfg');
 
             if ($path) {
-                $response = copy($path, INPHINIT_PATH . $this->path);
+                $response = copy($path, INPHINIT_SYSTEM . $this->path);
 
                 unlink($path);
 
