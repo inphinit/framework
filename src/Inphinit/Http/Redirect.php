@@ -34,8 +34,6 @@ class Redirect
 
         self::to($path, $code, $trigger);
 
-        Response::dispatch();
-
         App::trigger('finish');
 
         exit;
@@ -67,7 +65,7 @@ class Redirect
         }
 
         Response::status($code, $trigger);
-        Response::putHeader('Location', $path);
+        header('Location: ' . $path);
     }
 
     /**

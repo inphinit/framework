@@ -139,18 +139,6 @@ class Uri
     }
 
     /**
-     * Create URL based in public root application, for example,
-     * if you install inphinit in a sub path like: `http://site/foo/bar/myapplication/`
-     *
-     * @param string $path
-     * @return string
-     */
-    public static function root($path = '')
-    {
-        return rtrim(INPHINIT_URL, '/') . ($path ? self::canonpath($path) : $path);
-    }
-
-    /**
      * Reorder querystring by "keys"
      * if: `Uri::canonquery('z=1&u=2&a=5')` returns `a=5&u=2&z=1`
      *

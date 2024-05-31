@@ -22,7 +22,6 @@ class Cache
     private $expires;
     private $modified;
     private $finished = false;
-    private static $needHeaders;
 
     /**
      * Create a cache instance by route path
@@ -61,20 +60,18 @@ class Cache
         if (is_file($filename) && is_file($checkexpires)) {
             $this->isCache = file_get_contents($checkexpires) > REQUEST_TIME;
 
-            if ($this->isCache && static::allowHeaders()) {
+            if ($this->isCache && static::allow()) {
                 $etag = sha1_file($filename);
 
                 if (self::match(REQUEST_TIME + $modified, $etag)) {
-                    Response::putHeader('Etag', $etag);
+                    header('Etag: ' . $etag);
                     Response::cache($expires, $modified);
-                    Response::dispatch();
                     App::stop(304);
                 }
             }
 
             if ($this->isCache) {
                 App::on('ready', array($this, 'show'));
-
                 return null;
             }
         }
@@ -107,13 +104,9 @@ class Cache
      *
      * @return bool
      */
-    protected static function allowHeaders()
+    protected static function allow()
     {
-        if (self::$needHeaders !== null) {
-            return self::$needHeaders;
-        }
-
-        return self::$needHeaders = Request::is('GET') || Request::is('HEAD');
+        return Request::is('GET') || Request::is('HEAD');
     }
 
     /**
@@ -159,10 +152,9 @@ class Cache
             file_put_contents($this->cacheName . '.1', REQUEST_TIME + $this->expires);
             file_put_contents($this->cacheName . '.php', '<?php ' . $headers);
 
-            if (static::allowHeaders()) {
-                Response::putHeader('Etag', sha1_file($this->cacheName));
+            if (static::allow()) {
+                header('Etag: ' . sha1_file($this->cacheName));
                 Response::cache($this->expires, $this->modified);
-                Response::dispatch();
             }
 
             if (App::state() > 2) {

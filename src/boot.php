@@ -73,7 +73,7 @@ function inphinit_shutdown()
 {
     $last = error_get_last();
 
-    if ($last !== null && error_reporting() & $last['type']) {
+    if ($last !== null && (error_reporting() & $last['type'])) {
         App::dispatch();
         inphinit_error($last['type'], $last['message'], $last['file'], $last['line']);
     }
@@ -123,16 +123,8 @@ if (PHP_SAPI !== 'cli-server') {
     $inphinit_path = substr($inphinit_path, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
 }
 
-$inphinit_url = dirname($_SERVER['SCRIPT_NAME']);
-
-if ($inphinit_url === '\\' || $inphinit_url === '/') {
-    $inphinit_url = '';
-}
-
 define('INPHINIT_PATH', $inphinit_path);
-define('INPHINIT_URL', $inphinit_url . '/');
 define('REQUEST_TIME', time());
-define('EOL', chr(10));
 
 require 'Inphinit/App.php';
 require 'Inphinit/Routing/Route.php';

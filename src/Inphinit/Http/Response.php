@@ -10,123 +10,88 @@
 namespace Inphinit\Http;
 
 use Inphinit\App;
+use Inphinit\Event;
 
 class Response
 {
-    private static $httpCode;
-    private static $httpType;
-    private static $httpCharset;
-    private static $headers = array();
-    private static $dispatchedHeaders = false;
-
     /**
-     * Define registered headers to response
-     *
-     * @return void
-     */
-    public static function dispatch()
-    {
-        if (self::$dispatchedHeaders === false) {
-            self::$dispatchedHeaders = true;
-
-            foreach (self::$headers as $value) {
-                self::putHeader($value[0], $value[1], $value[2]);
-            }
-
-            $httpType = self::$httpType;
-
-            if ($httpType || self::$httpCharset) {
-                if (!$httpType) $httpType = 'text/html';
-
-                header('Content-Type: ' . $httpType . '; charset=' . self::$httpCharset);
-            }
-        }
-    }
-
-    /**
-     * Get registered headers
-     *
-     * @return array
-     */
-    public static function getHeaders()
-    {
-        return self::$headers;
-    }
-
-    /**
-     * Get or set status code and return last status code
+     * Get or set status code and return last status code. Note: if set status work, Event::on('changestatus') is trigged
      *
      * @param int  $code
+     * @param bool $trigger
      * @return int|bool
      */
-    public static function status($code = null)
+    public static function status($code)
     {
         $lastCode = http_response_code($code);
 
-        if ($lastCode && $lastCode !== $code && class_exists('\\Inphinit\\Event', false)) {
-            App::trigger('changestatus', array($code, null));
+        if ($lastCode && $lastCode !== $code) {
+            App::trigger('changestatus', array($code));
         }
 
         return $lastCode;
     }
 
     /**
-     * Register a header and return your index, if `Response::dispatch`
-     * was previously executed the header will be set directly and will not be
-     * registered
+     * Short
      *
-     * @param string $name
-     * @param string $value
-     * @param bool   $replace
+     * @param string      $code
+     * @param string|null $trigger
+     * @param bool        $replace
      * @return void
      */
-    public static function putHeader($name, $value, $replace = true)
+    public static function header($header, $value, $replace = true)
     {
-        if (self::$dispatchedHeaders || App::state() > 2) {
-            header($name . ': ' . ltrim($value), $replace);
+        if ($value === null) {
+            header_remove($header);
         } else {
-            self::$headers[] = array($name, $value, $replace);
+            header($header . ': ' . $value, $replace);
         }
     }
 
     /**
-     * Remove registered (or setted) header
+     * Get or set status code and return last status code
      *
-     * @param string $name
-     * @return void
+     * @param string|null $name
+     * @param string|null $charset
+     * @return bool
      */
-    public static function removeHeader($name)
+    public static function content($type, $charset = null)
     {
-        if (self::$dispatchedHeaders || App::state() > 2) {
-            header_remove($name);
+        if ($type === null) {
+            header_remove('Content-Type');
         } else {
-            self::$headers = array_filter(self::$headers, function ($header) use ($name) {
-                return strcasecmp($header[0], $name) !== 0;
-            });
+            if ($charset) {
+                $type .= ';charset=' . $charset;
+            }
+
+            header('Content-Type: ' . $type);
         }
     }
 
     /**
-     * Set header to cache page (or no-cache)
+     * Set header to cache page Response::cache($seconds, $modified = 0);
      *
-     * @param int $seconds
+     * @param int $expires
      * @param int $modified
-     * @return void
+     * @return bool
      */
-    public static function cache($seconds, $modified = 0)
+    public static function cache($expires, $modified = 0)
     {
-        if ($seconds < 1) {
-            self::putHeader('Expires', gmdate('D, d M Y H:i:s') . ' GMT');
-            self::putHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-            self::putHeader('Cache-Control', 'post-check=0, pre-check=0', false);
-            self::putHeader('Pragma', 'no-cache');
+        $time = time();
+
+        if ($expires < 1) {
+            header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Cache-Control: post-check=0, pre-check=0', false);
+            header('Pragma: no-cache');
         } else {
-            self::putHeader('Expires', gmdate('D, d M Y H:i:s', REQUEST_TIME + $seconds) . ' GMT');
-            self::putHeader('Cache-Control', 'public, max-age=' . $seconds);
-            self::putHeader('Pragma', 'max-age=' . $seconds);
+            header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $expires) . ' GMT');
+            header('Cache-Control: public, max-age=' . $expires);
+            header('Pragma: max-age=' . $expires);
         }
 
-        self::putHeader('Last-Modified', gmdate('D, d M Y H:i:s', $modified > 0 ? $modified : REQUEST_TIME) . ' GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified > 0 ? $modified : $time) . ' GMT');
     }
 
     /**
@@ -134,39 +99,17 @@ class Response
      *
      * @param string $name
      * @param int    $length
-     * @return void
+     * @return bool
      */
     public static function download($name, $length = 0)
     {
         $name = '; filename="' . rawurlencode($name) . '"';
 
-        self::putHeader('Content-Transfer-Encoding', 'Binary');
-        self::putHeader('Content-Disposition', 'attachment' . $name);
+        header('Content-Transfer-Encoding: Binary');
+        header('Content-Disposition: attachment' . $name);
 
         if ($length > 0) {
-            self::putHeader('Content-Length', $length);
+            header('Content-Length: ' . $length);
         }
-    }
-
-    /**
-     * Set content-type
-     *
-     * @param string $mime
-     * @return void
-     */
-    public static function type($type)
-    {
-        self::$httpType = trim($type);
-    }
-
-    /**
-     * Set charset in content-type
-     *
-     * @param string $mime
-     * @return void
-     */
-    public static function charset($charset)
-    {
-        self::$httpCharset = trim($charset);
     }
 }

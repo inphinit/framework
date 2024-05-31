@@ -173,11 +173,8 @@ class App
         }
 
         if (is_integer($resp)) {
-            self::on('finish', function () use ($resp) {
-                $data = array('status' => $resp);
-                inphinit_sandbox('error.php', $data);
-            });
-            
+            $data = array('status' => $resp);
+            inphinit_sandbox('error.php', $data);
             self::stop($resp);
         }
 
@@ -200,7 +197,7 @@ class App
 
         self::trigger('ready');
 
-        if ($output !== false && $output !== null) {
+        if ($output !== null) {
             echo $output;
         }
 
@@ -221,10 +218,6 @@ class App
      */
     public static function dispatch()
     {
-        if (class_exists('\\Inphinit\\Http\\Response', false)) {
-            Response::dispatch();
-        }
-
         if (class_exists('\\Inphinit\\Viewing\\View', false)) {
             View::dispatch();
         }
