@@ -11,6 +11,9 @@ namespace Inphinit;
 
 use Inphinit\App;
 use Inphinit\Config;
+use Inphinit\Event;
+use Inphinit\Exception;
+use Inphinit\File;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
 use Inphinit\Viewing\View;
@@ -18,9 +21,9 @@ use Inphinit\Viewing\View;
 class Debug
 {
     private static $showBeforeView = false;
-    private static $linkSearchError;
     private static $displayErrors;
     private static $views = array();
+    private static $configs;
 
     /**
      * Unregister debug events
@@ -35,7 +38,7 @@ class Debug
         App::off('terminate', array($nc, 'renderPerformance'));
         App::off('terminate', array($nc, 'renderDefined'));
 
-        if (false === empty(self::$displayErrors)) {
+        if (empty(self::$displayErrors) === false) {
             if (function_exists('init_set')) {
                 ini_set('display_errors', self::$displayErrors);
             }
@@ -57,23 +60,21 @@ class Debug
     {
         if (empty(self::$views['error'])) {
             return null;
-        } elseif (preg_match('#allowed\s+memory\s+size\s+of\s+\d+\s+bytes\s+exhausted\s+\(tried\s+to\s+allocate\s+\d+\s+bytes\)#i', $message)) {
-            die("<br><strong>Fatal error:</strong> {$message} in <strong>{$file}</strong> on line <strong>{$line}</strong>");
+        } elseif ($type === E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
+            die("Fatal error: {$message} in {$file} on line {$line}");
         }
 
         $data = self::details($type, $message, $file, $line);
 
-        if (!headers_sent() && strpos(Request::header('accept'), 'application/json') === 0) {
-            ob_start();
-
+        if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
             self::unregister();
 
             Response::cache(0);
-            Response::type('application/json');
+            Response::status(500);
+            Response::content('application/json');
 
             echo json_encode($data);
-
-            App::stop(500);
+            exit;
         }
 
         View::dispatch();
@@ -119,6 +120,8 @@ class Debug
      */
     public static function view($type, $view)
     {
+        self::boot();
+
         if ($view !== null && View::exists($view) === false) {
             throw new Exception($view . ' view is not found', 0, 2);
         }
@@ -132,7 +135,7 @@ class Debug
                 self::$displayErrors = ini_get('display_errors');
 
                 if (function_exists('ini_set')) {
-                    // ini_set('display_errors', '0');
+                    ini_set('display_errors', '0');
                 }
             }
         } elseif ($type === 'defined' || $type === 'performance') {
@@ -246,11 +249,12 @@ class Debug
      * Get backtrace php scripts
      *
      * @param int $level
+     * @param int $limit
      * @return array|null
      */
-    public static function caller($level = 0)
+    public static function caller($level = 0, $limit = 100)
     {
-        $trace = debug_backtrace(0);
+        $trace = debug_backtrace(0, $limit);
 
         foreach ($trace as $key => &$value) {
             if (isset($value['file'])) {
@@ -270,18 +274,16 @@ class Debug
     }
 
     /**
-     * Convert error message in a link, see `system/config/debug.php`
+     * Convert error message in a link, see `system/configs/debug.php`
      *
      * @param string $message
      * @return string
      */
     public static function searcherror($message)
     {
-        if (self::$linkSearchError === null) {
-            self::$linkSearchError = Config::load('debug')->get('searcherror');
-        }
+        self::boot();
 
-        $link = self::$linkSearchError;
+        $link = self::$configs->get('searcherror');
 
         if (strpos($link, '%error%') === -1) {
             return $message;
@@ -314,7 +316,7 @@ class Debug
     {
         $match = array();
 
-        if (preg_match('#called in ([\s\S]+?) on line (\d+)#', $message, $match)) {
+        if (preg_match('#called in (.*?) on line (\d+)#', $message, $match)) {
             $file = $match[1];
             $line = (int) $match[2];
         }
@@ -361,6 +363,21 @@ class Debug
         if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code#', $file, $match)) {
             $file = $match[1];
             $line = (int) $match[2];
+        }
+    }
+
+    /** some errors prevent spl_autoload from continuing, so it is necessary to include */
+    private static function boot()
+    {
+        if (self::$configs === null) {
+            include_once __DIR__ . '/Config.php';
+            include_once __DIR__ . '/Exception.php';
+            include_once __DIR__ . '/File.php';
+            include_once __DIR__ . '/Http/Request.php';
+            include_once __DIR__ . '/Http/Response.php';
+
+            self::$configs = Config::load('debug');
+            self::$configs->get('*'); // Test
         }
     }
 }

@@ -56,7 +56,7 @@ class Config
 
         self::$exceptionlevel = 2;
 
-        if (false === File::exists(INPHINIT_SYSTEM . $this->path)) {
+        if (File::exists(INPHINIT_SYSTEM . '/' . $this->path) === false) {
             throw new Exception('File not found ' . $this->path, 0, $level);
         }
 
@@ -68,26 +68,16 @@ class Config
     }
 
     /**
-     * Reload configuration from file
+     * Save configuration to file
      *
      * @return bool
      */
     public function save()
     {
-        if (Storage::createFolder('tmp/cfg')) {
-            $wd = preg_replace('#,(\s+|)\)#', '$1)', var_export($this->data, true));
-            $path = Storage::temp('<?php' . EOL . 'return ' . $wd . ';' . EOL, 'tmp/cfg');
+        $path = INPHINIT_SYSTEM . '/' . $this->path;
+        $contents = "<?php\nreturn " . var_export($this->data, true) . ";\n";
 
-            if ($path) {
-                $response = copy($path, INPHINIT_SYSTEM . $this->path);
-
-                unlink($path);
-
-                return $response;
-            }
-        }
-
-        return false;
+        return file_put_contents($path, $contents, LOCK_EX) !== false;
     }
 
     /**
