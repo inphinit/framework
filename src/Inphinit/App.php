@@ -180,7 +180,7 @@ class App
 
         $callback = &$resp['callback'];
 
-        if (is_string($callback)) {
+        if (is_string($callback) && strpos($callback, ':') !== false) {
             $parsed = explode(':', $callback, 2);
 
             $callback = '\\Controller\\' . str_replace('.', '\\', $parsed[0]);
