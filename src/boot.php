@@ -127,6 +127,7 @@ define('INPHINIT_PATH', $inphinit_path);
 define('REQUEST_TIME', time());
 
 require 'Inphinit/App.php';
+require 'Inphinit/Routing/Router.php';
 require 'Inphinit/Routing/Route.php';
 
 foreach (inphinit_sandbox('application/Config/config.php') as $key => $value) {

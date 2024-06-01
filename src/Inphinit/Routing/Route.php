@@ -24,7 +24,7 @@ class Route extends Router
      */
     public static function set($method, $path, $action)
     {
-        if (strpos($path, '{:') !==false) {
+        if (strpos($path, '{:') !== false) {
             self::$hasParams = true;
         }
 

@@ -23,13 +23,13 @@ class Packages
      * Create a `Inphinit\Packages` instance.
      *
      * @param string $path Define composer path, like `./vendor/composer` (if null or not defined, assume `./system/vender`)
-     * @throws \InvalidArgumentException
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function __construct($path = null)
     {
         if (empty($path)) {
-            $path = INPHINIT_SYSTEM . '/vendor';
+            $path = INPHINIT_SYSTEM . '/vendor/composer';
         }
 
         if (is_dir($path) === false) {
@@ -98,7 +98,7 @@ class Packages
 
             foreach ($data as $key => $value) {
                 if (empty($value) === false) {
-                    $this->libs[addcslashes($key, '\\')] = $value;
+                    $this->libs[$key] = $value;
                     ++$i;
                 }
             }
@@ -156,7 +156,7 @@ class Packages
      * Save imported packages path to file in PHP format
      *
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
-     * @throws \InvalidArgumentException
+     * @throws \Inphinit\Exception
      * @return bool
      */
     public function save($path)
@@ -171,20 +171,14 @@ class Packages
             throw new Exception('This path is not writabled: ' . $path, 0, 2);
         }
 
-        $first = true;
-        $eol = chr(10);
+        $libs = $this->libs;
 
-        fwrite($handle, '<?php' . $eol . 'return array(');
-
-        foreach ($this->libs as $key => $value) {
+        foreach ($libs as $key => &$value) {
             $value = self::relativePath($value);
-
-            fwrite($handle, ($first ? '' : ',') . "$eol    '$key' => '$value'");
-
-            $first = false;
         }
 
-        fwrite($handle, $eol . ');' . $eol);
+        fwrite($handle, "<?php\nreturn");
+        fwrite($handle, " " . var_export($libs, true) . ";\n");
         fclose($handle);
 
         return true;
@@ -203,9 +197,10 @@ class Packages
     private static function relativePath($path)
     {
         $path = str_replace('\\', '/', $path);
+        $system = INPHINIT_SYSTEM . '/';
 
-        if (strpos($path, INPHINIT_SYSTEM . '/') === 0) {
-            $path = substr($path, strlen(INPHINIT_SYSTEM . '/'));
+        if (strpos($path, $system) === 0) {
+            $path = substr($path, strlen($system));
         }
 
         return $path;
@@ -262,7 +257,7 @@ class Packages
 
         foreach ($data as $key => $value) {
             if (isset($value[0]) && is_string($value[0])) {
-                $this->libs[addcslashes($key, '\\')] = $value[0];
+                $this->libs[$key] = $value[0];
                 ++$i;
             }
         }

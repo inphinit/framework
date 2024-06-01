@@ -157,7 +157,9 @@ class Group extends Router
      */
     protected function checkDomain()
     {
-        if ($this->domainRequired === null) {
+        $domainRequired = $this->domainRequired;
+
+        if ($domainRequired === null) {
             return true;
         }
 
@@ -169,10 +171,10 @@ class Group extends Router
             $host = self::$cacheHost = $host ? strtok($host, ':') : '';
         }
 
-        if ($host === $this->domainRequired) {
+        if ($host === $domainRequired) {
             return true;
-        } elseif ($host) {
-            $re = Regex::parse($this->domainRequired);
+        } elseif ($host && strpos($domainRequired, '{:') !== false) {
+            $re = Regex::parse($domainRequired);
 
             if ($re === false || preg_match('#^' . $re . '$#', $host, $matches) === 0) {
                 return false;
@@ -195,16 +197,18 @@ class Group extends Router
      */
     protected function checkPath()
     {
-        if ($this->pathRequired === null) {
+        $pathRequired = $this->pathRequired;
+
+        if ($pathRequired === null) {
             return true;
         }
 
         $pathinfo = INPHINIT_PATH;
 
-        if (strpos($pathinfo, $this->pathRequired) === 0) {
-            $this->pathPrefix = $this->pathRequired;
+        if (strpos($pathinfo, $pathRequired) === 0) {
+            $this->pathPrefix = $pathRequired;
             return true;
-        } else {
+        } elseif (strpos($pathRequired, '{:') !== false) {
             $re = Regex::parse($this->pathRequired);
 
             if ($re !== false && preg_match('#^' . $re . '#', $pathinfo, $matches)) {

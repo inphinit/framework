@@ -138,12 +138,12 @@ class Storage
             return false;
         }
 
-        //Allow int(0) and empty string("")
+        // Allow int(0) and empty string("")
         if ($data === null && $data === false) {
             $data = '';
         }
 
-        //if the file already exists then will not try to create again
+        // if the file already exists then will not try to create again
         if ($data === '' && is_file($path)) {
             return true;
         }
