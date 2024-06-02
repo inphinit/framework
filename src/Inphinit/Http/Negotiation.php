@@ -212,12 +212,12 @@ class Negotiation
         }
 
         if ($this->headers) {
-            $value = $this->headers[$header];
+            $value = isset($this->headers[$header]) ? $this->headers[$header] : null;
         } else {
             $value = Request::header($header);
         }
 
-        return self::qFactor($value, $sort);
+        return $value ? self::qFactor($value, $sort) : null;
     }
 
     /**

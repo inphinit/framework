@@ -23,7 +23,7 @@ abstract class Treaty
      *
      * @var string
      */
-    protected static $valids = '#^(delete|get|head|options|patch|post|put)([A-Z0-9]\w+)$#';
+    protected static $valids = '#^(any|delete|get|head|options|patch|post|put)([A-Z0-9]\w+)$#';
 
     private $context;
 

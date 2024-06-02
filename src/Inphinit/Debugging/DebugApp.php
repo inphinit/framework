@@ -23,10 +23,10 @@ class DebugApp
 
     public function action($methods, $path, $callback)
     {
-        if (is_string($callback) && strpos($callback, ':') !== false) {
-            list($className, $method) = explode(':', $callback);
+        if (is_string($callback) && strpos($callback, '::') !== false) {
+            list($className, $method) = explode('::', $callback);
 
-            $className = '\\Controller\\' . str_replace('.', '\\', $className);
+            $className = '\\Controller\\' . $className;
             $classAndMethod = "{$className}::{$method}()";
 
             if (method_exists($className, $method) === false) {
