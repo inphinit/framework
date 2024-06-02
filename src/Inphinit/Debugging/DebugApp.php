@@ -84,8 +84,8 @@ class DebugApp extends App
 
     public function scope($pattern, \Closure $callback)
     {
-        if (!preg_match("#^.*?://(.*?\:.*?|\*)/#", $pattern)) {
-            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>/<path>?', 0, 2);
+        if (!preg_match("#^(\*|\S+)://(\*|\S+\:(\*|\d+))/#", $pattern)) {
+            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>:<port>/<path> or <scheme>://*/', 0, 2);
         }
 
         parent::scope($pattern, $callback);
