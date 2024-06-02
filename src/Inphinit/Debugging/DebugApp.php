@@ -12,13 +12,11 @@ namespace Inphinit\Debugging;
 use Inphinit\App;
 use Inphinit\Exception;
 
-class DebugApp
+class DebugApp extends App
 {
-    private $app;
-
-    public function __construct(App $app)
+    public function __construct()
     {
-        $this->app = $app;
+        /* keep empty */
     }
 
     public function action($methods, $path, $callback)
@@ -50,7 +48,7 @@ class DebugApp
             throw new Exception('Callback is not callable', 0, 2);
         }
 
-        $this->app->action($methods, $path, $callback);
+        parent::action($methods, $path, $callback);
     }
 
     public function setPattern($pattern, $regex)
@@ -63,7 +61,7 @@ class DebugApp
             throw new Exception('Invalid regex pattern', 0, 2);
         }
 
-        $this->app->setPattern($pattern, $regex);
+        parent::setPattern($pattern, $regex);
     }
 
     public function setNamespace($prefix)
@@ -72,7 +70,7 @@ class DebugApp
             throw new Exception($prefix . ' controller prefix is not valid', 0, 2);
         }
 
-        $this->app->setNamespace($prefix);
+        parent::setNamespace($prefix);
     }
 
     public function setPath($prefix)
@@ -81,11 +79,15 @@ class DebugApp
             throw new Exception($prefix . ' path prefix is not valid', 0, 2);
         }
 
-        $this->app->setPath($prefix);
+        parent::setPath($prefix);
     }
 
-    public function __call($name, array $arguments)
+    public function scope($pattern, \Closure $callback)
     {
-        return call_user_func_array(array($this->app, $name), $arguments);
+        if (!preg_match("#^.*?://(.*?\:.*?|\*)/#", $pattern)) {
+            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>/<path>?', 0, 2);
+        }
+
+        parent::scope($pattern, $callback);
     }
 }

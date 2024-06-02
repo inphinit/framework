@@ -14,8 +14,8 @@ use Inphinit\Viewing\View;
 
 class App
 {
-    private $pathInfo;
-    private $urlInfo;
+    private static $pathInfo;
+    private static $urlInfo;
 
     private static $configs;
 
@@ -75,11 +75,11 @@ class App
             $path = substr($path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
         }
 
-        $this->pathInfo = $path;
-        $this->urlInfo = $proto . '://' . $host . ':' . $port . $path;
+        self::$pathInfo = $path;
+        self::$urlInfo = $proto . '://' . $host . ':' . $port . $path;
 
         define('INPHINIT_PATH', $path);
-        define('INPHINIT_URL', $this->urlInfo);
+        define('INPHINIT_URL', self::$urlInfo);
 
         $this->patternNames = implode('|', array_keys($this->paramPatterns));
     }
@@ -178,7 +178,7 @@ class App
             ) . ')';
         }, $pattern);
 
-        if (preg_match('#^' . $pattern . '#', $this->urlInfo, $params)) {
+        if (preg_match('#^' . $pattern . '#', self::$urlInfo, $params)) {
             $path = parse_url($params[0], PHP_URL_PATH);
 
             if ($path) {
@@ -215,7 +215,7 @@ class App
                 return false;
             }
 
-            $path = $this->pathInfo;
+            $path = self::$pathInfo;
             $method = $_SERVER['REQUEST_METHOD'];
 
             if (isset($this->routes[$path])) {
@@ -292,7 +292,7 @@ class App
     private function params($method, &$code, &$callback, &$params)
     {
         $code = 404;
-        $pathinfo = $this->pathInfo;
+        $pathinfo = self::$pathInfo;
         $patterns = &$this->paramPatterns;
         $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
 
@@ -347,7 +347,7 @@ class App
 
     private function fileInBuiltIn()
     {
-        $path = $this->pathInfo;
+        $path = self::$pathInfo;
 
         return (
             $path !== '/' &&
