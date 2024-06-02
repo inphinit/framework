@@ -44,3 +44,6 @@ Temporary Items
 *.log
 
 .phpintel/
+node_modules/
+.idea/
+.vscode/

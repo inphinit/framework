@@ -7,9 +7,11 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Filesystem;
 
-use Inphinit\Uri;
+use Inphinit\App;
+use Inphinit\Exception;
+use Inphinit\Utility\Url;
 
 class File
 {
@@ -32,7 +34,7 @@ class File
         }
 
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
-            $path = Uri::canonpath($path);
+            $path = Url::canonpath($path, Url::PATH_NORMALIZE);
         }
 
         return str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path) === realpath($path);
@@ -56,41 +58,49 @@ class File
             return substr(sprintf('%o', $perms), -4);
         }
 
-        if (($perms & 0xC000) === 0xC000) {
-            $info = 's';
-        } elseif (($perms & 0xA000) === 0xA000) {
-            $info = 'l';
-        } elseif (($perms & 0x8000) === 0x8000) {
-            $info = '-';
-        } elseif (($perms & 0x6000) === 0x6000) {
-            $info = 'b';
-        } elseif (($perms & 0x4000) === 0x4000) {
-            $info = 'd';
-        } elseif (($perms & 0x2000) === 0x2000) {
-            $info = 'c';
-        } elseif (($perms & 0x1000) === 0x1000) {
-            $info = 'p';
-        } else {
-            $info = 'u';
+        switch ($perms & 0xF000) {
+            case 0xC000: // socket
+                $info = 's';
+                break;
+            case 0xA000: // symbolic link
+                $info = 'l';
+                break;
+            case 0x8000: // regular
+                $info = 'r';
+                break;
+            case 0x6000: // block special
+                $info = 'b';
+                break;
+            case 0x4000: // directory
+                $info = 'd';
+                break;
+            case 0x2000: // character special
+                $info = 'c';
+                break;
+            case 0x1000: // FIFO pipe
+                $info = 'p';
+                break;
+            default: // unknown
+                $info = 'u';
         }
 
+        // Owner
+        $from = $perms & 0x0800;
         $info .= $perms & 0x0100 ? 'r' : '-';
         $info .= $perms & 0x0080 ? 'w' : '-';
-        $info .= $perms & 0x0040 ?
-                    ($perms & 0x0800 ? 's' : 'x') :
-                        ($perms & 0x0800 ? 'S' : '-');
+        $info .= $perms & 0x0040 ? ($from ? 's' : 'x' ) : ($from ? 'S' : '-');
 
+        // Group
+        $from = $perms & 0x0400;
         $info .= $perms & 0x0020 ? 'r' : '-';
         $info .= $perms & 0x0010 ? 'w' : '-';
-        $info .= $perms & 0x0008 ?
-                    ($perms & 0x0400 ? 's' : 'x') :
-                        ($perms & 0x0400 ? 'S' : '-');
+        $info .= $perms & 0x0008 ? ($from ? 's' : 'x') : ($from ? 'S' : '-');
 
+        // World
+        $from = $perms & 0x0200;
         $info .= $perms & 0x0004 ? 'r' : '-';
         $info .= $perms & 0x0002 ? 'w' : '-';
-        $info .= $perms & 0x0001 ?
-                    ($perms & 0x0200 ? 't' : 'x') :
-                        ($perms & 0x0200 ? 'T' : '-');
+        $info .= $perms & 0x0001 ? ($from ? 't' : 'x') : ($from ? 'T' : '-');
 
         return $info;
     }

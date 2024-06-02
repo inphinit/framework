@@ -9,9 +9,11 @@
 
 namespace Inphinit;
 
+use Inphinit\Utility\Others;
+
 class Config
 {
-    private static $exceptionlevel = 3;
+    private static $exceptionLevel = 2;
     private $data = array();
     private $path;
 
@@ -24,7 +26,7 @@ class Config
      */
     public function __construct($path)
     {
-        $this->path = 'application/Config/' . str_replace('.', '/', $path) . '.php';
+        $this->path = 'configs/' . str_replace('.', '/', $path) . '.php';
 
         $this->reload();
     }
@@ -38,7 +40,7 @@ class Config
      */
     public static function load($path)
     {
-        self::$exceptionlevel = 4;
+        self::$exceptionLevel = 4;
 
         return new static($path);
     }
@@ -52,15 +54,21 @@ class Config
      */
     public function reload()
     {
-        $level = self::$exceptionlevel;
+        $level = self::$exceptionLevel;
 
-        self::$exceptionlevel = 2;
+        self::$exceptionLevel = 2;
 
-        if (File::exists(INPHINIT_SYSTEM . '/' . $this->path) === false) {
-            throw new Exception('File not found ' . $this->path, 0, $level);
+        $configs = inphinit_sandbox($this->path);
+
+        if (!$configs) {
+            throw new Exception($this->path . ' configurations cannot be loaded', 0, $level);
         }
 
-        foreach (\inphinit_sandbox($this->path) as $key => $value) {
+        if (!is_array($configs)) {
+            throw new Exception($this->path . ' has invalid data', 0, $level);
+        }
+
+        foreach ($configs as $key => $value) {
             $this->data[$key] = $value;
         }
 
@@ -93,7 +101,7 @@ class Config
             return $this->data;
         }
 
-        return Helper::extract($path, $this->data, $alternative);
+        return Others::extract($path, $this->data, $alternative);
     }
 
     /**

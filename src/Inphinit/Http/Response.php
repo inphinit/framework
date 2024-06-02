@@ -25,8 +25,8 @@ class Response
     {
         $lastCode = http_response_code($code);
 
-        if ($lastCode && $lastCode !== $code) {
-            App::trigger('changestatus', array($code));
+        if ($lastCode && $lastCode !== $code && class_exists('\\Inphinit\\Event', false)) {
+            Event::trigger('changestatus', array($code));
         }
 
         return $lastCode;

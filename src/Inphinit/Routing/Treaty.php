@@ -3,7 +3,7 @@ namespace Inphinit\Routing;
 
 use Inphinit\App;
 
-abstract class Treaty extends Router
+abstract class Treaty
 {
     /** Create a route with slash at the end, like: `/foo/` */
     const SLASH = 1;
@@ -18,7 +18,14 @@ abstract class Treaty extends Router
      */
     protected $format;
 
-    private static $valids = '#^([a-z]+)([A-Z0-9]\w+)$#';
+    /**
+     * Define regex for match public methods from controller
+     *
+     * @var string
+     */
+    protected static $valids = '#^(delete|get|head|options|patch|post|put)([A-Z0-9]\w+)$#';
+
+    private $context;
 
     /**
      * Define routes based on class methods
@@ -27,8 +34,10 @@ abstract class Treaty extends Router
      * @throws \Inphinit\Exception
      * @return mixed
      */
-    public function route()
+    public function route(App $context)
     {
+        $this->context = $context;
+
         $invalid = true;
         $analysis = new \ReflectionClass($this);
 
@@ -42,20 +51,21 @@ abstract class Treaty extends Router
         }
 
         if ($invalid) {
-            throw new \Inphinit\Exception('Invalid controller', 2);
+            throw new \Inphinit\Exception('Invalid controller', 0, 2);
         }
     }
 
     /**
      * Define routes based on class methods
      *
+     * @param \Inphinit\App $context
      * @throws \Inphinit\Exception
      * @return mixed
      */
-    public static function action()
+    public static function action(App $context)
     {
         $self = new static();
-        $self->route();
+        $self->route($context);
         return $self;
     }
 
@@ -87,11 +97,11 @@ abstract class Treaty extends Router
         }
 
         if ($format & self::NOSLASH) {
-            Route::set($method, $path, $callback);
+            $this->context->action($method, $path, $callback);
         }
 
         if ($path !== '/' && $format & self::SLASH) {
-            Route::set($method, $path . '/', $callback);
+            $this->context->action($method, $path . '/', $callback);
         }
     }
 }

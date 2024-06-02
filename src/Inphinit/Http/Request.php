@@ -9,28 +9,23 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Dom\Document;
-use Inphinit\Dom\DomException;
-
-use Inphinit\Helper;
 use Inphinit\Storage;
+use Inphinit\Utility\Others;
 
 class Request
 {
     private static $reqHeaders;
     private static $reqHeadersLower;
-    private static $rawInput;
-    private static $headerTokens = array('-' => '_', ' ' => '_');
+    private static $headerTokens = array('-', ' ');
 
     /**
-     * Get current HTTP path or route path
+     * Get current HTTP path
      *
-     * @param bool $info
      * @return string
      */
-    public static function path($info = false)
+    public static function path()
     {
-        return $info ? INPHINIT_PATH : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        return parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     }
 
     /**
@@ -43,7 +38,7 @@ class Request
     {
         switch ($check) {
             case 'secure':
-                return isset($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
+                return strpos(INPHINIT_URL, 'https') === 0;
 
             case 'xhr':
                 return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
@@ -58,6 +53,9 @@ class Request
                     strcasecmp(self::header('purpose', ''), 'preview') === 0 ||
                     strcasecmp(self::header('x-moz', ''), 'prefetch') === 0
                 );
+
+            case 'save':
+                return strcasecmp(self::header('save-data', ''), 'on') === 0;
         }
 
         return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
@@ -124,138 +122,6 @@ class Request
         return self::data($_COOKIE, $key, $alternative);
     }
 
-    /**
-     * Get a value from `$_FILES` (support path using dots)
-     *
-     * @param string $key
-     * @return mixed
-     */
-    public static function file($key)
-    {
-        $pos = strpos($key, '.');
-        $firstKey = $key;
-        $restKey  = null;
-
-        if ($pos > 0) {
-            $firstKey = substr($key, 0, $pos);
-            $restKey  = substr($key, $pos + 1);
-        } elseif (isset($_FILES[$firstKey]['name']) === false) {
-            return null;
-        } elseif ($restKey === null) {
-            return $_FILES[$firstKey];
-        }
-
-        $tmpName = Helper::extract($restKey, $_FILES[$firstKey]['tmp_name']);
-
-        if ($tmpName === false) {
-            return null;
-        }
-
-        return array(
-            'tmp_name' => $tmpName,
-            'name'     => Helper::extract($restKey, $_FILES[$firstKey]['name']),
-            'type'     => Helper::extract($restKey, $_FILES[$firstKey]['type']),
-            'error'    => Helper::extract($restKey, $_FILES[$firstKey]['error']),
-            'size'     => Helper::extract($restKey, $_FILES[$firstKey]['size'])
-        );
-    }
-
-    /**
-     * Get a value input handler
-     *
-     * @param bool $binary
-     * @return resource|bool
-     */
-    public static function raw($binary = true)
-    {
-        $mode = $binary ? 'rb' : 'r';
-
-        if (PHP_VERSION_ID >= 70224) {
-            return fopen('php://input', $mode);
-        } elseif (self::$rawInput) {
-            return fopen(self::$rawInput, $mode);
-        }
-
-        if (Storage::createFolder('tmp/raw') === false) {
-            return false;
-        }
-
-        $temp = Storage::temp(null, 'tmp/raw');
-
-        if ($temp === false || copy('php://input', $temp) === false) {
-            return false;
-        }
-
-        self::$rawInput = $temp;
-
-        return fopen($temp, $mode);
-    }
-
-    /**
-     * Get a value input handler
-     *
-     * @param bool $array
-     * @throws \Inphinit\Exception
-     */
-    public static function json($array = false)
-    {
-        $handle = self::raw();
-
-        if ($handle) {
-            $data = json_decode(stream_get_contents($handle), $array);
-
-            fclose($handle);
-
-            switch (json_last_error()) {
-                case JSON_ERROR_NONE:
-                    return $json;
-
-                case JSON_ERROR_DEPTH:
-                    throw new Exception('The maximum stack depth has been exceeded', 0, 2);
-
-                case JSON_ERROR_STATE_MISMATCH:
-                    throw new Exception('Invalid or malformed JSON', 0, 2);
-
-                case JSON_ERROR_CTRL_CHAR:
-                    throw new Exception('Control character error, possibly incorrectly encoded', 0, 2);
-
-                case JSON_ERROR_SYNTAX:
-                default:
-                    throw new Exception('Syntax error', 0, 2);
-            }
-        }
-
-        return $data;
-    }
-
-    /**
-     * Create a Document instance from HTTP request
-     *
-     * @return \Inphinit\Dom\Document
-     */
-    public static function xml()
-    {
-        $handle = Request::raw();
-
-        if ($handle) {
-            $data = stream_get_contents($handle);
-
-            fclose($handle);
-
-            $dom = new Document;
-
-            try {
-                $dom->loadXML($data);
-            } catch (DomException $ee) {
-                throw new DomException($ee->getMessage(), 0, 2);
-            }
-
-            $data = null;
-
-            return $doc;
-        }
-    }
-
     private static function data(&$data, $key, $alternative)
     {
         if (empty($data)) {
@@ -264,6 +130,6 @@ class Request
             return isset($data[$key]) ? $data[$key] : $alternative;
         }
 
-        return Helper::extract($key, $data, $alternative);
+        return Others::extract($key, $data, $alternative);
     }
 }

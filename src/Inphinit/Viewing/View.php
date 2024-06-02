@@ -70,7 +70,7 @@ class View
      */
     public static function exists($view)
     {
-        return inphinit_path_check(INPHINIT_SYSTEM . '/application/View/' . str_replace('.', '/', $view) . '.php');
+        return inphinit_path_check(INPHINIT_SYSTEM . '/views/' . str_replace('.', '/', $view) . '.php');
     }
 
     /**
@@ -88,7 +88,7 @@ class View
 
         $data += self::$shared;
 
-        inphinit_sandbox('application/View/' . str_replace('.', '/', $view) . '.php', $data);
+        inphinit_sandbox('views/' . str_replace('.', '/', $view) . '.php', $data);
 
         return -1;
     }

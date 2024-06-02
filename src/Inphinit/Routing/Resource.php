@@ -3,7 +3,7 @@ namespace Inphinit\Routing;
 
 use Inphinit\App;
 
-abstract class Resource extends Router
+abstract class Resource
 {
     /** Create a route with slash at the end, like: `/foo/` */
     const SLASH = 1;
@@ -34,10 +34,10 @@ abstract class Resource extends Router
         'index'   => array('GET', '/', null),
         'create'  => array('GET', '/create', null),
         'store'   => array('POST', '/', null),
-        'edit'    => array('GET', '/{:[^/]+:}/edit', null),
-        'show'    => array('GET', '/{:[^/]+:}', null),
-        'update'  => array(array('PUT', 'PATCH'), '{:[^/]+:}', null),
-        'destroy' => array('DELETE', '/{:[^/]+:}', null)
+        'edit'    => array('GET', '/<id>/edit', null),
+        'show'    => array('GET', '/<id>', null),
+        'update'  => array(array('PUT', 'PATCH'), '<id>', null),
+        'destroy' => array('DELETE', '/<id>', null)
     );
 
     /**
@@ -47,22 +47,23 @@ abstract class Resource extends Router
      * @throws \Inphinit\Exception
      * @return mixed
      */
-    public function route()
+    public function route(App $context)
     {
-        $allowed = array_keys(static::$valids);
+        $allowed = array_keys(self::$valids);
         $methods = get_class_methods($this);
 
         foreach (array_intersect($methods, $allowed) as $method) {
-            if (isset(static::$valids[$method])) {
-                $route = static::$valids[$method];
+            if (isset(self::$valids[$method])) {
+                $route = self::$valids[$method];
 
                 $type = isset($route[2]) ? $route[2] : $this->contentType;
 
-                Route::set($route[0], $route[1], function ($params = null) use ($type, $method) {
+                $context->action($route[0], $route[1], function ($params = null) use ($type, $method) {
                     header('Content-Type: ' . $type);
 
-                    return static::output(
-                        call_user_func_array(array($this, $method), func_get_args())
+                    return call_user_func_array(
+                        array($this, $method),
+                        array($params)
                     );
                 });
             }
@@ -72,24 +73,14 @@ abstract class Resource extends Router
     /**
      * Define routes based on class methods
      *
+     * @param \Inphinit\App $context
      * @throws \Inphinit\Exception
      * @return mixed
      */
-    public static function action()
+    public static function action(App $context)
     {
         $self = new static();
-        $self->route();
+        $self->route($context);
         return $self;
-    }
-
-    /**
-     * Overwrite output
-     *
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    protected static function output($output)
-    {
-        return $output;
     }
 }

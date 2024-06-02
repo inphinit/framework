@@ -27,10 +27,8 @@ class Checkup
     {
         $this->development = App::config('development');
 
-        if (!function_exists('php_ini_loaded_file')) {
-            $this->errors[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
-        } else {
-            if (!function_exists('ini_get')) {
+        if (function_exists('php_ini_loaded_file')) {
+            if (function_exists('ini_get') === false) {
                 $this->errors[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
                 $this->iniGet = false;
             }
@@ -43,6 +41,8 @@ class Checkup
             } else {
                 $this->errors[] = 'php.ini is not configured on your server';
             }
+        } else {
+            $this->errors[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
         }
     }
 
@@ -68,19 +68,19 @@ class Checkup
 
         $folder = INPHINIT_SYSTEM . '/storage';
 
-        if (is_dir($folder) && !is_writable($folder)) {
+        if (is_dir($folder) && is_writable($folder) === false) {
             $this->errors[] = 'Folder ' . $folder . ' requires write permissions, use chmod';
         }
 
-        if (!function_exists('mb_detect_encoding')) {
+        if (function_exists('mb_detect_encoding') === false) {
             $this->errors[] = '`Inphinit\Uri` class `Inphinit\Utility\Strings::toAscii` method will not work, to fix it, enable *Multibyte String* in `' . $this->iniPath . '` (optional)';
         }
 
-        if (!function_exists('iconv')) {
+        if (function_exists('iconv') === false) {
             $this->errors[] = '`Inphinit\Uri` class will not work, to fix it, enable `iconv` in `' . $this->iniPath . '` (optional)';
         }
 
-        if (!function_exists('finfo_file')) {
+        if (function_exists('finfo_file') === false) {
             $this->errors[] = '`Inphinit\File::mime` method will not work, to fix it, enable `finfo` in `' . $this->iniPath . '` (optional)';
         }
     }

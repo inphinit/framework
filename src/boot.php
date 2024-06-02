@@ -8,6 +8,7 @@
  */
 
 use Inphinit\App;
+use Inphinit\Event;
 
 header_remove('X-Powered-By');
 
@@ -60,7 +61,9 @@ function inphinit_error($type, $message, $file, $line, $context = null)
     if (in_array($collect, $collectedErrors) === false) {
         $collectedErrors[] = $collect;
 
-        App::trigger('error', array($type, $message, $file, $line));
+        if (class_exists('\\Inphinit\\Event', false)) {
+            Event::trigger('error', array($type, $message, $file, $line));
+        }
     }
 
     return false;
@@ -74,19 +77,25 @@ function inphinit_shutdown()
     $last = error_get_last();
 
     if ($last !== null && (error_reporting() & $last['type'])) {
-        App::dispatch();
+        App::forward();
         inphinit_error($last['type'], $last['message'], $last['file'], $last['line']);
     }
 
-    App::trigger('terminate');
+    if (class_exists('\\Inphinit\\Event', false)) {
+        Event::trigger('done');
+    }
 }
+
+set_error_handler('inphinit_error', error_reporting());
+
+register_shutdown_function('inphinit_shutdown');
 
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
     $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
 
-    spl_autoload_register(function ($class) use ($prefixes) {
+    spl_autoload_register(function ($class) use (&$prefixes) {
         $class = ltrim($class, '\\');
 
         $base = null;
@@ -117,26 +126,9 @@ if (INPHINIT_COMPOSER) {
     });
 }
 
-$inphinit_path = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
-
-if (PHP_SAPI !== 'cli-server') {
-    $inphinit_path = substr($inphinit_path, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
-}
-
-define('INPHINIT_PATH', $inphinit_path);
-define('REQUEST_TIME', time());
-
 require 'Inphinit/App.php';
-require 'Inphinit/Routing/Router.php';
-require 'Inphinit/Routing/Route.php';
 
-foreach (inphinit_sandbox('application/Config/config.php') as $key => $value) {
-    App::config($key, $value);
-}
-
-set_error_handler('inphinit_error', error_reporting());
-
-register_shutdown_function('inphinit_shutdown');
+$app = new App;
 
 if (App::config('development')) {
     require 'development.php';

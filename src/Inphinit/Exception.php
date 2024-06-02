@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Debugging\Debug;
+
 class Exception extends \Exception
 {
     /**
@@ -19,7 +21,7 @@ class Exception extends \Exception
      * @param int    $trace
      * @return void
      */
-    public function __construct($message = null, $code = 0, $trace = 0)
+    public function __construct($message, $code = 0, $trace = 0)
     {
         if ($trace > 0) {
             $data = Debug::caller($trace);

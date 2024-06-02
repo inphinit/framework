@@ -214,10 +214,6 @@ class Packages
      */
     public static function version($name)
     {
-        if ($name === 'inphinit/framework') {
-            return App::VERSION;
-        }
-
         if (self::$composerLock === null) {
             $file = INPHINIT_ROOT . '/composer.lock';
 

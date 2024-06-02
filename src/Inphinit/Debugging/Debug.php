@@ -7,13 +7,13 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Debugging;
 
 use Inphinit\App;
 use Inphinit\Config;
 use Inphinit\Event;
 use Inphinit\Exception;
-use Inphinit\File;
+use Inphinit\Filesystem\File;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
 use Inphinit\Viewing\View;
@@ -34,9 +34,9 @@ class Debug
     {
         $nc = '\\' . get_called_class();
 
-        App::off('error', array($nc, 'renderError'));
-        App::off('terminate', array($nc, 'renderPerformance'));
-        App::off('terminate', array($nc, 'renderDefined'));
+        Event::off('error', array($nc, 'renderError'));
+        Event::off('done', array($nc, 'renderPerformance'));
+        Event::off('done', array($nc, 'renderDefined'));
 
         if (empty(self::$displayErrors) === false) {
             if (function_exists('init_set')) {
@@ -129,7 +129,7 @@ class Debug
         $callRender = array('\\' . get_called_class(), 'render' . ucfirst($type));
 
         if ($type === 'error') {
-            App::on('error', $callRender);
+            Event::on('error', $callRender);
 
             if (empty(self::$displayErrors)) {
                 self::$displayErrors = ini_get('display_errors');
@@ -139,7 +139,7 @@ class Debug
                 }
             }
         } elseif ($type === 'defined' || $type === 'performance') {
-            App::on('terminate', $callRender);
+            Event::on('done', $callRender);
         } elseif ($type !== 'before') {
             throw new Exception($type . ' is not valid event', 0, 2);
         }
@@ -279,13 +279,13 @@ class Debug
      * @param string $message
      * @return string
      */
-    public static function searcherror($message)
+    public static function searcher($message)
     {
         self::boot();
 
         $link = self::$configs->get('searcherror');
 
-        if (strpos($link, '%error%') === -1) {
+        if (strpos($link, '{error}') === -1) {
             return $message;
         }
 
@@ -295,11 +295,56 @@ class Debug
             $message = substr($message, 0, $pos);
         }
 
-        $link = str_replace('%error%', rawurlencode($message), $link);
+        $link = str_replace('{error}', rawurlencode($message), $link);
         $link = htmlentities($link);
         $message = htmlentities($message);
 
         return '<a rel="nofollow noreferrer" target="_blank" href="' . $link . '">' . $message . '</a>';
+    }
+
+    /**
+     * Convert error message in a link, see `system/configs/debug.php`
+     *
+     * @param string $file
+     * @param int $line
+     * @return string
+     */
+    public static function editor($file, $line)
+    {
+        self::boot();
+
+        $message = $file . ' on line ' . $line;
+        $link = false;
+        $compareFile = str_replace('\\', '/', $file);
+
+        /*
+         * Note: The link to the editor will only be available for scripts outside the vendor, never edit a file on the vendor
+         * Note: Probably the problem could be an error when using some lib and not in the lib
+         * Note: The error could also be a bug in a library, report the bug
+         */
+        if (strpos($compareFile, INPHINIT_SYSTEM . '/vendor/') !== 0) {
+            self::boot();
+
+            $link = self::$configs->get('editor');
+
+            switch ($link) {
+                case 'vscode':
+                    $link = 'vscode://file/{path}:{line}:0';
+                    break;
+                case 'sublimetext':
+                    // Requires: https://packagecontrol.io/packages/subl%20protocol
+                    $link = 'subl://{path}:{line}';
+                    break;
+            }
+        }
+
+        if ($link && strpos($link, '{path}') !== -1) {
+            $link = str_replace('{path}', rawurlencode($file), $link);
+            $link = str_replace('{line}', rawurlencode($line), $link);
+            $message = '<a rel="nofollow noreferrer" href="' . $link . '">' . $message . '</a>';
+        }
+
+        return $message;
     }
 
     private static function render($view, $data)
@@ -370,11 +415,11 @@ class Debug
     private static function boot()
     {
         if (self::$configs === null) {
-            include_once __DIR__ . '/Config.php';
-            include_once __DIR__ . '/Exception.php';
-            include_once __DIR__ . '/File.php';
-            include_once __DIR__ . '/Http/Request.php';
-            include_once __DIR__ . '/Http/Response.php';
+            include_once __DIR__ . '/../Config.php';
+            include_once __DIR__ . '/../Exception.php';
+            include_once __DIR__ . '/../Filesystem/File.php';
+            include_once __DIR__ . '/../Http/Request.php';
+            include_once __DIR__ . '/../Http/Response.php';
 
             self::$configs = Config::load('debug');
             self::$configs->get('*'); // Test

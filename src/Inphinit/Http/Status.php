@@ -17,6 +17,7 @@ final class Status
     const HTTP_CONTINUE = 100;
     const HTTP_SWITCHING_PROTOCOLS = 101;
     const HTTP_PROCESSING = 102;
+    const HTTP_EARLY_HINTS = 103;
 
     const HTTP_OK = 200;
     const HTTP_CREATED = 201;
@@ -57,6 +58,7 @@ final class Status
     const HTTP_UNSUPPORTED_MEDIA_TYPE = 415;
     const HTTP_RANGE_NOT_SATISFIABLE = 416;
     const HTTP_EXPECTATION_FAILED = 417;
+    const HTTP_I_AM_A_TEAPOT = 418;
     const HTTP_MISDIRECTED_REQUEST = 421;
     const HTTP_UNPROCESSABLE_ENTITY = 422;
     const HTTP_LOCKED = 423;
@@ -83,6 +85,7 @@ final class Status
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing',
+        103 => 'Early Hints',
 
         200 => 'OK',
         201 => 'Created',
@@ -123,6 +126,7 @@ final class Status
         415 => 'Unsupported Media Type',
         416 => 'Range Not Satisfiable',
         417 => 'Expectation Failed',
+        418 => 'I\'m a teapot',
         421 => 'Misdirected Request',
         422 => 'Unprocessable Entity',
         423 => 'Locked',
@@ -155,6 +159,17 @@ final class Status
      */
     public static function message($code, $alternative = null)
     {
-        return isset(self::$messages[$code]) ? self::$messages[$code] : $alternative;
+        return self::valid($code) ? self::$messages[$code] : $alternative;
+    }
+
+    /**
+     * Validate HTTP code
+     *
+     * @param int    $code
+     * @return bool
+     */
+    public static function valid($code)
+    {
+        return isset(self::$messages[$code]);
     }
 }

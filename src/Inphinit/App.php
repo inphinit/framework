@@ -10,216 +10,350 @@
 namespace Inphinit;
 
 use Inphinit\Http\Response;
-use Inphinit\Routing\Route;
 use Inphinit\Viewing\View;
 
 class App
 {
-    /** Inphinit framework version */
-    const VERSION = '0.6.2';
+    private $pathInfo;
+    private $urlInfo;
 
-    private static $events = array();
-    private static $configs = array();
-    private static $state = 0;
+    private static $configs;
+
+    private $routes = array();
+    private $paramRoutes = array();
+
+    private $namespacePrefix = '';
+    private $pathPrefix = '/';
+
+    private $hasParams = false;
+    private $paramPatterns = array(
+        'alnum' => '[\da-zA-Z]+',
+        'alpha' => '[a-zA-Z]+',
+        'decimal' => '\d+\.\d+',
+        'num' => '\d+',
+        'nospace' => '[^/\s]+',
+        'uuid' => '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
+        'version' => '\d+\.\d+(\.\d+(-[\da-zA-Z]+(\.[\da-zA-Z]+)*(\+[\da-zA-Z]+(\.[\da-zA-Z]+)*)?)?)?'
+    );
+
+    private $patternNames;
+
+    private $beforeRE = array('\\:', '\\<', '\\>', '\\*');
+    private $afterRE = array(':', '<', '>', '.*?');
+
+    public function __construct()
+    {
+        self::$configs = inphinit_sandbox('configs/app.php');
+
+        $portFromHeader = false;
+        $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
+        $proto = self::$configs['fowarded_proto'];
+        $host = self::$configs['fowarded_host'];
+        $port = self::$configs['fowarded_port'];
+
+        if ($proto === null) {
+            $proto = $https ? 'https' : 'http';
+        }
+
+        if ($host === null && isset($_SERVER['HTTP_HOST'])) {
+            $host = $_SERVER['HTTP_HOST'];
+        }
+
+        if ($host) {
+            $host = strtok($host, ':');
+            $portFromHeader = strtok(':');
+        }
+
+        if ($port === null) {
+            $port = $portFromHeader ? $portFromHeader : ($https ? 443 : 80);
+        }
+
+        $path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+
+        if (PHP_SAPI !== 'cli-server') {
+            $path = substr($path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
+        }
+
+        $this->pathInfo = $path;
+        $this->urlInfo = $proto . '://' . $host . ':' . $port . $path;
+
+        define('INPHINIT_PATH', $path);
+        define('INPHINIT_URL', $this->urlInfo);
+
+        $this->patternNames = implode('|', array_keys($this->paramPatterns));
+    }
 
     /**
-     * Set or get environment value
+     * Get application configs
      *
-     * @param string                $key
-     * @param string|bool|int|float $value
-     * @return string|bool|int|float|void
+     * @param string $key
+     * @return mixed
      */
     public static function config($key, $value = null)
     {
-        if (is_string($value) || is_bool($value) || is_numeric($value)) {
-            self::$configs[$key] = $value;
+        if (array_key_exists($key, self::$configs)) {
+            $last = self::$configs[$key];
+
+            if ($value !== null) {
+                self::$configs[$key] = $value;
+            }
         } else {
-            return isset(self::$configs[$key]) ? self::$configs[$key] : null;
+            $last = null;
         }
+
+        return $last;
     }
 
     /**
-     * Trigger registered event
+     * Register a callback or script for a route
      *
-     * @param string $name
-     * @param array  $args
+     * @param string|array     $methods
+     * @param string           $path
+     * @param string|\Callable $callback
      * @return void
      */
-    public static function trigger($name, array $args = array())
+    public function action($methods, $path, $callback)
     {
-        if ($name === 'error') {
-            self::$state = 5;
+        $path = $this->pathPrefix . ltrim($path, '/');
+
+        if (strpos($path, '<') !== false) {
+            $routes = &$this->paramRoutes;
+
+            $this->hasParams = true;
+        } else {
+            $routes = &$this->routes;
         }
 
-        if (isset(self::$events[$name])) {
-            $listen = &self::$events[$name];
+        if (isset($routes[$path]) === false) {
+            $routes[$path] = array();
+        }
 
-            usort($listen, function ($a, $b) {
-                return $b[1] >= $a[1];
-            });
-
-            foreach ($listen as $callback) {
-                call_user_func_array($callback[0], $args);
+        if (is_array($methods)) {
+            foreach ($methods as $method) {
+                $routes[$path][strtoupper($method)] = $callback;
             }
+        } else {
+            $routes[$path][strtoupper($methods)] = $callback;
         }
     }
 
     /**
-     * Return application state
+     * Prefix controller on scope
      *
-     * <ul>
-     * <li>0 - Unexecuted - `App::exec()` is not executed</li>
-     * <li>1 - Initiated - `App::exec()` is executed</li>
-     * <li>2 - Interactive - After dispatch headers and views</li>
-     * <li>3 - Ready - After show return in output</li>
-     * <li>4 - Finished - Defined after trigger finish event</li>
-     * <li>5 - Error - Defined after trigger an error event (by user or by script)</li>
-     * </ul>
-     *
-     * @return int
+     * @param string $prefix Set controller prefix
      */
-    public static function state()
+    public function setNamespace($prefix)
     {
-        return self::$state;
+        $this->namespacePrefix = $ns;
     }
 
     /**
-     * Register an event
+     * Prefix route paths on scope
      *
-     * @param string   $name
-     * @param callable $callback
-     * @param int      $priority
-     * @return void
+     * @param string $prefix Set path prefix
      */
-    public static function on($name, callable $callback, $priority = 0)
+    public function setPath($prefix)
     {
-        if (is_string($name)) {
-            if (isset(self::$events[$name]) === false) {
-                self::$events[$name] = array();
+        $this->pathPrefix = $prefix;
+    }
+
+    /**
+     * Register a callback for a URI pattern
+     *
+     * @param string   $pattern  URI pattern
+     * @param \Closure $callback Callback
+     */
+    public function scope($pattern, \Closure $callback)
+    {
+        $patterns = &$this->paramPatterns;
+
+        $regex = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
+
+        $pattern = str_replace($this->beforeRE, $this->afterRE, preg_quote($pattern));
+
+        $pattern = preg_replace_callback($regex, function ($matches) use (&$patterns) {
+            return '(?P<' . $matches[1] . '>' . (
+                isset($matches[3]) ? $patterns[$matches[3]] : '[^/]+'
+            ) . ')';
+        }, $pattern);
+
+        if (preg_match('#^' . $pattern . '#', $this->urlInfo, $params)) {
+            $path = parse_url($params[0], PHP_URL_PATH);
+
+            if ($path) {
+                $this->pathPrefix = $path;
             }
 
-            self::$events[$name][] = array($callback, $priority);
-        }
-    }
-
-    /**
-     * Unregister 1 or all events
-     *
-     * @param string   $name
-     * @param callable $callback
-     * @return void
-     */
-    public static function off($name, callable $callback = null)
-    {
-        if (empty(self::$events[$name]) === false) {
-            if ($callback === null) {
-                $evts = &self::$events[$name];
-
-                foreach ($evts as $key => $value) {
-                    if ($value[0] === $callback) {
-                        unset($evts[$key]);
-                    }
+            foreach ($params as $index => $value) {
+                if (is_int($index)) {
+                    unset($params[$index]);
                 }
+            }
+
+            $callback($this, $params);
+
+            $this->namespacePrefix = '';
+            $this->pathPrefix = '/';
+        }
+    }
+
+    /**
+     * Execute application
+     *
+     * @return bool Returns false if request matches a file in built-in web server, otherwise returns true
+     */
+    public function exec()
+    {
+        $code = self::$configs['maintenance'] ? 503 : http_response_code();
+        $callback = null;
+        $params = null;
+        $output = null;
+
+        if ($code === 200) {
+            if (PHP_SAPI === 'cli-server' && $this->fileInBuiltIn()) {
+                return false;
+            }
+
+            $path = $this->pathInfo;
+            $method = $_SERVER['REQUEST_METHOD'];
+
+            if (isset($this->routes[$path])) {
+                $routes = &$this->routes[$path];
+
+                if (isset($routes[$method])) {
+                    $callback = $routes[$method];
+                } elseif (isset($routes['ANY'])) {
+                    $callback = $routes['ANY'];
+                } else {
+                    $code = 405;
+                }
+            } elseif ($this->hasParams) {
+                $this->params($method, $code, $callback, $params);
             } else {
-                self::$events[$name] = array();
+                $code = 404;
             }
         }
+
+        if ($code === 200) {
+            if (is_string($callback) && strpos($callback, '::') !== false) {
+                $parsed = explode('::', $callback, 2);
+                $callback = '\\Controller\\' . $this->namespacePrefix . $parsed[0];
+                $callback = array(new $callback, $parsed[1]);
+            }
+
+            $output = $callback($params);
+        } else {
+            http_response_code($code);
+            $code = array('status' => $code);
+            inphinit_sandbox('errors.php', $code);
+        }
+
+        self::forward($output);
+
+        return true;
     }
 
     /**
-     * Stop application, send HTTP status
+     * Create or remove a pattern for URL slugs
      *
-     * @param int    $code
-     * @param string $msg
+     * @param string $pattern Set pattern for URL slug params like this /foo/<var:pattern>
      * @return void
      */
-    public static function stop($code, $msg = null)
+    public function setPattern($pattern, $regex)
     {
-        if (Response::status($code, false)) {
-            self::trigger('changestatus', array($code, $msg));
-        }
-
-        self::trigger('finish');
-
-        if (self::$state < 4) {
-            self::$state = 4;
-        }
-
-        self::dispatch();
-
-        exit;
+        $this->paramPatterns[preg_quote($pattern)] = $regex;
+        $this->patternNames = implode('|', array_keys($this->paramPatterns));
     }
 
     /**
-     * Start application using routes
+     * Get routes from current scope and parents
      *
-     * @return void
+     * @return array
      */
-    public static function exec()
+    public function routes()
     {
-        if (self::$state > 0) {
-            return null;
-        }
-
-        self::trigger('init');
-
-        self::$state = 1;
-
-        $resp = self::config('maintenance') ? 503 : http_response_code();
-
-        //200 is initial value in commons webservers
-        if ($resp === 200) {
-            $resp = Route::get();
-        }
-
-        if (is_integer($resp)) {
-            $data = array('status' => $resp);
-            inphinit_sandbox('error.php', $data);
-            self::stop($resp);
-        }
-
-        $callback = &$resp['callback'];
-
-        if (is_string($callback) && strpos($callback, ':') !== false) {
-            $parsed = explode(':', $callback, 2);
-
-            $callback = '\\Controller\\' . str_replace('.', '\\', $parsed[0]);
-            $callback = array(new $callback, $parsed[1]);
-        }
-
-        $output = call_user_func_array($callback, $resp['args']);
-
-        self::dispatch();
-
-        if (self::$state < 2) {
-            self::$state = 2;
-        }
-
-        self::trigger('ready');
-
-        if ($output !== null) {
-            echo $output;
-        }
-
-        if (self::$state < 3) {
-            self::$state = 3;
-        }
-        
-        self::trigger('finish');
-
-        if (self::$state < 4) {
-            self::$state = 4;
-        }
+        return $this->routes + $this->paramRoutes;
     }
 
-    /**
-     * Dispatch before ready event if exec is Ok,
-     * or dispatch after finish event if stop() is executed
-     */
-    public static function dispatch()
+    public static function forward(&$output = null)
     {
         if (class_exists('\\Inphinit\\Viewing\\View', false)) {
             View::dispatch();
         }
+
+        echo $output;
+
+        if (class_exists('\\Inphinit\\Event', false)) {
+            Event::trigger('done');
+        }
+    }
+
+    private function params($method, &$code, &$callback, &$params)
+    {
+        $code = 404;
+        $pathinfo = $this->pathInfo;
+        $patterns = &$this->paramPatterns;
+        $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
+
+        $limit = 20;
+        $total = count($this->paramRoutes);
+
+        for ($indexRoutes = 0; $indexRoutes < $total; $indexRoutes += $limit) {
+            $slice = array_slice($this->paramRoutes, $indexRoutes, $limit);
+
+            $j = 0;
+            $callbacks = array();
+
+            foreach ($slice as $regexPath => &$param) {
+                $callbacks[] = $param;
+                $param = '#route_' . (++$j) . '>' . preg_quote($regexPath);
+            }
+
+            $groupRegex = implode(')|(', $slice);
+            $groupRegex = preg_replace($getParams, '(?<$1><$3>)', $groupRegex);
+            $groupRegex = str_replace('<>)', '[^/]+)', $groupRegex);
+
+            foreach ($patterns as $pattern => $regex) {
+                $groupRegex = str_replace('<' . $pattern . '>)', $regex . ')', $groupRegex);
+            }
+
+            $groupRegex = str_replace('#route_', '?<route_', $groupRegex);
+
+            if (preg_match('#^((?J)(' . $groupRegex . '))$#', $pathinfo, $params)) {
+                foreach ($params as $index => $value) {
+                    if ($value === '' || is_int($index)) {
+                        unset($params[$index]);
+                    } else if (strpos($index, 'route_') === 0) {
+                        $callbacks = $callbacks[substr($index, 6) - 1];
+                        unset($params[$index]);
+                    }
+                }
+
+                $code = 200;
+
+                if (isset($callbacks[$method])) {
+                    $callback = $callbacks[$method];
+                } elseif (isset($callbacks['ANY'])) {
+                    $callback = $callbacks['ANY'];
+                } else {
+                    $code = 405;
+                }
+
+                break;
+            }
+        }
+    }
+
+    private function fileInBuiltIn()
+    {
+        $path = $this->pathInfo;
+
+        return (
+            $path !== '/' &&
+            strpos($path, '.') !== 0 &&
+            strpos($path, '/.') === false &&
+            is_file(INPHINIT_ROOT . '/public' . $path)
+        );
     }
 }

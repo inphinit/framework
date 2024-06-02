@@ -9,10 +9,20 @@
 
 namespace Inphinit;
 
-use Inphinit\App;
-
 class Maintenance
 {
+    /**
+     * Down site to maintenance mode
+     *
+     * @param callable $callback
+     */
+    public static function ignore(callable $callback)
+    {
+        if (App::config('maintenance') && $callback() === true) {
+            App::config('maintenance', false);
+        }
+    }
+
     /**
      * Down site to maintenance mode
      *
@@ -41,7 +51,7 @@ class Maintenance
      */
     protected static function enable($enable)
     {
-        $config = Config::load('config');
+        $config = Config::load('app');
 
         if ($config->get('maintenance') === $enable) {
             return true;
@@ -50,20 +60,5 @@ class Maintenance
         $config->set('maintenance', $enable);
 
         return $config->save();
-    }
-
-    /**
-     * Up the site only in certain conditions, eg. the site administrator of the IP.
-     *
-     * @param callable $callback
-     * @return void
-     */
-    public static function ignoreif(callable $callback)
-    {
-        App::on('init', function () use ($callback) {
-            if ($callback()) {
-                App::config('maintenance', false);
-            }
-        });
     }
 }
