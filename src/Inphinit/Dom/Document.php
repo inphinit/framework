@@ -9,44 +9,36 @@
 
 namespace Inphinit\Dom;
 
-use Inphinit\Helper;
 use Inphinit\Storage;
+use Inphinit\Utility\Arrays;
 
-class Document extends \DOMDocument
+class Document
 {
+    /** Used with `Document::toArray` method to convert document in a simple array */
+    const SIMPLE = 1;
+
+    /** Used with `Document::toArray` method to convert document in a minimal array */
+    const MINIMAL = 2;
+
+    /** Used with `Document::toArray` method to convert document in a array with all properties */
+    const COMPLETE = 3;
+
+    /**  */
+    const ERROR = 4;
+    const FATAL = 8;
+    const WARNING = 16;
+
+    private $dom;
     private $xpath;
     private $selector;
 
-    private $internalErr;
-    private $exceptionlevel = 3;
+    private $internalErrors;
+    private $exceptionLevel = 3;
 
     private $complete = false;
     private $simple = false;
 
-    /**
-     * Used with `Document::reporting` method or in extended classes
-     *
-     * @var array
-     */
-    protected $levels = array(\LIBXML_ERR_WARNING, \LIBXML_ERR_ERROR, \LIBXML_ERR_FATAL);
-
-    /** Used with `Document::save` method to save document in XML format */
-    const XML = 1;
-
-    /** Used with `Document::save` method to save document in HTML format */
-    const HTML = 2;
-
-    /** Used with `Document::save` method to convert and save document in JSON format */
-    const JSON = 3;
-
-    /** Used with `Document::toArray` method to convert document in a simple array */
-    const SIMPLE = 4;
-
-    /** Used with `Document::toArray` method to convert document in a minimal array */
-    const MINIMAL = 5;
-
-    /** Used with `Document::toArray` method to convert document in a array with all properties */
-    const COMPLETE = 6;
+    private static $reporting;
 
     /**
      * Create a Document instance
@@ -57,26 +49,22 @@ class Document extends \DOMDocument
      */
     public function __construct($version = '1.0', $encoding = 'UTF-8')
     {
-        parent::__construct($version, $encoding);
+        if (self::$reporting === null) {
+            self::$reporting = self::ERROR | self::FATAL;
+        }
+
+        $this->dom = new \DOMDocument($version, $encoding);
     }
 
-    /**
-     * Set level error for exception, set `LIBXML_ERR_NONE` (or `0` - zero) for disable exceptions.
-     * For disable only warnings use like this `$dom->reporting(LIBXML_ERR_FATAL, LIBXML_ERR_ERROR)`
-     *
-     * <ul>
-     * <li>0 - `LIBXML_ERR_NONE` - Disable errors</li>
-     * <li>1 - `LIBXML_ERR_WARNING` - Show warnings in DOM</li>
-     * <li>2 - `LIBXML_ERR_ERROR` - Show recoverable errors in DOM</li>
-     * <li>3 - `LIBXML_ERR_FATAL` - Show DOM fatal errors</li>
-     * </ul>
-     *
-     * @param int $args,...
-     * @return void
-     */
-    public function reporting()
+    public static function setReporting($options)
     {
-        $this->levels = func_get_args();
+        $types = self::ERROR | self::FATAL | self::WARNING;
+
+        if (!($types & $reporting)) {
+            throw new Inphinit\Exception('Invalid reporting');
+        }
+
+        self::$reporting = $options;
     }
 
     /**
@@ -86,7 +74,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return void
      */
-    public function fromArray(array $data)
+    public function fromArray(array &$data)
     {
         if (empty($data)) {
             throw new DomException('Array is empty', 0, 2);
@@ -100,36 +88,17 @@ class Document extends \DOMDocument
             throw new DomException('Invalid root <' . $root . '> tag', 0, 2);
         }
 
-        if ($this->documentElement) {
-            $this->removeChild($this->documentElement);
+        if ($this->dom->documentElement) {
+            $this->removeChild($this->dom->documentElement);
         }
 
-        $this->enableRestoreInternal(true);
+        $this->enableInternalErrors(true);
 
         $this->generate($this, $data, 2);
 
-        $this->raise($this->exceptionlevel);
+        $this->raise($this->exceptionLevel);
 
-        $this->enableRestoreInternal(false);
-    }
-
-    /**
-     * Convert DOM to JSON string
-     *
-     * @param bool $format
-     * @param int  $options `JSON_HEX_QUOT`, `JSON_HEX_TAG`, `JSON_HEX_AMP`, `JSON_HEX_APOS`, `JSON_NUMERIC_CHECK`, `JSON_PRETTY_PRINT`, `JSON_UNESCAPED_SLASHES`, `JSON_FORCE_OBJECT`, `JSON_PRESERVE_ZERO_FRACTION`, `JSON_UNESCAPED_UNICODE`, `JSON_PARTIAL_OUTPUT_ON_ERROR`. The behaviour of these constants is described in http://php.net/manual/en/json.constants.php
-     *
-     * @return string
-     */
-    public function toJson($format = Document::MINIMAL, $options = 0)
-    {
-        $this->exceptionlevel = 4;
-
-        $json = json_encode($this->toArray($format), $options);
-
-        $this->exceptionlevel = 3;
-
-        return $json;
+        $this->enableInternalErrors(false);
     }
 
     /**
@@ -142,16 +111,16 @@ class Document extends \DOMDocument
     public function toArray($type = Document::SIMPLE)
     {
         switch ($type) {
-            case Document::MINIMAL:
+            case self::MINIMAL:
                 $this->simple = false;
                 $this->complete = false;
                 break;
 
-            case Document::SIMPLE:
+            case self::SIMPLE:
                 $this->simple = true;
                 break;
 
-            case Document::COMPLETE:
+            case self::COMPLETE:
                 $this->complete = true;
                 break;
 
@@ -159,7 +128,7 @@ class Document extends \DOMDocument
                 throw new DomException('Invalid type', 2);
         }
 
-        return $this->getNodes($this->childNodes);
+        return $this->getNodes($this->dom->childNodes);
     }
 
     /**
@@ -186,46 +155,6 @@ class Document extends \DOMDocument
     }
 
     /**
-     * Save file to location
-     *
-     * @param string $path
-     * @param int    $format Support XML, HTML, and JSON
-     * @throws \Inphinit\Dom\DomException
-     * @return void
-     */
-    #[\ReturnTypeWillChange]
-    public function save($path, $format = Document::XML)
-    {
-        switch ($format) {
-            case Document::XML:
-                $format = 'saveXML';
-                break;
-            case Document::HTML:
-                $format = 'saveHTML';
-                break;
-            case Document::JSON:
-                $format = 'toJson';
-                break;
-            default:
-                throw new DomException('Invalid format', 2);
-        }
-
-        if (Storage::createFolder('tmp/dom')) {
-            $tmp = Storage::temp($this->$format(), 'tmp/dom');
-        } else {
-            $tmp = false;
-        }
-
-        if ($tmp === false) {
-            throw new DomException('Can\'t create tmp file', 2);
-        } elseif (copy($tmp, $path) === false) {
-            throw new DomException('Can\'t copy tmp file to ' . $path, 2);
-        } else {
-            unlink($tmp);
-        }
-    }
-
-    /**
      * Get namespace attributes from root element or specific element
      *
      * @param \DOMElement $element
@@ -234,12 +163,12 @@ class Document extends \DOMDocument
     public function getNamespaces(\DOMElement $element = null)
     {
         if ($this->xpath === null) {
-            $this->xpath = new \DOMXPath($this);
+            $this->xpath = new \DOMXPath($this->dom);
         }
 
         if ($element === null) {
             $nodes = $this->xpath->query('namespace::*');
-            $element = $this->documentElement;
+            $element = $this->dom->documentElement;
         } else {
             $nodes = $this->xpath->query('namespace::*', $element);
         }
@@ -261,82 +190,85 @@ class Document extends \DOMDocument
         return $ns;
     }
 
-    /**
-     * Load XML from a string
-     *
-     * @param string $source
-     * @param int    $options
-     * @throws \Inphinit\Dom\DomException
-     * @return mixed
-     */
-    public function loadXML($source, $options = 0)
-    {
-        return $this->resource('loadXML', $source, $options);
-    }
-
-    /**
-     * Load XML from a file
-     *
-     * @param string $filename
-     * @param int    $options
-     * @throws \Inphinit\Dom\DomException
-     * @return mixed
-     */
+    // LOAD XML from FILE
     public function load($filename, $options = 0)
     {
-        return $this->resource('load', $filename, $options);
+        return $this->callMethod('load', $filename, $options);
     }
 
-    /**
-     * Load HTML from a string
-     *
-     * @param string $source
-     * @param int    $options
-     * @throws \Inphinit\Dom\DomException
-     * @return mixed
-     */
-    public function loadHTML($source, $options = 0)
+    // LOAD XML from STRING
+    public function loadXML($source, $options = 0)
     {
-        return $this->resource('loadHTML', $source, $options);
+        return $this->callMethod('loadXML', $source, $options);
     }
 
-    /**
-     * Load HTML from a file
-     *
-     * @param string $filename
-     * @param int    $options
-     * @throws \Inphinit\Dom\DomException
-     * @return mixed
-     */
+    // LOAD HTML from FILE
     public function loadHTMLFile($filename, $options = 0)
     {
-        return $this->resource('loadHTMLFile', $filename, $options);
+        return $this->callMethod('loadHTMLFile', $filename, $options);
+    }
+
+    // LOAD HTML from STRING
+    public function loadHTML($source, $options = 0)
+    {
+        return $this->callMethod('loadHTML', $source, $options);
+    }
+
+    // SAVE HTML to file
+    public function saveHTMLFile($filename)
+    {
+        return $this->callMethod('saveHTMLFile', $filename, null);
+    }
+
+    // SAVE HTML to STRING
+    public function saveHTML(\DOMNode $node = null)
+    {
+        return $this->callMethod('saveHTML', $node, null);
+    }
+
+    // SAVE HTML to FILE
+    public function save($filename, int $options = 0)
+    {
+        return $this->callMethod('save', $filename, $options);
+    }
+
+    /**
+     * Save HTML to string
+     *
+     * @param DOMNode $node
+     * @param int     $options
+     * @throws \Inphinit\Dom\DomException
+     * @return string|false
+     */
+    public function saveXML(\DOMNode $node = null, $options = 0)
+    {
+        return $this->callMethod('saveXML', $node, $options);
     }
 
     /**
      * Use query-selector like CSS, jQuery, querySelectorAll
      *
-     * @param string $selector
+     * @param string   $selector
      * @param \DOMNode $context
      * @return \DOMNodeList
      */
     public function query($selector, \DOMNode $context = null)
     {
-        $this->enableRestoreInternal(true);
+        $this->enableInternalErrors(true);
 
         if ($this->selector === null) {
-            $this->selector = new Selector($this);
+            $this->selector = new Selector($this->dom);
         }
 
         $nodes = $this->selector->get($selector, $context);
 
-        $level = $this->exceptionlevel;
+        $level = $this->exceptionLevel;
 
-        $this->exceptionlevel = 3;
+        $this->exceptionLevel = 3;
 
         $this->raise($level);
 
-        $this->enableRestoreInternal(false);
+        $this->enableInternalErrors(false);
 
         return $nodes;
     }
@@ -344,13 +276,13 @@ class Document extends \DOMDocument
     /**
      * Use query-selector like CSS, jQuery, querySelector
      *
-     * @param string $selector
+     * @param string   $selector
      * @param \DOMNode $context
      * @return \DOMNode
      */
     public function first($selector, \DOMNode $context = null)
     {
-        $this->exceptionlevel = 4;
+        $this->exceptionLevel = 4;
 
         $nodes = $this->query($selector, $context);
 
@@ -361,42 +293,50 @@ class Document extends \DOMDocument
         return $node;
     }
 
-    private function resource($function, $from, $options)
+    private function callMethod($function, $param, $options)
     {
-        $this->enableRestoreInternal(true);
+        $this->enableInternalErrors(true);
 
-        $resource = PHP_VERSION_ID >= 50400 ? parent::$function($from, $options) : parent::$function($from);
+        $callback = array($this->dom, $function);
+
+        if ($options !== null) {
+            $resource = $callback($param, $options);
+        } else {
+            $resource = $callback($param);
+        }
+
+        $callback = null;
 
         $this->raise(4);
 
-        $this->enableRestoreInternal(false);
+        $this->enableInternalErrors(false);
 
         return $resource;
     }
 
-    private function enableRestoreInternal($enable)
+    private function enableInternalErrors($enable)
     {
         \libxml_clear_errors();
 
         if ($enable) {
-            $this->internalErr = \libxml_use_internal_errors(true);
+            $this->internalErrors = \libxml_use_internal_errors(true);
         } else {
-            \libxml_use_internal_errors($this->internalErr);
+            \libxml_use_internal_errors($this->internalErrors);
         }
     }
 
-    private function raise($debuglvl)
+    private function raise($level)
     {
-        $err = \libxml_get_errors();
-
-        if (isset($err[0]->level) && in_array($err[0]->level, $this->levels, true)) {
-            throw new DomException(null, $debuglvl);
+        foreach (\libxml_get_errors() as $error) {
+            if ($error->level & $this->reporting) {
+                throw new DomException(null, $level);
+            }
         }
 
         \libxml_clear_errors();
     }
 
-    private function generate(\DOMNode $node, $data, $errorLevel)
+    private function generate(\DOMNode $node, &$data, $errorLevel)
     {
         if (is_array($data) === false) {
             $node->textContent = $data;
@@ -411,11 +351,14 @@ class Document extends \DOMDocument
             } elseif ($key === '@contents') {
                 $this->generate($node, $value, $nextLevel);
             } elseif ($key === '@attributes') {
-                self::setAttributes($node, $value);
+                foreach ($attributes as $name => $value) {
+                    $node->setAttribute($name, $value);
+                }
             } elseif (self::validTag($key)) {
-                if (Helper::seq($value)) {
+                if (Arrays::indexed($value)) {
                     foreach ($value as $subvalue) {
-                        $this->generate($node, array($key => $subvalue), $nextLevel);
+                        $create = array($key => $subvalue);
+                        $this->generate($node, $create, $nextLevel);
                     }
                 } elseif (is_array($value)) {
                     $this->generate($this->add($key, '', $node), $value, $nextLevel);
@@ -435,16 +378,9 @@ class Document extends \DOMDocument
 
     private function add($name, $value, \DOMNode $node)
     {
-        $newdom = $this->createElement($name, $value);
-        $node->appendChild($newdom);
+        $created = $this->dom->createElement($name, $value);
+        $node->appendChild($created);
         return $newdom;
-    }
-
-    private static function setAttributes(\DOMNode $node, array &$attributes)
-    {
-        foreach ($attributes as $name => $value) {
-            $node->setAttribute($name, $value);
-        }
     }
 
     private function getNodes($nodes)
