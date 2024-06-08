@@ -23,18 +23,23 @@ class App
     private static $state = 0;
 
     /**
-     * Set or get environment value
+     * Get application configs
      *
-     * @param string                $key
-     * @param string|bool|int|float $value
-     * @return string|bool|int|float|void
+     * @param string $key
+     * @return mixed
      */
     public static function config($key, $value = null)
     {
-        if (is_string($value) || is_bool($value) || is_numeric($value)) {
+        if (self::$configs === null) {
+            self::$configs = inphinit_sandbox('application/Config/config.php');
+        }
+
+        if (array_key_exists($key, self::$configs)) {
+            if ($value == null) {
+                return self::$configs[$key];
+            }
+
             self::$configs[$key] = $value;
-        } else {
-            return isset(self::$configs[$key]) ? self::$configs[$key] : null;
         }
     }
 

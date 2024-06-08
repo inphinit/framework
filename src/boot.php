@@ -130,10 +130,6 @@ require 'Inphinit/App.php';
 require 'Inphinit/Routing/Router.php';
 require 'Inphinit/Routing/Route.php';
 
-foreach (inphinit_sandbox('application/Config/config.php') as $key => $value) {
-    App::config($key, $value);
-}
-
 set_error_handler('inphinit_error', error_reporting());
 
 register_shutdown_function('inphinit_shutdown');
