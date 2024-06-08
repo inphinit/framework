@@ -74,15 +74,12 @@ function inphinit_error($type, $message, $file, $line, $context = null)
  */
 function inphinit_shutdown()
 {
-    $last = error_get_last();
+    $error = error_get_last();
 
-    if ($last !== null && (error_reporting() & $last['type'])) {
-        App::forward();
-        inphinit_error($last['type'], $last['message'], $last['file'], $last['line']);
-    }
+    App::forward();
 
-    if (class_exists('\\Inphinit\\Event', false)) {
-        Event::trigger('done');
+    if ($error !== null && (error_reporting() & $error['type'])) {
+        inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
     }
 }
 
@@ -128,10 +125,44 @@ if (INPHINIT_COMPOSER) {
 
 require 'Inphinit/App.php';
 
-$app = new App;
+$inphinit_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
+$inphinit_proto = App::config('fowarded_proto');
+$inphinit_host = App::config('fowarded_host');
+$inphinit_port = App::config('fowarded_port');
+
+if ($inphinit_proto === null) {
+    $inphinit_proto = $inphinit_https ? 'https' : 'http';
+}
+
+if ($inphinit_host === null && isset($_SERVER['HTTP_HOST'])) {
+    $inphinit_host = $_SERVER['HTTP_HOST'];
+}
+
+$inphinit_port_header = false;
+
+if ($inphinit_host) {
+    $inphinit_host = strtok($inphinit_host, ':');
+    $inphinit_port_header = strtok(':');
+}
+
+if ($inphinit_port === null) {
+    $inphinit_port = $inphinit_port_header ? $inphinit_port_header : ($inphinit_https ? 443 : 80);
+}
+
+$inphinit_path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+
+if (PHP_SAPI !== 'cli-server') {
+    $inphinit_path = substr($inphinit_path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
+}
+
+define('INPHINIT_PATH', $inphinit_path);
+define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_path);
 
 if (App::config('development')) {
     require 'development.php';
+} else {
+    $app = new App;
 }
 
 require INPHINIT_SYSTEM . '/main.php';

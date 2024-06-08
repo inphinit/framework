@@ -71,7 +71,6 @@ class Negotiation
         foreach (preg_split('#(\r)?\n#', $str) as $line) {
             if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
-
                 $headers[$key] = ltrim($value);
             }
         }

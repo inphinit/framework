@@ -59,7 +59,7 @@ class Checkup
     private function collectErrors()
     {
         if (version_compare(PHP_VERSION, '7.4.0', '<') && function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
-            $this->errors[] = 'Disable magic_quotes_gpc in `' . $this->iniPath . '`';
+            $this->errors[] = 'Disable `magic_quotes_gpc` in `' . $this->iniPath . '`';
         }
 
         if (version_compare(PHP_VERSION, '7.0.0', '<') && ini_get('always_populate_raw_post_data') != -1) {
@@ -77,11 +77,11 @@ class Checkup
         }
 
         if (function_exists('iconv') === false) {
-            $this->errors[] = '`Inphinit\Uri` class will not work, to fix it, enable `iconv` in `' . $this->iniPath . '` (optional)';
+            $this->errors[] = '`Inphinit\Utility\String` class will not work, to fix it, enable `iconv` in `' . $this->iniPath . '` (optional)';
         }
 
         if (function_exists('finfo_file') === false) {
-            $this->errors[] = '`Inphinit\File::mime` method will not work, to fix it, enable `finfo` in `' . $this->iniPath . '` (optional)';
+            $this->errors[] = '`Inphinit\Filesystem\File::mime` and `Inphinit\Filesystem\File::encoding` methods will not work, to fix it, enable `finfo` in `' . $this->iniPath . '` (optional)';
         }
     }
 

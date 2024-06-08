@@ -50,7 +50,7 @@ class Request
                 return (
                     strcasecmp(self::header('sec-purpose', ''), 'prefetch') === 0 ||
                     strcasecmp(self::header('x-purpose', ''), 'preview') === 0 ||
-                    strcasecmp(self::header('purpose', ''), 'preview') === 0 ||
+                    strcasecmp(self::header('purpose', ''), 'prefetch') === 0 ||
                     strcasecmp(self::header('x-moz', ''), 'prefetch') === 0
                 );
 

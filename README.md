@@ -8,9 +8,9 @@ Inphinit is a PHP framework for use routes, controllers and views. To try it, go
 ## Requirements
 
 1. PHP 5.4.0+, but it is recommended that you use PHP 8 due to PHP support issues, read: https://www.php.net/supported-versions.php
-1. Multibyte String (GD also) (optional, only used in `Inphinit\Strings` class)
-1. libiconv (optional, only used in `Inphinit\Strings` class)
-1. fileinfo (optional, only used in `Inphinit\File`)
+1. Multibyte String (GD also) (optional, only used in `Inphinit\Utility\Strings` class)
+1. libiconv (optional, only used in `Inphinit\Utility\Strings` class)
+1. fileinfo (optional, only used in `Inphinit\Filesystem\File`)
 
 ## Getting start
 

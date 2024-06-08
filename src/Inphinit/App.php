@@ -14,9 +14,6 @@ use Inphinit\Viewing\View;
 
 class App
 {
-    private static $pathInfo;
-    private static $urlInfo;
-
     private static $configs;
 
     private $routes = array();
@@ -43,44 +40,6 @@ class App
 
     public function __construct()
     {
-        self::$configs = inphinit_sandbox('configs/app.php');
-
-        $portFromHeader = false;
-        $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-
-        $proto = self::$configs['fowarded_proto'];
-        $host = self::$configs['fowarded_host'];
-        $port = self::$configs['fowarded_port'];
-
-        if ($proto === null) {
-            $proto = $https ? 'https' : 'http';
-        }
-
-        if ($host === null && isset($_SERVER['HTTP_HOST'])) {
-            $host = $_SERVER['HTTP_HOST'];
-        }
-
-        if ($host) {
-            $host = strtok($host, ':');
-            $portFromHeader = strtok(':');
-        }
-
-        if ($port === null) {
-            $port = $portFromHeader ? $portFromHeader : ($https ? 443 : 80);
-        }
-
-        $path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
-
-        if (PHP_SAPI !== 'cli-server') {
-            $path = substr($path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
-        }
-
-        self::$pathInfo = $path;
-        self::$urlInfo = $proto . '://' . $host . ':' . $port . $path;
-
-        define('INPHINIT_PATH', $path);
-        define('INPHINIT_URL', self::$urlInfo);
-
         $this->patternNames = implode('|', array_keys($this->paramPatterns));
     }
 
@@ -92,25 +51,25 @@ class App
      */
     public static function config($key, $value = null)
     {
-        if (array_key_exists($key, self::$configs)) {
-            $last = self::$configs[$key];
-
-            if ($value !== null) {
-                self::$configs[$key] = $value;
-            }
-        } else {
-            $last = null;
+        if (self::$configs === null) {
+            self::$configs = inphinit_sandbox('configs/app.php');
         }
 
-        return $last;
+        if (array_key_exists($key, self::$configs)) {
+            if ($value == null) {
+                return self::$configs[$key];
+            }
+
+            self::$configs[$key] = $value;
+        }
     }
 
     /**
      * Register a callback or script for a route
      *
-     * @param string|array     $methods
-     * @param string           $path
-     * @param string|\Callable $callback
+     * @param string|array    $methods
+     * @param string          $path
+     * @param string|callable $callback
      * @return void
      */
     public function action($methods, $path, $callback)
@@ -178,7 +137,7 @@ class App
             ) . ')';
         }, $pattern);
 
-        if (preg_match('#^' . $pattern . '#', self::$urlInfo, $params)) {
+        if (preg_match('#^' . $pattern . '#', INPHINIT_URL, $params)) {
             $path = parse_url($params[0], PHP_URL_PATH);
 
             if ($path) {
@@ -215,7 +174,7 @@ class App
                 return false;
             }
 
-            $path = self::$pathInfo;
+            $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
 
             if (isset($this->routes[$path])) {
@@ -292,7 +251,6 @@ class App
     private function params($method, &$code, &$callback, &$params)
     {
         $code = 404;
-        $pathinfo = self::$pathInfo;
         $patterns = &$this->paramPatterns;
         $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
 
@@ -320,7 +278,7 @@ class App
 
             $groupRegex = str_replace('#route_', '?<route_', $groupRegex);
 
-            if (preg_match('#^((?J)(' . $groupRegex . '))$#', $pathinfo, $params)) {
+            if (preg_match('#^((?J)(' . $groupRegex . '))$#', INPHINIT_PATH, $params)) {
                 foreach ($params as $index => $value) {
                     if ($value === '' || is_int($index)) {
                         unset($params[$index]);
@@ -347,7 +305,7 @@ class App
 
     private function fileInBuiltIn()
     {
-        $path = self::$pathInfo;
+        $path = INPHINIT_PATH;
 
         return (
             $path !== '/' &&

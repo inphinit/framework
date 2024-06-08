@@ -14,11 +14,6 @@ use Inphinit\Exception;
 
 class DebugApp extends App
 {
-    public function __construct()
-    {
-        /* keep empty */
-    }
-
     public function action($methods, $path, $callback)
     {
         if (is_string($callback) && strpos($callback, '::') !== false) {
@@ -58,7 +53,7 @@ class DebugApp extends App
         }
 
         if ($regex && preg_match('#' . $regex . '#', '') === false) {
-            throw new Exception('Invalid regex pattern', 0, 2);
+            throw new Exception('"' . $regex . '" pattern causes PCRE: ' . preg_last_error_msg(), 0, 2);
         }
 
         parent::setPattern($pattern, $regex);

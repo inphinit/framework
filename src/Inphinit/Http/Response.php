@@ -33,7 +33,7 @@ class Response
     }
 
     /**
-     * Short
+     * Shortcut
      *
      * @param string      $code
      * @param string|null $trigger
