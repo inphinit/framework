@@ -16,17 +16,22 @@ use Inphinit\Utility\Strings;
 
 class Url
 {
-    const PATH_CLEAR = 1;
-    const PATH_ASCII = 2;
-    const PATH_UNICODE = 4;
-    const PATH_NORMALIZE = 8;
+    const PATH_ASCII = 1;
+    const PATH_UNICODE = 2;
+    const PATH_NORMALIZE = 4;
+    const PATH_SLUG = 8;
     const SORT_QUERY = 16;
 
-    /** @var array Default schemes */
-    protected $knownSchemes = array('file', 'ftp', 'sftp', 'http', 'https');
+    private static $defaultPorts = array(
+        'ftp' => 21,
+        'sftp' => 22,
+        'http' => 80,
+        'https' => 443
+    );
 
-    /** @var array Default ports */
-    protected $defaultPorts = array('ftp' => 21, 'sftp' => 22, 'http' => 80, 'https' => 443);
+    private static $slugDict = array(
+        '@' => '-at-'
+    );
 
     private $data = array(
         'source' => null,
@@ -41,7 +46,27 @@ class Url
     );
 
     /**
-     * xxxx
+     * Sets default ports
+     *
+     * @param array $dict
+     */
+    public static function setDefaultPorts(array $ports)
+    {
+        self::$defaultPorts = $ports;
+    }
+
+    /**
+     * Sets slug dictionary
+     *
+     * @param array $dict
+     */
+    public static function setSlugDict(array $dict)
+    {
+        self::$slugDict = $dict;
+    }
+
+    /**
+     * Parse URL
      *
      * @param string $url
      */
@@ -63,50 +88,27 @@ class Url
     }
 
     /**
-     * Get current url
+     * Get Url instance from current url
+     *
+     * @param bool $query
      */
-    public static function current()
+    public static function application($query)
     {
         $url = INPHINIT_URL;
-        $query = Request::query();
 
-        if ($query) {
-            $url .= '?' . $query;
+        if ($query && ($qs = Request::query())) {
+            $url .= '?' . $qs;
         }
 
         return new static($url);
     }
 
     /**
-     * [xxxxxxxxxxx]
+     * Normalize path and querystring
      *
-     * @param string $value
-     * @return array|string
+     * @param int $configs
      */
-    public function __get($name)
-    {
-        if (isset($this->data[$name])) {
-            return $this->data[$name];
-        }
-    }
-
-    /**
-     * [xxxxxxxxxxx]
-     *
-     * @param string $value
-     */
-    public function __set($name, $value)
-    {
-        if (array_key_exists($name, $this->data)) {
-            if (is_string($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an string', 0, 2);
-            }
-
-            $this->data[$name] = $value;
-        }
-    }
-
-    public function normalize($configs = null)
+    public function normalize($configs = 0)
     {
         if ($this->data['scheme']) {
             $this->data['scheme'] = strtolower($this->data['scheme']);
@@ -121,6 +123,18 @@ class Url
                 $path = ltrim($path, '/');
             }
 
+            if ($configs & self::PATH_ASCII) {
+                $path = Strings::toAscii($path);
+            } elseif ($configs & self::PATH_UNICODE) {
+                $path = mb_strtolower($path);
+            }
+
+            if ($configs & self::PATH_SLUG) {
+                $path = strtr($path, self::$slugDict);
+                $path = preg_replace('#[^\/\-\pL\pN\s]+#u', '', $path);
+                $path = preg_replace('#[\s\-]+#u', '-', $path);
+            }
+
             $this->data['path'] = $path;
         }
 
@@ -129,64 +143,74 @@ class Url
 
             if ($query) {
                 Arrays::ksort($query);
-
                 $this->data['query'] = http_build_query($query);
             }
         }
     }
 
-    public static function canonpath($path, $configs = 0)
+    /**
+     * Canon path
+     *
+     * @param string $path
+     */
+    public static function canonpath($path)
     {
-        if ($configs === null) {
-            $configs = self::PATH_NORMALIZE;
-        }
+        $separator = strpos($path, '\\') !== false ? '\\' : '/';
 
-        $separator = '/';
-
-        if (strpos($path, '\\') !== false) {
-            $separator = '\\';
-            $path = preg_replace('#\\\\+#', '\\', $path);
-        } else {
-            $path = preg_replace('#//+#', '/', $path);
-        }
-
-        $parts = explode($separator, $path);
+        $parts = explode($separator, trim($path, '/'));
         $rebuild = array();
 
         foreach ($parts as $part) {
-            if ($part === '.') {
-                continue;
-            }
-
-            if ($part === '..') {
-                array_pop($rebuild);
-            } else {
-                $rebuild[] = $part;
+            if ($part !== '' && $part !== '.') {
+                if ($part === '..') {
+                    array_pop($rebuild);
+                } else {
+                    $rebuild[] = $part;
+                }
             }
         }
 
-        $path = implode('/', $rebuild);
+        $path = '/' . implode('/', $rebuild) . '/';
 
         $rebuild = null;
-
-        if ($configs & self::PATH_CLEAR) {
-            $path = preg_replace('#[`\'"\^~{}\[\]()]#', '', $path);
-            $path = preg_replace('#[\n\s_]#', '-', $path);
-        }
-
-        if ($configs & self::PATH_UNICODE) {
-            $path = preg_replace('#[^\d\p{L}\p{N}\/\-]#u', '', $path);
-        } elseif ($configs & self::PATH_ASCII) {
-            $path = preg_replace('#[^\d\p{L}\/\-]#u', '', $path);
-        }
-
-        if ($configs & self::PATH_CLEAR) {
-            $path = trim(preg_replace('#--+#', '-', $path), '-');
-        }
 
         return $path;
     }
 
+    /**
+     * Get value for a URL component
+     *
+     * @param string $value
+     * @return string
+     */
+    public function __get($name)
+    {
+        if (isset($this->data[$name])) {
+            return $this->data[$name];
+        }
+    }
+
+    /**
+     * Set value for a URL component
+     *
+     * @param string $value
+     */
+    public function __set($name, $value)
+    {
+        if (array_key_exists($name, $this->data)) {
+            if (is_string($value) === false) {
+                throw new Exception(get_class($this) . '::$' . $name . ' except an string', 0, 2);
+            }
+
+            $this->data[$name] = $value;
+        }
+    }
+
+    /**
+     * Compose string
+     *
+     * @return string
+     */
     public function __toString()
     {
         $scheme = $this->data['scheme'];
@@ -203,7 +227,7 @@ class Url
         $user = $this->data['user'] ? $this->data['user'] : '';
         $pass = $this->data['pass'] ? ':' . $this->data['pass'] : '';
 
-        $pass = $user || $pass ? $pass . '@' : '';
+        $pass = $user || $pass ? ($pass . '@') : '';
 
         if ($host) {
             $scheme .= '://';

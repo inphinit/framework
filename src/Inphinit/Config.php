@@ -32,20 +32,6 @@ class Config
     }
 
     /**
-     * Create a Negotiation instance
-     *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     * @return \Inphinit\Config
-     */
-    public static function load($path)
-    {
-        self::$exceptionLevel = 4;
-
-        return new static($path);
-    }
-
-    /**
      * Reload configuration from file
      *
      * @param string $path
@@ -80,54 +66,12 @@ class Config
      *
      * @return bool
      */
-    public function save()
+    public function commit()
     {
         $path = INPHINIT_SYSTEM . '/' . $this->path;
         $contents = "<?php\nreturn " . var_export($this->data, true) . ";\n";
 
         return file_put_contents($path, $contents, LOCK_EX) !== false;
-    }
-
-    /**
-     * Get all values like array or get specific item by level (multidimensional) using path
-     *
-     * @param string $path (optional) Path with "dots"
-     * @param string $alternative (optional) alternative value does not find the selected value, default is null
-     * @return mixed
-     */
-    public function get($path = null, $alternative = null)
-    {
-        if ($path === null) {
-            return $this->data;
-        }
-
-        return Others::extract($path, $this->data, $alternative);
-    }
-
-    /**
-     * Set value by path in specific level (multidimensional)
-     *
-     * @param string $path Path with "dots"
-     * @param mixed $value Define value
-     * @return \Inphinit\Config
-     */
-    public function set($path, $value)
-    {
-        $paths = explode('.', $path);
-
-        $key = array_shift($paths);
-
-        $tree = $value;
-
-        foreach (array_reverse($paths) as $item) {
-            $tree = array($item => $tree);
-        }
-
-        $this->data[$key] = $tree;
-
-        $tree = null;
-
-        return $this;
     }
 
     /**

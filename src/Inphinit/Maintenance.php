@@ -51,14 +51,14 @@ class Maintenance
      */
     protected static function enable($enable)
     {
-        $config = Config::load('app');
+        $config = new Config('app');
 
-        if ($config->get('maintenance') === $enable) {
+        if ($config->maintenance === $enable) {
             return true;
         }
 
-        $config->set('maintenance', $enable);
+        $config->maintenance = $enable;
 
-        return $config->save();
+        return $config->commit();
     }
 }

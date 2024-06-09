@@ -46,7 +46,7 @@ class Version
     }
 
     /**
-     * [xxxxxxxxxxx]
+     * Get value for a version component
      *
      * @param string $value
      * @return array|string
@@ -59,7 +59,7 @@ class Version
     }
 
     /**
-     * [xxxxxxxxxxx]
+     * Set value for a version component
      *
      * @param string $name
      * @param string|array $value
@@ -67,12 +67,8 @@ class Version
     public function __set($name, $value)
     {
         if (array_key_exists($name, $this->data)) {
-            if ($name === 'build' || $name === 'prerelease') {
-                if (is_array($value) === false) {
-                    throw new Exception(get_class($this) . '::$' . $name . ' except an array', 0, 2);
-                }
-            } elseif (is_string($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an string', 0, 2);
+            if (($name === 'build' || $name === 'prerelease') && is_array($value) === false) {
+                throw new Exception(get_class($this) . '::$' . $name . ' except an array', 0, 2);
             }
 
             $this->data[$name] = $value;

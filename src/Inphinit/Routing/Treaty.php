@@ -84,16 +84,16 @@ abstract class Treaty
     {
         $callback = array($this, $callback);
 
-        if ($path !== '/Index') {
-            $path = self::parsePath($path);
-        } else {
+        if ($path === '/Index') {
             $path = '/';
+        } else {
+            $path = self::parsePath($path);
         }
 
         if ($this->format) {
             $format = $this->format;
         } else {
-            $format = self::SLASH|self::NOSLASH;
+            $format = self::SLASH | self::NOSLASH;
         }
 
         if ($format & self::NOSLASH) {

@@ -421,8 +421,8 @@ class Debug
             include_once __DIR__ . '/../Http/Request.php';
             include_once __DIR__ . '/../Http/Response.php';
 
-            self::$configs = Config::load('debug');
-            self::$configs->get('*'); // Test
+            self::$configs = new Config('debug');
+            self::$configs->searcherror; // Test
         }
     }
 }
