@@ -9,24 +9,31 @@
 
 namespace Inphinit\Dom;
 
+use Inphinit\Exception;
 use Inphinit\Storage;
 use Inphinit\Utility\Arrays;
 
 class Document
 {
-    /** Used with `Document::toArray` method to convert document in a simple array */
-    const SIMPLE = 1;
+    /** Used with `Document::dump` or `Document::save` method to convert document in a simple array */
+    const ARRAY_SIMPLE = 1;
 
-    /** Used with `Document::toArray` method to convert document in a minimal array */
-    const MINIMAL = 2;
+    /** Used with `Document::dump` or `Document::save` method to convert document in a minimal array */
+    const ARRAY_MINIMAL = 2;
 
-    /** Used with `Document::toArray` method to convert document in a array with all properties */
-    const COMPLETE = 3;
+    /** Used with `Document::dump` or `Document::save` method to convert document in a array with all properties */
+    const ARRAY_COMPLETE = 3;
 
     /**  */
-    const ERROR = 4;
-    const FATAL = 8;
-    const WARNING = 16;
+    const HTML = 4;
+    const XML = 5;
+    const HTML_FILE = 6;
+    const XML_FILE = 7;
+
+    /** Constants to treat errors issued by libXML as exceptions */
+    const ERROR = 16;
+    const FATAL = 32;
+    const WARNING = 64;
 
     private $dom;
     private $xpath;
@@ -47,111 +54,102 @@ class Document
      * @param string $encoding The encoding of the document as part of the XML declaration
      * @return void
      */
-    public function __construct($version = '1.0', $encoding = 'UTF-8')
+    public function __construct($source, $format = 0, $options = 0)
     {
         if (self::$reporting === null) {
-            self::$reporting = self::ERROR | self::FATAL;
+            self::setReporting(0);
         }
 
-        $this->dom = new \DOMDocument($version, $encoding);
+        $this->dom = new \DOMDocument;
+
+        switch ($format) {
+            case self::XML_FILE:
+                $this->load($source, $options, 'loadXML', false);
+                break;
+
+            case self::XML:
+                $this->load($source, $options, 'load', true);
+                break;
+
+            case self::HTML:
+                $this->load($source, $options, 'loadHTML', false);
+                break;
+
+            case self::HTML_FILE:
+                $this->load($source, $options, 'loadHTMLFile', true);
+                break;
+
+            default:
+                if (is_array($source)) {
+                    $this->fromArray($source);
+                } else {
+                    throw new Exception('Invalido or undefined format param', 0, 2);
+                }
+        }
     }
 
+    /**
+     * Define libXML errors as exceptions
+     *
+     * @param int $options
+     */
     public static function setReporting($options)
     {
         $types = self::ERROR | self::FATAL | self::WARNING;
 
-        if (!($types & $reporting)) {
-            throw new Inphinit\Exception('Invalid reporting');
+        if ($options && !($types & $options)) {
+            throw new Exception('Invalid reporting options');
         }
 
         self::$reporting = $options;
     }
 
     /**
-     * Convert a array in node elements
+     * Use query-selector like CSS, jQuery, querySelectorAll
      *
-     * @param array|\Traversable $data
-     * @throws \Inphinit\Dom\DomException
-     * @return void
+     * @param string $selector
+     * @param \DOMNode $context
+     * @return \DOMNodeList
      */
-    public function fromArray(array &$data)
+    public function query($selector, \DOMNode $context = null)
     {
-        if (empty($data)) {
-            throw new DomException('Array is empty', 0, 2);
-        } elseif (count($data) > 1) {
-            throw new DomException('Root array accepts only a key', 0, 2);
-        }
-
-        $root = key($data);
-
-        if (self::validTag($root) === false) {
-            throw new DomException('Invalid root <' . $root . '> tag', 0, 2);
-        }
-
-        if ($this->dom->documentElement) {
-            $this->removeChild($this->dom->documentElement);
-        }
-
         $this->enableInternalErrors(true);
 
-        $this->generate($this, $data, 2);
-
-        $this->raise($this->exceptionLevel);
-
-        $this->enableInternalErrors(false);
-    }
-
-    /**
-     * Convert DOM to Array
-     *
-     * @param int $type
-     * @throws \Inphinit\Dom\DomException
-     * @return array
-     */
-    public function toArray($type = Document::SIMPLE)
-    {
-        switch ($type) {
-            case self::MINIMAL:
-                $this->simple = false;
-                $this->complete = false;
-                break;
-
-            case self::SIMPLE:
-                $this->simple = true;
-                break;
-
-            case self::COMPLETE:
-                $this->complete = true;
-                break;
-
-            default:
-                throw new DomException('Invalid type', 2);
+        if ($this->selector === null) {
+            $this->selector = new Selector($this->dom);
         }
 
-        return $this->getNodes($this->dom->childNodes);
+        $nodes = $this->selector->get($selector, $context);
+
+        $level = $this->exceptionLevel;
+
+        $this->exceptionLevel = 3;
+
+        $this->raise($level);
+
+        $this->enableInternalErrors(false);
+
+        return $nodes;
     }
 
     /**
-     * Magic method, return a well-formed XML string
+     * Use query-selector like CSS, jQuery, querySelector
      *
-     * Example:
-     * <pre>
-     * <code>
-     * $xml = new Dom;
-     *
-     * $xml->fromArray(array(
-     *     'foo' => 'bar'
-     * ));
-     *
-     * echo $xml;
-     * </code>
-     * </pre>
-     *
-     * @return string
+     * @param string $selector
+     * @param \DOMNode $context
+     * @return \DOMNode
      */
-    public function __toString()
+    public function first($selector, \DOMNode $context = null)
     {
-        return $this->saveXML();
+        $this->exceptionLevel = 4;
+
+        $nodes = $this->query($selector, $context);
+
+        $node = $nodes ? $nodes->item(0) : null;
+
+        $nodes = null;
+
+        return $node;
     }
 
     /**
@@ -190,128 +188,105 @@ class Document
         return $ns;
     }
 
-    // LOAD XML from FILE
-    public function load($filename, $options = 0)
+    public function dump($format, \DOMNode $node = null, $options = 0)
     {
-        return $this->callMethod('load', $filename, $options);
+        switch ($format) {
+            case self::HTML:
+                return $this->dom->saveHTML($node, $options);
+                break;
+
+            case self::XML:
+                return $this->dom->saveXML($node, $options);
+                break;
+
+            case self::ARRAY_COMPLETE:
+            case self::ARRAY_MINIMAL:
+            case self::ARRAY_SIMPLE:
+                return $this->toArray($format, $node);
+                break;
+
+            default:
+                throw new Exception('Invalid format param');
+        }
     }
 
-    // LOAD XML from STRING
-    public function loadXML($source, $options = 0)
+    public function save($filename, $format, $options = 0)
     {
-        return $this->callMethod('loadXML', $source, $options);
+        switch ($format) {
+            case self::HTML:
+                $this->dom->saveHTMLFile($node, $options);
+                break;
+            case self::XML:
+                $this->dom->save($node, $options);
+                break;
+            default:
+                throw new Exception('Invalid format param');
+        }
     }
 
-    // LOAD HTML from FILE
-    public function loadHTMLFile($filename, $options = 0)
+    private function fromArray($data)
     {
-        return $this->callMethod('loadHTMLFile', $filename, $options);
+        if (empty($data)) {
+            throw new Exception('Array is empty', 0, 3);
+        } elseif (count($data) > 1) {
+            throw new Exception('Root array accepts only a key', 0, 3);
+        }
+
+        $root = key($data);
+
+        if (self::validTag($root) === false) {
+            throw new Exception('Invalid root <' . $root . '> tag', 0, 3);
+        }
+
+        if ($this->dom->documentElement) {
+            $this->dom->removeChild($this->dom->documentElement);
+        }
+
+        $this->enableInternalErrors(true);
+
+        $this->generate($this->dom, $data, 3);
+
+        $this->raise($this->exceptionLevel);
+
+        $this->enableInternalErrors(false);
     }
 
-    // LOAD HTML from STRING
-    public function loadHTML($source, $options = 0)
-    {
-        return $this->callMethod('loadHTML', $source, $options);
-    }
-
-    // SAVE HTML to file
-    public function saveHTMLFile($filename)
-    {
-        return $this->callMethod('saveHTMLFile', $filename, null);
-    }
-
-    // SAVE HTML to STRING
-    public function saveHTML(\DOMNode $node = null)
-    {
-        return $this->callMethod('saveHTML', $node, null);
-    }
-
-    // SAVE HTML to FILE
-    public function save($filename, int $options = 0)
-    {
-        return $this->callMethod('save', $filename, $options);
-    }
-
-    /**
-     * Save HTML to string
-     *
-     * @param DOMNode $node
-     * @param int     $options
-     * @throws \Inphinit\Dom\DomException
-     * @return string|false
-     */
-    public function saveXML(\DOMNode $node = null, $options = 0)
-    {
-        return $this->callMethod('saveXML', $node, $options);
-    }
-
-    /**
-     * Use query-selector like CSS, jQuery, querySelectorAll
-     *
-     * @param string   $selector
-     * @param \DOMNode $context
-     * @return \DOMNodeList
-     */
-    public function query($selector, \DOMNode $context = null)
+    private function load($source, $options, $callback, $isFile)
     {
         $this->enableInternalErrors(true);
 
-        if ($this->selector === null) {
-            $this->selector = new Selector($this->dom);
-        }
+        $this->dom->{$callback}($source, $options);
 
-        $nodes = $this->selector->get($selector, $context);
-
-        $level = $this->exceptionLevel;
-
-        $this->exceptionLevel = 3;
-
-        $this->raise($level);
+        $this->raise(3);
 
         $this->enableInternalErrors(false);
-
-        return $nodes;
     }
 
-    /**
-     * Use query-selector like CSS, jQuery, querySelector
-     *
-     * @param string   $selector
-     * @param \DOMNode $context
-     * @return \DOMNode
-     */
-    public function first($selector, \DOMNode $context = null)
+    private function toArray($format, $node)
     {
-        $this->exceptionLevel = 4;
+        switch ($format) {
+            case self::ARRAY_MINIMAL:
+                $this->simple = false;
+                $this->complete = false;
+                break;
 
-        $nodes = $this->query($selector, $context);
+            case self::ARRAY_SIMPLE:
+                $this->simple = true;
+                break;
 
-        $node = $nodes ? $nodes->item(0) : null;
-
-        $nodes = null;
-
-        return $node;
-    }
-
-    private function callMethod($function, $param, $options)
-    {
-        $this->enableInternalErrors(true);
-
-        $callback = array($this->dom, $function);
-
-        if ($options !== null) {
-            $resource = $callback($param, $options);
-        } else {
-            $resource = $callback($param);
+            default:
+                $this->complete = true;
         }
 
-        $callback = null;
+        if ($node) {
+            if ($dom->documentElement->contains($node) === false) {
+                return false;
+            }
 
-        $this->raise(4);
+            return $this->getNodes($node->childNodes);
+        }
 
-        $this->enableInternalErrors(false);
-
-        return $resource;
+        return $this->getNodes($this->dom->childNodes);
     }
 
     private function enableInternalErrors($enable)
@@ -328,7 +303,15 @@ class Document
     private function raise($level)
     {
         foreach (\libxml_get_errors() as $error) {
-            if ($error->level & $this->reporting) {
+            if ($error->level === \LIBXML_ERR_WARNING) {
+                $reported = self::WARNING;
+            } elseif ($error->level === \LIBXML_ERR_ERROR) {
+                $reported = self::ERROR;
+            } else {
+                $reported = self::FATAL;
+            }
+
+            if (self::$reporting & $reported) {
                 throw new DomException(null, $level);
             }
         }
@@ -355,18 +338,18 @@ class Document
                     $node->setAttribute($name, $value);
                 }
             } elseif (self::validTag($key)) {
-                if (Arrays::indexed($value)) {
+                if (is_array($value) === false) {
+                    $this->add($key, $value, $node);
+                } elseif (Arrays::indexed($value)) {
                     foreach ($value as $subvalue) {
                         $create = array($key => $subvalue);
                         $this->generate($node, $create, $nextLevel);
                     }
-                } elseif (is_array($value)) {
-                    $this->generate($this->add($key, '', $node), $value, $nextLevel);
                 } else {
-                    $this->add($key, $value, $node);
+                    $this->generate($this->add($key, '', $node), $value, $nextLevel);
                 }
             } else {
-                throw new DomException('Invalid tag: <' . $key . '>', 0, $nextLevel);
+                throw new Exception('Invalid tag: <' . $key . '>', 0, $nextLevel);
             }
         }
     }
@@ -380,7 +363,7 @@ class Document
     {
         $created = $this->dom->createElement($name, $value);
         $node->appendChild($created);
-        return $newdom;
+        return $created;
     }
 
     private function getNodes($nodes)

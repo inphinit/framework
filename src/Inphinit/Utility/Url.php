@@ -185,9 +185,7 @@ class Url
      */
     public function __get($name)
     {
-        if (isset($this->data[$name])) {
-            return $this->data[$name];
-        }
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**

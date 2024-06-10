@@ -17,6 +17,7 @@ class File
 {
     private static $infos = array();
     private static $handleFinfo;
+    private static $devStrictMode = false;
 
     /**
      * Check if file exists using case-sensitive,
@@ -27,6 +28,7 @@ class File
      */
     public static function exists($path)
     {
+        $path = parse_url($path, PHP_URL_PATH);
         $rpath = realpath($path);
 
         if ($rpath === false) {
@@ -272,9 +274,19 @@ class File
         clearstatcache();
     }
 
+    /**
+     * Enable or disable strictmode for check if file exists with case-sensitive (only avaliable in development mode)
+     *
+     * @param bool $enable
+     */
+    public static function strictMode($enable)
+    {
+        self::$devStrictMode = $enable;
+    }
+
     private static function checkInDevMode($path)
     {
-        if (App::config('development') && self::exists($path) === false) {
+        if (self::$devStrictMode && App::config('development') && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 0, 3);
         }
     }

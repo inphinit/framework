@@ -29,7 +29,15 @@ class DomException extends \Inphinit\Exception
         }
 
         if (isset($err[0]->file) && $err[0]->line > 0) {
-            $this->file = preg_replace('#^file:/(\w+:)#i', '$1', $err[0]->file);
+            $file = $err[0]->file;
+
+            $scheme = parse_url($file, PHP_URL_SCHEME);
+
+            if (!$scheme || stripos($scheme, 'file:') === 0) {
+                $file = realpath(parse_url($file, PHP_URL_PATH));
+            }
+
+            $this->file = $file;
             $this->line = $err[0]->line;
             $this->code = $err[0]->code;
             $trace = 0;

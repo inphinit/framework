@@ -82,7 +82,7 @@ class View
      */
     public static function render($view, array $data = array())
     {
-        if (!self::$force) {
+        if (self::$force === false) {
             return array_push(self::$views, array($view, $data)) - 1;
         }
 

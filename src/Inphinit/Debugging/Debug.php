@@ -60,13 +60,13 @@ class Debug
     {
         if (empty(self::$views['error'])) {
             return null;
-        } elseif ($type === E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
+        } elseif ($type === \E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
             die("Fatal error: {$message} in {$file} on line {$line}");
         }
 
-        $data = self::details($type, $message, $file, $line);
-
         if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
+            $data = self::details($type, $message, $file, $line, false);
+
             self::unregister();
 
             Response::cache(0);
@@ -78,6 +78,8 @@ class Debug
         }
 
         View::dispatch();
+
+        $data = self::details($type, $message, $file, $line, true);
 
         self::render(self::$views['error'], $data);
     }
@@ -233,6 +235,9 @@ class Debug
             $breakpoint = $line;
         }
 
+        // Disable strict mode for File::lines, prevent extra-exceptions
+        File::strictMode(false);
+
         $preview = preg_split('#\r\n|\n#', File::lines($file, $init, $max));
 
         if (count($preview) !== $breakpoint && trim(end($preview)) === '') {
@@ -279,11 +284,11 @@ class Debug
      * @param string $message
      * @return string
      */
-    public static function searcher($message)
+    public static function assistant($message)
     {
         self::boot();
 
-        $link = self::$configs->get('searcherror');
+        $link = self::$configs->assistant;
 
         if (strpos($link, '{error}') === -1) {
             return $message;
@@ -295,7 +300,9 @@ class Debug
             $message = substr($message, 0, $pos);
         }
 
-        $link = str_replace('{error}', rawurlencode($message), $link);
+        $link_message = str_replace(array('"', '\''), '', $message);
+
+        $link = str_replace('{error}', rawurlencode($link_message), $link);
         $link = htmlentities($link);
         $message = htmlentities($message);
 
@@ -313,6 +320,8 @@ class Debug
     {
         self::boot();
 
+        $file = parse_url($file, PHP_URL_PATH);
+
         $message = $file . ' on line ' . $line;
         $link = false;
         $compareFile = str_replace('\\', '/', $file);
@@ -325,7 +334,7 @@ class Debug
         if (strpos($compareFile, INPHINIT_SYSTEM . '/vendor/') !== 0) {
             self::boot();
 
-            $link = self::$configs->get('editor');
+            $link = self::$configs->editor;
 
             switch ($link) {
                 case 'vscode':
@@ -349,7 +358,7 @@ class Debug
 
     private static function render($view, $data)
     {
-        if (!self::$showBeforeView && isset(self::$views['before'])) {
+        if (self::$showBeforeView === false && isset(self::$views['before'])) {
             self::$showBeforeView = true;
             View::render(self::$views['before']);
         }
@@ -357,7 +366,7 @@ class Debug
         View::render($view, $data);
     }
 
-    private static function details($type, $message, $file, $line)
+    private static function details($type, $message, $file, $line, $htmlentities = true)
     {
         $match = array();
 
@@ -395,11 +404,23 @@ class Debug
                 break;
         }
 
+        $source = null;
+
+        if ($line > -1) {
+            $source = self::source($file, $line);
+
+            if ($htmlentities && $source) {
+                foreach ($source['preview'] as &$entry) {
+                    $entry = strtr($entry, array('<' => '&lt;', '>' => '&gt;'));
+                }
+            }
+        }
+
         return array(
             'message' => $message,
             'file' => $file,
             'line' => $line,
-            'source' => $line > -1 ? self::source($file, $line) : null
+            'source' => $source
         );
     }
 

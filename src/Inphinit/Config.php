@@ -50,7 +50,7 @@ class Config
             throw new Exception($this->path . ' configurations cannot be loaded', 0, $level);
         }
 
-        if (!is_array($configs)) {
+        if (is_array($configs) === false) {
             throw new Exception($this->path . ' has invalid data', 0, $level);
         }
 
@@ -82,9 +82,7 @@ class Config
      */
     public function __get($name)
     {
-        if (array_key_exists($name, $this->data)) {
-            return $this->data[$name];
-        }
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**
