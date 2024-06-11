@@ -125,7 +125,7 @@ class Debug
         self::boot();
 
         if ($view !== null && View::exists($view) === false) {
-            throw new Exception($view . ' view is not found', 0, 2);
+            throw new Exception($view . ' view is not found');
         }
 
         $callRender = array('\\' . get_called_class(), 'render' . ucfirst($type));
@@ -143,7 +143,7 @@ class Debug
         } elseif ($type === 'defined' || $type === 'performance') {
             Event::on('done', $callRender);
         } elseif ($type !== 'before') {
-            throw new Exception($type . ' is not valid event', 0, 2);
+            throw new Exception($type . ' is not valid event');
         }
 
         self::$views[$type] = $view;

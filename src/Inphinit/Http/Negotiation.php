@@ -233,7 +233,7 @@ class Negotiation
 
         foreach (explode(',', $value) as $hvalues) {
             if (substr_count($hvalues, ';') > 1) {
-                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 0, 2);
+                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"');
             }
 
             $current = explode(';', $hvalues, 2);

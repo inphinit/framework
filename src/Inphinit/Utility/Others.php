@@ -19,7 +19,7 @@ class Others
      * @param mixed          $alternative
      * @return mixed
      */
-    public static function extract($path, $items, $alternative = null)
+    public static function extract($path, &$items, $alternative = null)
     {
         foreach (explode('.', $path) as $value) {
             if (is_array($items) && array_key_exists($value, $items)) {

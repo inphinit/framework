@@ -34,7 +34,7 @@ class Session
     public function __construct($name, $autocommit = false, array $options = array())
     {
         if (headers_sent()) {
-            throw new Exception('headers sent', 0, 2);
+            throw new Exception('headers sent');
         }
 
         self::directory();
@@ -92,7 +92,7 @@ class Session
         if (is_dir($path) && is_writable($path)) {
             self::$tempDir = $path;
         } else {
-            throw new Exception($path . ' is not writable or invalid', 0, 2);
+            throw new Exception($path . ' is not writable or invalid');
         }
     }
 
@@ -144,7 +144,7 @@ class Session
         try {
             $data = serialize($this->data);
         } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), 0, 2);
+            throw new Exception($e->getMessage());
         }
 
         $this->setLock(true);
@@ -164,7 +164,7 @@ class Session
     public function regenerate()
     {
         if (headers_sent()) {
-            throw new Exception('headers sent', 0, 2);
+            throw new Exception('headers sent');
         }
 
         $id = self::tempFile($dest);
@@ -172,7 +172,7 @@ class Session
         rewind($this->handle);
 
         if (stream_copy_to_stream($this->handle, $dest) === false) {
-            throw new Exception('Failed copy data', 0, 2);
+            throw new Exception('Failed copy data');
         }
 
         $this->setCookie($id, $this->handle, $dest);
@@ -203,7 +203,7 @@ class Session
         try {
             serialize($value);
         } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), 0, 2);
+            throw new Exception($e->getMessage());
         }
 
         $this->data[$name] = $value;

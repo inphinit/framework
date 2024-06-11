@@ -21,7 +21,7 @@ class Exception extends \Exception
      * @param int    $trace
      * @return void
      */
-    public function __construct($message, $code = 0, $trace = 0)
+    public function __construct($message, $code = 0, $trace = 2)
     {
         if ($trace > 0) {
             $data = Debug::caller($trace);

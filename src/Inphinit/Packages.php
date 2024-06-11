@@ -33,7 +33,7 @@ class Packages
         }
 
         if (is_dir($path) === false) {
-            throw new Exception('Composer path is not accessible: ' . $path, 0, 2);
+            throw new Exception('Composer path is not accessible: ' . $path);
         }
 
         $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
@@ -168,7 +168,7 @@ class Packages
         $handle = fopen($path, 'w');
 
         if ($handle === false) {
-            throw new Exception('This path is not writabled: ' . $path, 0, 2);
+            throw new Exception('This path is not writabled: ' . $path);
         }
 
         $libs = $this->libs;

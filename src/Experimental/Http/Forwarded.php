@@ -32,7 +32,7 @@ class Forwarded
         }
 
         if (!$forwarded) {
-            throw new Exception('Error Processing Request', 0, 2);
+            throw new Exception('Error Processing Request');
         }
 
         // foreach (explode(';', $forwarded) as $item) {

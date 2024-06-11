@@ -75,7 +75,7 @@ class Url
         $data = parse_url($url);
 
         if ($data === false) {
-            throw new Exception($url . ' is invalid', 0, 2);
+            throw new Exception($url . ' is invalid');
         }
 
         $data['source'] = $url;
@@ -197,7 +197,7 @@ class Url
     {
         if (array_key_exists($name, $this->data)) {
             if (is_string($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an string', 0, 2);
+                throw new Exception(get_class($this) . '::$' . $name . ' except an string');
             }
 
             $this->data[$name] = $value;

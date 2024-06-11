@@ -26,7 +26,7 @@ class Object
         if (is_object($source) || ($this->isArray = is_array($source))) {
             $this->data = $source;
         } else {
-            throw new Exception('Expected an array or object', 0, 2);
+            throw new Exception('Expected an array or object');
         }
     }
 

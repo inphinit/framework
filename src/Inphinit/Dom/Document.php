@@ -83,7 +83,7 @@ class Document
                 if (is_array($source)) {
                     $this->fromArray($source);
                 } else {
-                    throw new Exception('Invalido or undefined format param', 0, 2);
+                    throw new Exception('Invalido or undefined format param');
                 }
         }
     }
@@ -143,11 +143,12 @@ class Document
     {
         $this->exceptionLevel = 4;
 
+        $node = null;
         $nodes = $this->query($selector, $context);
 
-        $node = $nodes ? $nodes->item(0) : null;
-
-        $nodes = null;
+        if ($nodes) {
+            $node = $nodes->item(0);
+        }
 
         return $node;
     }
@@ -188,6 +189,14 @@ class Document
         return $ns;
     }
 
+    /**
+     * Convert to string
+     *
+     * @param int         $format
+     * @param \DOMElement $element
+     * @param int         $options
+     * @return void
+     */
     public function dump($format, \DOMNode $node = null, $options = 0)
     {
         switch ($format) {
@@ -210,18 +219,38 @@ class Document
         }
     }
 
+    /**
+     * Save to file
+     *
+     * @param string $filename
+     * @param int    $format
+     * @param int    $options
+     * @return void
+     */
     public function save($filename, $format, $options = 0)
     {
         switch ($format) {
             case self::HTML:
                 $this->dom->saveHTMLFile($node, $options);
                 break;
+
             case self::XML:
                 $this->dom->save($node, $options);
                 break;
+
             default:
                 throw new Exception('Invalid format param');
         }
+    }
+
+    /**
+     * Get original document
+     *
+     * @return \DOMDocument
+     */
+    public function document()
+    {
+        return $this->dom;
     }
 
     private function fromArray($data)

@@ -41,7 +41,7 @@ class Version
                 $this->data['build'] = explode('.', $matches[5]);
             }
         } else {
-            throw new Exception($version . ' not matches with semversion', 0, 2);
+            throw new Exception($version . ' not matches with semversion');
         }
     }
 
@@ -66,7 +66,7 @@ class Version
     {
         if (array_key_exists($name, $this->data)) {
             if (($name === 'build' || $name === 'prerelease') && is_array($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an array', 0, 2);
+                throw new Exception(get_class($this) . '::$' . $name . ' except an array');
             }
 
             $this->data[$name] = $value;
