@@ -64,11 +64,11 @@ class Document
 
         switch ($format) {
             case self::XML_FILE:
-                $this->load($source, $options, 'loadXML', false);
+                $this->load($source, $options, 'load', false);
                 break;
 
             case self::XML:
-                $this->load($source, $options, 'load', true);
+                $this->load($source, $options, 'loadXML', true);
                 break;
 
             case self::HTML:
@@ -363,8 +363,8 @@ class Document
             } elseif ($key === '@contents') {
                 $this->generate($node, $value, $nextLevel);
             } elseif ($key === '@attributes') {
-                foreach ($attributes as $name => $value) {
-                    $node->setAttribute($name, $value);
+                foreach ($value as $subKey => $subValue) {
+                    $node->setAttribute($subKey, $subValue);
                 }
             } elseif (self::validTag($key)) {
                 if (is_array($value) === false) {
