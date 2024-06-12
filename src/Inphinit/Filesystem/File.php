@@ -28,7 +28,8 @@ class File
      */
     public static function exists($path)
     {
-        $path = parse_url($path, PHP_URL_PATH);
+        $path = stripos('file:', $path) === 0 ? parse_url($path, PHP_URL_PATH) : $path;
+
         $rpath = realpath($path);
 
         if ($rpath === false) {
@@ -36,10 +37,10 @@ class File
         }
 
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
-            $path = Url::canonpath($path, Url::PATH_NORMALIZE);
+            $path = Url::canonpath($path);
         }
 
-        return str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path) === realpath($path);
+        return inphinit_path_check($path);
     }
 
     /**

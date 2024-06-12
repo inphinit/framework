@@ -65,7 +65,7 @@ class App
     }
 
     /**
-     * Register a callback or script for a route
+     * Register callable or controller for a route
      *
      * @param string|array    $methods
      * @param string          $path
@@ -118,7 +118,19 @@ class App
     }
 
     /**
-     * Register a callback for a URI pattern
+     * Create or remove a pattern for URL slugs
+     *
+     * @param string $pattern Set pattern for URL slug params like this /foo/<var:pattern>
+     * @return void
+     */
+    public function setPattern($pattern, $regex)
+    {
+        $this->paramPatterns[preg_quote($pattern)] = $regex;
+        $this->patternNames = implode('|', array_keys($this->paramPatterns));
+    }
+
+    /**
+     * Register a callback for isolate routes
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback
@@ -203,7 +215,7 @@ class App
 
             $output = $callback($params);
         } else {
-            http_response_code($code);
+            Response::status($code);
             $code = array('status' => $code);
             inphinit_sandbox('errors.php', $code);
         }
@@ -211,18 +223,6 @@ class App
         self::forward($output);
 
         return true;
-    }
-
-    /**
-     * Create or remove a pattern for URL slugs
-     *
-     * @param string $pattern Set pattern for URL slug params like this /foo/<var:pattern>
-     * @return void
-     */
-    public function setPattern($pattern, $regex)
-    {
-        $this->paramPatterns[preg_quote($pattern)] = $regex;
-        $this->patternNames = implode('|', array_keys($this->paramPatterns));
     }
 
     /**

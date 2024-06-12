@@ -14,8 +14,35 @@ use Inphinit\Exception;
 
 class DebugApp extends App
 {
+    private static $allowedMethods = array(
+        'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'ANY'
+    );
+
+    /**
+     * Validate method and callback, if valid register callable or controller for a route
+     *
+     * @param string|array    $methods
+     * @param string          $path
+     * @param string|callable $callback
+     * @throws \Inphinit\Exception
+     * @return void
+     */
     public function action($methods, $path, $callback)
     {
+        $checkMethods = is_array($methods) ? $methods : array($methods);
+
+        foreach ($checkMethods as $method) {
+            if (is_string($method) === false) {
+                throw new Exception('One of the methods is not a string');
+            }
+        }
+
+        $diffMethods = array_diff($checkMethods, self::$allowedMethods);
+
+        if ($diffMethods) {
+            throw new Exception('Invalid methods: ' . implode(', ', $diffMethods));
+        }
+
         if (is_string($callback) && strpos($callback, '::') !== false) {
             list($className, $method) = explode('::', $callback);
 
@@ -37,7 +64,7 @@ class DebugApp extends App
             }
 
             if ($reflection->isConstructor() || $reflection->isDestructor()) {
-                throw new Exception("{$classAndMethod} is not valid");
+                throw new Exception($classAndMethod . ' is not valid');
             }
         } elseif (is_callable($callback) === false) {
             throw new Exception('Callback is not callable');
@@ -46,9 +73,43 @@ class DebugApp extends App
         parent::action($methods, $path, $callback);
     }
 
+    /**
+     * Validate namespace prefix, if valid define controller prefix on scope
+     *
+     * @param string $prefix Set controller prefix
+     */
+    public function setNamespace($prefix)
+    {
+        if (substr($prefix, -1) !== '\\' || $prefix[0] !== '\\' || strpos($prefix, '\\\\') !== false) {
+            throw new Exception($prefix . ' controller prefix is not valid');
+        }
+
+        parent::setNamespace($prefix);
+    }
+
+    /**
+     * Validate path prefix, if valid define route prefix paths on scope
+     *
+     * @param string $prefix Set path prefix
+     */
+    public function setPath($prefix)
+    {
+        if (substr($prefix, -1) !== '/' || $prefix[0] !== '/' || strpos($prefix, '/') !== false) {
+            throw new Exception($prefix . ' path prefix is not valid');
+        }
+
+        parent::setPath($prefix);
+    }
+
+    /**
+     * Validate pattern, if valid create or remove a pattern for URL slugs
+     *
+     * @param string $pattern
+     * @return void
+     */
     public function setPattern($pattern, $regex)
     {
-        if (!$pattern) {
+        if (!$pattern || is_string($pattern) === false) {
             throw new Exception('Invalid pattern');
         }
 
@@ -59,28 +120,16 @@ class DebugApp extends App
         parent::setPattern($pattern, $regex);
     }
 
-    public function setNamespace($prefix)
-    {
-        if (substr($prefix, -1) !== '\\' || $prefix[0] !== '\\' || strpos($prefix, '\\\\') !== false) {
-            throw new Exception($prefix . ' controller prefix is not valid');
-        }
-
-        parent::setNamespace($prefix);
-    }
-
-    public function setPath($prefix)
-    {
-        if (substr($prefix, -1) !== '/' || $prefix[0] !== '/' || strpos($prefix, '/') !== false) {
-            throw new Exception($prefix . ' path prefix is not valid');
-        }
-
-        parent::setPath($prefix);
-    }
-
+    /**
+     * Validate pattern, if valid register a callback for isolate routes
+     *
+     * @param string   $pattern  URI pattern
+     * @param \Closure $callback Callback
+     */
     public function scope($pattern, \Closure $callback)
     {
-        if (!preg_match("#^(\*|\S+)://(\*|\S+\:(\*|\d+))/#", $pattern)) {
-            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>:<port>/<path> or <scheme>://*/');
+        if (!preg_match("#^([a-z*]+)://([^/]+)(\:[\d*]+)?/(.*)/#", $pattern)) {
+            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>:<port>/<path>/ (including wildcard)');
         }
 
         parent::scope($pattern, $callback);

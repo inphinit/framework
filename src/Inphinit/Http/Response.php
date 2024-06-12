@@ -50,7 +50,7 @@ class Response
     }
 
     /**
-     * Get or set status code and return last status code
+     * Set Content-Type header or remove previously set headers
      *
      * @param string|null $name
      * @param string|null $charset
@@ -70,7 +70,7 @@ class Response
     }
 
     /**
-     * Set header to cache page Response::cache($seconds, $modified = 0);
+     * Set HTTP cache
      *
      * @param int $expires
      * @param int $modified
@@ -81,21 +81,24 @@ class Response
         $time = time();
 
         if ($expires < 1) {
-            header('Expires: ' . gmdate('D, d M Y H:i:s') . ' GMT');
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Cache-Control: post-check=0, pre-check=0', false);
             header('Pragma: no-cache');
+
+            $date = gmdate('D, d M Y H:i:s');
         } else {
-            header('Expires: ' . gmdate('D, d M Y H:i:s', $time + $expires) . ' GMT');
             header('Cache-Control: public, max-age=' . $expires);
             header('Pragma: max-age=' . $expires);
+
+            $date = gmdate('D, d M Y H:i:s', $time + $expires);
         }
 
+        header('Expires: ' . $date . ' GMT');
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $modified > 0 ? $modified : $time) . ' GMT');
     }
 
     /**
-     * Force download current page
+     * Force download current response
      *
      * @param string $name
      * @param int    $length

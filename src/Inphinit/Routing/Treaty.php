@@ -51,7 +51,7 @@ abstract class Treaty
         }
 
         if ($invalid) {
-            throw new \Inphinit\Exception('Invalid controller', 0, 2);
+            throw new \Inphinit\Exception('Invalid controller');
         }
     }
 

@@ -117,7 +117,7 @@ class Url
         $path = $this->data['path'];
 
         if ($path) {
-            $path = self::canonpath($path, $configs);
+            $path = self::canonpath($path);
 
             if ($this->data['scheme'] === 'file' && $path[0] === '/' && strpos($path, ':') === 2) {
                 $path = ltrim($path, '/');
