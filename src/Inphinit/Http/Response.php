@@ -33,7 +33,7 @@ class Response
     }
 
     /**
-     * Shortcut
+     * Shortcut for set header
      *
      * @param string      $code
      * @param string|null $trigger
@@ -50,7 +50,7 @@ class Response
     }
 
     /**
-     * Set Content-Type header or remove previously set headers
+     * Set Content-Type header or remove previously headers
      *
      * @param string|null $name
      * @param string|null $charset

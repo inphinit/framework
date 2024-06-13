@@ -26,7 +26,7 @@ class App
     private $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
-        'decimal' => '\d+\.\d+',
+        'decimal' => '(0|[1-9]\d+)\.\d+',
         'num' => '\d+',
         'nospace' => '[^/\s]+',
         'uuid' => '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
@@ -44,7 +44,7 @@ class App
     }
 
     /**
-     * Get application configs
+     * Get or set application configs
      *
      * @param string $key
      * @return mixed
@@ -98,9 +98,9 @@ class App
     }
 
     /**
-     * Prefix controller on scope
+     * Prefixes the namespace in the current scope control
      *
-     * @param string $prefix Set controller prefix
+     * @param string $prefix
      */
     public function setNamespace($prefix)
     {
@@ -108,9 +108,9 @@ class App
     }
 
     /**
-     * Prefix route paths on scope
+     * Prefixes route path in the current scope control
      *
-     * @param string $prefix Set path prefix
+     * @param string $prefix
      */
     public function setPath($prefix)
     {
@@ -120,7 +120,7 @@ class App
     /**
      * Create or remove a pattern for URL slugs
      *
-     * @param string $pattern Set pattern for URL slug params like this /foo/<var:pattern>
+     * @param string $pattern
      * @return void
      */
     public function setPattern($pattern, $regex)
@@ -216,8 +216,8 @@ class App
             $output = $callback($params);
         } else {
             Response::status($code);
-            $code = array('status' => $code);
-            inphinit_sandbox('errors.php', $code);
+            $details = array('status' => $code);
+            inphinit_sandbox('errors.php', $details);
         }
 
         self::forward($output);

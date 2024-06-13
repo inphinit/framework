@@ -104,6 +104,7 @@ class Packages
             }
 
             $this->log[] = 'Imported ' . $i . ' classes from classmap';
+
             return $i;
         }
 
@@ -156,7 +157,6 @@ class Packages
      * Save imported packages path to file in PHP format
      *
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
-     * @throws \Inphinit\Exception
      * @return bool
      */
     public function save($path)
@@ -165,23 +165,15 @@ class Packages
             return false;
         }
 
-        $handle = fopen($path, 'w');
-
-        if ($handle === false) {
-            throw new Exception('This path is not writabled: ' . $path);
-        }
-
         $libs = $this->libs;
 
         foreach ($libs as $key => &$value) {
             $value = self::relativePath($value);
         }
 
-        fwrite($handle, "<?php\nreturn");
-        fwrite($handle, " " . var_export($libs, true) . ";\n");
-        fclose($handle);
+        $contents = "<?php\nreturn " . var_export($libs, true) . ";\n";
 
-        return true;
+        return file_put_contents($path, $contents, LOCK_EX) !== false;
     }
 
     /**

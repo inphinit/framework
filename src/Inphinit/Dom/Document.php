@@ -105,7 +105,7 @@ class Document
     }
 
     /**
-     * Use query-selector like CSS, jQuery, querySelectorAll
+     * Gets all elements that matches the CSS selector (like document.querySelectorAll)
      *
      * @param string $selector
      * @param \DOMNode $context
@@ -133,7 +133,7 @@ class Document
     }
 
     /**
-     * Use query-selector like CSS, jQuery, querySelector
+     * Gets an element that matches the CSS selector (like document.querySelector)
      *
      * @param string $selector
      * @param \DOMNode $context
@@ -190,7 +190,7 @@ class Document
     }
 
     /**
-     * Convert to string
+     * Convert document to XML string, HTML string or array
      *
      * @param int         $format
      * @param \DOMElement $element
@@ -202,17 +202,14 @@ class Document
         switch ($format) {
             case self::HTML:
                 return $this->dom->saveHTML($node, $options);
-                break;
 
             case self::XML:
                 return $this->dom->saveXML($node, $options);
-                break;
 
             case self::ARRAY_COMPLETE:
             case self::ARRAY_MINIMAL:
             case self::ARRAY_SIMPLE:
                 return $this->toArray($format, $node);
-                break;
 
             default:
                 throw new Exception('Invalid format param');
@@ -220,7 +217,7 @@ class Document
     }
 
     /**
-     * Save to file
+     * Save document to file
      *
      * @param string $filename
      * @param int    $format

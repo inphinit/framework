@@ -15,7 +15,7 @@ use Inphinit\Exception;
 class DebugApp extends App
 {
     private static $allowedMethods = array(
-        'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'ANY'
+        'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'
     );
 
     /**
@@ -41,6 +41,10 @@ class DebugApp extends App
 
         if ($diffMethods) {
             throw new Exception('Invalid methods: ' . implode(', ', $diffMethods));
+        }
+
+        if (count($checkMethods) !== count(array_unique($checkMethods))) {
+            throw new Exception('Duplicate methods: ' . implode(', ', $methods));
         }
 
         if (is_string($callback) && strpos($callback, '::') !== false) {

@@ -28,7 +28,9 @@ class File
      */
     public static function exists($path)
     {
-        $path = stripos('file:', $path) === 0 ? parse_url($path, PHP_URL_PATH) : $path;
+        if (stripos($path, 'file:') === 0) {
+            $path = parse_url($path, PHP_URL_PATH);
+        }
 
         $rpath = realpath($path);
 
@@ -40,7 +42,7 @@ class File
             $path = Url::canonpath($path);
         }
 
-        return inphinit_path_check($path);
+        return inphinit_check_path($path);
     }
 
     /**
@@ -65,24 +67,31 @@ class File
             case 0xC000: // socket
                 $info = 's';
                 break;
+
             case 0xA000: // symbolic link
                 $info = 'l';
                 break;
+
             case 0x8000: // regular
                 $info = 'r';
                 break;
+
             case 0x6000: // block special
                 $info = 'b';
                 break;
+
             case 0x4000: // directory
                 $info = 'd';
                 break;
+
             case 0x2000: // character special
                 $info = 'c';
                 break;
+
             case 0x1000: // FIFO pipe
                 $info = 'p';
                 break;
+
             default: // unknown
                 $info = 'u';
         }

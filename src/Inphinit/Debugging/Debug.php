@@ -290,7 +290,7 @@ class Debug
 
         $link = self::$configs->assistant;
 
-        if (strpos($link, '{error}') === -1) {
+        if (strpos($link, '{error}') === false) {
             return $message;
         }
 
@@ -443,7 +443,7 @@ class Debug
             include_once __DIR__ . '/../Http/Response.php';
 
             self::$configs = new Config('debug');
-            self::$configs->searcherror; // Test
+            self::$configs->assistant; // Test
         }
     }
 }

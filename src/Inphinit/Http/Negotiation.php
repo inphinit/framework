@@ -32,7 +32,7 @@ class Negotiation
      *                       headers returned by curl or other way
      * @return void
      */
-    public function __construct(array $headers = null)
+    public function __construct(array $headers = array())
     {
         if (empty($headers) === false) {
             $headers = array_change_key_case($headers, CASE_LOWER);

@@ -13,12 +13,12 @@ use Inphinit\Event;
 header_remove('X-Powered-By');
 
 /**
- * Return normalized path (for checking case-sensitive in Windows OS)
+ * case-sensitive check path
  *
  * @param string $path
  * @return bool
  */
-function inphinit_path_check($path)
+function inphinit_check_path($path)
 {
     return str_replace('\\', '/', $path) === str_replace('\\', '/', realpath($path));
 }
@@ -29,11 +29,11 @@ function inphinit_path_check($path)
  * @param string $sandbox_path
  * @param array  $sandbox_data
  */
-function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
+function inphinit_sandbox($sandbox_path, &$sandbox_data = null)
 {
     $sandbox_path = INPHINIT_SYSTEM . '/' . $sandbox_path;
 
-    if (inphinit_path_check($sandbox_path)) {
+    if (inphinit_check_path($sandbox_path)) {
         if ($sandbox_data) {
             extract($sandbox_data, EXTR_SKIP);
         }
@@ -95,11 +95,11 @@ if (INPHINIT_COMPOSER) {
     spl_autoload_register(function ($class) use (&$prefixes) {
         $class = ltrim($class, '\\');
 
-        $base = null;
-
         if (isset($prefixes[$class]) && pathinfo($prefixes[$class], PATHINFO_EXTENSION)) {
             $base = $prefixes[$class];
         } else {
+            $base = null;
+
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
@@ -116,7 +116,7 @@ if (INPHINIT_COMPOSER) {
                 $base = INPHINIT_SYSTEM . '/' . $base;
             }
 
-            if (inphinit_path_check($base)) {
+            if (inphinit_check_path($base)) {
                 include_once $base;
             }
         }

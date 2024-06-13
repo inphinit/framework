@@ -29,7 +29,7 @@ class Request
     }
 
     /**
-     * Check if is a specific HTTP method, HTTPS, and xmlhttprequest (Depends on how an ajax call was made)
+     * Check is request is: HTTPS, XMLHttpRequest, Pjax, prefetch
      *
      * @param string $check
      * @return bool
@@ -62,7 +62,7 @@ class Request
     }
 
     /**
-     * Get HTTP headers from current request
+     * Get HTTP header from current request
      *
      * @param string $name
      * @return string|null

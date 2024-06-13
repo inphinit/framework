@@ -58,32 +58,83 @@ class Size
             throw new Exception($path . ' not found (check case-sensitive)');
         }
 
+        $size = null;
+
         $path = realpath($path);
 
-        if (!$path) {
+        if ($path === false) {
             throw new Exception('Invalid path');
         }
 
-        if (self::$isWin && $this->size === null && $this->modes & self::COM) {
-            $this->fromFileSystemObject($path);
+        if (self::$isWin && $size === null && $this->modes & self::COM) {
+            $size = $this->fromFileSystemObject($path);
         }
 
-        if ($this->size === null && $this->modes & self::CURL) {
-            $this->fromCurl($path);
+        if ($size === null && $this->modes & self::CURL) {
+            $size = $this->fromCurl($path);
         }
 
-        if ($this->size === null && $this->modes & self::SYSTEM) {
-            $this->fromOS($path);
+        if ($size === null && $this->modes & self::SYSTEM) {
+            $size = $this->fromSystem($path);
         }
 
-        if ($this->size === null && $this->lastError) {
+        if ($size === null && $this->lastError) {
             throw new Exception($this->lastError);
         }
 
-        return $this->size;
+        return $size;
     }
 
-    private function fromOS($path)
+    private function fromFileSystemObject($path)
+    {
+        if (class_exists('com', false)) {
+            $obj = new \com('Scripting.FileSystemObject');
+
+            if ($file = $obj->GetFile($path)) {
+                return $file->size;
+            }
+
+            $this->lastError = 'COM: get size failed: ' . $path;
+        } else {
+            $this->lastError = 'COM: Not avaliable in your OS or disabled';
+        }
+    }
+
+    private function fromCurl($path)
+    {
+        if (function_exists('curl_init')) {
+            $handle = curl_init('file://' . rawurlencode($path));
+
+            if ($handle !== false) {
+                curl_setopt($handle, CURLOPT_NOBODY, true);
+                curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($handle, CURLOPT_HEADER, true);
+
+                $size = null;
+
+                if (curl_exec($handle)) {
+                    $size = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+                    $error = null;
+                } else {
+                    $error = curl_error($handle);
+                }
+
+                curl_close($handle);
+
+                if ($error !== null) {
+                    $this->lastError = 'CURL: ' . $error . ' from ' . $this->path;
+                }
+
+                return $size;
+            } else {
+                $this->lastError = 'CURL: can\'t read ' . $this->path;
+            }
+        } else {
+            $this->lastError = 'CURL: curl_init is disabled';
+        }
+    }
+
+    private function fromSystem($path)
     {
         if (function_exists('shell_exec')) {
             $arg = escapeshellarg($path);
@@ -101,57 +152,12 @@ class Size
             }
 
             if (is_numeric($response)) {
-                $this->size = $response;
-            } else {
-                $this->lastError = 'SYSTEM: ' . ($response ? $response : 'Unknown error');
+                return $response;
             }
+
+            $this->lastError = 'SYSTEM: ' . ($response ? $response : 'Unknown error');
         } else {
             $this->lastError = 'SYSTEM: shell_exec is disabled';
-        }
-    }
-
-    private function fromCurl($path)
-    {
-        if (function_exists('curl_init')) {
-            $handle = curl_init('file://' . rawurlencode($path));
-
-            if ($handle !== false) {
-                curl_setopt($handle, CURLOPT_NOBODY, true);
-                curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($handle, CURLOPT_HEADER, true);
-
-                if (curl_exec($handle)) {
-                    $this->size = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-                    $error = null;
-                } else {
-                    $error = curl_error($handle);
-                }
-
-                curl_close($handle);
-
-                if ($error !== null) {
-                    $this->lastError = 'CURL: ' . $error . ' from ' . $this->path;
-                }
-            } else {
-                $this->lastError = 'CURL: can\'t read ' . $this->path;
-            }
-        } else {
-            $this->lastError = 'CURL: curl_init is disabled';
-        }
-    }
-
-    private function fromFileSystemObject($path)
-    {
-        if (class_exists('com', false)) {
-            $obj = new com('Scripting.FileSystemObject');
-
-            if ($file = $obj->GetFile($path)) {
-                $this->size = $file->size;
-            } else {
-                $this->lastError = 'COM: ' . $error . ' from ' . $this->path;
-            }
-        } else {
-            $this->lastError = 'COM: Not avaliable in your OS or disabled';
         }
     }
 }
