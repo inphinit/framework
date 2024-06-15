@@ -28,6 +28,7 @@ function inphinit_check_path($path)
  *
  * @param string $sandbox_path
  * @param array  $sandbox_data
+ * @return mixed
  */
 function inphinit_sandbox($sandbox_path, &$sandbox_data = null)
 {
@@ -71,6 +72,8 @@ function inphinit_error($type, $message, $file, $line, $context = null)
 
 /**
  * Use with `register_shutdown_function` fatal errors and execute `done` event
+ *
+ * @return void
  */
 function inphinit_shutdown()
 {

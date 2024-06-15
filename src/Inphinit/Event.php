@@ -80,7 +80,7 @@ class Event
      * @param callable $callback
      * @return void
      */
-    public static function off($name, callable $callback = null)
+    public static function off($name, $callback = null)
     {
         if ($callback === null) {
             self::$events[$name] = array();

@@ -50,7 +50,8 @@ class Size
     /**
      * Get file size using defined modes
      *
-     * @param string $modes
+     * @param string $path
+     * @return int
      */
     public function get($path)
     {

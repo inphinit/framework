@@ -16,7 +16,6 @@ class DomException extends \Inphinit\Exception
      *
      * @param string $message
      * @param int    $trace
-     * @return void
      */
     public function __construct($message = null, $trace = 1)
     {

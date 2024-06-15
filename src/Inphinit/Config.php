@@ -22,7 +22,6 @@ class Config
      *
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function __construct($path)
     {
@@ -36,7 +35,7 @@ class Config
      *
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return \Inphinit\Config
+     * @return void
      */
     public function reload()
     {
@@ -46,19 +45,13 @@ class Config
 
         $configs = inphinit_sandbox($this->path);
 
-        if (!$configs) {
-            throw new Exception($this->path . ' configurations cannot be loaded', 0, $level);
-        }
-
-        if (is_array($configs) === false) {
-            throw new Exception($this->path . ' has invalid data', 0, $level);
+        if (!$configs || is_array($configs) === false) {
+            throw new Exception($this->path . ' configurations cannot be loaded or format is invalid', 0, $level);
         }
 
         foreach ($configs as $key => $value) {
             $this->data[$key] = $value;
         }
-
-        return $this;
     }
 
     /**
@@ -77,12 +70,12 @@ class Config
     /**
      * Magic method for get specific item by ->
      *
-     * @param string $name
+     * @param string $key
      * @return mixed
      */
-    public function __get($name)
+    public function __get($key)
     {
-        return isset($this->data[$name]) ? $this->data[$name] : null;
+        return isset($this->data[$key]) ? $this->data[$key] : null;
     }
 
     /**

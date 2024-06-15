@@ -49,6 +49,7 @@ class Url
      * Sets default ports
      *
      * @param array $dict
+     * @return void
      */
     public static function setDefaultPorts(array $ports)
     {
@@ -59,6 +60,7 @@ class Url
      * Sets slug dictionary
      *
      * @param array $dict
+     * @return void
      */
     public static function setSlugDict(array $dict)
     {
@@ -91,6 +93,7 @@ class Url
      * Get Url instance from current url
      *
      * @param bool $query
+     * @return void
      */
     public static function application($query)
     {
@@ -107,6 +110,7 @@ class Url
      * Normalize path and querystring
      *
      * @param int $configs
+     * @return void
      */
     public function normalize($configs = 0)
     {
@@ -152,6 +156,7 @@ class Url
      * Canon path
      *
      * @param string $path
+     * @return void
      */
     public static function canonpath($path)
     {
@@ -180,12 +185,12 @@ class Url
     /**
      * Get value for a URL component
      *
-     * @param string $value
-     * @return string
+     * @param string $key
+     * @return string|null
      */
-    public function __get($name)
+    public function __get($key)
     {
-        return isset($this->data[$name]) ? $this->data[$name] : null;
+        return isset($this->data[$key]) ? $this->data[$key] : null;
     }
 
     /**

@@ -24,7 +24,6 @@ class Packages
      *
      * @param string $path Define composer path, like `./vendor/composer` (if null or not defined, assume `./system/vender`)
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function __construct($path = null)
     {
@@ -62,7 +61,7 @@ class Packages
     /**
      * Load `./system/boot/namespaces.php` classes
      *
-     * @return int|bool Return total packages loaded, if `namespaces.php`
+     * @return bool|int Return total packages loaded, if `namespaces.php`
      *                  is not accessible return `false`
      */
     public function inAutoload()
@@ -85,7 +84,7 @@ class Packages
     /**
      * Load `autoload_classmap.php` classes
      *
-     * @return int|bool Return total packages loaded, if `autoload_classmap.php`
+     * @return bool|int Return total packages loaded, if `autoload_classmap.php`
      *                  is not accessible return `false`
      */
     public function classmap()
@@ -116,7 +115,7 @@ class Packages
     /**
      * Load `autoload_namespaces.php` classes, used by PSR-0 packages
      *
-     * @return int|bool Return total packages loaded, if `autoload_namespaces.php`
+     * @return bool|int Return total packages loaded, if `autoload_namespaces.php`
      *                  is not accessible return `false`
      */
     public function psr0()
@@ -136,7 +135,7 @@ class Packages
     /**
      * Load `autoload_psr4.php` classes, used by PSR-4 packages
      *
-     * @return int|bool Return total packages loaded, if `autoload_psr4.php`
+     * @return bool|int Return total packages loaded, if `autoload_psr4.php`
      *                  is not accessible return `false`
      */
     public function psr4()

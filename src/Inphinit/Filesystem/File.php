@@ -134,7 +134,7 @@ class File
      *
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return bool
+     * @return string|bool
      */
     public static function encoding($path)
     {
@@ -175,7 +175,7 @@ class File
      * @param string $path
      * @param int    $length
      * @param int    $delay
-     * @return void|bool
+     * @return bool
      */
     public static function output($path, $length = 262144, $delay = 0)
     {
@@ -206,6 +206,8 @@ class File
 
             flush();
         }
+
+        return true;
     }
 
     /**
@@ -271,7 +273,7 @@ class File
      *
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return string|bool
+     * @return void
      */
     public static function clearstat()
     {
@@ -288,6 +290,7 @@ class File
      * Enable or disable strictmode for check if file exists with case-sensitive (only avaliable in development mode)
      *
      * @param bool $enable
+     * @return void
      */
     public static function strictMode($enable)
     {

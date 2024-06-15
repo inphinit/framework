@@ -52,7 +52,6 @@ class Document
      *
      * @param string $version  The version number of the document as part of the XML declaration
      * @param string $encoding The encoding of the document as part of the XML declaration
-     * @return void
      */
     public function __construct($source, $format = 0, $options = 0)
     {
@@ -92,6 +91,7 @@ class Document
      * Define libXML errors as exceptions
      *
      * @param int $options
+     * @return void
      */
     public static function setReporting($options)
     {

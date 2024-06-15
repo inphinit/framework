@@ -18,11 +18,6 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
-    /**
-     * Register a callback or script for a route
-     *
-     * @param boolean $debug
-     */
     public function __construct()
     {
         $this->development = App::config('development');
@@ -46,11 +41,21 @@ class Checkup
         }
     }
 
+    /**
+     * Get errors
+     *
+     * @return array
+     */
     public function getErrors()
     {
         return $this->errors;
     }
 
+    /**
+     * Get warnings
+     *
+     * @return array
+     */
     public function getWarnings()
     {
         return $this->warnings;

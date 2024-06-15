@@ -19,7 +19,6 @@ class Exception extends \Exception
      * @param string $message
      * @param int    $code
      * @param int    $trace
-     * @return void
      */
     public function __construct($message, $code = 0, $trace = 2)
     {

@@ -56,7 +56,7 @@ class App
         }
 
         if (array_key_exists($key, self::$configs)) {
-            if ($value == null) {
+            if ($value === null) {
                 return self::$configs[$key];
             }
 
@@ -101,6 +101,7 @@ class App
      * Prefixes the namespace in the current scope control
      *
      * @param string $prefix
+     * @return void
      */
     public function setNamespace($prefix)
     {
@@ -111,6 +112,7 @@ class App
      * Prefixes route path in the current scope control
      *
      * @param string $prefix
+     * @return void
      */
     public function setPath($prefix)
     {
@@ -134,6 +136,7 @@ class App
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback
+     * @return void
      */
     public function scope($pattern, \Closure $callback)
     {
@@ -178,8 +181,8 @@ class App
     {
         $code = self::$configs['maintenance'] ? 503 : http_response_code();
         $callback = null;
-        $params = null;
         $output = null;
+        $params = null;
 
         if ($code === 200) {
             if (PHP_SAPI === 'cli-server' && $this->fileInBuiltIn()) {

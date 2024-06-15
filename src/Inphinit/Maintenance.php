@@ -15,6 +15,7 @@ class Maintenance
      * Down site to maintenance mode
      *
      * @param callable $callback
+     * @return void
      */
     public static function ignore(callable $callback)
     {

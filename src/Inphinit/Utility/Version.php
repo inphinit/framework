@@ -49,11 +49,11 @@ class Version
      * Get value for a version component
      *
      * @param string $value
-     * @return array|string
+     * @return array|string|null
      */
-    public function __get($name)
+    public function __get($key)
     {
-        return isset($this->data[$name]) ? $this->data[$name] : null;
+        return isset($this->data[$key]) ? $this->data[$key] : null;
     }
 
     /**

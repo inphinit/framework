@@ -44,7 +44,6 @@ abstract class Resource
      * Define routes based on class methods
      *
      * @param \Inphinit\App $context
-     * @throws \Inphinit\Exception
      * @return mixed
      */
     public function route(App $context)

@@ -19,7 +19,7 @@ class Response
      *
      * @param int  $code
      * @param bool $trigger
-     * @return int|bool
+     * @return bool|int
      */
     public static function status($code)
     {

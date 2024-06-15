@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental\Http;
 
 use Inphinit\App;
+use Inphinit\Exception;
 use Inphinit\Http\Request;
 
 class Forwarded
