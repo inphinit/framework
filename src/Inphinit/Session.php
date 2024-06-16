@@ -182,12 +182,12 @@ class Session
      * Magic method for get session variables (this method also returns variables that have not yet
      * been committed)
      *
-     * @param string $key
+     * @param string $name
      * @return mixed
      */
-    public function __get($key)
+    public function __get($name)
     {
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**
@@ -196,7 +196,6 @@ class Session
      * @param string $name
      * @param mixed  $value
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function __set($name, $value)
     {

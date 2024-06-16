@@ -70,25 +70,17 @@ function inphinit_error($type, $message, $file, $line, $context = null)
     return false;
 }
 
-/**
- * Use with `register_shutdown_function` fatal errors and execute `done` event
- *
- * @return void
- */
-function inphinit_shutdown()
-{
-    $error = error_get_last();
-
-    App::forward();
-
-    if ($error !== null && (error_reporting() & $error['type'])) {
-        inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
-    }
-}
-
 set_error_handler('inphinit_error', error_reporting());
 
-register_shutdown_function('inphinit_shutdown');
+register_shutdown_function(function () {
+    $error = error_get_last();
+
+    if ($error !== null && (error_reporting() & $error['type'])) {
+        App::forward();
+
+        inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
+    }
+});
 
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';

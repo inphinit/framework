@@ -27,8 +27,8 @@ class App
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
         'decimal' => '(0|[1-9]\d+)\.\d+',
-        'num' => '\d+',
         'nospace' => '[^/\s]+',
+        'num' => '\d+',
         'uuid' => '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
         'version' => '\d+\.\d+(\.\d+(-[\da-zA-Z]+(\.[\da-zA-Z]+)*(\+[\da-zA-Z]+(\.[\da-zA-Z]+)*)?)?)?'
     );
@@ -55,7 +55,7 @@ class App
             self::$configs = inphinit_sandbox('configs/app.php');
         }
 
-        if (array_key_exists($key, self::$configs)) {
+        if (isset(self::$configs[$key])) {
             if ($value === null) {
                 return self::$configs[$key];
             }

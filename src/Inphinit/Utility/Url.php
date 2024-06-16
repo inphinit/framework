@@ -185,17 +185,18 @@ class Url
     /**
      * Get value for a URL component
      *
-     * @param string $key
+     * @param string $name
      * @return string|null
      */
-    public function __get($key)
+    public function __get($name)
     {
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**
      * Set value for a URL component
      *
+     * @param string $name
      * @param string $value
      */
     public function __set($name, $value)

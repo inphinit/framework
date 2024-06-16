@@ -30,7 +30,6 @@ class Negotiation
      *
      * @param array $headers This parameter is optional, you can set with
      *                       headers returned by curl or other way
-     * @return void
      */
     public function __construct(array $headers = array())
     {
@@ -62,7 +61,7 @@ class Negotiation
      * Create a Negotiation instance based in string (eg.: `curl_opt(..., CURL_OPT_HEADER, true)`)
      *
      * @param string $str
-     * @return void
+     * @return \Inphinit\Http\Negotiation
      */
     public static function fromString($str)
     {

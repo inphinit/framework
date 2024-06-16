@@ -28,7 +28,7 @@ class Version
      */
     public function __construct($version)
     {
-        if (preg_match('#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$#', $version, $matches)) {
+        if (preg_match('#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#', $version, $matches)) {
             $this->data['major'] = $matches[1];
             $this->data['minor'] = $matches[2];
             $this->data['patch'] = $matches[3];
@@ -48,12 +48,12 @@ class Version
     /**
      * Get value for a version component
      *
-     * @param string $value
+     * @param string $name
      * @return array|string|null
      */
-    public function __get($key)
+    public function __get($name)
     {
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**

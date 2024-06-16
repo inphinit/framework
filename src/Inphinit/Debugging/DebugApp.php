@@ -125,7 +125,7 @@ class DebugApp extends App
     }
 
     /**
-     * Validate pattern, if valid register a callback for isolate routes
+     * Validate URL pattern, if valid register a callback for isolate routes
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback

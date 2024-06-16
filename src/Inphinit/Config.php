@@ -68,14 +68,14 @@ class Config
     }
 
     /**
-     * Magic method for get specific item by ->
+     * Magic method for get specific item
      *
-     * @param string $key
+     * @param string $name
      * @return mixed
      */
-    public function __get($key)
+    public function __get($name)
     {
-        return isset($this->data[$key]) ? $this->data[$key] : null;
+        return isset($this->data[$name]) ? $this->data[$name] : null;
     }
 
     /**
@@ -83,7 +83,6 @@ class Config
      *
      * @param string $name
      * @param mixed  $value
-     * @return void
      */
     public function __set($name, $value)
     {
@@ -98,7 +97,7 @@ class Config
      */
     public function __isset($name)
     {
-        return array_key_exists($name, $this->data);
+        return isset($this->data[$name]);
     }
 
     /**
