@@ -23,7 +23,7 @@ class App
     private $pathPrefix = '/';
 
     private $hasParams = false;
-    private $paramPatterns = array(
+    protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
         'decimal' => '(0|[1-9]\d+)\.\d+',
@@ -120,14 +120,15 @@ class App
     }
 
     /**
-     * Create or remove a pattern for URL slugs
+     * Create or replace a pattern for URL slugs
      *
-     * @param string $pattern
+     * @param string $name
+     * @param string $regex
      * @return void
      */
-    public function setPattern($pattern, $regex)
+    public function setPattern($name, $regex)
     {
-        $this->paramPatterns[preg_quote($pattern)] = $regex;
+        $this->paramPatterns[preg_quote($name)] = $regex;
         $this->patternNames = implode('|', array_keys($this->paramPatterns));
     }
 
@@ -142,17 +143,17 @@ class App
     {
         $patterns = &$this->paramPatterns;
 
-        $regex = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
+        $getParams = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
 
-        $pattern = str_replace($this->beforeRE, $this->afterRE, preg_quote($pattern));
+        $scopeRegex = str_replace($this->beforeRE, $this->afterRE, preg_quote($pattern));
 
-        $pattern = preg_replace_callback($regex, function ($matches) use (&$patterns) {
+        $scopeRegex = preg_replace_callback($getParams, function ($matches) use (&$patterns) {
             return '(?P<' . $matches[1] . '>' . (
                 isset($matches[3]) ? $patterns[$matches[3]] : '[^/]+'
             ) . ')';
-        }, $pattern);
+        }, $scopeRegex);
 
-        if (preg_match('#^' . $pattern . '#', INPHINIT_URL, $params)) {
+        if (preg_match('#^' . $scopeRegex . '#', INPHINIT_URL, $params)) {
             $path = parse_url($params[0], PHP_URL_PATH);
 
             if ($path) {
@@ -272,7 +273,7 @@ class App
             }
 
             $groupRegex = implode(')|(', $slice);
-            $groupRegex = preg_replace($getParams, '(?<$1><$3>)', $groupRegex);
+            $groupRegex = preg_replace($getParams, '(?P<$1><$3>)', $groupRegex);
             $groupRegex = str_replace('<>)', '[^/]+)', $groupRegex);
 
             foreach ($patterns as $pattern => $regex) {

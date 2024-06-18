@@ -47,6 +47,8 @@ class DebugApp extends App
             throw new Exception('Duplicate methods: ' . implode(', ', $methods));
         }
 
+        $this->checkPatterns($path);
+
         if (is_string($callback) && strpos($callback, '::') !== false) {
             list($className, $method) = explode('::', $callback);
 
@@ -106,22 +108,27 @@ class DebugApp extends App
     }
 
     /**
-     * Validate pattern, if valid create or remove a pattern for URL slugs
+     * Validate pattern, if valid create or replace a pattern for URL slugs
      *
-     * @param string $pattern
+     * @param string $name
+     * @param string $regex
      * @return void
      */
-    public function setPattern($pattern, $regex)
+    public function setPattern($name, $regex)
     {
-        if (!$pattern || is_string($pattern) === false) {
-            throw new Exception('Invalid pattern');
+        if (!$name || is_string($name) === false) {
+            throw new Exception('Pattern name is empty or non-string');
+        }
+
+        if (!preg_match('#^\w+$#', $name)) {
+            throw new Exception('Invalid pattern name: ' . $name);
         }
 
         if ($regex && preg_match('#' . $regex . '#', '') === false) {
             throw new Exception('"' . $regex . '" pattern causes PCRE: ' . preg_last_error_msg());
         }
 
-        parent::setPattern($pattern, $regex);
+        parent::setPattern($name, $regex);
     }
 
     /**
@@ -132,10 +139,30 @@ class DebugApp extends App
      */
     public function scope($pattern, \Closure $callback)
     {
-        if (!preg_match("#^([a-z*]+)://([^/]+)(\:[\d*]+)?/(.*)/#", $pattern)) {
+        if (!preg_match('#^([a-z*]+)://([^/]+)(\:[\d*]+)?/(.*)/$#', $pattern)) {
             throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>:<port>/<path>/ (including wildcard)');
         }
 
+        $this->checkPatterns($pattern);
+
         parent::scope($pattern, $callback);
+    }
+
+    private function checkPatterns($pattern)
+    {
+        if (strpos($pattern, '<') !== false && preg_match_all('#[<](.*?)(\:(.*?))?[>]#', $pattern, $matches)) {
+            $names = $matches[1];
+
+            if (count($names) !== count(array_flip($names))) {
+                throw new Exception('There are duplicate named parameters', 0, 3);
+            }
+
+            $patterns = $matches[3];
+            $invalids = array_diff($patterns, array_keys($this->paramPatterns));
+
+            if (count($invalids)) {
+                throw new Exception('Invalid patterns: ' . implode(', ', $invalids), 0, 3);
+            }
+        }
     }
 }

@@ -29,7 +29,7 @@ class Request
     }
 
     /**
-     * Check is request is: HTTPS, XMLHttpRequest, Pjax, prefetch
+     * Check is request is: HTTPS, XMLHttpRequest, Pjax, prefetch, save-data or HTTP methods
      *
      * @param string $check
      * @return bool
@@ -37,12 +37,6 @@ class Request
     public static function is($check)
     {
         switch ($check) {
-            case 'secure':
-                return strpos(INPHINIT_URL, 'https') === 0;
-
-            case 'xhr':
-                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
-
             case 'pjax':
                 return strcasecmp(self::header('x-pjax', ''), 'true') === 0;
 
@@ -56,9 +50,16 @@ class Request
 
             case 'save':
                 return strcasecmp(self::header('save-data', ''), 'on') === 0;
-        }
 
-        return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+            case 'secure':
+                return strpos(INPHINIT_URL, 'https') === 0;
+
+            case 'xhr':
+                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
+
+            default:
+                return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+        }
     }
 
     /**

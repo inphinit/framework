@@ -320,10 +320,8 @@ class Debug
     {
         self::boot();
 
-        $file = parse_url($file, PHP_URL_PATH);
-
-        $message = $file . ' on line ' . $line;
         $link = false;
+        $message = $file . ' on line ' . $line;
         $compareFile = str_replace('\\', '/', $file);
 
         /*

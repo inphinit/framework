@@ -15,7 +15,7 @@ use Inphinit\Event;
 class Response
 {
     /**
-     * Get or set status code and return last status code. Note: if set status work, Event::on('changestatus') is trigged
+     * Get or set status code and return last status code. Note: if the status has changed the Event::on('changestatus') event will be trigged
      *
      * @param int  $code
      * @param bool $trigger
