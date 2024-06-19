@@ -24,7 +24,7 @@ class Checkup
 
         if (function_exists('php_ini_loaded_file')) {
             if (function_exists('ini_get') === false) {
-                $this->errors[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
+                $this->warnings[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
                 $this->iniGet = false;
             }
 

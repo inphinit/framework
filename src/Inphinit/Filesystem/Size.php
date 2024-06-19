@@ -11,7 +11,6 @@ namespace Inphinit\Filesystem;
 
 use Inphinit\App;
 use Inphinit\Exception;
-use Inphinit\Uri;
 
 class Size
 {

@@ -10,7 +10,6 @@
 namespace Inphinit;
 
 use Inphinit\Exception;
-use Inphinit\Storage;
 
 class Session
 {

@@ -9,7 +9,6 @@
 
 namespace Inphinit\Debugging;
 
-use Inphinit\App;
 use Inphinit\Config;
 use Inphinit\Event;
 use Inphinit\Exception;

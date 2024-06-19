@@ -181,9 +181,9 @@ class App
     public function exec()
     {
         $code = self::$configs['maintenance'] ? 503 : http_response_code();
-        $callback = null;
         $output = null;
         $params = null;
+        $callback = null;
 
         if ($code === 200) {
             if (PHP_SAPI === 'cli-server' && $this->fileInBuiltIn()) {
@@ -192,21 +192,20 @@ class App
 
             $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
+            $routes = null;
 
             if (isset($this->routes[$path])) {
                 $routes = &$this->routes[$path];
-
-                if (isset($routes[$method])) {
-                    $callback = $routes[$method];
-                } elseif (isset($routes['ANY'])) {
-                    $callback = $routes['ANY'];
-                } else {
-                    $code = 405;
-                }
             } elseif ($this->hasParams) {
-                $this->params($method, $code, $callback, $params);
+                $this->params($routes, $params);
+            }
+
+            if (isset($routes[$method])) {
+                $callback = $routes[$method];
+            } elseif (isset($routes['ANY'])) {
+                $callback = $routes['ANY'];
             } else {
-                $code = 404;
+                $code = $routes === null ? 404 : 405;
             }
         }
 
@@ -252,9 +251,8 @@ class App
         }
     }
 
-    private function params($method, &$code, &$callback, &$params)
+    private function params(&$routes, &$params)
     {
-        $code = 404;
         $patterns = &$this->paramPatterns;
         $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
 
@@ -287,19 +285,9 @@ class App
                     if ($value === '' || is_int($index)) {
                         unset($params[$index]);
                     } else if (strpos($index, 'route_') === 0) {
-                        $callbacks = $callbacks[substr($index, 6) - 1];
+                        $routes = $callbacks[substr($index, 6) - 1];
                         unset($params[$index]);
                     }
-                }
-
-                $code = 200;
-
-                if (isset($callbacks[$method])) {
-                    $callback = $callbacks[$method];
-                } elseif (isset($callbacks['ANY'])) {
-                    $callback = $callbacks['ANY'];
-                } else {
-                    $code = 405;
                 }
 
                 break;

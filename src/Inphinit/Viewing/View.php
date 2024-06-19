@@ -9,8 +9,6 @@
 
 namespace Inphinit\Viewing;
 
-use Inphinit\App;
-
 class View
 {
     private static $force = false;

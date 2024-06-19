@@ -12,12 +12,12 @@ namespace Inphinit;
 class Maintenance
 {
     /**
-     * Down site to maintenance mode
+     * Condition to bypass maintenance mode
      *
      * @param callable $callback
      * @return void
      */
-    public static function ignore(callable $callback)
+    public static function bypass(callable $callback)
     {
         if (App::config('maintenance') && $callback() === true) {
             App::config('maintenance', false);

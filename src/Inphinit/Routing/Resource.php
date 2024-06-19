@@ -78,8 +78,8 @@ abstract class Resource
      */
     public static function action(App $context)
     {
-        $self = new static();
-        $self->route($context);
-        return $self;
+        $instance = new static();
+        $instance->route($context);
+        return $instance;
     }
 }

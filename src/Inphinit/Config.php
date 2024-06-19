@@ -9,8 +9,6 @@
 
 namespace Inphinit;
 
-use Inphinit\Utility\Others;
-
 class Config
 {
     private static $exceptionLevel = 2;

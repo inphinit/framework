@@ -157,7 +157,7 @@ class DebugApp extends App
                 throw new Exception('There are duplicate named parameters', 0, 3);
             }
 
-            $patterns = $matches[3];
+            $patterns = array_filter($matches[3]);
             $invalids = array_diff($patterns, array_keys($this->paramPatterns));
 
             if (count($invalids)) {

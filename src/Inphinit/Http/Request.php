@@ -9,7 +9,6 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Storage;
 use Inphinit\Utility\Others;
 
 class Request
@@ -66,6 +65,7 @@ class Request
      * Get HTTP header from current request
      *
      * @param string $name
+     * @param mixed  $alternative
      * @return string|null
      */
     public static function header($name, $alternative = null)

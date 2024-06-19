@@ -10,7 +10,6 @@
 namespace Inphinit\Dom;
 
 use Inphinit\Exception;
-use Inphinit\Storage;
 use Inphinit\Utility\Arrays;
 
 class Document
