@@ -15,30 +15,32 @@ class Method
 {
     private static $originalMethod;
 
-    private $allowed = array('delete', 'patch', 'put');
+    private $methods = array('delete', 'patch', 'put');
 
     private $headers = array('x-http-method-override', 'x-http-method', 'x-method-override');
 
     private $params = array('_method', '_HttpMethod');
 
     /**
-     * Sets allowed headers for override HTTP method
+     * Create instace
      *
-     * @param array $headers
+     * @param array $methods Sets allowed methods
+     * @param array $headers Sets allowed headers
+     * @param array $params  Sets allowed params (GET or POST)
      */
-    public function setHeaders(array $headers)
+    public function __construct(array $methods = array(), array $headers = array(), array $params = array())
     {
-        $this->headers = $headers;
-    }
+        if ($methods) {
+            $this->methods = $methods;
+        }
 
-    /**
-     * Sets allowed params (GET or POST) for override HTTP method
-     *
-     * @param array $headers
-     */
-    public function setParams(array $params)
-    {
-        $this->params = $params;
+        if ($headers) {
+            $this->headers = $headers;
+        }
+
+        if ($params) {
+            $this->params = $params;
+        }
     }
 
     /**
@@ -57,7 +59,7 @@ class Method
             }
         }
 
-        return in_array($method, $this->allowed) ? $method : $alternative;
+        return $this->getValue($method, $alternative);
     }
 
     /**
@@ -76,11 +78,11 @@ class Method
             }
         }
 
-        return in_array($method, $this->allowed) ? $method : $alternative;
+        return $this->getValue($method, $alternative);
     }
 
     /**
-     * HTTP method override using default settings
+     * `$_SERVER['REQUEST_METHOD']` override using default settings
      *
      * @param bool $headers
      * @param bool $params
@@ -114,5 +116,14 @@ class Method
         }
 
         return self::$originalMethod;
+    }
+
+    private function getValue($method, $alternative)
+    {
+        if ($method && in_array(strtolower($method), $this->methods)) {
+            return strtoupper($method);
+        }
+
+        return $alternative;
     }
 }

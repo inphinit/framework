@@ -105,7 +105,7 @@ class App
      */
     public function setNamespace($prefix)
     {
-        $this->namespacePrefix = $ns;
+        $this->namespacePrefix = $prefix;
     }
 
     /**
@@ -181,7 +181,6 @@ class App
     public function exec()
     {
         $code = self::$configs['maintenance'] ? 503 : http_response_code();
-        $output = null;
         $params = null;
         $callback = null;
 
@@ -209,7 +208,13 @@ class App
             }
         }
 
-        if ($code === 200) {
+        if ($code !== 200) {
+            Response::status($code);
+            $details = array('status' => $code);
+            inphinit_sandbox('errors.php', $details);
+
+            $output = null;
+        } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
                 $parsed = explode('::', $callback, 2);
                 $callback = '\\Controller\\' . $this->namespacePrefix . $parsed[0];
@@ -217,10 +222,6 @@ class App
             }
 
             $output = $callback($params);
-        } else {
-            Response::status($code);
-            $details = array('status' => $code);
-            inphinit_sandbox('errors.php', $details);
         }
 
         self::forward($output);

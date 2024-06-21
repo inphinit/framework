@@ -299,9 +299,9 @@ class Debug
             $message = substr($message, 0, $pos);
         }
 
-        $link_message = str_replace(array('"', '\''), '', $message);
+        $linkMessage = str_replace(array('"', '\''), '', $message);
 
-        $link = str_replace('{error}', rawurlencode($link_message), $link);
+        $link = str_replace('{error}', rawurlencode($linkMessage), $link);
         $link = htmlentities($link);
         $message = htmlentities($message);
 

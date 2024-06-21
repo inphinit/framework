@@ -55,7 +55,7 @@ class Document
     public function __construct($source, $format = 0, $options = 0)
     {
         if (self::$reporting === null) {
-            self::setReporting(0);
+            self::setReporting(self::FATAL);
         }
 
         $this->dom = new \DOMDocument;
@@ -200,7 +200,7 @@ class Document
     {
         switch ($format) {
             case self::HTML:
-                return $this->dom->saveHTML($node, $options);
+                return $this->dom->saveHTML($node);
 
             case self::XML:
                 return $this->dom->saveXML($node, $options);
@@ -227,11 +227,11 @@ class Document
     {
         switch ($format) {
             case self::HTML:
-                $this->dom->saveHTMLFile($node, $options);
+                $this->dom->saveHTMLFile($filename);
                 break;
 
             case self::XML:
-                $this->dom->save($node, $options);
+                $this->dom->save($filename, $options);
                 break;
 
             default:
@@ -304,7 +304,7 @@ class Document
         }
 
         if ($node) {
-            if ($dom->documentElement->contains($node) === false) {
+            if ($this->dom->documentElement->contains($node) === false) {
                 return false;
             }
 

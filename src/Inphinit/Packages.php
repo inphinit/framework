@@ -153,6 +153,17 @@ class Packages
     }
 
     /**
+     * Custom namespace prefix
+     *
+     * @param string $prefix
+     * @param string $value
+     */
+    public function setItem($prefix, $value)
+    {
+        $this->libs[$prefix] = $value;
+    }
+
+    /**
      * Save imported packages path to file in PHP format
      *
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
@@ -166,9 +177,14 @@ class Packages
 
         $libs = $this->libs;
 
-        foreach ($libs as $key => &$value) {
+        foreach ($libs as &$value) {
             $value = self::relativePath($value);
         }
+
+        // Deep namespace prefixes must take priority in autoloader
+        uksort($libs, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
 
         $contents = "<?php\nreturn " . var_export($libs, true) . ";\n";
 

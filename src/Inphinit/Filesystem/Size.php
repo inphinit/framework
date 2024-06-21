@@ -66,7 +66,7 @@ class Size
             throw new Exception('Invalid path');
         }
 
-        if (self::$isWin && $size === null && $this->modes & self::COM) {
+        if (self::$isWin && $this->modes & self::COM) {
             $size = $this->fromFileSystemObject($path);
         }
 

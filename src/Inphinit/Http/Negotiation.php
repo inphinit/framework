@@ -58,7 +58,7 @@ class Negotiation
     }
 
     /**
-     * Create a Negotiation instance based in string (eg.: `curl_opt(..., CURL_OPT_HEADER, true)`)
+     * Create a Negotiation instance based in string
      *
      * @param string $str
      * @return \Inphinit\Http\Negotiation

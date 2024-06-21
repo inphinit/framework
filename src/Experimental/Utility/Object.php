@@ -37,12 +37,12 @@ class Object
      */
     public function __get($key)
     {
-        if (strpos($key, '$.') === false) {
+        if (strpos($key, '$.') !== 0) {
             if ($this->isArray) {
                 return isset($this->data[$key]) ? $this->data[$key] : null;
             }
 
-            return isset($this->data->$key) ? $this->data->$key : null;
+            return isset($this->data->{$key}) ? $this->data->{$key} : null;
         }
 
         $found = true;
@@ -51,8 +51,8 @@ class Object
         foreach (self::path($key) as $path) {
             if (is_array($items) && isset($items[$path])) {
                 $items = &$items[$path];
-            } elseif (is_object($items) && isset($items->$path)) {
-                $items = &$items->$path;
+            } elseif (is_object($items) && isset($items->{$path})) {
+                $items = &$items->{$path};
             } else {
                 $found = false;
                 break;
@@ -67,32 +67,34 @@ class Object
      */
     public function __set($key, $value)
     {
-        if (strpos($key, '$.') === false) {
-            if ($this->isArray) {
-                if (isset($this->data[$key])) {
-                    $this->data[$key] = $value;
+        $items = &$this->data;
+        $isArray = $this->isArray;
+
+        if (strpos($key, '$.') === 0) {
+
+            $path = self::path($key);
+            $last = array_pop($path);
+
+            foreach ($path as $value) {
+                if (is_array($items) && array_key_exists($value, $items)) {
+                    $items = &$items[$value];
+                    $isArray = true;
+                } elseif (is_object($items) && property_exists($items, $value)) {
+                    $items = &$items->{$value};
+                    $isArray = false;
+                } else {
+                    $items = $isArray ? array() : new stdClass;
+                    $items = &$items;
                 }
-            } elseif (isset($this->data->$key)) {
-                $this->data->$key = $value;
             }
         } else {
-            $found = true;
-            $items = &$this->data;
+            $last = $key;
+        }
 
-            foreach (self::path($key) as $path) {
-                if (is_array($items) && isset($items[$path])) {
-                    $items = &$items[$path];
-                } elseif (is_object($items) && isset($items->$path)) {
-                    $items = &$items->$path;
-                } else {
-                    $found = false;
-                    break;
-                }
-            }
-
-            if ($found) {
-                $items = $value;
-            }
+        if ($isArray) {
+            $items[$last] = $value;
+        } else {
+            $items->{$last} = $value;
         }
     }
 
