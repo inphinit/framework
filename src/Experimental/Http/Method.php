@@ -89,7 +89,7 @@ class Method
      */
     public static function override($headers = true, $params = true)
     {
-        $instance = new static;
+        $instance = new static();
 
         $method = $headers ? $instance->fromHeaders() : null;
 

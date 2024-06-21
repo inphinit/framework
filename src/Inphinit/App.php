@@ -218,7 +218,7 @@ class App
             if (is_string($callback) && strpos($callback, '::') !== false) {
                 $parsed = explode('::', $callback, 2);
                 $callback = '\\Controller\\' . $this->namespacePrefix . $parsed[0];
-                $callback = array(new $callback, $parsed[1]);
+                $callback = array(new $callback(), $parsed[1]);
             }
 
             $output = $callback($params);
@@ -285,7 +285,7 @@ class App
                 foreach ($params as $index => $value) {
                     if ($value === '' || is_int($index)) {
                         unset($params[$index]);
-                    } else if (strpos($index, 'route_') === 0) {
+                    } elseif (strpos($index, 'route_') === 0) {
                         $routes = $callbacks[substr($index, 6) - 1];
                         unset($params[$index]);
                     }

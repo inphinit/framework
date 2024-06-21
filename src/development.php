@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-error_reporting(E_ALL|E_STRICT);
+error_reporting(E_ALL | E_STRICT);
 
 set_error_handler('inphinit_error', error_reporting());
 

@@ -40,7 +40,7 @@ class Negotiation
                 if (
                     $key === 'accept-ranges' ||
                     strpos($key, 'accept-control-') === 0 ||
-                    ($key !=='te' && $key !=='accept' && strpos($key, 'accept-') !== 0)
+                    ($key !== 'te' && $key !== 'accept' && strpos($key, 'accept-') !== 0)
                 ) {
                     unset($headers[$key]);
                 }

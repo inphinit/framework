@@ -182,7 +182,7 @@ class Packages
         }
 
         // Deep namespace prefixes must take priority in autoloader
-        uksort($libs, function($a, $b) {
+        uksort($libs, function ($a, $b) {
             return strlen($b) - strlen($a);
         });
 

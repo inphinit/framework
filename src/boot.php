@@ -157,7 +157,7 @@ define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphini
 if (App::config('development')) {
     require 'development.php';
 } else {
-    $app = new App;
+    $app = new App();
 }
 
 require INPHINIT_SYSTEM . '/main.php';

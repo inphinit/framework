@@ -100,7 +100,7 @@ class File
         $from = $perms & 0x0800;
         $info .= $perms & 0x0100 ? 'r' : '-';
         $info .= $perms & 0x0080 ? 'w' : '-';
-        $info .= $perms & 0x0040 ? ($from ? 's' : 'x' ) : ($from ? 'S' : '-');
+        $info .= $perms & 0x0040 ? ($from ? 's' : 'x') : ($from ? 'S' : '-');
 
         // Group
         $from = $perms & 0x0400;

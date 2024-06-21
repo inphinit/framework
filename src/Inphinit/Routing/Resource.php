@@ -1,4 +1,12 @@
 <?php
+/*
+ * Inphinit
+ *
+ * Copyright (c) 2024 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ *
+ * Released under the MIT license
+ */
+
 namespace Inphinit\Routing;
 
 use Inphinit\App;

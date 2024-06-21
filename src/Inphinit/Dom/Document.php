@@ -58,7 +58,7 @@ class Document
             self::setReporting(self::FATAL);
         }
 
-        $this->dom = new \DOMDocument;
+        $this->dom = new \DOMDocument();
 
         switch ($format) {
             case self::XML_FILE:
