@@ -30,6 +30,8 @@ class Method
      */
     public function __construct(array $methods = array(), array $headers = array(), array $params = array())
     {
+        static::original(); // Save original method
+
         if ($methods) {
             $this->methods = $methods;
         }
@@ -44,7 +46,7 @@ class Method
     }
 
     /**
-     * Get method from headers (using `$_REQUEST`)
+     * Get method from headers
      *
      * @param mixed $alternative
      * @return mixed
@@ -98,8 +100,6 @@ class Method
         }
 
         if ($method !== null) {
-            self::original(); // Save original method
-
             $_SERVER['REQUEST_METHOD'] = $method;
         }
     }

@@ -36,7 +36,7 @@ class App
     private $patternNames;
 
     private $beforeRE = array('\\:', '\\<', '\\>', '\\*');
-    private $afterRE = array(':', '<', '>', '.*?');
+    private $afterRE = array(':', '<', '>', '[^/]+');
 
     public function __construct()
     {

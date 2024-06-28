@@ -26,8 +26,6 @@ class Document
     /**  */
     const HTML = 4;
     const XML = 5;
-    const HTML_FILE = 6;
-    const XML_FILE = 7;
 
     /** Constants to treat errors issued by libXML as exceptions */
     const ERROR = 16;
@@ -44,46 +42,24 @@ class Document
     private $complete = false;
     private $simple = false;
 
+    private $format;
+    private $loadOptions;
+    private $saveOptions;
+
     private static $reporting;
 
     /**
      * Create a Document instance
      *
-     * @param string $version  The version number of the document as part of the XML declaration
-     * @param string $encoding The encoding of the document as part of the XML declaration
+     * @param string $format
      */
-    public function __construct($source, $format = 0, $options = 0)
+    public function __construct($format = 0)
     {
         if (self::$reporting === null) {
             self::setReporting(self::FATAL);
         }
 
         $this->dom = new \DOMDocument();
-
-        switch ($format) {
-            case self::XML_FILE:
-                $this->load($source, $options, 'load', false);
-                break;
-
-            case self::XML:
-                $this->load($source, $options, 'loadXML', true);
-                break;
-
-            case self::HTML:
-                $this->load($source, $options, 'loadHTML', false);
-                break;
-
-            case self::HTML_FILE:
-                $this->load($source, $options, 'loadHTMLFile', true);
-                break;
-
-            default:
-                if (is_array($source)) {
-                    $this->fromArray($source);
-                } else {
-                    throw new Exception('Invalido or undefined format param');
-                }
-        }
     }
 
     /**
@@ -101,6 +77,28 @@ class Document
         }
 
         self::$reporting = $options;
+    }
+
+    /**
+     * Define libXML options for load a document or string
+     *
+     * @param int $options
+     * @return void
+     */
+    public function setLoadOptions($options)
+    {
+        $this->loadOptions = $options;
+    }
+
+    /**
+     * Define libXML options for dump or save a document as file
+     *
+     * @param int $options
+     * @return void
+     */
+    public function setSaveOptions($options)
+    {
+        $this->saveOptions = $options;
     }
 
     /**
@@ -191,52 +189,31 @@ class Document
     /**
      * Convert document to XML string, HTML string or array
      *
-     * @param int         $format
      * @param \DOMElement $element
-     * @param int         $options
      * @return void
      */
-    public function dump($format, \DOMNode $node = null, $options = 0)
+    public function dump(\DOMNode $node = null)
     {
-        switch ($format) {
-            case self::HTML:
-                return $this->dom->saveHTML($node);
-
-            case self::XML:
-                return $this->dom->saveXML($node, $options);
-
-            case self::ARRAY_COMPLETE:
-            case self::ARRAY_MINIMAL:
-            case self::ARRAY_SIMPLE:
-                return $this->toArray($format, $node);
-
-            default:
-                throw new Exception('Invalid format param');
+        if ($this->format === self::XML) {
+            return $this->dom->saveXML($node, $this->saveOptions);
         }
+
+        return $this->dom->saveHTML($node);
     }
 
     /**
      * Save document to file
      *
-     * @param string $filename
-     * @param int    $format
-     * @param int    $options
+     * @param string $dest
      * @return void
      */
-    public function save($filename, $format, $options = 0)
+    public function save($dest)
     {
-        switch ($format) {
-            case self::HTML:
-                $this->dom->saveHTMLFile($filename);
-                break;
-
-            case self::XML:
-                $this->dom->save($filename, $options);
-                break;
-
-            default:
-                throw new Exception('Invalid format param');
+        if ($this->format === self::XML) {
+            return $this->dom->save($dest, $this->saveOptions);
         }
+
+        return $this->dom->saveHTMLFile($dest);
     }
 
     /**
@@ -249,7 +226,12 @@ class Document
         return $this->dom;
     }
 
-    private function fromArray($data)
+    /**
+     * Convert array to DOM
+     *
+     * @param array $data
+     */
+    public function fromArray(array $data)
     {
         if (empty($data)) {
             throw new Exception('Array is empty', 0, 3);
@@ -259,35 +241,61 @@ class Document
 
         $root = key($data);
 
-        if (self::validTag($root) === false) {
-            throw new Exception('Invalid root <' . $root . '> tag', 0, 3);
+        if ($this->format === self::HTML && strcasecmp($root, 'html') !== 0) {
+            throw new Exception('HTML except <' . $root . '> tag as root');
+        } elseif ($this->format === self::XML && self::validTag($root) === false) {
+            throw new Exception('Invalid <' . $root . '> root tag');
         }
 
-        if ($this->dom->documentElement) {
-            $this->dom->removeChild($this->dom->documentElement);
+        $dom = $this->dom;
+
+        $dom->loadHTML('<!DOCTYPE html><html></html>');
+
+        if ($dom->documentElement) {
+            $dom->removeChild($dom->documentElement);
         }
 
         $this->enableInternalErrors(true);
 
-        $this->generate($this->dom, $data, 3);
+        $this->generate($dom, $data, 3);
 
         $this->raise($this->exceptionLevel);
 
         $this->enableInternalErrors(false);
     }
 
-    private function load($source, $options, $callback, $isFile)
+    /**
+     * Load string or file
+     *
+     * @param string $source
+     * @param bool   $file
+     */
+    public function load($source, $file = false)
     {
+        if ($this->format === self::HTML) {
+            $callback = $file ? 'loadHTMLFile' : 'loadHTML';
+        } elseif ($file) {
+            $callback = 'load';
+        } else {
+            $callback = 'loadXML';
+        }
+
         $this->enableInternalErrors(true);
 
-        $this->dom->{$callback}($source, $options);
+        $this->dom->{$callback}($source, $this->loadOptions);
 
         $this->raise(3);
 
         $this->enableInternalErrors(false);
     }
 
-    private function toArray($format, $node)
+    /**
+     * Convert DOM to Array
+     *
+     * @param int     $format
+     * @param DOMNode $node
+     */
+    public function toArray($format, \DOMNode $node = null)
     {
         switch ($format) {
             case self::ARRAY_MINIMAL:

@@ -275,14 +275,18 @@ class Session
             $this->options['secure'],
             $this->options['httponly']
         ) === false) {
-            if ($dest) fclose($dest);
+            if ($dest) {
+                fclose($dest);
+            }
 
             $dest = null;
 
             throw new Exception('Failed to set HTTP cookie', 0, 3);
         }
 
-        if ($from) fclose($from);
+        if ($from) {
+            fclose($from);
+        }
 
         $from = null;
 
