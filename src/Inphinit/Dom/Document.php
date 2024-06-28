@@ -43,8 +43,8 @@ class Document
     private $simple = false;
 
     private $format;
-    private $loadOptions;
-    private $saveOptions;
+    private $loadOptions = 0;
+    private $saveOptions = 0;
 
     private static $reporting;
 
@@ -133,7 +133,7 @@ class Document
 
         $this->exceptionLevel = 3;
 
-        $this->raise($level);
+        $this->raise(3);
 
         $this->enableInternalErrors(false);
 
@@ -207,20 +207,22 @@ class Document
     public function load($source, $file = false)
     {
         if ($this->format === self::HTML) {
-            $callback = $file ? 'loadHTMLFile' : 'loadHTML';
+            $callback = array($this->dom, $file ? 'loadHTMLFile' : 'loadHTML');
         } elseif ($file) {
-            $callback = 'load';
+            $callback = array($this->dom, 'load');
         } else {
-            $callback = 'loadXML';
+            $callback = array($this->dom, 'loadXML');
         }
 
         $this->enableInternalErrors(true);
 
-        $this->dom->{$callback}($source, $this->loadOptions);
+        if ($this->loadOptions !== null) {
+            $callback($source, $this->loadOptions);
+        } else {
+            $callback($source);
+        }
 
-        $this->raise(2);
-
-        $this->enableInternalErrors(false);
+        $this->raise(3);
     }
 
     /**
@@ -232,10 +234,18 @@ class Document
     public function dump(\DOMNode $node = null)
     {
         if ($this->format === self::XML) {
-            return $this->dom->saveXML($node, $this->saveOptions);
+            $callback = array($this->dom, 'saveXML');
+            $options = $this->saveOptions;
+        } else {
+            $callback = array($this->dom, 'saveHTML');
+            $options = 0;
         }
 
-        return $this->dom->saveHTML($node);
+        if ($options !== 0) {
+            return $callback($node, $options);
+        }
+
+        return $callback($node);
     }
 
     /**
@@ -247,14 +257,22 @@ class Document
     public function save($dest)
     {
         if ($this->format === self::XML) {
-            return $this->dom->save($dest, $this->saveOptions);
+            $callback = array($this->dom, 'save');
+            $options = $this->saveOptions;
+        } else {
+            $callback = array($this->dom, 'saveHTMLFile');
+            $options = 0;
         }
 
-        return $this->dom->saveHTMLFile($dest);
+        if ($options !== 0) {
+            return $callback($node, $options);
+        }
+
+        return $callback($node);
     }
 
     /**
-     * Convert array to DOM
+     * Convert Array to DOM
      *
      * @param array $data
      */
@@ -288,9 +306,7 @@ class Document
 
         $this->generate($dom, $data, 3);
 
-        $this->raise(2);
-
-        $this->enableInternalErrors(false);
+        $this->raise(0);
     }
 
     /**
@@ -339,6 +355,8 @@ class Document
 
     private function raise($level)
     {
+        $exception = null;
+
         foreach (\libxml_get_errors() as $error) {
             if ($error->level === \LIBXML_ERR_WARNING) {
                 $reported = self::WARNING;
@@ -349,11 +367,18 @@ class Document
             }
 
             if (self::$reporting & $reported) {
-                throw new DomException(null, $level);
+                $exception = new DomException(null, $level);
+            }
+
+            if ($exception !== null) {
+                $this->enableInternalErrors(false);
+                throw $exception;
             }
         }
 
         \libxml_clear_errors();
+
+        $this->enableInternalErrors(false);
     }
 
     private function generate(\DOMNode $node, &$data, $errorLevel)
