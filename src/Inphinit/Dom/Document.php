@@ -60,6 +60,7 @@ class Document
         }
 
         $this->dom = new \DOMDocument();
+        $this->format = $format;
     }
 
     /**
@@ -99,6 +100,16 @@ class Document
     public function setSaveOptions($options)
     {
         $this->saveOptions = $options;
+    }
+
+    /**
+     * Get original document
+     *
+     * @return \DOMDocument
+     */
+    public function document()
+    {
+        return $this->dom;
     }
 
     /**
@@ -187,9 +198,35 @@ class Document
     }
 
     /**
+     * Load string or file
+     *
+     * @param string $source
+     * @param bool   $file
+     * @return void
+     */
+    public function load($source, $file = false)
+    {
+        if ($this->format === self::HTML) {
+            $callback = $file ? 'loadHTMLFile' : 'loadHTML';
+        } elseif ($file) {
+            $callback = 'load';
+        } else {
+            $callback = 'loadXML';
+        }
+
+        $this->enableInternalErrors(true);
+
+        $this->dom->{$callback}($source, $this->loadOptions);
+
+        $this->raise(2);
+
+        $this->enableInternalErrors(false);
+    }
+
+    /**
      * Convert document to XML string, HTML string or array
      *
-     * @param \DOMElement $element
+     * @param \DOMNode $node
      * @return void
      */
     public function dump(\DOMNode $node = null)
@@ -217,16 +254,6 @@ class Document
     }
 
     /**
-     * Get original document
-     *
-     * @return \DOMDocument
-     */
-    public function document()
-    {
-        return $this->dom;
-    }
-
-    /**
      * Convert array to DOM
      *
      * @param array $data
@@ -249,7 +276,9 @@ class Document
 
         $dom = $this->dom;
 
-        $dom->loadHTML('<!DOCTYPE html><html></html>');
+        if ($this->format === self::HTML) {
+            $dom->loadHTML('<!DOCTYPE html><html></html>');
+        }
 
         if ($dom->documentElement) {
             $dom->removeChild($dom->documentElement);
@@ -259,32 +288,7 @@ class Document
 
         $this->generate($dom, $data, 3);
 
-        $this->raise($this->exceptionLevel);
-
-        $this->enableInternalErrors(false);
-    }
-
-    /**
-     * Load string or file
-     *
-     * @param string $source
-     * @param bool   $file
-     */
-    public function load($source, $file = false)
-    {
-        if ($this->format === self::HTML) {
-            $callback = $file ? 'loadHTMLFile' : 'loadHTML';
-        } elseif ($file) {
-            $callback = 'load';
-        } else {
-            $callback = 'loadXML';
-        }
-
-        $this->enableInternalErrors(true);
-
-        $this->dom->{$callback}($source, $this->loadOptions);
-
-        $this->raise(3);
+        $this->raise(2);
 
         $this->enableInternalErrors(false);
     }
@@ -355,17 +359,17 @@ class Document
     private function generate(\DOMNode $node, &$data, $errorLevel)
     {
         if (is_array($data) === false) {
-            $node->textContent = $data;
+            $node->nodeValue = $data;
             return;
         }
 
-        $nextLevel = $errorLevel + 1;
+        ++$errorLevel;
 
         foreach ($data as $key => $value) {
             if ($key === '@comments') {
                 continue;
             } elseif ($key === '@contents') {
-                $this->generate($node, $value, $nextLevel);
+                $this->generate($node, $value, $errorLevel);
             } elseif ($key === '@attributes') {
                 foreach ($value as $subKey => $subValue) {
                     $node->setAttribute($subKey, $subValue);
@@ -376,13 +380,13 @@ class Document
                 } elseif (Arrays::indexed($value)) {
                     foreach ($value as $subvalue) {
                         $create = array($key => $subvalue);
-                        $this->generate($node, $create, $nextLevel);
+                        $this->generate($node, $create, $errorLevel);
                     }
                 } else {
-                    $this->generate($this->add($key, '', $node), $value, $nextLevel);
+                    $this->generate($this->add($key, '', $node), $value, $errorLevel);
                 }
             } else {
-                throw new Exception('Invalid tag: <' . $key . '>', 0, $nextLevel);
+                throw new Exception('Invalid tag: <' . $key . '>', 0, $errorLevel);
             }
         }
     }
