@@ -13,8 +13,6 @@ use Inphinit\Utility\Others;
 
 class Request
 {
-    private static $reqHeaders;
-    private static $reqHeadersLower;
     private static $headerTokens = array('-', ' ');
 
     /**

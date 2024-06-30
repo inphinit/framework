@@ -218,10 +218,10 @@ class Document
     /**
      * Save document to file
      *
-     * @param string $dest
+     * @param string $file
      * @return void
      */
-    public function save($dest)
+    public function save($file)
     {
         if ($this->type === self::XML) {
             $callback = array($this->base, 'save');
@@ -231,7 +231,7 @@ class Document
             $options = 0;
         }
 
-        return $options === 0 ? $callback($node) : $callback($node, $options);
+        return $options === 0 ? $callback($file) : $callback($file, $options);
     }
 
     /**

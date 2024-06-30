@@ -11,7 +11,7 @@ namespace Inphinit\Experimental\Utility;
 
 use Inphinit\Exception;
 
-class Object
+class ObjectPath
 {
     private $data;
     private $isArray = false;

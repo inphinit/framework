@@ -14,8 +14,6 @@ use Inphinit\Exception;
 
 class Size
 {
-    private $path;
-    private $size;
     private $modes;
     private $lastError;
     private static $isWin;
@@ -122,12 +120,12 @@ class Size
                 curl_close($handle);
 
                 if ($error !== null) {
-                    $this->lastError = 'CURL: ' . $error . ' from ' . $this->path;
+                    $this->lastError = 'CURL: ' . $error . ' from ' . $path;
                 }
 
                 return $size;
             } else {
-                $this->lastError = 'CURL: can\'t read ' . $this->path;
+                $this->lastError = 'CURL: can\'t read ' . $path;
             }
         } else {
             $this->lastError = 'CURL: curl_init is disabled';
