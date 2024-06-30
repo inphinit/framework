@@ -16,6 +16,7 @@ class App
 {
     private static $configs;
 
+    private $data = array();
     private $routes = array();
     private $paramRoutes = array();
 
@@ -67,9 +68,9 @@ class App
     /**
      * Register callable or controller for a route
      *
-     * @param string|array    $methods
-     * @param string          $path
-     * @param string|callable $callback
+     * @param string|array $methods
+     * @param string       $path
+     * @param callable     $callback
      * @return void
      */
     public function action($methods, $path, $callback)
@@ -221,7 +222,7 @@ class App
                 $callback = array(new $callback(), $parsed[1]);
             }
 
-            $output = $callback($params);
+            $output = $callback($this, $params);
         }
 
         self::forward($output);
@@ -250,6 +251,16 @@ class App
         if (class_exists('\\Inphinit\\Event', false)) {
             Event::trigger('done');
         }
+    }
+
+    public function __get($name)
+    {
+        return isset($this->data[$name]) ? $this->data[$name] : null;
+    }
+
+    public function __set($name, $value)
+    {
+        $this->data[$name] = $value;
     }
 
     private function params(&$routes, &$params)

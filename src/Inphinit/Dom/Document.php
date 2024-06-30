@@ -32,35 +32,39 @@ class Document
     const FATAL = 32;
     const WARNING = 64;
 
-    private $dom;
+    private $base;
     private $xpath;
     private $selector;
 
     private $internalErrors;
-    private $exceptionLevel = 3;
 
     private $complete = false;
     private $simple = false;
 
-    private $format;
+    private $type;
     private $loadOptions = 0;
     private $saveOptions = 0;
 
-    private static $reporting;
+    private static $severityLevels;
 
     /**
      * Create a Document instance
      *
-     * @param string $format
+     * @param string $type
      */
-    public function __construct($format = 0)
+    public function __construct($type = 0)
     {
-        if (self::$reporting === null) {
-            self::setReporting(self::FATAL);
+        if ($type !== self::HTML && $type !== self::XML) {
+            throw new Exception('Invalid format');
         }
 
-        $this->dom = new \DOMDocument();
-        $this->format = $format;
+        if (self::$severityLevels === null) {
+            self::setSeverityLevels(self::FATAL);
+        }
+
+        $this->type = $type;
+
+        $this->base = new \DOMDocument();
     }
 
     /**
@@ -69,15 +73,15 @@ class Document
      * @param int $options
      * @return void
      */
-    public static function setReporting($options)
+    public static function setSeverityLevels($options)
     {
-        $types = self::ERROR | self::FATAL | self::WARNING;
+        $levels = self::ERROR | self::FATAL | self::WARNING;
 
-        if ($options && !($types & $options)) {
+        if ($options !== 0 && !($levels & $options)) {
             throw new Exception('Invalid reporting options');
         }
 
-        self::$reporting = $options;
+        self::$severityLevels = $options;
     }
 
     /**
@@ -109,56 +113,23 @@ class Document
      */
     public function document()
     {
-        return $this->dom;
+        return $this->base;
     }
 
     /**
-     * Gets all elements that matches the CSS selector (like document.querySelectorAll)
+     * Gets all elements that match the CSS selector
      *
-     * @param string $selector
-     * @param \DOMNode $context
-     * @return \DOMNodeList
+     * @return \Inphinit\Dom\Selector
      */
-    public function query($selector, \DOMNode $context = null)
+    public function selector()
     {
         $this->enableInternalErrors(true);
 
         if ($this->selector === null) {
-            $this->selector = new Selector($this->dom);
+            $this->selector = new Selector($this->base);
         }
 
-        $nodes = $this->selector->get($selector, $context);
-
-        $level = $this->exceptionLevel;
-
-        $this->exceptionLevel = 3;
-
-        $this->raise(3);
-
-        $this->enableInternalErrors(false);
-
-        return $nodes;
-    }
-
-    /**
-     * Gets an element that matches the CSS selector (like document.querySelector)
-     *
-     * @param string $selector
-     * @param \DOMNode $context
-     * @return \DOMNode
-     */
-    public function first($selector, \DOMNode $context = null)
-    {
-        $this->exceptionLevel = 4;
-
-        $node = null;
-        $nodes = $this->query($selector, $context);
-
-        if ($nodes) {
-            $node = $nodes->item(0);
-        }
-
-        return $node;
+        return $this->selector;
     }
 
     /**
@@ -170,31 +141,31 @@ class Document
     public function getNamespaces(\DOMElement $element = null)
     {
         if ($this->xpath === null) {
-            $this->xpath = new \DOMXPath($this->dom);
+            $this->xpath = new \DOMXPath($this->base);
         }
 
         if ($element === null) {
             $nodes = $this->xpath->query('namespace::*');
-            $element = $this->dom->documentElement;
+            $element = $this->base->documentElement;
         } else {
             $nodes = $this->xpath->query('namespace::*', $element);
         }
 
-        $ns = array();
+        $items = array();
 
         if ($nodes) {
             foreach ($nodes as $node) {
                 $arr = $element->getAttribute($node->nodeName);
 
                 if ($arr) {
-                    $ns[$node->nodeName] = $arr;
+                    $items[$node->nodeName] = $arr;
                 }
             }
 
             $nodes = null;
         }
 
-        return $ns;
+        return $items;
     }
 
     /**
@@ -206,12 +177,12 @@ class Document
      */
     public function load($source, $file = false)
     {
-        if ($this->format === self::HTML) {
-            $callback = array($this->dom, $file ? 'loadHTMLFile' : 'loadHTML');
+        if ($this->type === self::HTML) {
+            $callback = array($this->base, $file ? 'loadHTMLFile' : 'loadHTML');
         } elseif ($file) {
-            $callback = array($this->dom, 'load');
+            $callback = array($this->base, 'load');
         } else {
-            $callback = array($this->dom, 'loadXML');
+            $callback = array($this->base, 'loadXML');
         }
 
         $this->enableInternalErrors(true);
@@ -233,19 +204,15 @@ class Document
      */
     public function dump(\DOMNode $node = null)
     {
-        if ($this->format === self::XML) {
-            $callback = array($this->dom, 'saveXML');
+        if ($this->type === self::XML) {
+            $callback = array($this->base, 'saveXML');
             $options = $this->saveOptions;
         } else {
-            $callback = array($this->dom, 'saveHTML');
+            $callback = array($this->base, 'saveHTML');
             $options = 0;
         }
 
-        if ($options !== 0) {
-            return $callback($node, $options);
-        }
-
-        return $callback($node);
+        return $options === 0 ? $callback($node) : $callback($node, $options);
     }
 
     /**
@@ -256,19 +223,15 @@ class Document
      */
     public function save($dest)
     {
-        if ($this->format === self::XML) {
-            $callback = array($this->dom, 'save');
+        if ($this->type === self::XML) {
+            $callback = array($this->base, 'save');
             $options = $this->saveOptions;
         } else {
-            $callback = array($this->dom, 'saveHTMLFile');
+            $callback = array($this->base, 'saveHTMLFile');
             $options = 0;
         }
 
-        if ($options !== 0) {
-            return $callback($node, $options);
-        }
-
-        return $callback($node);
+        return $options === 0 ? $callback($node) : $callback($node, $options);
     }
 
     /**
@@ -279,22 +242,22 @@ class Document
     public function fromArray(array $data)
     {
         if (empty($data)) {
-            throw new Exception('Array is empty', 0, 3);
+            throw new Exception('Array is empty');
         } elseif (count($data) > 1) {
-            throw new Exception('Root array accepts only a key', 0, 3);
+            throw new Exception('Root array accepts only a key');
         }
 
         $root = key($data);
 
-        if ($this->format === self::HTML && strcasecmp($root, 'html') !== 0) {
-            throw new Exception('HTML except <' . $root . '> tag as root');
-        } elseif ($this->format === self::XML && self::validTag($root) === false) {
+        if ($this->type === self::HTML && strcasecmp($root, 'html') !== 0) {
+            throw new Exception('HTML except <html> tag as root');
+        } elseif ($this->type === self::XML && self::validTag($root) === false) {
             throw new Exception('Invalid <' . $root . '> root tag');
         }
 
-        $dom = $this->dom;
+        $dom = $this->base;
 
-        if ($this->format === self::HTML) {
+        if ($this->type === self::HTML) {
             $dom->loadHTML('<!DOCTYPE html><html></html>');
         }
 
@@ -306,7 +269,7 @@ class Document
 
         $this->generate($dom, $data, 3);
 
-        $this->raise(0);
+        $this->raise(3);
     }
 
     /**
@@ -332,14 +295,14 @@ class Document
         }
 
         if ($node) {
-            if ($this->dom->documentElement->contains($node) === false) {
+            if ($this->base->documentElement->contains($node) === false) {
                 return false;
             }
 
             return $this->getNodes($node->childNodes);
         }
 
-        return $this->getNodes($this->dom->childNodes);
+        return $this->getNodes($this->base->childNodes);
     }
 
     private function enableInternalErrors($enable)
@@ -366,12 +329,13 @@ class Document
                 $reported = self::FATAL;
             }
 
-            if (self::$reporting & $reported) {
+            if (self::$severityLevels & $reported) {
                 $exception = new DomException(null, $level);
             }
 
             if ($exception !== null) {
                 $this->enableInternalErrors(false);
+
                 throw $exception;
             }
         }
@@ -384,7 +348,8 @@ class Document
     private function generate(\DOMNode $node, &$data, $errorLevel)
     {
         if (is_array($data) === false) {
-            $node->nodeValue = $data;
+            $created = $this->base->createTextNode($data);
+            $node->appendChild($created);
             return;
         }
 
@@ -423,7 +388,7 @@ class Document
 
     private function add($name, $value, \DOMNode $node)
     {
-        $created = $this->dom->createElement($name, $value);
+        $created = $this->base->createElement($name, $value);
         $node->appendChild($created);
         return $created;
     }
@@ -462,18 +427,18 @@ class Document
         }
 
         if ($node->getElementsByTagName('*')->length) {
-            $r = $this->getNodes($node->childNodes) + (
+            $contents = $this->getNodes($node->childNodes) + (
                 empty($extras['@attributes']) ? array() : $extras
             );
         } elseif (empty($extras['@attributes'])) {
             return $node->nodeValue;
         } else {
-            $r = array($node->nodeValue) + $extras;
+            $contents = array($node->nodeValue) + $extras;
         }
 
-        self::simplify($r);
+        self::simplify($contents);
 
-        return $r;
+        return $contents;
     }
 
     private static function simplify(&$items)

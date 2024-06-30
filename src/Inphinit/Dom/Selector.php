@@ -9,8 +9,9 @@
 
 namespace Inphinit\Dom;
 
-class Selector extends \DOMXPath
+class Selector
 {
+    private $base;
     private $prevent;
     private $rules;
     private $allSiblingsToken;
@@ -49,6 +50,34 @@ class Selector extends \DOMXPath
     );
 
     /**
+     * Create a `Inphinit\Dom\Selector` instance.
+     *
+     * @param \DOMDocument $document
+     * @param bool $registerNodeNS
+     */
+    public function __construct(\DOMDocument $document, $registerNodeNS = true)
+    {
+        if (PHP_VERSION_ID >= 800000) {
+            $this->base = new \DOMXPath($document, $registerNodeNS);
+        } else {
+            $this->base = new \DOMXPath($document);
+        }
+    }
+
+    /**
+     * Get DOMXPath instance
+     *
+     * @param string $selector
+     * @param \DOMNode $context
+     * @param bool $registerNodeNS
+     * @return \DOMXPath
+     */
+    public function xpath()
+    {
+        return $this->base;
+    }
+
+    /**
      * Count all nodes matching the given CSS selector
      *
      * @param string $selector
@@ -62,29 +91,36 @@ class Selector extends \DOMXPath
     }
 
     /**
-     * Returns a \DOMNodeList containing all nodes matching the given CSS selector
+     * Returns a \DOMNodeList that match the specified selector
      *
      * @param string $selector
      * @param \DOMNode $context
      * @param bool $registerNodeNS
      * @return \DOMNodeList
      */
-    public function get($selector, \DOMNode $context = null, $registerNodeNS = true)
+    public function all($selector, \DOMNode $context = null, $registerNodeNS = true)
     {
         return $this->exec('query', $selector, $context, $registerNodeNS);
     }
 
+    /**
+     * Returns the first element or node within the document that matches the specified selector.
+     * If no matches are found, null is returned.
+     *
+     * @param string $selector
+     * @param \DOMNode $context
+     * @param bool $registerNodeNS
+     * @return \DOMElement|\DOMNode|\DOMNameSpaceNode|null
+     */
+    public function first($selector, \DOMNode $context = null, $registerNodeNS = true)
+    {
+        $nodes = $this->exec('query', $selector, $context, $registerNodeNS);
+        return $nodes ? $nodes->item(0) : null;
+    }
+
     private function exec($method, $query, $context, $registerNodeNS)
     {
-        $query = $this->toXPath($query);
-
-        if (PHP_VERSION_ID >= 50303) {
-            return $this->$method($query, $context, $registerNodeNS);
-        } elseif ($context !== null) {
-            return $this->$method($query, $context);
-        }
-
-        return $this->$method($query);
+        return $this->base->$method($this->toXPath($query), $context, $registerNodeNS);
     }
 
     private function tokens($query)
