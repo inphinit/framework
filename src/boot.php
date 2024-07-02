@@ -62,7 +62,7 @@ function inphinit_error($type, $message, $file, $line, $context = null)
     if (in_array($collect, $collectedErrors) === false) {
         $collectedErrors[] = $collect;
 
-        if (class_exists('\\Inphinit\\Event', false)) {
+        if (class_exists('\\Inphinit\\Event', false) && (error_reporting() & $type)) {
             Event::trigger('error', array($type, $message, $file, $line));
         }
     }
@@ -70,14 +70,13 @@ function inphinit_error($type, $message, $file, $line, $context = null)
     return false;
 }
 
-set_error_handler('inphinit_error', error_reporting());
+set_error_handler('inphinit_error');
 
 register_shutdown_function(function () {
     $error = error_get_last();
 
-    if ($error !== null && (error_reporting() & $error['type'])) {
+    if ($error !== null) {
         App::forward();
-
         inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
     }
 });

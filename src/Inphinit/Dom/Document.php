@@ -250,9 +250,9 @@ class Document
         $root = key($data);
 
         if ($this->type === self::HTML && strcasecmp($root, 'html') !== 0) {
-            throw new Exception('HTML except <html> tag as root');
+            throw new Exception('Document::HTML expects "html" key as root');
         } elseif ($this->type === self::XML && self::validTag($root) === false) {
-            throw new Exception('Invalid <' . $root . '> root tag');
+            throw new Exception('Invalid "' . $root . '" key as root');
         }
 
         $dom = $this->base;
@@ -356,8 +356,9 @@ class Document
         ++$errorLevel;
 
         foreach ($data as $key => $value) {
-            if ($key === '@comments') {
-                continue;
+            if ($key === '@comment') {
+                $created = $this->base->createComment((string) $value);
+                $node->appendChild($created);
             } elseif ($key === '@contents') {
                 $this->generate($node, $value, $errorLevel);
             } elseif ($key === '@attributes') {
@@ -462,6 +463,7 @@ class Document
     {
         if (count($item) > 1 && isset($item[0]) && isset($item[1]) === false) {
             $item['@contents'] = $item[0];
+
             unset($item[0]);
 
             return false;
