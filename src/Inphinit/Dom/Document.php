@@ -330,7 +330,7 @@ class Document
             }
 
             if (self::$severityLevels & $reported) {
-                $exception = new DomException(null, $level);
+                $exception = new DomException($error, $level);
             }
 
             if ($exception !== null) {

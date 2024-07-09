@@ -29,6 +29,6 @@ class Exception extends \Exception
             $this->line = $data['line'];
         }
 
-        parent::__construct($message, $code);
+        parent::__construct(trim($message), $code);
     }
 }

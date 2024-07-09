@@ -14,21 +14,15 @@ class DomException extends \Inphinit\Exception
     /**
      * Raise an exception
      *
-     * @param string $message
-     * @param int    $trace
+     * @param \LibXMLError $error
+     * @param int          $trace
      */
-    public function __construct($message = null, $trace = 1)
+    public function __construct(\LibXMLError $error, $trace = 1)
     {
-        $err = \libxml_get_errors();
-
         ++$trace;
 
-        if ($message === null && isset($err[0]->message)) {
-            $message = trim($err[0]->message);
-        }
-
-        if (isset($err[0]->file) && $err[0]->file !== '' && $err[0]->line > 0) {
-            $file = $err[0]->file;
+        if (isset($error->file) && $error->file !== '' && $error->line > 0) {
+            $file = $error->file;
 
             $scheme = parse_url($file, PHP_URL_SCHEME);
 
@@ -39,12 +33,11 @@ class DomException extends \Inphinit\Exception
 
             if ($file) {
                 $this->file = $file;
-                $this->line = $err[0]->line;
-                $this->code = $err[0]->code;
+                $this->line = $error->line;
                 $trace = 0;
             }
         }
 
-        parent::__construct($message, 0, $trace);
+        parent::__construct($error->message, $error->code, $trace);
     }
 }

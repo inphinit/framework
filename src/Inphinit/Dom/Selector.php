@@ -16,7 +16,7 @@ class Selector
     private $rules;
     private $allSiblingsToken;
     private static $cache = array();
-    private $qxs = array(
+    private static $qxs = array(
         array('/^([^a-z*])/i', '*\\1'),
         array('/([>+~])([^\w*\s])/', '\\1*\\2'),
         array('/\[(.*?)\]/', '[@\\1\\2]'),
@@ -189,7 +189,7 @@ class Selector
             $descendants = explode(' ', trim($descendants));
 
             foreach ($descendants as &$descendant) {
-                foreach ($this->qxs as &$qx) {
+                foreach (self::$qxs as &$qx) {
                     $r = strtr($qx[1], $this->rules);
 
                     $descendant = str_replace($preventToken . 'i]', ' i]', $descendant);
