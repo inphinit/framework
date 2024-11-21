@@ -105,7 +105,7 @@ if (INPHINIT_COMPOSER) {
         }
 
         if ($base !== null) {
-            // if starts with / or contains :, $base request a file
+            // if not starts with / or not contains :, $base request a file
             if ($base[0] !== '/' && strpos($base, ':') === false) {
                 $base = INPHINIT_SYSTEM . '/' . $base;
             }

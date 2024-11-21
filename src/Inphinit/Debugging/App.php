@@ -9,10 +9,9 @@
 
 namespace Inphinit\Debugging;
 
-use Inphinit\App;
 use Inphinit\Exception;
 
-class DebugApp extends App
+class App extends \Inphinit\App
 {
     private static $allowedMethods = array(
         'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'

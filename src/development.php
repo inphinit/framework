@@ -9,8 +9,8 @@
 
 error_reporting(E_ALL);
 
-set_error_handler('inphinit_error', error_reporting());
+set_error_handler('inphinit_error', E_ALL);
 
-$app = new Inphinit\Debugging\DebugApp();
+$app = new Inphinit\Debugging\App();
 
 require INPHINIT_SYSTEM . '/dev.php';

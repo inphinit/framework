@@ -15,6 +15,7 @@ class Selector
     private $prevent;
     private $rules;
     private $allSiblingsToken;
+    private $registerNodeNS = false;
     private static $cache = array();
     private static $qxs = array(
         array('/^([^a-z*])/i', '*\\1'),
@@ -62,14 +63,14 @@ class Selector
         } else {
             $this->base = new \DOMXPath($document);
         }
+
+        // Check (fallback)
+        $this->registerNodeNS = $registerNodeNS;
     }
 
     /**
      * Get DOMXPath instance
      *
-     * @param string $selector
-     * @param \DOMNode $context
-     * @param bool $registerNodeNS
      * @return \DOMXPath
      */
     public function xpath()
@@ -81,26 +82,22 @@ class Selector
      * Count all nodes matching the given CSS selector
      *
      * @param string $selector
-     * @param \DOMNode $context
-     * @param bool $registerNodeNS
      * @return \DOMNodeList
      */
-    public function count($selector, \DOMNode $context = null, $registerNodeNS = true)
+    public function count($selector)
     {
-        return $this->exec('evaluate', $selector, $context, $registerNodeNS);
+        return $this->exec('evaluate', $selector);
     }
 
     /**
      * Returns a \DOMNodeList that match the specified selector
      *
      * @param string $selector
-     * @param \DOMNode $context
-     * @param bool $registerNodeNS
      * @return \DOMNodeList
      */
-    public function all($selector, \DOMNode $context = null, $registerNodeNS = true)
+    public function all($selector)
     {
-        return $this->exec('query', $selector, $context, $registerNodeNS);
+        return $this->exec('query', $selector);
     }
 
     /**
@@ -108,19 +105,17 @@ class Selector
      * If no matches are found, null is returned.
      *
      * @param string $selector
-     * @param \DOMNode $context
-     * @param bool $registerNodeNS
      * @return \DOMElement|\DOMNode|\DOMNameSpaceNode|null
      */
-    public function first($selector, \DOMNode $context = null, $registerNodeNS = true)
+    public function first($selector)
     {
-        $nodes = $this->exec('query', $selector, $context, $registerNodeNS);
+        $nodes = $this->exec('query', $selector);
         return $nodes ? $nodes->item(0) : null;
     }
 
-    private function exec($method, $query, $context, $registerNodeNS)
+    private function exec($method, $query)
     {
-        return $this->base->$method($this->toXPath($query), $context, $registerNodeNS);
+        return $this->base->$method($this->toXPath($query), null, $this->registerNodeNS);
     }
 
     private function tokens($query)
@@ -281,9 +276,9 @@ class Selector
         return $last . $preceding;
     }
 
-    private static function uniqueToken($query, $key, $token = null)
+    private static function uniqueToken($query, $key, $token = 0)
     {
-        if ($token === null) {
+        if ($token === 0) {
             $token = time();
         }
 

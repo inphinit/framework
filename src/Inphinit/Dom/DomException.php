@@ -21,14 +21,13 @@ class DomException extends \Inphinit\Exception
     {
         ++$trace;
 
-        if (isset($error->file) && $error->file !== '' && $error->line > 0) {
+        if ($error->file && $error->line > 0) {
             $file = $error->file;
-
             $scheme = parse_url($file, PHP_URL_SCHEME);
 
             if (!$scheme || stripos($scheme, 'file') === 0) {
                 $file = parse_url($file, PHP_URL_PATH);
-                $file = preg_replace('#^\/([A-Z]\:)#i', '$1', $file);
+                $file = preg_replace('#^/+([A-Z]\:)#i', '$1', $file);
             }
 
             if ($file) {

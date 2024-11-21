@@ -16,7 +16,7 @@ use Inphinit\Utility\Url;
 class File
 {
     private static $infos = array();
-    private static $handleFinfo;
+    private static $finfo;
     private static $devStrictMode = false;
 
     /**
@@ -159,11 +159,11 @@ class File
         self::checkInDevMode($path);
 
         if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
-            if (self::$handleFinfo === null) {
-                self::$handleFinfo = finfo_open(FILEINFO_MIME);
+            if (self::$finfo === null) {
+                self::$finfo = finfo_open(FILEINFO_MIME);
             }
 
-            self::$infos[$path] = finfo_buffer(self::$handleFinfo, $buffer);
+            self::$infos[$path] = finfo_buffer(self::$finfo, $buffer);
         }
 
         return self::$infos[$path];
@@ -279,9 +279,9 @@ class File
     {
         self::$infos = array();
 
-        finfo_close(self::$handleFinfo);
+        finfo_close(self::$finfo);
 
-        self::$handleFinfo = null;
+        self::$finfo = null;
 
         clearstatcache();
     }

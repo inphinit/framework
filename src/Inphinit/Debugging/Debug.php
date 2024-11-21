@@ -385,7 +385,7 @@ class Debug
                 break;
 
             case E_ERROR:
-            case E_USER_ERROR:
+            case E_USER_ERROR: // deprecated as of PHP 8.4
             case E_RECOVERABLE_ERROR:
                 $message = 'Fatal error: ' . $message;
                 break;

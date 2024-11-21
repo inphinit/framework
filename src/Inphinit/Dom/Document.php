@@ -117,6 +117,16 @@ class Document
     }
 
     /**
+     * Get root element
+     *
+     * @return \DOMDocument
+     */
+    public function root()
+    {
+        return $this->base->documentElement;
+    }
+
+    /**
      * Gets all elements that match the CSS selector
      *
      * @return \Inphinit\Dom\Selector
@@ -138,15 +148,14 @@ class Document
      * @param \DOMElement $element
      * @return void
      */
-    public function getNamespaces(\DOMElement $element = null)
+    public function getNamespaces(\DOMElement $element)
     {
         if ($this->xpath === null) {
             $this->xpath = new \DOMXPath($this->base);
         }
 
-        if ($element === null) {
+        if ($element === $this->base->documentElement) {
             $nodes = $this->xpath->query('namespace::*');
-            $element = $this->base->documentElement;
         } else {
             $nodes = $this->xpath->query('namespace::*', $element);
         }
@@ -202,7 +211,7 @@ class Document
      * @param \DOMNode $node
      * @return void
      */
-    public function dump(\DOMNode $node = null)
+    public function dump(\DOMNode $node)
     {
         if ($this->type === self::XML) {
             $callback = array($this->base, 'saveXML');
@@ -238,6 +247,7 @@ class Document
      * Convert Array to DOM
      *
      * @param array $data
+     * @return void
      */
     public function fromArray(array $data)
     {
@@ -275,10 +285,11 @@ class Document
     /**
      * Convert DOM to Array
      *
-     * @param int     $format
      * @param DOMNode $node
+     * @param int     $format
+     * @return array
      */
-    public function toArray($format, \DOMNode $node = null)
+    public function toArray(\DOMNode $node, $format)
     {
         switch ($format) {
             case self::ARRAY_MINIMAL:
