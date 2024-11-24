@@ -16,10 +16,10 @@ use Inphinit\Viewing\View;
 class App
 {
     /** Inphinit framework version */
-    const VERSION = '0.6.2';
+    const VERSION = '0.6.3';
 
+    private static $configs;
     private static $events = array();
-    private static $configs = array();
     private static $state = 0;
 
     /**
