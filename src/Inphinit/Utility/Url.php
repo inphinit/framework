@@ -156,7 +156,7 @@ class Url
      * Canon path
      *
      * @param string $path
-     * @return void
+     * @return string
      */
     public static function canonpath($path)
     {

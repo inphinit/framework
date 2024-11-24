@@ -13,117 +13,95 @@ use Inphinit\Http\Request;
 
 class Method
 {
-    private static $originalMethod;
+    private $allowed = array('delete', 'patch', 'put');
 
-    private $methods = array('delete', 'patch', 'put');
-
-    private $headers = array('x-http-method-override', 'x-http-method', 'x-method-override');
-
-    private $params = array('_method', '_HttpMethod');
+    private $sources = array(
+        array('x-http-method-override', false, 0),
+        array('x-http-method', false, 0),
+        array('x-method-override', false, 0),
+        array('_method', true, 0),
+        array('_HttpMethod', true, 0),
+    );
 
     /**
      * Create instace
      *
-     * @param array $methods Sets allowed methods
-     * @param array $headers Sets allowed headers
-     * @param array $params  Sets allowed params (GET or POST)
+     * @param bool $reset Reset sources
      */
-    public function __construct(array $methods = array(), array $headers = array(), array $params = array())
+    public function __construct($reset = false)
     {
-        static::original(); // Save original method
-
-        if ($methods) {
-            $this->methods = $methods;
-        }
-
-        if ($headers) {
-            $this->headers = $headers;
-        }
-
-        if ($params) {
-            $this->params = $params;
+        if ($reset) {
+            $this->sources = array();
         }
     }
 
     /**
-     * Get method from headers
+     * Append param
      *
-     * @param mixed $alternative
-     * @return mixed
+     * @param bool $param
+     * @param int  $priority
      */
-    public function fromHeaders($alternative = null)
+    public function appendParam($param, $priority = 0)
     {
-        $method = null;
-
-        foreach ($this->headers as $header) {
-            if ($method = Request::header($header)) {
-                break;
-            }
-        }
-
-        return $this->getValue($method, $alternative);
+        $this->sources[] = array($param, false, $priority);
     }
 
     /**
-     * Get method from POST or GET param (using `$_REQUEST`)
+     * Append header
      *
-     * @param mixed $alternative
-     * @return mixed
+     * @param bool $header
+     * @param int  $priority
      */
-    public function fromParams($alternative = null)
+    public function appendHeader($header, $priority = 0)
     {
-        $method = null;
-
-        foreach ($this->params as $param) {
-            if (isset($_REQUEST[$param]) && $method = $_REQUEST[$param]) {
-                break;
-            }
-        }
-
-        return $this->getValue($method, $alternative);
+        $this->sources[] = array($header, true, $priority);
     }
 
     /**
-     * `$_SERVER['REQUEST_METHOD']` override using default settings
-     *
-     * @param bool $headers
-     * @param bool $params
-     */
-    public static function override($headers = true, $params = true)
-    {
-        $instance = new static();
-
-        $method = $headers ? $instance->fromHeaders() : null;
-
-        if ($params && $method === null) {
-            $method = $instance->fromParams();
-        }
-
-        if ($method !== null) {
-            $_SERVER['REQUEST_METHOD'] = $method;
-        }
-    }
-
-    /**
-     * Get original method
+     * Get header from $_REUUEST or headers
      *
      * @return string
      */
-    public static function original()
+    public function __toString()
     {
-        if (self::$originalMethod === null) {
-            self::$originalMethod = $_SERVER['REQUEST_METHOD'];
+        usort($this->sources, function ($a, $b) {
+            if ($a[1] === $b[1]) {
+                return 0;
+            }
+
+            return $a[1] > $b[1] ? 1 : -1;
+        });
+
+        $method = null;
+
+        foreach ($this->sources as $source) {
+            if ($source[1]) {
+                $method = Request::header($source);
+            } elseif (isset($_REQUEST[$source][0])) {
+                $method = $_REQUEST[$source][0];
+            }
+
+            if ($method && in_array(strtolower($method), $this->allowed)) {
+                return $method;
+            }
         }
 
-        return self::$originalMethod;
+        return '';
     }
 
-    private function getValue($method, $alternative)
+    /**
+     * Override `$_SERVER['REQUEST_METHOD']`
+     */
+    public static function override()
     {
-        if ($method && in_array(strtolower($method), $this->methods)) {
-            return strtoupper($method);
-        }
+        $instance = new static();
 
-        return $alternative;
+        $method = (string) $instance;
+
+        $instance = null;
+
+        if ($method) {
+            $_SERVER['REQUEST_METHOD'] = $method;
+        }
     }
 }

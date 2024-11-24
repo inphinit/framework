@@ -18,16 +18,18 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
+    private static $devAdvice = 'While your application is in development mode, it is recommended to disable `%s` in `%s`';
+
     public function __construct()
     {
         $this->development = App::config('development');
 
-        if (function_exists('php_ini_loaded_file')) {
-            if (function_exists('ini_get') === false) {
-                $this->warnings[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
-                $this->iniGet = false;
-            }
+        if (function_exists('ini_get') === false) {
+            $this->warnings[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
+            $this->iniGet = false;
+        }
 
+        if (function_exists('php_ini_loaded_file')) {
             $this->iniPath = php_ini_loaded_file();
 
             if ($this->iniPath) {
@@ -94,23 +96,23 @@ class Checkup
     {
         if (!$this->development && $this->iniGet) {
             if (function_exists('xcache_get') && $this->flag('xcache.cacher')) {
-                $this->warnings[] = 'Your application is in development mode, in this mode it is recommended to disable `xcache.cacher` in `' . $this->iniPath . '`';
+                $this->warnings[] = sprintf($this->devAdvice, 'xcache.cacher', $this->iniPath);
             }
 
             if (function_exists('opcache_get_status') && $this->flag('opcache.enable')) {
-                $this->warnings[] = 'Your application is in development mode, in this mode it is recommended to disable `opcache.enable` in `' . $this->iniPath . '`';
+                $this->warnings[] = sprintf($this->devAdvice, 'opcache.enable', $this->iniPath);
             }
 
             if (function_exists('wincache_ocache_meminfo') && $this->flag('wincache.ocenabled')) {
-                $this->warnings[] = 'Your application is in development mode, in this mode it is recommended to disable `wincache.ocenabled` in `' . $this->iniPath . '`';
+                $this->warnings[] = sprintf($this->devAdvice, 'wincache.ocenabled', $this->iniPath);
             }
 
             if (function_exists('apc_compile_file') && $this->flag('apc.enabled')) {
-                $this->warnings[] = 'Your application is in development mode, in this mode it is recommended to disable `apc.ocenabled` in `' . $this->iniPath . '`';
+                $this->warnings[] = sprintf($this->devAdvice, 'apc.ocenabled', $this->iniPath);
             }
 
             if (function_exists('eaccelerator_get') && $this->flag('eaccelerator.enable')) {
-                $this->warnings[] = 'Your application is in development mode, in this mode it is recommended to disable `eaccelerator.ocenabled` in `' . $this->iniPath . '`';
+                $this->warnings[] = sprintf($this->devAdvice, 'eaccelerator.ocenabled', $this->iniPath);
             }
         }
     }

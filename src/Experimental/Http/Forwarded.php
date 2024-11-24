@@ -16,8 +16,8 @@ use Inphinit\Http\Request;
 class Forwarded
 {
     private $params = array(
-        'by' => [],
-        'for' => [],
+        'by' => array(),
+        'for' => array(),
         'host' => '',
         'proto' => '',
     );
@@ -44,13 +44,13 @@ class Forwarded
 
     public function setHost($host)
     {
-        $this->host = $host;
+        $this->params['host'] = $host;
     }
 
     public function setProto($proto)
     {
         if ($proto === 'https' || $proto === 'http') {
-            $this->proto = $proto;
+            $this->params['proto'] = $proto;
         }
     }
 
