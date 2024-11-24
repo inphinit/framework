@@ -11,6 +11,7 @@ Inphinit is a PHP framework for use routes, controllers and views. To try it, go
 1. Multibyte String (GD also) (optional, only used in `Inphinit\Utility\Strings` class)
 1. libiconv (optional, only used in `Inphinit\Utility\Strings` class)
 1. fileinfo (optional, only used in `Inphinit\Filesystem\File`)
+1. COM or CUrl (optional, only used in `Inphinit\Filesystem\Size`)
 
 ## Getting start
 
@@ -20,3 +21,9 @@ Inphinit is a minimalist framework based on the syntax of other popular framewor
 
 - `Inphinit` namespace contains all defined classes that will hardly change their behavior.
 - `Inphinit\Experimental` namespace contains classes that are being designed and tested, some of them already work very well, others are not yet fully defined, if the class has all its functionalities defined and tested in the future it will be moved to the `Inphinit` namespace.
+
+If you are a contributor, before sending a pull-request it is important to run LINT, use the following command to make it easier:
+
+```bash
+find . -type f -name "*.php" -exec php -l {} \;`
+```
