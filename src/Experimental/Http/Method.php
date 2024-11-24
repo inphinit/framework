@@ -16,11 +16,11 @@ class Method
     private $allowed = array('delete', 'patch', 'put');
 
     private $sources = array(
-        array('x-http-method-override', false, 0),
-        array('x-http-method', false, 0),
-        array('x-method-override', false, 0),
-        array('_method', true, 0),
-        array('_HttpMethod', true, 0),
+        array('x-http-method-override', true, 0),
+        array('x-http-method', true, 0),
+        array('x-method-override', true, 0),
+        array('_method', false, 0),
+        array('_HttpMethod', false, 0),
     );
 
     /**
@@ -36,14 +36,13 @@ class Method
     }
 
     /**
-     * Append param
+     * Set allowed
      *
-     * @param bool $param
-     * @param int  $priority
+     * @param array $methods
      */
-    public function appendParam($param, $priority = 0)
+    public function setAllowed(array $methods)
     {
-        $this->sources[] = array($param, false, $priority);
+        $this->allowed = $methods;
     }
 
     /**
@@ -58,27 +57,40 @@ class Method
     }
 
     /**
-     * Get header from $_REUUEST or headers
+     * Append param
+     *
+     * @param bool $param
+     * @param int  $priority
+     */
+    public function appendParam($param, $priority = 0)
+    {
+        $this->sources[] = array($param, false, $priority);
+    }
+
+    /**
+     * Get header from `$_REQUEST` or from headers
      *
      * @return string
      */
     public function __toString()
     {
         usort($this->sources, function ($a, $b) {
-            if ($a[1] === $b[1]) {
+            if ($a[2] === $b[2]) {
                 return 0;
             }
 
-            return $a[1] > $b[1] ? 1 : -1;
+            return $a[2] > $b[2] ? 1 : -1;
         });
 
         $method = null;
 
         foreach ($this->sources as $source) {
+            $key = $source[0];
+
             if ($source[1]) {
-                $method = Request::header($source);
-            } elseif (isset($_REQUEST[$source][0])) {
-                $method = $_REQUEST[$source][0];
+                $method = Request::header($key);
+            } elseif (isset($_REQUEST[$key])) {
+                $method = $_REQUEST[$key];
             }
 
             if ($method && in_array(strtolower($method), $this->allowed)) {
