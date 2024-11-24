@@ -7,8 +7,8 @@
  * Released under the MIT license
  */
 
-error_reporting(E_ALL|E_STRICT);
+error_reporting(E_ALL);
 
-set_error_handler('inphinit_error', error_reporting());
+set_error_handler('inphinit_error', E_ALL);
 
 require INPHINIT_SYSTEM . '/dev.php';

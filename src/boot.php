@@ -12,12 +12,12 @@ use Inphinit\App;
 header_remove('X-Powered-By');
 
 /**
- * Return normalized path (for checking case-sensitive in Windows OS)
+ * case-sensitive check path
  *
  * @param string $path
  * @return bool
  */
-function inphinit_path_check($path)
+function inphinit_check_path($path)
 {
     return str_replace('\\', '/', $path) === str_replace('\\', '/', realpath($path));
 }
@@ -32,7 +32,7 @@ function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
 {
     $sandbox_path = INPHINIT_SYSTEM . '/' . $sandbox_path;
 
-    if (inphinit_path_check($sandbox_path)) {
+    if (inphinit_check_path($sandbox_path)) {
         if ($sandbox_data) {
             extract($sandbox_data, EXTR_SKIP);
         }
@@ -42,7 +42,7 @@ function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
 }
 
 /**
- * Function used from `set_error_handler` and trigger `Event::trigger('error')`
+ * Function used from `set_error_handler` and trigger `App::trigger('error')`
  *
  * @param int    $type
  * @param string $message
@@ -60,40 +60,39 @@ function inphinit_error($type, $message, $file, $line, $context = null)
     if (in_array($collect, $collectedErrors) === false) {
         $collectedErrors[] = $collect;
 
-        App::trigger('error', array($type, $message, $file, $line));
+        if (error_reporting() & $type) {
+            App::trigger('error', array($type, $message, $file, $line));
+        }
     }
 
     return false;
 }
 
-/**
- * Use with `register_shutdown_function` fatal errors and execute `done` event
- */
-function inphinit_shutdown()
-{
-    $last = error_get_last();
+set_error_handler('inphinit_error');
 
-    if ($last !== null && (error_reporting() & $last['type'])) {
+register_shutdown_function(function () {
+    $error = error_get_last();
+
+    if ($error !== null) {
         App::dispatch();
-        inphinit_error($last['type'], $last['message'], $last['file'], $last['line']);
+        inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
     }
+});
 
-    App::trigger('terminate');
-}
 
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
     $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
 
-    spl_autoload_register(function ($class) use ($prefixes) {
+    spl_autoload_register(function ($class) use (&$prefixes) {
         $class = ltrim($class, '\\');
-
-        $base = null;
 
         if (isset($prefixes[$class]) && pathinfo($prefixes[$class], PATHINFO_EXTENSION)) {
             $base = $prefixes[$class];
         } else {
+            $base = null;
+
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
@@ -105,22 +104,22 @@ if (INPHINIT_COMPOSER) {
         }
 
         if ($base !== null) {
-            // if starts with / or contains :, $base request a file
+            // if not starts with / or not contains :, $base request a file
             if ($base[0] !== '/' && strpos($base, ':') === false) {
                 $base = INPHINIT_SYSTEM . '/' . $base;
             }
 
-            if (inphinit_path_check($base)) {
+            if (inphinit_check_path($base)) {
                 include_once $base;
             }
         }
     });
 }
 
-$inphinit_path = urldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+$inphinit_path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
 
 if (PHP_SAPI !== 'cli-server') {
-    $inphinit_path = substr($inphinit_path, stripos($_SERVER['SCRIPT_NAME'], '/index.php'));
+    $inphinit_path = substr($inphinit_path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
 }
 
 define('INPHINIT_PATH', $inphinit_path);
@@ -129,10 +128,6 @@ define('REQUEST_TIME', time());
 require 'Inphinit/App.php';
 require 'Inphinit/Routing/Router.php';
 require 'Inphinit/Routing/Route.php';
-
-set_error_handler('inphinit_error', error_reporting());
-
-register_shutdown_function('inphinit_shutdown');
 
 if (App::config('development')) {
     require 'development.php';
