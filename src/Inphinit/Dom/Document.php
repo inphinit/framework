@@ -229,7 +229,7 @@ class Document extends \DOMDocument
      * Get namespace attributes from root element or specific element
      *
      * @param \DOMElement $element
-     * @return void
+     * @return array
      */
     public function getNamespaces(\DOMElement $element = null)
     {

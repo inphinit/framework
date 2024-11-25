@@ -249,7 +249,7 @@ class File
      *
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return string|bool
+     * @return void
      */
     public static function clearstat()
     {

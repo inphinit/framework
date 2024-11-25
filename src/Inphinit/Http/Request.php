@@ -13,6 +13,7 @@ use Inphinit\Dom\Document;
 use Inphinit\Dom\DomException;
 
 use Inphinit\Helper;
+use Inphinit\Exception;
 use Inphinit\Storage;
 
 class Request
@@ -208,7 +209,7 @@ class Request
 
             switch (json_last_error()) {
                 case JSON_ERROR_NONE:
-                    return $json;
+                    return $data;
 
                 case JSON_ERROR_DEPTH:
                     throw new Exception('The maximum stack depth has been exceeded', 0, 2);
@@ -225,13 +226,13 @@ class Request
             }
         }
 
-        return $data;
+        return [];
     }
 
     /**
      * Create a Document instance from HTTP request
      *
-     * @return \Inphinit\Dom\Document
+     * @return \Inphinit\Dom\Document|false
      */
     public static function xml()
     {
@@ -252,8 +253,10 @@ class Request
 
             $data = null;
 
-            return $doc;
+            return $dom;
         }
+
+        return false;
     }
 
     private static function data(&$data, $key, $alternative)

@@ -54,7 +54,7 @@ class Response
      *
      * @param string|null $name
      * @param string|null $charset
-     * @return bool
+     * @return void
      */
     public static function content($type, $charset = null)
     {
@@ -74,7 +74,7 @@ class Response
      *
      * @param int $expires
      * @param int $modified
-     * @return bool
+     * @return void
      */
     public static function cache($expires, $modified = 0)
     {
@@ -99,7 +99,7 @@ class Response
      *
      * @param string $name
      * @param int    $length
-     * @return bool
+     * @return void
      */
     public static function download($name, $length = 0)
     {

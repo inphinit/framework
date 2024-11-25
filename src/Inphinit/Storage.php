@@ -119,7 +119,7 @@ class Storage
      */
     public static function write($path, $data = null)
     {
-        self::put($path, $data, LOCK_EX);
+        return self::put($path, $data, LOCK_EX);
     }
 
     /**

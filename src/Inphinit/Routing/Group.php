@@ -44,7 +44,7 @@ class Group extends Router
      */
     public function prefixNS($namespace)
     {
-        $this->prefixNamespaceRequired = trim($namespace, '.\\') . '.';
+        $this->namespacePrefix = trim($namespace, '.\\') . '.';
         return $this;
     }
 

@@ -61,7 +61,13 @@ class Redirect
         } elseif (isset($path[0]) === false) {
             throw new Exception('Path is not defined', 0, $debuglvl);
         } elseif (strpos($path, '/') === 0) {
-            $path = Uri::root($path);
+            $path = dirname($_SERVER['SCRIPT_NAME']);
+
+            if ($path === '\\' || $path === '/') {
+                $path = '';
+            }
+
+            $path .= '/';
         }
 
         Response::status($code, $trigger);
