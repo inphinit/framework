@@ -40,7 +40,6 @@ abstract class Treaty
      *
      * @param \Inphinit\App $context
      * @throws \Inphinit\Exception
-     * @return mixed
      */
     public function route(App $context)
     {

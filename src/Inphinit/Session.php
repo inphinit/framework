@@ -135,7 +135,6 @@ class Session
     /**
      * Save session data
      *
-     * @param bool $unlock
      * @return void
      */
     public function commit()
@@ -287,8 +286,6 @@ class Session
         if ($from) {
             fclose($from);
         }
-
-        $from = null;
 
         $this->id = $id;
     }

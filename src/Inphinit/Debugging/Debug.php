@@ -19,133 +19,80 @@ use Inphinit\Viewing\View;
 
 class Debug
 {
-    private static $showBeforeView = false;
-    private static $displayErrors;
-    private static $views = array();
+    private $rendered = false;
+    private $beforeView;
+    private $views = array();
     private static $configs;
 
     /**
-     * Unregister debug events
+     * Set view for display displayed before other defined from a Debug instance
+     *
+     * @param string $view
+     * @throws \Inphinit\Exception
+     * @return void
+     */
+    public function setBeforeView($view)
+    {
+        $this->beforeView = $view;
+    }
+
+    /**
+     * Set view for display defined constants, functions and classes
+     *
+     * @param string $view
+     * @throws \Inphinit\Exception
+     * @return void
+     */
+    public function setDefinedView($view)
+    {
+        $this->view('defined', $view);
+    }
+
+    /**
+     * Set view for display errors and exceptions
+     *
+     * @param string $view
+     * @throws \Inphinit\Exception
+     * @return void
+     */
+    public function setErrorView($view)
+    {
+        $this->view('error', $view);
+
+        // Check functions are enabled
+        if (function_exists('ini_get') && function_exists('ini_set')) {
+            $config = ini_get('display_errors');
+
+            if (empty($config) === false) {
+                ini_set('display_errors', '0');
+            }
+        }
+    }
+
+    /**
+     * Set view for display memory usage after application terminate
+     *
+     * @param string $view
+     * @throws \Inphinit\Exception
+     * @return void
+     */
+    public function setPerformanceView($view)
+    {
+        $this->view('performance', $view);
+    }
+
+    /**
+     * Unregister debug events and views
      *
      * @return void
      */
     public static function unregister()
     {
-        $nc = '\\' . get_called_class();
-
-        Event::off('error', array($nc, 'renderError'));
-        Event::off('done', array($nc, 'renderPerformance'));
-        Event::off('done', array($nc, 'renderDefined'));
-
-        if (empty(self::$displayErrors) === false) {
-            if (function_exists('init_set')) {
-                ini_set('display_errors', self::$displayErrors);
-            }
-
-            self::$displayErrors = null;
-        }
-    }
-
-    /**
-     * Render a View to error
-     *
-     * @param int    $type
-     * @param string $message
-     * @param string $file
-     * @param int    $line
-     * @return void
-     */
-    public static function renderError($type, $message, $file, $line)
-    {
-        if (empty(self::$views['error'])) {
-            return null;
-        } elseif ($type === \E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
-            die("Fatal error: {$message} in {$file} on line {$line}");
+        foreach ($this->views as $type => $callback) {
+            Event::off($type === 'error' ? $type : 'done', $callback);
         }
 
-        if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
-            $data = self::details($type, $message, $file, $line, false);
-
-            self::unregister();
-
-            Response::cache(0);
-            Response::status(500);
-            Response::content('application/json');
-
-            echo json_encode($data);
-            exit;
-        }
-
-        View::dispatch();
-
-        $data = self::details($type, $message, $file, $line, true);
-
-        self::render(self::$views['error'], $data);
-    }
-
-    /**
-     * Render a View to show performance, memory and time to display page
-     *
-     * @return void
-     */
-    public static function renderPerformance()
-    {
-        if (isset(self::$views['performance'])) {
-            self::render(self::$views['performance'], self::performance());
-        }
-    }
-
-    /**
-     * Render a View to show performance and show declared classes
-     *
-     * @return void
-     */
-    public static function renderDefined()
-    {
-        if (isset(self::$views['defined'])) {
-            self::render(self::$views['defined'], array(
-                'classes' => self::classes(),
-                'constants' => self::constants(),
-                'functions' => self::functions()
-            ));
-        }
-    }
-
-    /**
-     * Register a debug views
-     *
-     * @param string $type
-     * @param string $view
-     * @throws \Inphinit\Exception
-     * @return void
-     */
-    public static function view($type, $view)
-    {
-        self::boot();
-
-        if ($view !== null && View::exists($view) === false) {
-            throw new Exception($view . ' view is not found');
-        }
-
-        $callRender = array('\\' . get_called_class(), 'render' . ucfirst($type));
-
-        if ($type === 'error') {
-            Event::on('error', $callRender);
-
-            if (empty(self::$displayErrors)) {
-                self::$displayErrors = ini_get('display_errors');
-
-                if (function_exists('ini_set')) {
-                    ini_set('display_errors', '0');
-                }
-            }
-        } elseif ($type === 'defined' || $type === 'performance') {
-            Event::on('done', $callRender);
-        } elseif ($type !== 'before') {
-            throw new Exception($type . ' is not valid event');
-        }
-
-        self::$views[$type] = $view;
+        ini_set('display_errors', '1');
     }
 
     /**
@@ -353,11 +300,70 @@ class Debug
         return $message;
     }
 
-    private static function render($view, $data)
+    private function view($type, $view)
     {
-        if (self::$showBeforeView === false && isset(self::$views['before'])) {
-            self::$showBeforeView = true;
-            View::render(self::$views['before']);
+        self::boot();
+
+        if (View::exists($view) === false) {
+            throw new Exception($view . ' view is not found', 3);
+        }
+
+        $callback = function () use ($view, $type) {
+            $args = func_get_args();
+            array_unshift($args, $view);
+            call_user_func_array(array($this, 'render' . ucfirst($type)), $args);
+        };
+
+        $this->views[$type] = $callback;
+
+        Event::on($type === 'error' ? $type : 'done', $callback);
+    }
+
+    private function renderError($view, $type, $message, $file, $line)
+    {
+        if ($type === \E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
+            die("Fatal error: {$message} in {$file} on line {$line}");
+        }
+
+        if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
+            $data = self::details($type, $file, $line, false);
+
+            self::unregister();
+
+            Response::cache(0);
+            Response::status(500);
+            Response::content('application/json');
+
+            echo json_encode($data);
+            exit;
+        }
+
+        View::dispatch();
+
+        $data = self::details($type, $message, $file, $line, true);
+
+        $this->render($view, $data);
+    }
+
+    private function renderPerformance($view)
+    {
+        $this->render($view, self::performance());
+    }
+
+    private function renderDefined($view)
+    {
+        $this->render($view, array(
+            'classes' => self::classes(),
+            'constants' => self::constants(),
+            'functions' => self::functions()
+        ));
+    }
+
+    private function render($view, $data)
+    {
+        if ($this->rendered === false && $this->beforeView) {
+            $this->rendered = true;
+            View::render($this->beforeView);
         }
 
         View::render($view, $data);

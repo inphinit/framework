@@ -17,8 +17,7 @@ class Response
     /**
      * Get or set status code and return last status code. Note: if the status has changed the Event::on('changestatus') event will be trigged
      *
-     * @param int  $code
-     * @param bool $trigger
+     * @param int $code
      * @return bool|int
      */
     public static function status($code)
@@ -35,9 +34,8 @@ class Response
     /**
      * Shortcut for set header
      *
-     * @param string      $code
-     * @param string|null $trigger
-     * @param bool        $replace
+     * @param string $code
+     * @param bool   $replace
      * @return void
      */
     public static function header($header, $value, $replace = true)

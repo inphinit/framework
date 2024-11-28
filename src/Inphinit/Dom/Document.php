@@ -50,7 +50,7 @@ class Document
     /**
      * Create a Document instance
      *
-     * @param string $type
+     * @param int $type
      */
     public function __construct($type = 0)
     {

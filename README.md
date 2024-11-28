@@ -25,5 +25,5 @@ Inphinit is a minimalist framework based on the syntax of other popular framewor
 If you are a contributor, before sending a pull-request it is important to run LINT, use the following command to make it easier:
 
 ```bash
-find . -type f -name "*.php" -exec php -l {} \;`
+find . -type f -name "*.php" -exec php -l {} \;
 ```

@@ -31,7 +31,6 @@ class Config
     /**
      * Reload configuration from file
      *
-     * @param string $path
      * @throws \Inphinit\Exception
      * @return void
      */

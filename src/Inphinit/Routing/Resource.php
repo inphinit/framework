@@ -13,19 +13,6 @@ use Inphinit\App;
 
 abstract class Resource
 {
-    /** Create a route with slash at the end, like: `/foo/` */
-    const SLASH = 1;
-
-    /** Create a route without slash at the end, like: `/foo` */
-    const NOSLASH = 2;
-
-    /**
-     * Define path format, possible values: self::SLASH, self::NOSLASH, self::SLASH|self::NOSLASH
-     *
-     * @var int
-     */
-    protected $format;
-
     /**
      * Define content-type header
      *
@@ -52,7 +39,6 @@ abstract class Resource
      * Define routes based on class methods
      *
      * @param \Inphinit\App $context
-     * @return mixed
      */
     public function route(App $context)
     {

@@ -83,7 +83,7 @@ class ObjectPath
                     $items = &$items->{$value};
                     $isArray = false;
                 } else {
-                    $items = $isArray ? array() : new stdClass();
+                    $items = $isArray ? array() : new \stdClass();
                     $items = &$items;
                 }
             }

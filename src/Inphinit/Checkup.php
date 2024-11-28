@@ -80,7 +80,7 @@ class Checkup
         }
 
         if (function_exists('mb_detect_encoding') === false) {
-            $this->errors[] = '`Inphinit\Uri` class `Inphinit\Utility\Strings::toAscii` method will not work, to fix it, enable *Multibyte String* in `' . $this->iniPath . '` (optional)';
+            $this->errors[] = '`Inphinit\Utility\Url` class and `Inphinit\Utility\Strings::toAscii` method will not work, to fix it, enable *Multibyte String* in `' . $this->iniPath . '` (optional)';
         }
 
         if (function_exists('iconv') === false) {
