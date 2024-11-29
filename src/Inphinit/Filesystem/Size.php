@@ -56,13 +56,13 @@ class Size
             throw new Exception($path . ' not found (check case-sensitive)');
         }
 
-        $size = null;
-
         $path = realpath($path);
 
         if ($path === false) {
             throw new Exception('Invalid path');
         }
+
+        $size = null;
 
         if (self::$isWin && $this->modes & self::COM) {
             $size = $this->fromFileSystemObject($path);

@@ -57,16 +57,21 @@ class Arrays
      *
      * @param array $array
      * @param int   $flags See details in https://www.php.net/manual/en/function.ksort.php#refsect1-function.ksort-parameters
+     * @param bool  $descending
      * @return void
      */
-    public static function ksort(array &$array, $flags = \SORT_REGULAR)
+    public static function ksort(array &$array, $flags = \SORT_REGULAR, $descending = false)
     {
         foreach ($array as &$item) {
             if (is_array($item)) {
-                self::ksort($item, $flags);
+                self::ksort($item, $flags, $descending);
             }
         }
 
-        ksort($array, $flags);
+        if ($descending) {
+            krsort($array, $flags);
+        } else {
+            ksort($array, $flags);
+        }
     }
 }

@@ -22,13 +22,20 @@ class Version
     );
 
     /**
+     * Define version pattern
+     *
+     * @var string
+     */
+    protected static $pattern = '#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#';
+
+    /**
      * Parse version format
      *
      * @param string $version
      */
     public function __construct($version)
     {
-        if (preg_match('#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#', $version, $matches)) {
+        if (preg_match(self::$pattern, $version, $matches)) {
             $this->data['major'] = $matches[1];
             $this->data['minor'] = $matches[2];
             $this->data['patch'] = $matches[3];
@@ -91,6 +98,17 @@ class Version
         }
 
         return $output;
+    }
+
+    /**
+     * Validate string version
+     *
+     * @param string $version
+     * @return bool
+     */
+    public static function valid($version)
+    {
+        return preg_match(self::$pattern, $version) === 1;
     }
 
     public function __destruct()

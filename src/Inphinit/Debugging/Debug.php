@@ -86,7 +86,7 @@ class Debug
      *
      * @return void
      */
-    public static function unregister()
+    public function unregister()
     {
         foreach ($this->views as $type => $callback) {
             Event::off($type === 'error' ? $type : 'done', $callback);
@@ -165,7 +165,7 @@ class Debug
      *
      * @param string $file
      * @param int    $line
-     * @return array|null
+     * @return array
      */
     public static function source($file, $line)
     {
@@ -267,7 +267,7 @@ class Debug
         self::boot();
 
         $link = false;
-        $message = $file . ' on line ' . $line;
+        $message = $file . ' in line ' . $line;
         $compareFile = str_replace('\\', '/', $file);
 
         /*
@@ -328,7 +328,7 @@ class Debug
         if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
             $data = self::details($type, $file, $line, false);
 
-            self::unregister();
+            $this->unregister();
 
             Response::cache(0);
             Response::status(500);
