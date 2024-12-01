@@ -36,7 +36,7 @@ final class Status
     const HTTP_SEE_OTHER = 303;
     const HTTP_NOT_MODIFIED = 304;
     const HTTP_USE_PROXY = 305;
-    const HTTP_SWITCH_PROXY = 306;
+    const HTTP_UNUSED = 306;
     const HTTP_TEMPORARY_REDIRECT = 307;
     const HTTP_PERMANENT_REDIRECT = 308;
 
@@ -53,16 +53,17 @@ final class Status
     const HTTP_GONE = 410;
     const HTTP_LENGTH_REQUIRED = 411;
     const HTTP_PRECONDITION_FAILED = 412;
-    const HTTP_PAYLOAD_TOO_LARGE = 413;
+    const HTTP_CONTENT_TOO_LARGE = 413;
     const HTTP_URI_TOO_LONG = 414;
     const HTTP_UNSUPPORTED_MEDIA_TYPE = 415;
     const HTTP_RANGE_NOT_SATISFIABLE = 416;
     const HTTP_EXPECTATION_FAILED = 417;
-    const HTTP_I_AM_A_TEAPOT = 418;
+    const HTTP_IM_A_TEAPOT = 418;
     const HTTP_MISDIRECTED_REQUEST = 421;
-    const HTTP_UNPROCESSABLE_ENTITY = 422;
+    const HTTP_UNPROCESSABLE_CONTENT = 422;
     const HTTP_LOCKED = 423;
     const HTTP_FAILED_DEPENDENCY = 424;
+    const HTTP_TOO_EARLY_EXPERIMENTAL = 425;
     const HTTP_UPGRADE_REQUIRED = 426;
     const HTTP_PRECONDITION_REQUIRED = 428;
     const HTTP_TOO_MANY_REQUESTS = 429;
@@ -74,7 +75,7 @@ final class Status
     const HTTP_BAD_GATEWAY = 502;
     const HTTP_SERVICE_UNAVAILABLE = 503;
     const HTTP_GATEWAY_TIMEOUT = 504;
-    const HTTP_VERSION_NOT_SUPPORTED = 505;
+    const HTTP_HTTP_VERSION_NOT_SUPPORTED = 505;
     const HTTP_VARIANT_ALSO_NEGOTIATES = 506;
     const HTTP_INSUFFICIENT_STORAGE = 507;
     const HTTP_LOOP_DETECTED = 508;
@@ -104,7 +105,7 @@ final class Status
         303 => 'See Other',
         304 => 'Not Modified',
         305 => 'Use Proxy',
-        306 => 'Switch Proxy',
+        306 => 'unused',
         307 => 'Temporary Redirect',
         308 => 'Permanent Redirect',
 
@@ -121,21 +122,22 @@ final class Status
         410 => 'Gone',
         411 => 'Length Required',
         412 => 'Precondition Failed',
-        413 => 'Payload Too Large',
+        413 => 'Content Too Large',
         414 => 'URI Too Long',
         415 => 'Unsupported Media Type',
         416 => 'Range Not Satisfiable',
         417 => 'Expectation Failed',
         418 => 'I\'m a teapot',
         421 => 'Misdirected Request',
-        422 => 'Unprocessable Entity',
+        422 => 'Unprocessable Content',
         423 => 'Locked',
         424 => 'Failed Dependency',
+        425 => 'Too Early Experimental',
         426 => 'Upgrade Required',
         428 => 'Precondition Required',
         429 => 'Too Many Requests',
         431 => 'Request Header Fields Too Large',
-        451 => 'Unavailable for Legal Reasons',
+        451 => 'Unavailable For Legal Reasons',
 
         500 => 'Internal Server Error',
         501 => 'Not Implemented',
@@ -159,7 +161,7 @@ final class Status
      */
     public static function message($code, $alternative = null)
     {
-        return self::valid($code) ? self::$messages[$code] : $alternative;
+        return isset(self::$messages[$code]) ? self::$messages[$code] : $alternative;
     }
 
     /**

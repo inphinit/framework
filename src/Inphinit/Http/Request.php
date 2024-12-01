@@ -73,8 +73,7 @@ class Request
     }
 
     /**
-     * Get querystring, this method is useful for anyone who uses IIS.
-     *
+     * Get querystring - Note: same as $_SERVER['QUERY_STRING'], but with framework adjustments on IIS web server.
      * @return string|null
      */
     public static function query()
@@ -84,7 +83,7 @@ class Request
 
     /**
      * Get a value from `$_GET`, if `$_GET` is a array multidimensional, you can use dot like path:
-     * If `$_GET['foo']` returns this `array( 'baz' => 'bar' => 1);` use `Request::get('foo.bar.baz');`
+     * If `$_GET['foo']` returns this `array('baz' => 'bar' => 1);` use `Request::get('foo.bar.baz');`
      * for return `1`
      *
      * @param string $key
@@ -98,7 +97,7 @@ class Request
 
     /**
      * Get a value from $_POST, if $_POST is a array multidimensional, you can use dot like path:
-     * If $_POST['foo'] returns this array( 'baz' => 'bar' => 1); use Request::post('foo.bar.baz');
+     * If $_POST['foo'] returns this array('baz' => 'bar' => 1); use Request::post('foo.bar.baz');
      *
      * @param string $key
      * @param mixed  $alternative

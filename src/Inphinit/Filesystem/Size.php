@@ -48,7 +48,7 @@ class Size
      * Get file size using defined modes
      *
      * @param string $path
-     * @return int
+     * @return float|int|string
      */
     public function get($path)
     {
@@ -92,9 +92,9 @@ class Size
                 return $file->size;
             }
 
-            $this->lastError = 'COM: get size failed: ' . $path;
+            $this->lastError = 'COM: failed to get size: ' . $path;
         } else {
-            $this->lastError = 'COM: Not avaliable in your OS or disabled';
+            $this->lastError = 'COM: Not available on your operating system or disabled';
         }
     }
 
@@ -104,24 +104,19 @@ class Size
             $handle = curl_init('file://' . rawurlencode($path));
 
             if ($handle !== false) {
+                curl_setopt($handle, CURLOPT_HEADER, true);
                 curl_setopt($handle, CURLOPT_NOBODY, true);
                 curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($handle, CURLOPT_HEADER, true);
 
                 $size = null;
 
                 if (curl_exec($handle)) {
                     $size = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-                    $error = null;
                 } else {
-                    $error = curl_error($handle);
+                    $this->lastError = 'CURL: ' . curl_error($handle) . ' from ' . $path;
                 }
 
                 curl_close($handle);
-
-                if ($error !== null) {
-                    $this->lastError = 'CURL: ' . $error . ' from ' . $path;
-                }
 
                 return $size;
             } else {
