@@ -58,7 +58,7 @@ class Selector
      */
     public function __construct(\DOMDocument $document, $registerNodeNS = true)
     {
-        if (PHP_VERSION_ID >= 800000) {
+        if (PHP_VERSION_ID >= 80000) {
             $this->base = new \DOMXPath($document, $registerNodeNS);
         } else {
             $this->base = new \DOMXPath($document);

@@ -18,7 +18,7 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
-    private static $devAdvice = 'While your application is in development mode, it is recommended to disable `%s` in `%s`';
+    private $devAdvice = 'While your application is in development mode, it is recommended to disable `%s` in `%s`';
 
     public function __construct()
     {
@@ -65,18 +65,22 @@ class Checkup
 
     private function collectErrors()
     {
-        if (version_compare(PHP_VERSION, '7.4.0', '<') && function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+        if (PHP_VERSION_ID < 70400 && function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
             $this->errors[] = 'Disable `magic_quotes_gpc` in `' . $this->iniPath . '`';
         }
 
-        if (version_compare(PHP_VERSION, '7.0.0', '<') && ini_get('always_populate_raw_post_data') != -1) {
+        if ($this->iniGet && PHP_VERSION_ID < 70000 && ini_get('always_populate_raw_post_data') != -1) {
             $this->errors[] = 'Set -1 to `always_populate_raw_post_data` in `' . $this->iniPath . '`';
+        }
+
+        if ($this->iniGet && $this->development === false && $this->flag('display_errors')) {
+            $this->errors[] = 'Disable `display_errors` in `' . $this->iniPath . '`';
         }
 
         $folder = INPHINIT_SYSTEM . '/storage';
 
         if (is_dir($folder) && is_writable($folder) === false) {
-            $this->errors[] = 'Folder ' . $folder . ' requires write permissions, use chmod';
+            $this->errors[] = 'Folder ' . $folder . ' requires write permissions';
         }
 
         if (function_exists('mb_detect_encoding') === false) {
@@ -94,7 +98,7 @@ class Checkup
 
     private function collectWarnings()
     {
-        if (!$this->development && $this->iniGet) {
+        if ($this->development === false && $this->iniGet) {
             if (function_exists('xcache_get') && $this->flag('xcache.cacher')) {
                 $this->warnings[] = sprintf($this->devAdvice, 'xcache.cacher', $this->iniPath);
             }
