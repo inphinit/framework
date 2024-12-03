@@ -34,7 +34,8 @@ class Response
     /**
      * Shortcut for set header
      *
-     * @param string $code
+     * @param string $header
+     * @param string $value
      * @param bool   $replace
      * @return void
      */
@@ -50,7 +51,7 @@ class Response
     /**
      * Set Content-Type header or remove previously headers
      *
-     * @param string|null $name
+     * @param string|null $type
      * @param string|null $charset
      * @return void
      */

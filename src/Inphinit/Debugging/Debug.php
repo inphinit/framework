@@ -201,7 +201,7 @@ class Debug
      *
      * @param int $level
      * @param int $limit
-     * @return array|null
+     * @return array
      */
     public static function caller($level = 0, $limit = 100)
     {
@@ -222,6 +222,8 @@ class Debug
         } elseif (isset($trace[$level])) {
             return $trace = $trace[$level];
         }
+
+        return array();
     }
 
     /**
@@ -391,8 +393,8 @@ class Debug
                 break;
 
             case E_ERROR:
-            case E_USER_ERROR: // deprecated as of PHP 8.4
             case E_RECOVERABLE_ERROR:
+            case E_USER_ERROR: // deprecated as of PHP 8.4
                 $message = 'Fatal error: ' . $message;
                 break;
 

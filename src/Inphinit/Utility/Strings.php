@@ -24,6 +24,7 @@ class Strings
         }
 
         $encode = mb_detect_encoding($text, $encodings, true);
+
         return 'ASCII' === $encode ? $text : iconv($encode, 'ASCII//TRANSLIT//IGNORE', $text);
     }
 

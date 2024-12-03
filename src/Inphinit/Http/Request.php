@@ -64,7 +64,7 @@ class Request
      *
      * @param string $name
      * @param mixed  $alternative
-     * @return string|null
+     * @return mixed
      */
     public static function header($name, $alternative = null)
     {

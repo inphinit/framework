@@ -9,8 +9,8 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Http\Request;
 use Inphinit\Exception;
+use Inphinit\Http\Request;
 
 class Negotiation
 {
@@ -85,7 +85,7 @@ class Negotiation
      * Get all languages by `Accept-Language` header sorted by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts languages using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
@@ -98,7 +98,7 @@ class Negotiation
      * Get all languages by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts charsets using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
@@ -111,7 +111,7 @@ class Negotiation
      * Get all languages by `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
      *
      * @param string $sort Sorts encodings using `LOW` or `HIGH` constants,
-     *                      or return all in an simple array use `ALL` constant
+     *                     or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
@@ -124,7 +124,7 @@ class Negotiation
      * Get all document types by `Accept` header and sorted by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts types using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */

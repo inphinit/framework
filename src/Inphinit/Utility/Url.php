@@ -197,16 +197,12 @@ class Url
      * Set value for a URL component
      *
      * @param string $name
-     * @param string $value
+     * @param string $value|null
      */
     public function __set($name, $value)
     {
         if (array_key_exists($name, $this->data)) {
-            if (is_string($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an string');
-            }
-
-            $this->data[$name] = $value;
+            $this->data[$name] = $value ? "{$value}" : null;
         }
     }
 

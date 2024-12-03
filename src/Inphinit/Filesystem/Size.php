@@ -25,9 +25,9 @@ class Size
     /**
      * Define supported modes
      *
-     * @param string $modes
+     * @param int $modes
      */
-    public function __construct($modes = null)
+    public function __construct($modes = 0)
     {
         if (self::$isWin === null) {
             self::$isWin = stripos(PHP_OS, 'WIN') === 0;
@@ -35,7 +35,7 @@ class Size
 
         $allModes = self::COM | self::CURL | self::SYSTEM;
 
-        if ($modes === null) {
+        if ($modes === 0) {
             $this->modes = $allModes;
         } elseif (is_int($modes) && $allModes & $modes) {
             $this->modes = $modes;

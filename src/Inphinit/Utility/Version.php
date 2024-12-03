@@ -68,6 +68,7 @@ class Version
      *
      * @param string $name
      * @param string|array $value
+     * @throws \Inphinit\Exception
      */
     public function __set($name, $value)
     {

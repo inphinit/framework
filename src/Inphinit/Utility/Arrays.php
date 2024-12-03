@@ -12,7 +12,7 @@ namespace Inphinit\Utility;
 class Arrays
 {
     /**
-     * Similar to `is_iterable` from PHP-7.1.0+
+     * Similar to `is_iterable` from PHP 7.1.0+
      *
      * @param mixed $obj
      * @return bool
@@ -25,7 +25,7 @@ class Arrays
     /**
      * Check if array is indexed, like ['foo', 'bar']. Similar to `array_is_list`
      *
-     * @param mixed $array
+     * @param array $array
      * @return bool
      */
     public static function indexed(array &$array)
@@ -44,7 +44,7 @@ class Arrays
     /**
      * Check if array is associative, like ['bar' => foo', 'baz' => 'bar']
      *
-     * @param mixed $array
+     * @param array $array
      * @return bool
      */
     public static function associative(array &$array)

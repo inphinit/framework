@@ -167,7 +167,7 @@ final class Status
     /**
      * Validate HTTP code
      *
-     * @param int    $code
+     * @param int $code
      * @return bool
      */
     public static function valid($code)

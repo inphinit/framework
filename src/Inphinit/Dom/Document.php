@@ -182,6 +182,7 @@ class Document
      *
      * @param string $source
      * @param bool   $file
+     * @throws \Inphinit\Dom\DomException
      * @return void
      */
     public function load($source, $file = false)
@@ -247,6 +248,7 @@ class Document
      * Convert Array to DOM
      *
      * @param array $data
+     * @throws \Inphinit\Dom\DomException
      * @return void
      */
     public function fromArray(array $data)

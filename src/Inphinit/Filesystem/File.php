@@ -51,6 +51,7 @@ class File
      *
      * @param string $path
      * @param bool   $full
+     * @throws \Inphinit\Exception
      * @return string|bool
      */
     public static function permissions($path, $full = false)
@@ -58,6 +59,10 @@ class File
         self::checkInDevMode($path);
 
         $perms = fileperms($path);
+
+        if ($perms === false) {
+            return $perms;
+        }
 
         if ($full !== true) {
             return substr(sprintf('%o', $perms), -4);
@@ -156,7 +161,7 @@ class File
 
     private static function info($path)
     {
-        self::checkInDevMode($path);
+        self::checkInDevMode($path, 4);
 
         if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
             if (self::$finfo === null) {
@@ -271,16 +276,17 @@ class File
     /**
      * Clear state files and clear size files in `Inphinit\File::size`
      *
-     * @throws \Inphinit\Exception
      * @return void
      */
     public static function clearstat()
     {
         self::$infos = array();
 
-        finfo_close(self::$finfo);
+        if (self::$finfo !== null) {
+            finfo_close(self::$finfo);
 
-        self::$finfo = null;
+            self::$finfo = null;
+        }
 
         clearstatcache();
     }
@@ -296,10 +302,10 @@ class File
         self::$devStrictMode = $enable;
     }
 
-    private static function checkInDevMode($path)
+    private static function checkInDevMode($path, $level = 3)
     {
         if (self::$devStrictMode && App::config('development') && self::exists($path) === false) {
-            throw new Exception($path . ' not found (check case-sensitive)', 0, 3);
+            throw new Exception($path . ' not found (check case-sensitive)', 0, $level);
         }
     }
 }

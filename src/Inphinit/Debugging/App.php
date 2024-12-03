@@ -116,7 +116,7 @@ class App extends \Inphinit\App
     public function setPattern($name, $regex)
     {
         if (!$name || is_string($name) === false) {
-            throw new Exception('Pattern name is empty or non-string');
+            throw new Exception('Pattern name is empty or not a string');
         }
 
         if (!preg_match('#^\w+$#', $name)) {
@@ -139,7 +139,7 @@ class App extends \Inphinit\App
     public function scope($pattern, \Closure $callback)
     {
         if (!preg_match('#^([a-z*]+)://([^/]+)(\:[\d*]+)?/(.*)/$#', $pattern)) {
-            throw new Exception('Invalid match url pattern format, excepeted: <scheme>://<host>:<port>/<path>/ (including wildcard)');
+            throw new Exception('Invalid match url pattern format, excepeted: {scheme}://{host}:{port}/{path}/ (including wildcard)');
         }
 
         $this->checkPatterns($pattern);

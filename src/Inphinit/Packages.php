@@ -61,8 +61,8 @@ class Packages
     /**
      * Load `./system/boot/namespaces.php` classes
      *
-     * @return bool|int Return total packages loaded, if `namespaces.php`
-     *                  is not accessible return `false`
+     * @return bool|int Returns the total number of loaded packages, if `namespaces.php`
+     *                  is not accessible returns `false`
      */
     public function inAutoload()
     {
@@ -85,7 +85,7 @@ class Packages
      * Load `autoload_classmap.php` classes
      *
      * @return bool|int Return total packages loaded, if `autoload_classmap.php`
-     *                  is not accessible return `false`
+     *                  is not accessible returns `false`
      */
     public function classmap()
     {
@@ -116,7 +116,7 @@ class Packages
      * Load `autoload_namespaces.php` classes, used by PSR-0 packages
      *
      * @return bool|int Return total packages loaded, if `autoload_namespaces.php`
-     *                  is not accessible return `false`
+     *                  is not accessible returns `false`
      */
     public function psr0()
     {
@@ -136,7 +136,7 @@ class Packages
      * Load `autoload_psr4.php` classes, used by PSR-4 packages
      *
      * @return bool|int Return total packages loaded, if `autoload_psr4.php`
-     *                  is not accessible return `false`
+     *                  is not accessible returns `false`
      */
     public function psr4()
     {

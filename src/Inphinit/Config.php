@@ -11,7 +11,7 @@ namespace Inphinit;
 
 class Config
 {
-    private static $exceptionLevel = 2;
+    private $exceptionLevel = 2;
     private $data = array();
     private $path;
 
@@ -25,6 +25,8 @@ class Config
     {
         $this->path = 'configs/' . str_replace('.', '/', $path) . '.php';
 
+        $this->exceptionLevel = 3;
+
         $this->reload();
     }
 
@@ -36,13 +38,13 @@ class Config
      */
     public function reload()
     {
-        $level = self::$exceptionLevel;
+        $level = $this->exceptionLevel;
 
-        self::$exceptionLevel = 2;
+        $this->exceptionLevel = 2;
 
         $configs = inphinit_sandbox($this->path);
 
-        if (!$configs || is_array($configs) === false) {
+        if (is_array($configs) === false) {
             throw new Exception($this->path . ' configurations cannot be loaded or format is invalid', 0, $level);
         }
 

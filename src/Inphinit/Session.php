@@ -76,6 +76,7 @@ class Session
      * Set or get temp directory
      *
      * @param string $path
+     * @throws \Inphinit\Exception
      * @return string|void
      */
     public static function directory($path = null)
@@ -135,6 +136,7 @@ class Session
     /**
      * Save session data
      *
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function commit()
@@ -157,6 +159,7 @@ class Session
     /**
      * Regenerate data
      *
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function regenerate()

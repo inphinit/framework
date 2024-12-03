@@ -36,7 +36,7 @@ class Checkup
                 $this->collectErrors();
                 $this->collectWarnings();
             } else {
-                $this->errors[] = 'php.ini is not configured on your server';
+                $this->errors[] = '`php.ini` is not configured on your server';
             }
         } else {
             $this->errors[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
