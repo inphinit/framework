@@ -130,7 +130,7 @@ class Url
             if ($configs & self::PATH_ASCII) {
                 $path = Strings::toAscii($path);
             } elseif ($configs & self::PATH_UNICODE) {
-                $path = mb_strtolower($path);
+                $path = \mb_strtolower($path);
             }
 
             if ($configs & self::PATH_SLUG) {

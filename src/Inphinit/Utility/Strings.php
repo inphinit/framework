@@ -20,12 +20,12 @@ class Strings
     public static function toAscii($text, array $encodings = array())
     {
         if (empty($encodings)) {
-            $encodings = mb_detect_order();
+            $encodings = \mb_detect_order();
         }
 
-        $encode = mb_detect_encoding($text, $encodings, true);
+        $encode = \mb_detect_encoding($text, $encodings, true);
 
-        return 'ASCII' === $encode ? $text : iconv($encode, 'ASCII//TRANSLIT//IGNORE', $text);
+        return 'ASCII' === $encode ? $text : \iconv($encode, 'ASCII//TRANSLIT//IGNORE', $text);
     }
 
     /**

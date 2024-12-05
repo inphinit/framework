@@ -383,22 +383,17 @@ class Debug
         self::evalFileLocation($file, $line);
 
         switch ($type) {
-            case E_PARSE:
-                $message = 'Parse error: ' . $message;
-                break;
-
-            case E_DEPRECATED:
-            case E_USER_DEPRECATED:
-                $message = 'Deprecated: ' . $message;
-                break;
-
             case E_ERROR:
+            case E_CORE_ERROR:
+            case E_COMPILE_ERROR:
             case E_RECOVERABLE_ERROR:
             case E_USER_ERROR: // deprecated as of PHP 8.4
                 $message = 'Fatal error: ' . $message;
                 break;
 
             case E_WARNING:
+            case E_CORE_WARNING:
+            case E_COMPILE_WARNING:
             case E_USER_WARNING:
                 $message = 'Warning: ' . $message;
                 break;
@@ -406,6 +401,15 @@ class Debug
             case E_NOTICE:
             case E_USER_NOTICE:
                 $message = 'Notice: ' . $message;
+                break;
+
+            case E_DEPRECATED:
+            case E_USER_DEPRECATED:
+                $message = 'Deprecated: ' . $message;
+                break;
+
+            case E_PARSE:
+                $message = 'Parse error: ' . $message;
                 break;
         }
 

@@ -147,11 +147,15 @@ if ($inphinit_port === null) {
 $inphinit_path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
 
 if (PHP_SAPI !== 'cli-server') {
-    $inphinit_path = substr($inphinit_path, strpos($_SERVER['SCRIPT_NAME'], '/index.php'));
+    $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/index.php');
+    $inphinit_prefix = substr($inphinit_path, 0, $inphinit_pos);
+    $inphinit_path = substr($inphinit_path, $inphinit_pos);
+} else {
+    $inphinit_prefix = '';
 }
 
 define('INPHINIT_PATH', $inphinit_path);
-define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_path);
+define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
 
 if (App::config('development')) {
     require 'development.php';

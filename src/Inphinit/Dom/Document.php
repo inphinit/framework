@@ -14,16 +14,16 @@ use Inphinit\Utility\Arrays;
 
 class Document
 {
-    /** Used with `Document::dump` or `Document::save` method to convert document in a simple array */
+    /** Use with `Document::dump` or `Document::save` method to convert document in a simple array */
     const ARRAY_SIMPLE = 1;
 
-    /** Used with `Document::dump` or `Document::save` method to convert document in a minimal array */
+    /** Use with `Document::dump` or `Document::save` method to convert document in a minimal array */
     const ARRAY_MINIMAL = 2;
 
-    /** Used with `Document::dump` or `Document::save` method to convert document in a array with all properties */
+    /** Use with `Document::dump` or `Document::save` method to convert document in a array with all properties */
     const ARRAY_COMPLETE = 3;
 
-    /**  */
+    /** Use for define format */
     const HTML = 4;
     const XML = 5;
 
@@ -287,11 +287,10 @@ class Document
     /**
      * Convert DOM to Array
      *
-     * @param DOMNode $node
-     * @param int     $format
+     * @param int $format
      * @return array
      */
-    public function toArray(\DOMNode $node, $format)
+    public function toArray($format)
     {
         switch ($format) {
             case self::ARRAY_MINIMAL:
@@ -305,14 +304,6 @@ class Document
 
             default:
                 $this->complete = true;
-        }
-
-        if ($node) {
-            if ($this->base->documentElement->contains($node) === false) {
-                return false;
-            }
-
-            return $this->getNodes($node->childNodes);
         }
 
         return $this->getNodes($this->base->childNodes);

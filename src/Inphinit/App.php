@@ -37,7 +37,7 @@ class App
     private $patternNames;
 
     private $beforeRE = array('\\:', '\\<', '\\>', '\\*');
-    private $afterRE = array(':', '<', '>', '[^/]+');
+    private $afterRE = array(':', '<', '>', '.*?');
 
     public function __construct()
     {
@@ -48,6 +48,7 @@ class App
      * Get or set application configs
      *
      * @param string $key
+     * @param string $value
      * @return mixed
      */
     public static function config($key, $value = null)
@@ -154,8 +155,8 @@ class App
             ) . ')';
         }, $scopeRegex);
 
-        if (preg_match('#^' . $scopeRegex . '#', INPHINIT_URL, $params)) {
-            $path = parse_url($params[0], PHP_URL_PATH);
+        if (preg_match('#^' . $scopeRegex . '#', INPHINIT_URL . INPHINIT_PATH, $params)) {
+            $path = substr($params[0], strlen(INPHINIT_URL));
 
             if ($path) {
                 $this->pathPrefix = $path;

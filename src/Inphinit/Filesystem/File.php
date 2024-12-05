@@ -165,10 +165,10 @@ class File
 
         if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
             if (self::$finfo === null) {
-                self::$finfo = finfo_open(FILEINFO_MIME);
+                self::$finfo = \finfo_open(FILEINFO_MIME);
             }
 
-            self::$infos[$path] = finfo_buffer(self::$finfo, $buffer);
+            self::$infos[$path] = \finfo_buffer(self::$finfo, $buffer);
         }
 
         return self::$infos[$path];
@@ -283,7 +283,7 @@ class File
         self::$infos = array();
 
         if (self::$finfo !== null) {
-            finfo_close(self::$finfo);
+            \finfo_close(self::$finfo);
 
             self::$finfo = null;
         }

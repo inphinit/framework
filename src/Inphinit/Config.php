@@ -85,7 +85,11 @@ class Config
      */
     public function __set($name, $value)
     {
-        $this->data[$name] = $value;
+        try {
+            $this->data[$name] = unserialize(serialize($value));
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage());
+        }
     }
 
     /**
