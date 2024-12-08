@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Inphinit
  *
  * Copyright (c) 2024 Guilherme Nascimento (brcontainer@yahoo.com.br)
@@ -27,7 +27,7 @@ class App
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
-        'decimal' => '(0|[1-9]\d+)\.\d+',
+        'decimal' => '(\d|[1-9]\d+)\.\d+',
         'nospace' => '[^/\s]+',
         'num' => '\d+',
         'uuid' => '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
@@ -187,7 +187,7 @@ class App
         $callback = null;
 
         if ($code === 200) {
-            if (PHP_SAPI === 'cli-server' && $this->fileInBuiltIn()) {
+            if (PHP_SAPI === 'cli-server' && (include __DIR__ . '/../public.php')) {
                 return false;
             }
 
@@ -212,7 +212,7 @@ class App
 
         if ($code !== 200) {
             Response::status($code);
-            $details = array('status' => $code);
+            $details = array('code' => $code);
             inphinit_sandbox('errors.php', $details);
 
             $output = null;
@@ -306,17 +306,5 @@ class App
                 break;
             }
         }
-    }
-
-    private function fileInBuiltIn()
-    {
-        $path = INPHINIT_PATH;
-
-        return (
-            $path !== '/' &&
-            strpos($path, '.') !== 0 &&
-            strpos($path, '/.') === false &&
-            is_file(INPHINIT_ROOT . '/public' . $path)
-        );
     }
 }

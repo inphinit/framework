@@ -36,7 +36,7 @@ class Method
     }
 
     /**
-     * Set allowed
+     * Set allowed methods
      *
      * @param array $methods
      */
@@ -68,7 +68,7 @@ class Method
     }
 
     /**
-     * Get header from `$_REQUEST` or from headers
+     * Get method from `$_REQUEST` or from headers
      *
      * @return string
      */
