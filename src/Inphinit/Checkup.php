@@ -20,7 +20,7 @@ class Checkup
     private $warnings = array();
 
     private $iniConfigs = '`%s`, additional `.ini` files, or directives';
-    private $devAdvice = 'While your application is in development mode, it is recommended to disable `%s` in %s';
+    private $devAdvice = 'While the application is in development mode, it is recommended to disable `%s` in %s';
 
     public function __construct()
     {
@@ -117,24 +117,30 @@ class Checkup
         if ($this->development === false && $this->iniGet) {
             $directives = $this->getDirectives();
 
-            if (function_exists('xcache_get') && $this->flag('xcache.cacher')) {
-                $this->warnings[] = sprintf($this->devAdvice, 'xcache.cacher', $directives);
-            }
-
-            if (function_exists('opcache_get_status') && $this->flag('opcache.enable')) {
-                $this->warnings[] = sprintf($this->devAdvice, 'opcache.enable', $directives);
-            }
-
-            if (function_exists('wincache_ocache_meminfo') && $this->flag('wincache.ocenabled')) {
-                $this->warnings[] = sprintf($this->devAdvice, 'wincache.ocenabled', $directives);
-            }
-
-            if (function_exists('apc_compile_file') && $this->flag('apc.enabled')) {
-                $this->warnings[] = sprintf($this->devAdvice, 'apc.ocenabled', $directives);
+            if (function_exists('apc_cache_info') && $this->flag('apc.enabled')) {
+                $this->warnings[] = sprintf($this->devAdvice, 'apc.enabled', $directives);
             }
 
             if (function_exists('eaccelerator_get') && $this->flag('eaccelerator.enable')) {
-                $this->warnings[] = sprintf($this->devAdvice, 'eaccelerator.ocenabled', $directives);
+                $this->warnings[] = sprintf($this->devAdvice, 'eaccelerator.enable', $directives);
+            }
+
+            if (function_exists('opcache_get_configuration') && $this->flag('opcache.enable')) {
+                $this->warnings[] = sprintf($this->devAdvice, 'opcache.enable', $directives);
+            }
+
+            if (function_exists('wincache_fcache_meminfo')) {
+                if ($this->flag('wincache.fcenabled')) {
+                    $this->warnings[] = sprintf($this->devAdvice, 'wincache.fcenabled', $directives);
+                }
+
+                if ($this->flag('wincache.ocenabled')) {
+                    $this->warnings[] = sprintf($this->devAdvice, 'wincache.ocenabled', $directives);
+                }
+            }
+
+            if (function_exists('xcache_get') && $this->flag('xcache.cacher')) {
+                $this->warnings[] = sprintf($this->devAdvice, 'xcache.cacher', $directives);
             }
         }
     }
