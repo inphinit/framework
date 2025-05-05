@@ -32,11 +32,11 @@ class File
             $path = parse_url($path, PHP_URL_PATH);
         }
 
-        $rpath = realpath($path);
-
-        if ($rpath === false) {
+        if (realpath($path) === false) {
             return false;
         }
+
+        $path = str_replace('\\', '/', $path);
 
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
             $path = Url::canonpath($path);

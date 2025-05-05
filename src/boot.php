@@ -84,9 +84,13 @@ register_shutdown_function(function () {
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
-    $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
+    spl_autoload_register(function ($class) {
+        static $prefixes;
 
-    spl_autoload_register(function ($class) use (&$prefixes) {
+        if ($prefixes === null) {
+            $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
+        }
+
         $class = ltrim($class, '\\');
 
         if (isset($prefixes[$class]) && pathinfo($prefixes[$class], PATHINFO_EXTENSION)) {

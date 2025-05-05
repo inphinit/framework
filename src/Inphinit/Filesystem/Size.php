@@ -18,6 +18,10 @@ class Size
     private $lastError;
     private static $isWin;
 
+    private static $bootCOM;
+    private static $bootCurl;
+    private static $bootSystem;
+
     const COM = 1;
     const CURL = 2;
     const SYSTEM = 4;
@@ -26,6 +30,7 @@ class Size
      * Define supported modes
      *
      * @param int $modes
+     * @throws \Inphinit\Exception
      */
     public function __construct($modes = 0)
     {
@@ -48,6 +53,7 @@ class Size
      * Get file size using defined modes
      *
      * @param string $path
+     * @throws \Inphinit\Exception
      * @return float|int|string
      */
     public function get($path)
@@ -65,7 +71,7 @@ class Size
         $size = null;
 
         if (self::$isWin && $this->modes & self::COM) {
-            $size = $this->fromFileSystemObject($path);
+            $size = $this->fromCOM($path);
         }
 
         if ($size === null && $this->modes & self::CURL) {
@@ -76,81 +82,93 @@ class Size
             $size = $this->fromSystem($path);
         }
 
-        if ($size === null && $this->lastError) {
+        if ($size === null) {
             throw new Exception($this->lastError);
         }
 
         return $size;
     }
 
-    private function fromFileSystemObject($path)
+    private function fromCurl($path)
     {
-        if (class_exists('com', false)) {
-            $obj = new \com('Scripting.FileSystemObject');
+        if (self::$bootCurl) {
+            $boot = self::$bootCurl;
+        } elseif (function_exists('curl_init')) {
+            $boot = curl_init();
+            curl_setopt($boot, CURLOPT_HEADER, true);
+            curl_setopt($boot, CURLOPT_NOBODY, true);
+            curl_setopt($boot, CURLOPT_RETURNTRANSFER, true);
 
-            if ($file = $obj->GetFile($path)) {
-                return $file->size;
-            }
-
-            $this->lastError = 'COM: failed to get size: ' . $path;
+            self::$bootCurl = $boot;
         } else {
-            $this->lastError = 'COM: Not available on your operating system or disabled';
+            $boot = false;
+        }
+
+        if (!$boot) {
+            $this->lastError = 'CURL: disabled in your server';
+        } else {
+            curl_setopt($boot, CURLOPT_URL, $path);
+
+            if (curl_exec($boot)) {
+                return curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+            } else {
+                $this->lastError = 'CURL: failed to get size: ' . $path;
+            }
         }
     }
 
-    private function fromCurl($path)
+    private function fromCOM($path)
     {
-        if (function_exists('curl_init')) {
-            $handle = curl_init('file://' . rawurlencode($path));
-
-            if ($handle !== false) {
-                curl_setopt($handle, CURLOPT_HEADER, true);
-                curl_setopt($handle, CURLOPT_NOBODY, true);
-                curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-
-                $size = null;
-
-                if (curl_exec($handle)) {
-                    $size = curl_getinfo($handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-                } else {
-                    $this->lastError = 'CURL: ' . curl_error($handle) . ' from ' . $path;
-                }
-
-                curl_close($handle);
-
-                return $size;
-            } else {
-                $this->lastError = 'CURL: can\'t read ' . $path;
-            }
+        if (self::$bootCOM) {
+            $boot = self::$bootCOM;
+        } elseif (class_exists('com', false)) {
+            $boot = new \com('Scripting.FileSystemObject');
+            self::$bootCOM = $boot;
         } else {
-            $this->lastError = 'CURL: curl_init is disabled';
+            $boot = false;
+        }
+
+        if (!$boot) {
+            $this->lastError = 'COM: `com` class not available on your server or disabled';
+        } elseif ($file = $obj->GetFile($path)) {
+            return $file->size;
+        } else {
+            $this->lastError = 'COM: failed to get size: ' . $path;
         }
     }
 
     private function fromSystem($path)
     {
-        if (function_exists('shell_exec')) {
-            $arg = escapeshellarg($path);
-
+        if (self::$bootSystem) {
+            $boot = self::$bootSystem;
+        } elseif (function_exists('shell_exec')) {
             if (self::$isWin) {
-                $command = 'for %F in (' . $arg . ') do @echo %~zF';
+                $boot = 'for %%F in (%s) do @echo %%~zF';
             } else {
-                $command = 'stat -c %s ' . $arg;
+                $boot = 'stat -c %%s %s';
             }
 
-            $response = shell_exec($command);
-
-            if ($response) {
-                $response = trim($response);
-            }
-
-            if (is_numeric($response)) {
-                return $response;
-            }
-
-            $this->lastError = 'SYSTEM: ' . ($response ? $response : 'Unknown error');
+            self::$bootSystem = $boot;
         } else {
-            $this->lastError = 'SYSTEM: shell_exec is disabled';
+            $boot = false;
+        }
+
+        if (!$boot) {
+            $this->lastError = 'SYSTEM: `shell_exec()` disabled in your server';
+        } else {
+            $path = sprintf($boot, escapeshellarg($path));
+
+            if ($output = shell_exec($path)) {
+                $output = trim($output);
+
+                if (is_numeric($output)) {
+                    return $output;
+                }
+
+                $this->lastError = 'SYSTEM: ' . ($output ? $output : 'Unknown error');
+            } else {
+                $this->lastError = 'SYSTEM: failed to get size: ' . $path;
+            }
         }
     }
 }

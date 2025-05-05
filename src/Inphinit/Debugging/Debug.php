@@ -92,7 +92,9 @@ class Debug
             Event::off($type === 'error' ? $type : 'done', $callback);
         }
 
-        ini_set('display_errors', '1');
+        if (function_exists('ini_set')) {
+            ini_set('display_errors', '1');
+        }
     }
 
     /**

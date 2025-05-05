@@ -175,7 +175,7 @@ class Url
             }
         }
 
-        $path = '/' . implode('/', $rebuild) . '/';
+        $path = implode('/', $rebuild);
 
         $rebuild = null;
 
