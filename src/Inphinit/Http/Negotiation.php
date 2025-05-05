@@ -9,7 +9,6 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Http\Request;
 use Inphinit\Exception;
 
 class Negotiation
@@ -30,9 +29,8 @@ class Negotiation
      *
      * @param array $headers This parameter is optional, you can set with
      *                       headers returned by curl or other way
-     * @return void
      */
-    public function __construct(array $headers = null)
+    public function __construct(array $headers = array())
     {
         if (empty($headers) === false) {
             $headers = array_change_key_case($headers, CASE_LOWER);
@@ -41,7 +39,7 @@ class Negotiation
                 if (
                     $key === 'accept-ranges' ||
                     strpos($key, 'accept-control-') === 0 ||
-                    ($key !=='te' && $key !=='accept' && strpos($key, 'accept-') !== 0)
+                    ($key !== 'te' && $key !== 'accept' && strpos($key, 'accept-') !== 0)
                 ) {
                     unset($headers[$key]);
                 }
@@ -59,10 +57,10 @@ class Negotiation
     }
 
     /**
-     * Create a Negotiation instance based in string (eg.: `curl_opt(..., CURL_OPT_HEADER, true)`)
+     * Create a Negotiation instance based in string
      *
      * @param string $str
-     * @return void
+     * @return \Inphinit\Http\Negotiation
      */
     public static function fromString($str)
     {
@@ -71,7 +69,6 @@ class Negotiation
         foreach (preg_split('#(\r)?\n#', $str) as $line) {
             if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
-
                 $headers[$key] = ltrim($value);
             }
         }
@@ -87,9 +84,9 @@ class Negotiation
      * Get all languages by `Accept-Language` header sorted by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts languages using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
-     * @return array|null
+     * @return array
      */
     public function acceptLanguage($sort = self::HIGH)
     {
@@ -100,9 +97,9 @@ class Negotiation
      * Get all languages by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts charsets using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
-     * @return array|null
+     * @return array
      */
     public function acceptCharset($sort = self::HIGH)
     {
@@ -113,9 +110,9 @@ class Negotiation
      * Get all languages by `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
      *
      * @param string $sort Sorts encodings using `LOW` or `HIGH` constants,
-     *                      or return all in an simple array use `ALL` constant
+     *                     or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
-     * @return array|null
+     * @return array
      */
     public function acceptEncoding($sort = self::HIGH)
     {
@@ -126,9 +123,9 @@ class Negotiation
      * Get all document types by `Accept` header and sorted by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts types using `LOW` or `HIGH` constants,
-     *                   or return all in an simple array use `ALL` constant
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
-     * @return array|null
+     * @return array
      */
     public function accept($sort = self::HIGH)
     {
@@ -201,23 +198,23 @@ class Negotiation
      * @param string $header
      * @param int    $sort
      * @throws \Inphinit\Exception
-     * @return array|null
+     * @return array
      */
     public function header($header, $sort = self::HIGH)
     {
         $header = strtolower($header);
 
         if ($header === 'accept-ranges' || strpos($header, 'accept-control-') === 0) {
-            return null;
+            return [];
         }
 
         if ($this->headers) {
-            $value = $this->headers[$header];
+            $value = isset($this->headers[$header]) ? $this->headers[$header] : null;
         } else {
             $value = Request::header($header);
         }
 
-        return self::qFactor($value, $sort);
+        return $value ? self::qFactor($value, $sort) : [];
     }
 
     /**
@@ -234,7 +231,7 @@ class Negotiation
 
         foreach (explode(',', $value) as $hvalues) {
             if (substr_count($hvalues, ';') > 1) {
-                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"', 0, 2);
+                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"');
             }
 
             $current = explode(';', $hvalues, 2);

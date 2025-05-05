@@ -21,7 +21,7 @@ class Request
     private static $reqHeaders;
     private static $reqHeadersLower;
     private static $rawInput;
-    private static $headerTokens = array('-' => '_', ' ' => '_');
+    private static $headerTokens = array('-', '_');
 
     /**
      * Get current HTTP path or route path
@@ -43,12 +43,6 @@ class Request
     public static function is($check)
     {
         switch ($check) {
-            case 'secure':
-                return isset($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
-
-            case 'xhr':
-                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
-
             case 'pjax':
                 return strcasecmp(self::header('x-pjax', ''), 'true') === 0;
 
@@ -56,12 +50,22 @@ class Request
                 return (
                     strcasecmp(self::header('sec-purpose', ''), 'prefetch') === 0 ||
                     strcasecmp(self::header('x-purpose', ''), 'preview') === 0 ||
-                    strcasecmp(self::header('purpose', ''), 'preview') === 0 ||
+                    strcasecmp(self::header('purpose', ''), 'prefetch') === 0 ||
                     strcasecmp(self::header('x-moz', ''), 'prefetch') === 0
                 );
-        }
 
-        return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+            case 'save':
+                return strcasecmp(self::header('save-data', ''), 'on') === 0;
+
+            case 'secure':
+                return isset($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'on') === 0;
+
+            case 'xhr':
+                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
+
+            default:
+                return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+        }
     }
 
     /**
