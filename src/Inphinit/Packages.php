@@ -22,7 +22,8 @@ class Packages
     /**
      * Create a `Inphinit\Packages` instance.
      *
-     * @param string $path Define composer path, like `./vendor/composer` (if null or not defined, assume `./system/vender`)
+     * @param string $path Set composer path, like `vendor/composer`.
+     *                     if not set or set to null, the default path `system/vendor` will be used.
      * @throws \Inphinit\Exception
      */
     public function __construct($path = null)
@@ -115,8 +116,8 @@ class Packages
     /**
      * Load `autoload_namespaces.php` classes, used by PSR-0 packages
      *
-     * @return bool|int Return total packages loaded, if `autoload_namespaces.php`
-     *                  is not accessible returns `false`
+     * @return int|false Return total packages loaded, if `autoload_namespaces.php`
+     *                   is not accessible returns `false`
      */
     public function psr0()
     {
@@ -135,8 +136,8 @@ class Packages
     /**
      * Load `autoload_psr4.php` classes, used by PSR-4 packages
      *
-     * @return bool|int Return total packages loaded, if `autoload_psr4.php`
-     *                  is not accessible returns `false`
+     * @return int|false Return total packages loaded, if `autoload_psr4.php`
+     *                   is not accessible returns `false`
      */
     public function psr4()
     {
@@ -216,7 +217,7 @@ class Packages
     /**
      * Get package version from composer.lock file
      *
-     * @param string $name set package for detect version
+     * @param string $name Set package for detect version
      * @return string|null
      */
     public static function version($name)

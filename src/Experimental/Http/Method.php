@@ -26,7 +26,7 @@ class Method
     /**
      * Create instace
      *
-     * @param bool $reset Reset sources
+     * @param bool $reset Optional. Reset sources
      */
     public function __construct($reset = false)
     {

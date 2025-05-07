@@ -107,12 +107,14 @@ class Size
         if (!$boot) {
             $this->lastError = 'CURL: disabled in your server';
         } else {
-            curl_setopt($boot, CURLOPT_URL, $path);
+            $path = rawurlencode($path);
+
+            curl_setopt($boot, CURLOPT_URL, 'file:///' . $path);
 
             if (curl_exec($boot)) {
                 return curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
             } else {
-                $this->lastError = 'CURL: failed to get size: ' . $path;
+                $this->lastError = 'CURL: ' . curl_error($boot);
             }
         }
     }
@@ -130,10 +132,10 @@ class Size
 
         if (!$boot) {
             $this->lastError = 'COM: `com` class not available on your server or disabled';
-        } elseif ($file = $obj->GetFile($path)) {
+        } elseif ($file = $boot->GetFile($path)) {
             return $file->size;
         } else {
-            $this->lastError = 'COM: failed to get size: ' . $path;
+            $this->lastError = 'COM: Unable to retrieve the size of ' . $path;
         }
     }
 
@@ -167,7 +169,7 @@ class Size
 
                 $this->lastError = 'SYSTEM: ' . ($output ? $output : 'Unknown error');
             } else {
-                $this->lastError = 'SYSTEM: failed to get size: ' . $path;
+                $this->lastError = 'SYSTEM: Unable to retrieve the size of ' . $path;
             }
         }
     }

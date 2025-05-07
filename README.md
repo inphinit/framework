@@ -1,5 +1,3 @@
-## Inphinit 2.0
-
 Inphinit is a PHP framework for use routes, controllers and views. To try it, go to:
 
 - https://github.com/inphinit/inphinit/blob/master/README.md (English)
@@ -7,11 +5,11 @@ Inphinit is a PHP framework for use routes, controllers and views. To try it, go
 
 ## Requirements
 
-1. PHP 5.4.0+, but it is recommended that you use PHP 8 due to PHP support issues, read: https://www.php.net/supported-versions.php
+1. PHP 8 (minimal PHP 5.4 -- consider updating to one of the latest PHP versions when possible: https://www.php.net/supported-versions.php)
 1. Multibyte String (GD also) (optional, only used in `Inphinit\Utility\Strings` class)
 1. libiconv (optional, only used in `Inphinit\Utility\Strings` class)
 1. fileinfo (optional, only used in `Inphinit\Filesystem\File`)
-1. COM or CUrl (optional, only used in `Inphinit\Filesystem\Size`)
+1. COM or cURL (optional, only used in `Inphinit\Filesystem\Size`)
 
 ## Getting start
 
@@ -26,4 +24,10 @@ If you are a contributor, before sending a pull-request it is important to run L
 
 ```bash
 find . -type f -name "*.php" -exec php -l {} \;
+```
+
+On Windows:
+
+```batch
+for /R %F in (*.php) do @php -l %F
 ```

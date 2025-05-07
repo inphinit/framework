@@ -10,7 +10,6 @@
 namespace Inphinit\Http;
 
 use Inphinit\Exception;
-use Inphinit\Http\Request;
 
 class Negotiation
 {
@@ -28,8 +27,7 @@ class Negotiation
     /**
      * Create a Negotiation instance
      *
-     * @param array $headers This parameter is optional, you can set with
-     *                       headers returned by curl or other way
+     * @param array $headers Optional. You can set with headers returned by curl or other way
      */
     public function __construct(array $headers = array())
     {

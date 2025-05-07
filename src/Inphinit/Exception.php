@@ -16,11 +16,12 @@ class Exception extends \Exception
     /**
      * Raise an exception
      *
-     * @param string $message
-     * @param int    $code
-     * @param int    $trace
+     * @param string     $message
+     * @param int        $code
+     * @param int        $trace
+     * @param \Throwable $previous
      */
-    public function __construct($message, $code = 0, $trace = 2)
+    public function __construct($message, $code = 0, $trace = 2, $previous = null)
     {
         if ($trace > 0) {
             $data = Debug::caller($trace);
@@ -29,6 +30,6 @@ class Exception extends \Exception
             $this->line = $data['line'];
         }
 
-        parent::__construct(trim($message), $code);
+        parent::__construct(trim($message), $code, $previous);
     }
 }

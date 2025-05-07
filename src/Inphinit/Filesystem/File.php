@@ -16,8 +16,18 @@ use Inphinit\Utility\Url;
 class File
 {
     private static $infos = array();
-    private static $finfo;
     private static $devStrictMode = false;
+
+    /**
+     * Enable or disable strictmode for check if file exists with case-sensitive (only avaliable in development mode)
+     *
+     * @param bool $enable
+     * @return void
+     */
+    public static function strictMode($enable)
+    {
+        self::$devStrictMode = $enable;
+    }
 
     /**
      * Check if file exists using case-sensitive,
@@ -28,6 +38,7 @@ class File
      */
     public static function exists($path)
     {
+        // Removing the file URI scheme for compatibility with realpath() function
         if (stripos($path, 'file:') === 0) {
             $path = parse_url($path, PHP_URL_PATH);
         }
@@ -38,6 +49,7 @@ class File
 
         $path = str_replace('\\', '/', $path);
 
+        // Canonicalize the path for support in the inphinit_check_path() function
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
             $path = Url::canonpath($path);
         }
@@ -52,7 +64,7 @@ class File
      * @param string $path
      * @param bool   $full
      * @throws \Inphinit\Exception
-     * @return string|bool
+     * @return string|false
      */
     public static function permissions($path, $full = false)
     {
@@ -64,8 +76,15 @@ class File
             return $perms;
         }
 
+        $path = realpath($path);
+        $from = $full ? 'symbolic' : 'octal';
+
+        if (isset(self::$infos[$path][$from])) {
+            return self::$infos[$path][$from];
+        }
+
         if ($full !== true) {
-            return substr(sprintf('%o', $perms), -4);
+            return self::$infos[$path][$from] = substr(sprintf('%o', $perms), -4);
         }
 
         switch ($perms & 0xF000) {
@@ -119,59 +138,7 @@ class File
         $info .= $perms & 0x0002 ? 'w' : '-';
         $info .= $perms & 0x0001 ? ($from ? 't' : 'x') : ($from ? 'T' : '-');
 
-        return $info;
-    }
-
-    /**
-     * Get mimetype from file, return `false` if file is invalid
-     *
-     * @param string $path
-     * @return string|bool
-     */
-    public static function mime($path)
-    {
-        $info = self::info($path);
-        return $info ? strtok($info, ';') : false;
-    }
-
-    /**
-     * Determines whether the file is binary
-     *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     * @return string|bool
-     */
-    public static function encoding($path)
-    {
-        $info = self::info($path);
-
-        if ($info) {
-            $pos = strpos($info, ';');
-
-            if ($pos === false) {
-                $info = false;
-            } else {
-                $info = explode('charset=', $info);
-                return $info[1];
-            }
-        }
-
-        return $info;
-    }
-
-    private static function info($path)
-    {
-        self::checkInDevMode($path, 4);
-
-        if (isset(self::$infos[$path]) === false && $buffer = file_get_contents($path, false, null, 0, 5012)) {
-            if (self::$finfo === null) {
-                self::$finfo = \finfo_open(FILEINFO_MIME);
-            }
-
-            self::$infos[$path] = \finfo_buffer(self::$finfo, $buffer);
-        }
-
-        return self::$infos[$path];
+        return self::$infos[$path][$from] = $info;
     }
 
     /**
@@ -180,6 +147,7 @@ class File
      * @param string $path
      * @param int    $length
      * @param int    $delay
+     * @throws \Inphinit\Exception
      * @return bool
      */
     public static function output($path, $length = 262144, $delay = 0)
@@ -222,7 +190,7 @@ class File
      * @param int    $offset
      * @param int    $length
      * @throws \Inphinit\Exception
-     * @return string|bool
+     * @return string|false
      */
     public static function portion($path, $offset = 0, $length = 1024)
     {
@@ -238,7 +206,7 @@ class File
      * @param int    $offset
      * @param int    $max
      * @throws \Inphinit\Exception
-     * @return string|bool
+     * @return string|false
      */
     public static function lines($path, $offset = 0, $max = 32)
     {
@@ -281,25 +249,7 @@ class File
     public static function clearstat()
     {
         self::$infos = array();
-
-        if (self::$finfo !== null) {
-            \finfo_close(self::$finfo);
-
-            self::$finfo = null;
-        }
-
         clearstatcache();
-    }
-
-    /**
-     * Enable or disable strictmode for check if file exists with case-sensitive (only avaliable in development mode)
-     *
-     * @param bool $enable
-     * @return void
-     */
-    public static function strictMode($enable)
-    {
-        self::$devStrictMode = $enable;
     }
 
     private static function checkInDevMode($path, $level = 3)

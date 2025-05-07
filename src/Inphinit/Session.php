@@ -9,8 +9,6 @@
 
 namespace Inphinit;
 
-use Inphinit\Exception;
-
 class Session
 {
     private $name;
@@ -58,7 +56,7 @@ class Session
             $this->handle = fopen(self::$tempDir . '/' . $name, 'r+');
 
             if ($this->handle === false) {
-                throw new Exception('Invalid session file', 0, 3);
+                throw new Exception('Invalid session file');
             }
 
             $this->read();

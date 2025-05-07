@@ -11,8 +11,6 @@ namespace Inphinit\Utility;
 
 use Inphinit\Exception;
 use Inphinit\Http\Request;
-use Inphinit\Utility\Arrays;
-use Inphinit\Utility\Strings;
 
 class Url
 {

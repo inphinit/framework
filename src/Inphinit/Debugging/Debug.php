@@ -280,8 +280,6 @@ class Debug
          * Note: The error could also be a bug in a library, report the bug
          */
         if (strpos($compareFile, INPHINIT_SYSTEM . '/vendor/') !== 0) {
-            self::boot();
-
             $link = self::$configs->editor;
 
             switch ($link) {
@@ -309,7 +307,7 @@ class Debug
         self::boot();
 
         if (View::exists($view) === false) {
-            throw new Exception($view . ' view is not found', 3);
+            throw new Exception($view . ' view is not found', 0, 3);
         }
 
         $callback = function () use ($view, $type) {

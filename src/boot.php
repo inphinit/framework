@@ -44,14 +44,14 @@ function inphinit_sandbox($sandbox_path, &$sandbox_data = null)
 }
 
 /**
- * Function used from `set_error_handler` and trigger `Event::trigger('error')`
+ * Function used by `set_error_handler` and trigger `Event::trigger('error')`
  *
  * @param int    $type
  * @param string $message
  * @param string $file
  * @param int    $line
  * @param array  $context
- * @return bool
+ * @return false
  */
 function inphinit_error($type, $message, $file, $line, $context = null)
 {
