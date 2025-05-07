@@ -106,10 +106,6 @@ class Checkup
         if (function_exists('iconv') === false) {
             $this->errors[] = '`Inphinit\Utility\String` class will not work, to fix it, enable `iconv` in ' . $directives . ' (optional)';
         }
-
-        if (function_exists('finfo_file') === false) {
-            $this->errors[] = '`Inphinit\Filesystem\File::mime` and `Inphinit\Filesystem\File::encoding` methods will not work, to fix it, enable `finfo` in ' . $directives . ' (optional)';
-        }
     }
 
     private function collectWarnings()
