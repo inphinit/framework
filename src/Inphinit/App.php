@@ -219,7 +219,7 @@ class App
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
                 $parsed = explode('::', $callback, 2);
-                $callback = '\\Controller\\' . $this->namespacePrefix . $parsed[0];
+                $callback = '\\Controllers\\' . $this->namespacePrefix . $parsed[0];
                 $callback = array(new $callback(), $parsed[1]);
             }
 

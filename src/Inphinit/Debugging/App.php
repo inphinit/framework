@@ -51,7 +51,7 @@ class App extends \Inphinit\App
         if (is_string($callback) && strpos($callback, '::') !== false) {
             list($className, $method) = explode('::', $callback);
 
-            $className = '\\Controller\\' . $className;
+            $className = '\\Controllers\\' . $className;
             $classAndMethod = "{$className}::{$method}()";
 
             if (method_exists($className, $method) === false) {
