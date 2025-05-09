@@ -12,6 +12,8 @@ use Inphinit\Event;
 
 header_remove('X-Powered-By');
 
+require 'Inphinit/App.php';
+
 /**
  * case-sensitive check path
  *
@@ -44,7 +46,7 @@ function inphinit_sandbox($sandbox_path, &$sandbox_data = null)
 }
 
 /**
- * Function used by `set_error_handler` and trigger `Event::trigger('error')`
+ * Function used by `set_error_handler` and `Event::trigger('error')`
  *
  * @param int    $type
  * @param string $message
@@ -81,9 +83,22 @@ register_shutdown_function(function () {
     }
 });
 
+$inphinit_config_development = App::config('development');
+
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
+    if (!$inphinit_config_development) {
+        /*
+         * Improved autoload performance for classes from system folder (Controllers, Models, Services, ...)
+         * and classes within the Inphinit\ namespace
+         * Nota: Only available in production mode, in developer mode it will do extra checks to avoid failures
+         */
+        set_include_path(__DIR__ . PATH_SEPARATOR . INPHINIT_SYSTEM);
+        spl_autoload_extensions('.php');
+        spl_autoload_register();
+    }
+
     spl_autoload_register(function ($class) {
         static $prefixes;
 
@@ -101,7 +116,7 @@ if (INPHINIT_COMPOSER) {
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
-                    // substr($prefix, -1) returns \ (PSR-4) or _ (PSR-0)
+                    // substr($prefix, -1) -> '\' (PSR-4) or '_' (PSR-0)
                     $base = $path . '/' . str_replace(substr($prefix, -1), '/', $class) . '.php';
                     break;
                 }
@@ -109,7 +124,7 @@ if (INPHINIT_COMPOSER) {
         }
 
         if ($base !== null) {
-            // if not starts with / or not contains :, $base request a file
+            // if $base does not start with '/' nor contain ':', $base will request a file
             if ($base[0] !== '/' && strpos($base, ':') === false) {
                 $base = INPHINIT_SYSTEM . '/' . $base;
             }
@@ -120,8 +135,6 @@ if (INPHINIT_COMPOSER) {
         }
     });
 }
-
-require 'Inphinit/App.php';
 
 $inphinit_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
@@ -161,7 +174,7 @@ if (PHP_SAPI !== 'cli-server') {
 define('INPHINIT_PATH', $inphinit_path);
 define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
 
-if (App::config('development')) {
+if ($inphinit_config_development) {
     require 'development.php';
 } else {
     $app = new App();
