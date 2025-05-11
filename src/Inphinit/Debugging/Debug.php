@@ -28,7 +28,6 @@ class Debug
      * Set view for display displayed before other defined from a Debug instance
      *
      * @param string $view
-     * @throws \Inphinit\Exception
      * @return void
      */
     public function setBeforeView($view)
@@ -229,12 +228,14 @@ class Debug
     }
 
     /**
-     * Convert error message in a link, see `system/configs/debug.php`
+     * Convert error message into a link for a search engine or
+     * online assistant to analyze the error message. See `system/configs/debug.php`
      *
      * @param string $message
+     * @param string $target
      * @return string
      */
-    public static function assistant($message)
+    public static function assistant($message, $target='_blank')
     {
         self::boot();
 
@@ -256,17 +257,18 @@ class Debug
         $link = htmlentities($link);
         $message = htmlentities($message);
 
-        return '<a rel="nofollow noreferrer" target="_blank" href="' . $link . '">' . $message . '</a>';
+        return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
     }
 
     /**
-     * Convert error message in a link, see `system/configs/debug.php`
+     * Creates a link to open a file in your editor via the protocol. See `system/configs/debug.php`
      *
      * @param string $file
      * @param int $line
+     * @param string $target
      * @return string
      */
-    public static function editor($file, $line)
+    public static function editor($file, $line, $target = '_self')
     {
         self::boot();
 
@@ -296,7 +298,7 @@ class Debug
         if ($link && strpos($link, '{path}') !== -1) {
             $link = str_replace('{path}', rawurlencode($file), $link);
             $link = str_replace('{line}', rawurlencode($line), $link);
-            $message = '<a rel="nofollow noreferrer" href="' . $link . '">' . $message . '</a>';
+            $message = '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }
 
         return $message;
@@ -307,7 +309,7 @@ class Debug
         self::boot();
 
         if (View::exists($view) === false) {
-            throw new Exception($view . ' view is not found', 0, 3);
+            throw new Exception($view . ' view not found', 0, 3);
         }
 
         $callback = function () use ($view, $type) {
