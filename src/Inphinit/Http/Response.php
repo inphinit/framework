@@ -55,7 +55,7 @@ class Response
      * @param string|null $charset
      * @return void
      */
-    public static function content($type, $charset = null)
+    public static function type($type, $charset = null)
     {
         if ($type === null) {
             header_remove('Content-Type');
