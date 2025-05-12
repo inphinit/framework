@@ -274,14 +274,19 @@ class Debug
 
         $link = false;
         $message = $file . ' in line ' . $line;
-        $compareFile = str_replace('\\', '/', $file);
+
+        $file = realpath($file);
+        $file = str_replace('\\', '/', $file);
+
+        $vendor = realpath(INPHINIT_SYSTEM . '/vendor/');
+        $vendor = str_replace('\\', '/', $vendor);
 
         /*
          * Note: The link to the editor will only be available for scripts outside the vendor, never edit a file on the vendor
          * Note: Probably the problem could be an error when using some lib and not in the lib
          * Note: The error could also be a bug in a library, report the bug
          */
-        if (strpos($compareFile, INPHINIT_SYSTEM . '/vendor/') !== 0) {
+        if (strpos($file, $vendor) !== 0) {
             $link = self::$configs->editor;
 
             switch ($link) {
@@ -289,15 +294,22 @@ class Debug
                     $link = 'vscode://file/{path}:{line}:0';
                     break;
                 case 'sublimetext':
-                    // Requires: https://packagecontrol.io/packages/subl%20protocol
+                    /*
+                     * Requires: https://packagecontrol.io/packages/subl%20protocol
+                     */
                     $link = 'subl://{path}:{line}';
                     break;
             }
         }
 
-        if ($link && strpos($link, '{path}') !== -1) {
-            $link = str_replace('{path}', rawurlencode($file), $link);
-            $link = str_replace('{line}', rawurlencode($line), $link);
+        if ($link && strpos($link, '{path}') !== false) {
+            $file = rawurlencode($file);
+
+            // Restores the directory separator
+            $file = str_replace('%2F', '/', $file);
+
+            $link = str_replace('{path}', $file, $link);
+            $link = str_replace('{line}', $line, $link);
             $message = '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }
 

@@ -21,20 +21,18 @@ class DomException extends \Inphinit\Exception
     {
         ++$trace;
 
-        if ($error->file && $error->line > 0) {
-            $file = $error->file;
+        $file = $error->file;
+
+        if ($file && $error->line > 0) {
             $scheme = parse_url($file, PHP_URL_SCHEME);
 
-            if (!$scheme || stripos($scheme, 'file') === 0) {
-                $file = parse_url($file, PHP_URL_PATH);
-                $file = preg_replace('#^/+([A-Z]\:)#i', '$1', $file);
+            if (strcasecmp($scheme, 'file') === 0) {
+                $file = preg_replace('#^file:/+#i', '', $file);
             }
 
-            if ($file) {
-                $this->file = $file;
-                $this->line = $error->line;
-                $trace = 0;
-            }
+            $this->file = $file;
+            $this->line = $error->line;
+            $trace = 0;
         }
 
         parent::__construct($error->message, $error->code, $trace);
