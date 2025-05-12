@@ -11,21 +11,21 @@ namespace Inphinit\Utility;
 
 class Strings
 {
+    private static $transliterator;
+
     /**
      * Convert string to ASCII
      *
      * @param string $text
      * @return string
      */
-    public static function toAscii($text, array $encodings = array())
+    public static function toAscii($text)
     {
-        if (empty($encodings)) {
-            $encodings = \mb_detect_order();
+        if (self::$transliterator === null) {
+            self::$transliterator = \Transliterator::create('Any-Latin; Latin-ASCII');
         }
 
-        $encode = \mb_detect_encoding($text, $encodings, true);
-
-        return 'ASCII' === $encode ? $text : \iconv($encode, 'ASCII//TRANSLIT//IGNORE', $text);
+        return self::$transliterator->transliterate($text);
     }
 
     /**

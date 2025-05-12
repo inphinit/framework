@@ -62,8 +62,8 @@ class Packages
     /**
      * Load `./system/boot/namespaces.php` classes
      *
-     * @return bool|int Returns the total number of loaded packages, if `namespaces.php`
-     *                  is not accessible returns `false`
+     * @return int|false Returns the total number of loaded packages, if `namespaces.php`
+     *                   is not accessible returns `false`
      */
     public function inAutoload()
     {
@@ -85,8 +85,8 @@ class Packages
     /**
      * Load `autoload_classmap.php` classes
      *
-     * @return bool|int Return total packages loaded, if `autoload_classmap.php`
-     *                  is not accessible returns `false`
+     * @return int|false Return total packages loaded, if `autoload_classmap.php`
+     *                   is not accessible returns `false`
      */
     public function classmap()
     {

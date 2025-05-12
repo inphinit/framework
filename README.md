@@ -5,10 +5,11 @@ Inphinit is a PHP framework for use routes, controllers and views. To try it, go
 
 ## Requirements
 
-1. PHP 8 (minimal PHP 5.4 -- consider updating to one of the latest PHP versions when possible: https://www.php.net/supported-versions.php)
-1. Multibyte String (GD also) (optional, only used in `Inphinit\Utility\Strings` class)
-1. libiconv (optional, only used in `Inphinit\Utility\Strings` class)
-1. COM or cURL (optional, only used in `Inphinit\Filesystem\Size`)
+1. Currently supported PHP version: https://www.php.net/supported-versions.php.
+    * Minimal _PHP 5.4_ (backward compatibility is maintained for users with upgrade limitations).
+    * If you need a full-featured server for Windows or macOS, try: Wamp, Xampp, Laragon, EasyPHP, AMPPS, etc.
+1. (Optional) Intl PHP extension to use `Inphinit\Utility\Strings` class.
+1. (Optional) COM PHP extension or cURL PHP extension to use `Inphinit\Filesystem\Size` class.
 
 ## Getting start
 
