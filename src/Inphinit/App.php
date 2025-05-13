@@ -36,13 +36,8 @@ class App
 
     private $patternNames;
 
-    private $beforeRE = array('\\:', '\\<', '\\>', '\\*');
-    private $afterRE = array(':', '<', '>', '.*?');
-
-    public function __construct()
-    {
-        $this->patternNames = implode('|', array_keys($this->paramPatterns));
-    }
+    private static $beforeRE = array('\\:', '\\<', '\\>', '\\*');
+    private static $afterRE = array(':', '<', '>', '.*?');
 
     /**
      * Get or set application configs
@@ -131,7 +126,7 @@ class App
     public function setPattern($name, $regex)
     {
         $this->paramPatterns[preg_quote($name)] = $regex;
-        $this->patternNames = implode('|', array_keys($this->paramPatterns));
+        $this->patternNames = null;
     }
 
     /**
@@ -143,11 +138,13 @@ class App
      */
     public function scope($pattern, \Closure $callback)
     {
+        $this->refreshPatterns();
+
         $patterns = &$this->paramPatterns;
 
         $getParams = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
 
-        $scopeRegex = str_replace($this->beforeRE, $this->afterRE, preg_quote($pattern));
+        $scopeRegex = str_replace(self::$beforeRE, self::$afterRE, preg_quote($pattern));
 
         $scopeRegex = preg_replace_callback($getParams, function ($matches) use (&$patterns) {
             return '(?P<' . $matches[1] . '>' . (
@@ -266,6 +263,8 @@ class App
 
     private function params(&$routes, &$params)
     {
+        $this->refreshPatterns();
+
         $patterns = &$this->paramPatterns;
         $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
 
@@ -305,6 +304,13 @@ class App
 
                 break;
             }
+        }
+    }
+
+    private function refreshPatterns()
+    {
+        if ($this->patternNames === null) {
+            $this->patternNames = implode('|', array_keys($this->paramPatterns));
         }
     }
 }
