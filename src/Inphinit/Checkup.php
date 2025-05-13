@@ -19,7 +19,7 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
-    private $iniConfigs = '`%s`, additional `.ini` files, or directives';
+    private $iniConfigs = '`%s`, additional `.ini` files, or via directives';
     private $devAdvice = 'While the application is in development mode, it is recommended to disable `%s` in %s';
 
     public function __construct()
@@ -100,11 +100,11 @@ class Checkup
         }
 
         if (function_exists('mb_detect_encoding') === false) {
-            $this->errors[] = '`Inphinit\Utility\Url` class and `Inphinit\Utility\Strings::toAscii` method will not work, to fix it, enable *Multibyte String* in ' . $directives . ' (optional)';
+            $this->errors[] = '(Optional) *Multibyte String* extension required by `Inphinit\Utility\Url`. Enable it in ' . $directives;
         }
 
-        if (function_exists('iconv') === false) {
-            $this->errors[] = '`Inphinit\Utility\String` class will not work, to fix it, enable `iconv` in ' . $directives . ' (optional)';
+        if (class_exists('\\Transliterator', false) === false) {
+            $this->errors[] = '(Optional) *Intl* extension required by `Inphinit\Utility\String`. Enable it in ' . $directives;
         }
     }
 

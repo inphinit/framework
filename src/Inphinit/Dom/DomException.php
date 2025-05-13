@@ -24,9 +24,7 @@ class DomException extends \Inphinit\Exception
         $file = $error->file;
 
         if ($file && $error->line > 0) {
-            $scheme = parse_url($file, PHP_URL_SCHEME);
-
-            if (strcasecmp($scheme, 'file') === 0) {
+            if (stripos($file, 'file:') === 0) {
                 $file = preg_replace('#^file:/+#i', '', $file);
             }
 
