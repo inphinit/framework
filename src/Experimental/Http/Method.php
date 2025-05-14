@@ -46,29 +46,29 @@ class Method
     }
 
     /**
-     * Append header
+     * Adds a request header that can be used to inform a different HTTP method than the one initially used in a request
      *
      * @param bool $header
      * @param int  $priority
      */
-    public function appendHeader($header, $priority = 0)
+    public function addHeader($header, $priority = 0)
     {
         $this->sources[] = array($header, true, $priority);
     }
 
     /**
-     * Append param
+     * Adds a param (request body or querystring) that can be used to inform a different HTTP method than the one initially used in a request
      *
      * @param bool $param
      * @param int  $priority
      */
-    public function appendParam($param, $priority = 0)
+    public function addParam($param, $priority = 0)
     {
         $this->sources[] = array($param, false, $priority);
     }
 
     /**
-     * Get method from `$_REQUEST` or from headers
+     * Get method from `$_POST` or `$_GET` or headers
      *
      * @return string
      */
@@ -89,8 +89,10 @@ class Method
 
             if ($source[1]) {
                 $method = Request::header($key);
-            } elseif (isset($_REQUEST[$key])) {
-                $method = $_REQUEST[$key];
+            } elseif (isset($_POST[$key])) {
+                $method = $_POST[$key];
+            } elseif (isset($_GET[$key])) {
+                $method = $_GET[$key];
             }
 
             if ($method && in_array(strtolower($method), $this->allowed)) {
