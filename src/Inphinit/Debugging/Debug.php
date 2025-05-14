@@ -23,20 +23,25 @@ class Debug
     private $beforeView;
     private $views = array();
     private static $configs;
+    private static $nonCli = PHP_SAPI !== 'cli';
 
     /**
      * Set view for display displayed before other defined from a Debug instance
+     * Note: This method does not affect behavior in the CLI environment
      *
      * @param string $view
      * @return void
      */
     public function setBeforeView($view)
     {
-        $this->beforeView = $view;
+        if (self::$nonCli) {
+            $this->beforeView = $view;
+        }
     }
 
     /**
      * Set view for display defined constants, functions and classes
+     * Note: This method does not affect behavior in the CLI environment
      *
      * @param string $view
      * @throws \Inphinit\Exception
@@ -49,6 +54,7 @@ class Debug
 
     /**
      * Set view for display errors and exceptions
+     * Note: This method does not affect behavior in the CLI environment
      *
      * @param string $view
      * @throws \Inphinit\Exception
@@ -59,7 +65,7 @@ class Debug
         $this->view('error', $view);
 
         // Check functions are enabled
-        if (function_exists('ini_get') && function_exists('ini_set')) {
+        if (self::$nonCli && function_exists('ini_get') && function_exists('ini_set')) {
             $config = ini_get('display_errors');
 
             if (empty($config) === false) {
@@ -70,6 +76,7 @@ class Debug
 
     /**
      * Set view for display memory usage after application terminate
+     * Note: This method does not affect behavior in the CLI environment
      *
      * @param string $view
      * @throws \Inphinit\Exception
@@ -320,19 +327,21 @@ class Debug
     {
         self::boot();
 
-        if (View::exists($view) === false) {
-            throw new Exception($view . ' view not found', 0, 3);
+        if (self::$nonCli) {
+            if (View::exists($view) === false) {
+                throw new Exception($view . ' view not found', 0, 3);
+            }
+
+            $callback = function () use ($view, $type) {
+                $args = func_get_args();
+                array_unshift($args, $view);
+                call_user_func_array(array($this, 'render' . ucfirst($type)), $args);
+            };
+
+            $this->views[$type] = $callback;
+
+            Event::on($type === 'error' ? $type : 'done', $callback);
         }
-
-        $callback = function () use ($view, $type) {
-            $args = func_get_args();
-            array_unshift($args, $view);
-            call_user_func_array(array($this, 'render' . ucfirst($type)), $args);
-        };
-
-        $this->views[$type] = $callback;
-
-        Event::on($type === 'error' ? $type : 'done', $callback);
     }
 
     private function renderError($view, $type, $message, $file, $line)
