@@ -12,26 +12,31 @@ namespace Inphinit;
 class Packages
 {
     private static $composerLock;
-    private $composerPath;
+    private $composerPath = INPHINIT_SYSTEM . '/vendor/composer';
     private $classmapName = 'autoload_classmap.php';
     private $psrZeroName = 'autoload_namespaces.php';
     private $psrFourName = 'autoload_psr4.php';
     private $libs = array();
     private $log = array();
 
+    public function __construct()
+    {
+        $path = $this->composerPath;
+
+        if (is_dir($path)) {
+            $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
+        }
+    }
+
     /**
-     * Create a `Inphinit\Packages` instance.
+     * Change composer path
      *
      * @param string $path Set composer path, like `vendor/composer`.
-     *                     if not set or set to null, the default path `system/vendor` will be used.
      * @throws \Inphinit\Exception
+     * @return void
      */
-    public function __construct($path = null)
+    public function setComposer($path)
     {
-        if (empty($path)) {
-            $path = INPHINIT_SYSTEM . '/vendor/composer';
-        }
-
         if (is_dir($path) === false) {
             throw new Exception('Composer path is not accessible: ' . $path);
         }
@@ -85,8 +90,8 @@ class Packages
     /**
      * Load `autoload_classmap.php` classes
      *
-     * @return int|false Return total packages loaded, if `autoload_classmap.php`
-     *                   is not accessible returns `false`
+     * @return int Return total packages loaded, if `autoload_classmap.php`
+     *             is not accessible returns `false`
      */
     public function classmap()
     {
@@ -104,20 +109,18 @@ class Packages
             }
 
             $this->log[] = 'Imported ' . $i . ' classes from classmap';
-
-            return $i;
+        } else {
+            $this->log[] = 'Warn: classmap not found';
         }
 
-        $this->log[] = 'Warn: classmap not found';
-
-        return false;
+        return $i;
     }
 
     /**
      * Load `autoload_namespaces.php` classes, used by PSR-0 packages
      *
-     * @return int|false Return total packages loaded, if `autoload_namespaces.php`
-     *                   is not accessible returns `false`
+     * @return int Return total packages loaded, if `autoload_namespaces.php`
+     *             is not accessible returns `false`
      */
     public function psr0()
     {
@@ -125,19 +128,18 @@ class Packages
 
         if ($i !== false) {
             $this->log[] = 'Imported ' . $i . ' classes from psr0';
-            return $i;
+        } else {
+            $this->log[] = 'Warn: psr0 not found';
         }
 
-        $this->log[] = 'Warn: psr0 not found';
-
-        return false;
+        return $i;
     }
 
     /**
      * Load `autoload_psr4.php` classes, used by PSR-4 packages
      *
-     * @return int|false Return total packages loaded, if `autoload_psr4.php`
-     *                   is not accessible returns `false`
+     * @return int Return total packages loaded, if `autoload_psr4.php`
+     *             is not accessible returns `false`
      */
     public function psr4()
     {
@@ -145,23 +147,22 @@ class Packages
 
         if ($i !== false) {
             $this->log[] = 'Imported ' . $i . ' classes from psr4';
-            return $i;
+        } else {
+            $this->log[] = 'Warn: psr4 not found';
         }
 
-        $this->log[] = 'Warn: psr4 not found';
-
-        return false;
+        return $i;
     }
 
     /**
-     * Custom namespace prefix
+     * Associate namespace prefix to folder
      *
      * @param string $prefix
-     * @param string $value
+     * @param string $path
      */
-    public function setItem($prefix, $value)
+    public function setItem($prefix, $path)
     {
-        $this->libs[$prefix] = $value;
+        $this->libs[$prefix] = $path;
     }
 
     /**
@@ -170,7 +171,7 @@ class Packages
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
      * @return bool
      */
-    public function save($path)
+    public function save($path = null)
     {
         if (count($this->libs) === 0) {
             return false;
@@ -182,14 +183,21 @@ class Packages
             $value = self::relativePath($value);
         }
 
-        // Deep namespace prefixes must take priority in autoloader
+        // Namespaces with more separators stay at the top.
         uksort($libs, function ($a, $b) {
-            return strlen($b) - strlen($a);
+            $x = substr_count($a, strpos($a, '\\') === false ? '\\' : '_');
+            $y = substr_count($b, strpos($b, '\\') === false ? '\\' : '_');
+
+            return $y - $x;
         });
 
-        $contents = "<?php\nreturn " . var_export($libs, true) . ";\n";
+        $contents = [
+            '<?php',
+            '// Namespaces with more separators stay at the top.',
+            'return ' . var_export($libs, true) . ";\n"
+        ];
 
-        return file_put_contents($path, $contents, LOCK_EX) !== false;
+        return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }
 
     /**
@@ -200,18 +208,6 @@ class Packages
     public function getLibs()
     {
         return $this->libs;
-    }
-
-    private static function relativePath($path)
-    {
-        $path = str_replace('\\', '/', $path);
-        $system = INPHINIT_SYSTEM . '/';
-
-        if (strpos($path, $system) === 0) {
-            $path = substr($path, strlen($system));
-        }
-
-        return $path;
     }
 
     /**
@@ -267,6 +263,18 @@ class Packages
         }
 
         return $i;
+    }
+
+    private static function relativePath($path)
+    {
+        $path = str_replace('\\', '/', $path);
+        $system = INPHINIT_SYSTEM . '/';
+
+        if (strpos($path, $system) === 0) {
+            $path = substr($path, strlen($system));
+        }
+
+        return $path;
     }
 
     public function __destruct()
