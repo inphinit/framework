@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Utility\Arrays;
+
 class Packages
 {
     private static $composerLock;
@@ -171,7 +173,7 @@ class Packages
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
      * @return bool
      */
-    public function save($path = null)
+    public function save($path)
     {
         if (count($this->libs) === 0) {
             return false;
@@ -190,6 +192,14 @@ class Packages
 
             return $y - $x;
         });
+
+        if (is_file($path)) {
+            $original = include $path;
+
+            if (Arrays::associative($original)) {
+                $libs += $original;
+            }
+        }
 
         $contents = [
             '<?php',
