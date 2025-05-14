@@ -136,6 +136,10 @@ if (INPHINIT_COMPOSER) {
     });
 }
 
+if (PHP_SAPI === 'cli') {
+    return null;
+}
+
 $inphinit_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
 $inphinit_proto = App::config('fowarded_proto');
