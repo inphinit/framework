@@ -90,7 +90,7 @@ class Checkup
         }
 
         if ($this->iniGet && $this->development === false && $this->flag('display_errors')) {
-            $this->errors[] = 'Disable `display_errors` in ' . $directives;
+            $this->errors[] = 'In production environment you must disable `display_errors` in ' . $directives;
         }
 
         $folder = INPHINIT_SYSTEM . '/storage';
@@ -100,11 +100,11 @@ class Checkup
         }
 
         if (function_exists('mb_detect_encoding') === false) {
-            $this->errors[] = '(Optional) *Multibyte String* extension required by `Inphinit\Utility\Url`. Enable it in ' . $directives;
+            $this->errors[] = '(Optional) *Multibyte String* extension is required by `Inphinit\Utility\Url`. Enable it in ' . $directives;
         }
 
         if (class_exists('\\Transliterator', false) === false) {
-            $this->errors[] = '(Optional) *Intl* extension required by `Inphinit\Utility\String`. Enable it in ' . $directives;
+            $this->errors[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String`. Enable it in ' . $directives;
         }
     }
 
