@@ -51,26 +51,26 @@ class Size
 
     /**
      * Get file size using defined modes
+     * Note: If it is not a file or does not exist, this method will return false.
      *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     * @return float|int|string
+     * @param string $path Path to the file
+     * @throws \Inphinit\Exception If all defined modes fail, an exception will be thrown
+     *                             Note: Dev mode throws an exception on case-sensitive check failure
+     * @return float|int|string|false Each mode may return a different type of value
      */
     public function get($path)
     {
-        if (App::config('development') && File::exists($path) === false) {
-            throw new Exception($path . ' not found (check case-sensitive)');
-        }
-
         $path = realpath($path);
 
-        if ($path === false) {
-            throw new Exception('Invalid path');
+        if ($path === false || is_file($path) === false) {
+            return false;
+        } elseif (App::config('development') && File::exists($path) === false) {
+            throw new Exception($path . ' not found (check case-sensitive)');
         }
 
         $size = null;
 
-        if (self::$isWin && $this->modes & self::COM) {
+        if ($this->modes & self::COM) {
             $size = $this->fromCOM($path);
         }
 
@@ -82,11 +82,42 @@ class Size
             $size = $this->fromSystem($path);
         }
 
-        if ($size === null) {
+        if ($size !== null) {
+            return $size;
+        }
+
+        if (is_string($this->lastError)) {
             throw new Exception($this->lastError);
         }
 
-        return $size;
+        $message = $this->lastError->getMessage();
+        $message = preg_replace('#<br(\s+)?\/?>#', ' ', $message);
+        $message = strip_tags($message);
+
+        throw new Exception($message, $this->lastError->getCode());
+    }
+
+    private function fromCOM($path)
+    {
+        if (self::$bootCOM) {
+            $boot = self::$bootCOM;
+        } elseif (class_exists('com', false)) {
+            $boot = new \com('Scripting.FileSystemObject');
+            self::$bootCOM = $boot;
+        } else {
+            $boot = false;
+        }
+
+        if (!$boot) {
+            $this->lastError = 'COM: disabled or not supported by the server';
+        } else {
+            try {
+                $file = $boot->GetFile($path);
+                return $file->size;
+            } catch (\Exception $ee) {
+                $this->lastError = $ee;
+            }
+        }
     }
 
     private function fromCurl($path)
@@ -105,7 +136,7 @@ class Size
         }
 
         if (!$boot) {
-            $this->lastError = 'CURL: disabled in your server';
+            $this->lastError = 'CURL: disabled or not supported by the server';
         } else {
             $path = rawurlencode($path);
 
@@ -114,28 +145,8 @@ class Size
             if (curl_exec($boot)) {
                 return curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
             } else {
-                $this->lastError = 'CURL: ' . curl_error($boot);
+                $this->lastError = 'CURL: ' . rawurldecode(curl_error($boot));
             }
-        }
-    }
-
-    private function fromCOM($path)
-    {
-        if (self::$bootCOM) {
-            $boot = self::$bootCOM;
-        } elseif (class_exists('com', false)) {
-            $boot = new \com('Scripting.FileSystemObject');
-            self::$bootCOM = $boot;
-        } else {
-            $boot = false;
-        }
-
-        if (!$boot) {
-            $this->lastError = 'COM: `com` class not available on your server or disabled';
-        } elseif ($file = $boot->GetFile($path)) {
-            return $file->size;
-        } else {
-            $this->lastError = 'COM: Unable to retrieve the size of ' . $path;
         }
     }
 
@@ -156,11 +167,11 @@ class Size
         }
 
         if (!$boot) {
-            $this->lastError = 'SYSTEM: `shell_exec()` disabled in your server';
+            $this->lastError = 'SYSTEM: shell_exec function disabled by the server';
         } else {
-            $path = sprintf($boot, escapeshellarg($path));
+            $command = sprintf($boot, escapeshellarg($path));
 
-            if ($output = shell_exec($path)) {
+            if ($output = shell_exec($command)) {
                 $output = trim($output);
 
                 if (is_numeric($output)) {
