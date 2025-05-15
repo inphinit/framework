@@ -53,9 +53,9 @@ class Size
      * Get file size using defined modes
      * Note: If it is not a file or does not exist, this method will return false.
      *
-     * @param string $path Path to the file
-     * @throws \Inphinit\Exception If all defined modes fail, an exception will be thrown
-     *                             Note: Dev mode throws an exception on case-sensitive check failure
+     * @param string $path            Path to the file
+     * @throws \Inphinit\Exception    If all defined modes fail, an exception will be thrown
+     *                                Note: Dev mode throws an exception on case-sensitive check failure
      * @return float|int|string|false Each mode may return a different type of value
      */
     public function get($path)

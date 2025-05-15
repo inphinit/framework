@@ -11,6 +11,7 @@ namespace Inphinit;
 
 class Session
 {
+    private $id;
     private $name;
     private $data = array();
     private $handle;
@@ -52,8 +53,8 @@ class Session
 
         if (isset($_COOKIE[$name])) {
             $id = $_COOKIE[$name];
-            $name = sprintf(self::$filename, $id);
-            $this->handle = fopen(self::$tempDir . '/' . $name, 'r+');
+            $filename = sprintf(self::$filename, $id);
+            $this->handle = fopen(self::$tempDir . '/' . $filename, 'r+');
 
             if ($this->handle === false) {
                 throw new Exception('Invalid session file');
@@ -68,6 +69,8 @@ class Session
         if ($request) {
             $this->setCookie($id, null, null);
         }
+
+        $this->id = $id;
     }
 
     /**
@@ -155,6 +158,16 @@ class Session
     }
 
     /**
+     * Get current ID from session
+     *
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
      * Regenerate data
      *
      * @throws \Inphinit\Exception
@@ -175,6 +188,8 @@ class Session
         }
 
         $this->setCookie($id, $this->handle, $dest);
+        $this->handle = $dest;
+        $this->id = $id;
     }
 
     /**
@@ -287,8 +302,6 @@ class Session
         if ($from) {
             fclose($from);
         }
-
-        $this->id = $id;
     }
 
     private function setLock($lock)
@@ -304,10 +317,13 @@ class Session
 
     private static function tempFile(&$handle)
     {
+        $count = 0;
         $dir = self::$tempDir;
         $handle = false;
 
-        while ($handle === false) {
+        while ($handle === false && $count < 100) {
+            ++$count;
+
             $id = decoct(time());
             $name = sprintf(self::$filename, $id);
             $handle = fopen($dir . '/' . $name, 'x+');
