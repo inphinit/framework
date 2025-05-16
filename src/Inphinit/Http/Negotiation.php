@@ -27,7 +27,7 @@ class Negotiation
     /**
      * Create a Negotiation instance
      *
-     * @param array $headers Optional. You can set with headers returned by curl or other way
+     * @param array $headers Optional. You can set with headers returned by cURL or other way
      */
     public function __construct(array $headers = array())
     {
@@ -35,11 +35,7 @@ class Negotiation
             $headers = array_change_key_case($headers, CASE_LOWER);
 
             foreach ($headers as $key => $value) {
-                if (
-                    $key === 'accept-ranges' ||
-                    strpos($key, 'accept-control-') === 0 ||
-                    ($key !== 'te' && $key !== 'accept' && strpos($key, 'accept-') !== 0)
-                ) {
+                if ($key === 'accept-ranges' || strpos($key, 'accept-control-') === 0) {
                     unset($headers[$key]);
                 }
             }
@@ -229,16 +225,22 @@ class Negotiation
         $headers = array();
 
         foreach (explode(',', $value) as $hvalues) {
-            if (substr_count($hvalues, ';') > 1) {
-                throw new Exception('Header contains a value with multiple semicolons: "' . $value . '"');
-            }
-
             $current = explode(';', $hvalues, 2);
 
+            if (strlen($current[0]) === 0) {
+                continue;
+            }
+
+            $qvalue = 1.0;
+
             if (isset($current[1])) {
-                $qvalue = self::parseQValue($current[1]);
-            } else {
-                $qvalue = 1.0;
+                $found = preg_match_all('#(^|;)\s*q\s*=\s*([^;]*)#', $current[1], $matches);
+
+                if ($found > 1) {
+                    throw new Exception('The header contains more than one q= in "' . $current[0] . '"');
+                } else if ($found === 1) {
+                    $qvalue = self::parseQValue($matches[2][0]);
+                }
             }
 
             $headers[trim($current[0])] = $qvalue;
@@ -259,14 +261,14 @@ class Negotiation
 
     private static function parseQValue($value)
     {
-        $qvalue = str_replace('q=', '', $value);
+        $value = trim($value);
 
-        if (is_numeric($qvalue) === false) {
+        if (is_numeric($value) === false) {
             throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
-        } elseif ($qvalue > 1) {
+        } elseif ($value > 1) {
             throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0.0 to 1.0): "' . $value . '"', 0, 3);
         }
 
-        return (float) $qvalue;
+        return (float) $value;
     }
 }
