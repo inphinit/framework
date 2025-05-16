@@ -13,12 +13,17 @@ use Inphinit\Http\Request;
 
 class Method
 {
+    private static $initial;
+
     private $allowed = array('delete', 'patch', 'put');
 
     private $sources = array(
+        // Headers
         array('x-http-method-override', true, 0),
         array('x-http-method', true, 0),
         array('x-method-override', true, 0),
+
+        // fields or querystring
         array('_method', false, 0),
         array('_HttpMethod', false, 0),
     );
@@ -30,6 +35,10 @@ class Method
      */
     public function __construct($reset = false)
     {
+        if (self::$initial === null) {
+            self::$initial = $_SERVER['REQUEST_METHOD'];
+        }
+
         if ($reset) {
             $this->sources = array();
         }
@@ -96,7 +105,7 @@ class Method
             }
 
             if ($method && in_array(strtolower($method), $this->allowed)) {
-                return $method;
+                return strtoupper($method);
             }
         }
 
@@ -117,5 +126,15 @@ class Method
         if ($method) {
             $_SERVER['REQUEST_METHOD'] = $method;
         }
+    }
+
+    /**
+     * Gets the original/initial method value.
+     *
+     * @return string
+     */
+    public static function original()
+    {
+        return self::$initial;
     }
 }
