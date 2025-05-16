@@ -150,13 +150,38 @@ class App extends \Inphinit\App
     private function checkPatterns($pattern)
     {
         if (strpos($pattern, '<') !== false && preg_match_all('#[<](.*?)(\:(.*?))?[>]#', $pattern, $matches)) {
+            $check = '#^[a-z]\w*$#';
+
+            $bases = $matches[0];
             $names = $matches[1];
+            $patterns = $matches[2];
+
+            $j = count($matches[0]);
+
+            for ($i = 0; $i < $j; ++$i) {
+                $base = $bases[$i];
+                $name = $names[$i];
+                $pattern = $patterns[$i];
+
+                // Check invalid parameter names
+                if (preg_match('#^[a-z]\w*$#', $name) !== 1) {
+                    throw new Exception('Invalid parameter: ' . $base, 0, 3);
+                }
+
+                // Check invalid patterns
+                if ($pattern !== '' && preg_match('#^:[a-z]\w*$#', $pattern) !== 1) {
+                    throw new Exception('Invalid pattern: ' . $base, 0, 3);
+                }
+            }
 
             if (count($names) !== count(array_flip($names))) {
                 throw new Exception('There are duplicate named parameters', 0, 3);
             }
 
+            // removes items that do not have defined patterns
             $patterns = array_filter($matches[3]);
+
+            // Compare patterns in scope or routes with paramPatterns
             $invalids = array_diff($patterns, array_keys($this->paramPatterns));
 
             if (count($invalids)) {

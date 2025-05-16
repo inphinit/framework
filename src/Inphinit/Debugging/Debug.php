@@ -23,7 +23,6 @@ class Debug
     private $beforeView;
     private $views = array();
     private static $configs;
-    private static $nonCli = PHP_SAPI !== 'cli';
 
     /**
      * Set view for display displayed before other defined from a Debug instance
@@ -34,7 +33,7 @@ class Debug
      */
     public function setBeforeView($view)
     {
-        if (self::$nonCli) {
+        if (PHP_SAPI !== 'cli') {
             $this->beforeView = $view;
         }
     }
@@ -65,7 +64,7 @@ class Debug
         $this->view('error', $view);
 
         // Check functions are enabled
-        if (self::$nonCli && function_exists('ini_get') && function_exists('ini_set')) {
+        if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set')) {
             $config = ini_get('display_errors');
 
             if (empty($config) === false) {
@@ -327,7 +326,7 @@ class Debug
     {
         self::boot();
 
-        if (self::$nonCli) {
+        if (PHP_SAPI !== 'cli') {
             if (View::exists($view) === false) {
                 throw new Exception($view . ' view not found', 0, 3);
             }
