@@ -16,9 +16,10 @@ class Url
 {
     const PATH_ASCII = 1;
     const PATH_UNICODE = 2;
-    const PATH_NORMALIZE = 4;
-    const PATH_SLUG = 8;
-    const SORT_QUERY = 16;
+    const PATH_SLUG = 4;
+    const SORT_QUERY = 8;
+
+    private static $transliterator;
 
     private static $defaultPorts = array(
         'ftp' => 21,
@@ -72,12 +73,37 @@ class Url
      */
     public function __construct($url)
     {
-        $data = parse_url($url);
+        $items = explode('#', $url, 2);
+        $url = $items[0];
+        $fragment = empty($items[1]) ? '' : $items[1];
 
-        if ($data === false) {
+        if (preg_match('#^(([^/:]+)://([^/]+))?/([^?]*)(\?.*|)$#', $url, $match) !== 1) {
             throw new Exception($url . ' is invalid');
         }
 
+        $scheme = $match[2];
+        $host = $match[3];
+        $path = $match[4];
+        $query = $match[5];
+
+        $eurl = '';
+
+        if ($scheme) $eurl .= $scheme . '://' . $host;
+
+        $eurl .= '/' . rawurlencode($path);
+
+        if ($query) $eurl .= '?' . rawurlencode(substr($query, 1));
+
+        $data = parse_url($eurl);
+
+        foreach ($data as $key => $_) {
+            if (isset($data[$key])) {
+                $data[$key] = rawurldecode($data[$key]);
+            }
+        }
+
+        $data += $this->data;
+        $data['fragment'] = $fragment;
         $data['source'] = $url;
 
         if (isset($data['scheme']) && strcasecmp($data['scheme'], 'file') === 0) {
@@ -127,8 +153,13 @@ class Url
 
             if ($configs & self::PATH_ASCII) {
                 $path = Strings::toAscii($path);
+                $path = \strtolower($path);
             } elseif ($configs & self::PATH_UNICODE) {
-                $path = \mb_strtolower($path);
+                if (self::$transliterator === null) {
+                    self::$transliterator = \Transliterator::create('Any-Lower');
+                }
+
+                $path = self::$transliterator->transliterate($path);
             }
 
             if ($configs & self::PATH_SLUG) {
@@ -173,7 +204,7 @@ class Url
             }
         }
 
-        $path = implode('/', $rebuild);
+        $path = '/' . implode('/', $rebuild);
 
         $rebuild = null;
 
