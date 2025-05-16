@@ -37,7 +37,7 @@ class App
     private $patternNames;
 
     private static $beforeRE = array('\\:', '\\<', '\\>', '\\*');
-    private static $afterRE = array(':', '<', '>', '.*?');
+    private static $afterRE = array(':', '<', '>', '[^/]*?');
 
     /**
      * Get or set application configs

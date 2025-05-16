@@ -14,7 +14,7 @@ use Inphinit\Utility\Arrays;
 class Packages
 {
     private static $composerLock;
-    private $composerPath = INPHINIT_SYSTEM . '/vendor/composer';
+    private $composerPath;
     private $classmapName = 'autoload_classmap.php';
     private $psrZeroName = 'autoload_namespaces.php';
     private $psrFourName = 'autoload_psr4.php';
@@ -23,11 +23,9 @@ class Packages
 
     public function __construct()
     {
-        $path = $this->composerPath;
+        $path = INPHINIT_SYSTEM . '/vendor/composer';
 
-        if (is_dir($path)) {
-            $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
-        }
+        $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
     }
 
     /**
