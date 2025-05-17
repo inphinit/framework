@@ -272,11 +272,11 @@ class Session
 
         $data = stream_get_contents($this->handle);
 
+        $this->setLock(false);
+
         if ($data) {
             $this->data = unserialize($data);
         }
-
-        $this->setLock(false);
     }
 
     private function setCookie($id, $from, $dest)
