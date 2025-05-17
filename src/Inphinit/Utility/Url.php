@@ -88,7 +88,7 @@ class Url
 
         $eurl = '';
 
-        if ($scheme) $eurl .= $scheme . '://' . $host;
+        if ($scheme) $eurl .= $scheme . '://' . rawurlencode($host);
 
         $eurl .= '/' . rawurlencode($path);
 
@@ -96,10 +96,8 @@ class Url
 
         $data = parse_url($eurl);
 
-        foreach ($data as $key => $_) {
-            if (isset($data[$key])) {
-                $data[$key] = rawurldecode($data[$key]);
-            }
+        foreach ($data as &$value) {
+            $value = rawurldecode($value);
         }
 
         $data += $this->data;
@@ -164,8 +162,9 @@ class Url
 
             if ($configs & self::PATH_SLUG) {
                 $path = strtr($path, self::$slugDict);
-                $path = preg_replace('#[^\/\-\pL\pN\s]+#u', '', $path);
-                $path = preg_replace('#[\s\-]+#u', '-', $path);
+                $path = preg_replace('#[^\/\-\pL\pN\s_]+#u', '', $path);
+                $path = preg_replace('#[\s\-_]+#', '-', $path);
+                $path = str_replace(array('/-', '-/'), '/', $path);
             }
 
             $this->data['path'] = $path;
@@ -190,8 +189,9 @@ class Url
     public static function canonpath($path)
     {
         $separator = strpos($path, '\\') !== false ? '\\' : '/';
+        $appendSeparator = substr($path, -1) === $separator;
 
-        $parts = explode($separator, trim($path, '/'));
+        $parts = explode($separator, trim($path, $separator));
         $rebuild = array();
 
         foreach ($parts as $part) {
@@ -204,7 +204,17 @@ class Url
             }
         }
 
-        $path = '/' . implode('/', $rebuild);
+        $path = '';
+
+        if ($separator === '/') {
+            $path .= '/';
+        }
+
+        $path .= implode($separator, $rebuild);
+
+        if ($appendSeparator) {
+            $path .= $separator;
+        }
 
         $rebuild = null;
 

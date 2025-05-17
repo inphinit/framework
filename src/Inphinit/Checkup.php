@@ -99,12 +99,8 @@ class Checkup
             $this->errors[] = '`' . ($this->sensitive ? $folder : './storage') . '` directory requires write permissions';
         }
 
-        if (function_exists('mb_detect_encoding') === false) {
-            $this->errors[] = '(Optional) *Multibyte String* extension is required by `Inphinit\Utility\Url`. Enable it in ' . $directives;
-        }
-
         if (class_exists('\\Transliterator', false) === false) {
-            $this->errors[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String`. Enable it in ' . $directives;
+            $this->errors[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String` and `Inphinit\Utility\Url`. Enable it in ' . $directives;
         }
     }
 
