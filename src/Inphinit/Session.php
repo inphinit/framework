@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Utility\Arrays;
+
 class Session
 {
     private $id;
@@ -18,8 +20,9 @@ class Session
     private $options;
     private $autocommit = false;
 
-    private static $filename = '~sess[%s]';
     private static $tempDir;
+
+    protected static $filename = '~sess[%s]';
 
     /**
      * Create cookie session and configure session
@@ -54,7 +57,7 @@ class Session
         if (isset($_COOKIE[$name])) {
             $id = $_COOKIE[$name];
             $filename = sprintf(self::$filename, $id);
-            $this->handle = fopen(self::$tempDir . '/' . $filename, 'r+');
+            $this->handle = fopen(self::$tempDir . '/' . $filename, 'c+');
 
             if ($this->handle === false) {
                 throw new Exception('Invalid session file');
@@ -84,7 +87,7 @@ class Session
     {
         if ($path === null) {
             if (self::$tempDir === null) {
-                self::$tempDir = sys_get_temp_dir();
+                self::$tempDir = INPHINIT_SYSTEM . '/storage/session';
             }
 
             return self::$tempDir;
@@ -137,22 +140,15 @@ class Session
     /**
      * Save session data
      *
-     * @throws \Inphinit\Exception
      * @return void
      */
     public function commit()
     {
-        try {
-            $data = serialize($this->data);
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage());
-        }
-
         $this->setLock(true);
 
         ftruncate($this->handle, 0);
         rewind($this->handle);
-        fwrite($this->handle, $data);
+        fwrite($this->handle, serialize($this->data));
 
         $this->setLock(false);
     }
@@ -216,7 +212,7 @@ class Session
         try {
             serialize($value);
         } catch (\Exception $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), $e->getCode());
         }
 
         $this->data[$name] = $value;
@@ -275,7 +271,15 @@ class Session
         $this->setLock(false);
 
         if ($data) {
-            $this->data = unserialize($data);
+            try {
+                $data = unserialize($data);
+
+                if (is_array($data)) {
+                    $this->data = $data;
+                }
+            } catch (\Exception $e) {
+                throw new Exception($e->getMessage(), $e->getCode(), 3);
+            }
         }
     }
 

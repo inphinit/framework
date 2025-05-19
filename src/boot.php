@@ -22,7 +22,7 @@ require 'Inphinit/App.php';
  */
 function inphinit_check_path($path)
 {
-    return str_replace('\\', '/', $path) === str_replace('\\', '/', realpath($path));
+    return realpath($path) === str_replace(array('\\', '/'), DIRECTORY_SEPARATOR, $path);
 }
 
 /**
