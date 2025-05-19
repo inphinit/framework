@@ -61,7 +61,7 @@ class Packages
      */
     public function auto()
     {
-        return 0 + $this->classmap() + $this->psr0() + $this->psr4();
+        return $this->classmap() + $this->psr0() + $this->psr4();
     }
 
     /**
@@ -90,8 +90,7 @@ class Packages
     /**
      * Load `autoload_classmap.php` classes
      *
-     * @return int Return total packages loaded, if `autoload_classmap.php`
-     *             is not accessible returns `false`
+     * @return int Return total packages loaded
      */
     public function classmap()
     {
@@ -128,18 +127,19 @@ class Packages
 
         if ($i !== false) {
             $this->log[] = 'Imported ' . $i . ' classes from psr0';
-        } else {
-            $this->log[] = 'Warn: psr0 not found';
+
+            return $i;
         }
 
-        return $i;
+        $this->log[] = 'Warn: psr0 not found';
+
+        return 0;
     }
 
     /**
      * Load `autoload_psr4.php` classes, used by PSR-4 packages
      *
-     * @return int Return total packages loaded, if `autoload_psr4.php`
-     *             is not accessible returns `false`
+     * @return int Return total packages loaded
      */
     public function psr4()
     {
@@ -147,11 +147,13 @@ class Packages
 
         if ($i !== false) {
             $this->log[] = 'Imported ' . $i . ' classes from psr4';
-        } else {
-            $this->log[] = 'Warn: psr4 not found';
+
+            return $i;
         }
 
-        return $i;
+        $this->log[] = 'Warn: psr4 not found';
+
+        return 0;
     }
 
     /**

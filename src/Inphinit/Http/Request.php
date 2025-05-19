@@ -22,7 +22,7 @@ class Request
      */
     public static function path()
     {
-        return parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        return rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
     }
 
     /**
@@ -73,7 +73,8 @@ class Request
     }
 
     /**
-     * Get querystring - Note: same as $_SERVER['QUERY_STRING'], but with framework adjustments on IIS web server.
+     * Get querystring - Note: same as $_SERVER['QUERY_STRING'], but with framework adjustments on IIS web server
+     *
      * @return string|null
      */
     public static function query()
