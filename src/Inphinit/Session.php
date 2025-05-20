@@ -321,18 +321,20 @@ class Session
 
     private static function tempFile(&$handle)
     {
-        $count = 0;
+        $count = 0.0;
+        $max = 100;
         $dir = self::$tempDir;
         $handle = false;
+        $fname = self::$filename;
 
-        while ($handle === false && $count < 100) {
+        while ($handle === false && $count < $max) {
             ++$count;
 
-            $id = decoct(time());
-            $name = sprintf(self::$filename, $id);
+            $id = uniqid($count);
+            $name = sprintf($fname, $id);
             $handle = fopen($dir . '/' . $name, 'x+');
         }
 
-        return $id;
+        return $handle ? $id : false;
     }
 }
