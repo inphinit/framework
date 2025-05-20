@@ -89,7 +89,7 @@ class Negotiation
     }
 
     /**
-     * Get all languages by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
+     * Get all charsets by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
      *
      * @param int $sort Sorts charsets using `LOW` or `HIGH` constants,
      *                  or return all in an simple array use `ALL` constant
@@ -102,10 +102,10 @@ class Negotiation
     }
 
     /**
-     * Get all languages by `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
+     * Get all encodings by  `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
      *
-     * @param string $sort Sorts encodings using `LOW` or `HIGH` constants,
-     *                     or return all in an simple array use `ALL` constant
+     * @param int $sort Sorts encodings using `LOW` or `HIGH` constants,
+     *                  or return all in an simple array use `ALL` constant
      * @throws \Inphinit\Exception
      * @return array|null
      */
@@ -138,8 +138,7 @@ class Negotiation
      */
     public function getLanguage($alternative = null)
     {
-        $headers = $this->acceptLanguage();
-        return $headers ? key($headers) : $alternative;
+        return $this->getFirst('acceptLanguage', $alternative);
     }
 
     /**
@@ -153,8 +152,7 @@ class Negotiation
      */
     public function getCharset($alternative = null)
     {
-        $headers = $this->acceptCharset();
-        return $headers ? key($headers) : $alternative;
+        return $this->getFirst('acceptCharset', $alternative);
     }
 
     /**
@@ -168,8 +166,7 @@ class Negotiation
      */
     public function getEncoding($alternative = null)
     {
-        $headers = $this->acceptEncoding();
-        return $headers ? key($headers) : $alternative;
+        return $this->getFirst('acceptEncoding', $alternative);
     }
 
     /**
@@ -183,7 +180,13 @@ class Negotiation
      */
     public function getAccept($alternative = null)
     {
-        $headers = $this->accept();
+        return $this->getFirst('accept', $alternative);
+    }
+
+    private function getFirst($method, $alternative)
+    {
+        $getter = $this->{$method};
+        $headers = $getter();
         return $headers ? key($headers) : $alternative;
     }
 

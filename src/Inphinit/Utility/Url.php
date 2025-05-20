@@ -45,6 +45,60 @@ class Url
     );
 
     /**
+     * Parse URL
+     *
+     * @param string $url
+     */
+    public function __construct($url)
+    {
+        $source = $url;
+        $fragment = null;
+        $querystring = null;
+
+        if (strpos($url, '#') !== false) {
+            list($url, $fragment) = explode('#', $url, 2);
+        }
+
+        if (strpos($url, '?') !== false) {
+            list($url, $querystring) = explode('?', $url, 2);
+        }
+
+        if (preg_match('#^[A-Z]\:#i', $url)) {
+            $url = 'file:///' . $url;
+        }
+
+        $restore = array('%40' => '@', '%3A' => ':', '%5C' => '\\');
+        $extract = explode('/', $url);
+
+        foreach ($extract as &$value) {
+            $value = strtr(rawurlencode($value), $restore);
+        }
+
+        $url = implode('/', $extract);
+
+        $data = parse_url($url);
+
+        if ($data === false) {
+            throw new Exception('Invalid URL');
+        }
+
+        foreach ($data as &$value) {
+            $value = rawurldecode($value);
+        }
+
+        $data += $this->data;
+        $data['fragment'] = $fragment;
+        $data['query'] = $querystring;
+        $data['source'] = $source;
+
+        if (isset($data['scheme']) && strcasecmp($data['scheme'], 'file') === 0) {
+            $data['path'] = '/' . ltrim($data['path'], '/');
+        }
+
+        $this->data = $data + $this->data;
+    }
+
+    /**
      * Sets default ports
      *
      * @param array $dict
@@ -67,55 +121,10 @@ class Url
     }
 
     /**
-     * Parse URL
-     *
-     * @param string $url
-     */
-    public function __construct($url)
-    {
-        $items = explode('#', $url, 2);
-        $url = $items[0];
-        $fragment = empty($items[1]) ? '' : $items[1];
-
-        if (preg_match('#^(([^/:]+)://([^/]+))?/([^?]*)(\?.*|)$#', $url, $match) !== 1) {
-            throw new Exception($url . ' is invalid');
-        }
-
-        $scheme = $match[2];
-        $host = $match[3];
-        $path = $match[4];
-        $query = $match[5];
-
-        $eurl = '';
-
-        if ($scheme) $eurl .= $scheme . '://' . rawurlencode($host);
-
-        $eurl .= '/' . rawurlencode($path);
-
-        if ($query) $eurl .= '?' . rawurlencode(substr($query, 1));
-
-        $data = parse_url($eurl);
-
-        foreach ($data as &$value) {
-            $value = rawurldecode($value);
-        }
-
-        $data += $this->data;
-        $data['fragment'] = $fragment;
-        $data['source'] = $url;
-
-        if (isset($data['scheme']) && strcasecmp($data['scheme'], 'file') === 0) {
-            $data['path'] = '/' . ltrim($data['path'], '/');
-        }
-
-        $this->data = $data + $this->data;
-    }
-
-    /**
      * Get Url instance from current url
      *
      * @param bool $query
-     * @return void
+     * @return \Inphinit\Utility\Url
      */
     public static function application($query)
     {
@@ -165,6 +174,7 @@ class Url
                 $path = preg_replace('#[^\/\-\pL\pN\s_]+#u', '', $path);
                 $path = preg_replace('#[\s\-_]+#', '-', $path);
                 $path = str_replace(array('/-', '-/'), '/', $path);
+                $path = preg_replace('#//+#', '/', $path);
             }
 
             $this->data['path'] = $path;
@@ -188,7 +198,18 @@ class Url
      */
     public static function canonpath($path)
     {
-        $separator = strpos($path, '\\') !== false ? '\\' : '/';
+        $slash = strpos($path, '/');
+        $backSlash = strpos($path, '\\');
+
+        if (strpos($path, '\\') !== false) {
+            $separator = '\\';
+        } elseif (strpos($path, '/') !== false) {
+            $separator = '/';
+        } else {
+            return $path;
+        }
+
+        $prependSeparator = substr($path, 0, 1) === $separator;
         $appendSeparator = substr($path, -1) === $separator;
 
         $parts = explode($separator, trim($path, $separator));
@@ -206,8 +227,8 @@ class Url
 
         $path = '';
 
-        if ($separator === '/') {
-            $path .= '/';
+        if ($prependSeparator) {
+            $path .= $separator;
         }
 
         $path .= implode($separator, $rebuild);
@@ -241,7 +262,7 @@ class Url
     public function __set($name, $value)
     {
         if (array_key_exists($name, $this->data)) {
-            $this->data[$name] = $value ? "{$value}" : null;
+            $this->data[$name] = $value ? (string) $value : null;
         }
     }
 
@@ -256,7 +277,7 @@ class Url
         $host = $this->data['host'] ? $this->data['host'] : '';
         $port = $this->data['port'];
 
-        if (isset($this->defaultPorts[$scheme]) && $this->defaultPorts[$scheme] === $port) {
+        if (isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] === $port) {
             $port = '';
         } else {
             $port = $this->data['port'] ? ':' . $this->data['port'] : '';
@@ -264,7 +285,7 @@ class Url
 
         $path = $this->data['path'] ? $this->data['path'] : '';
         $user = $this->data['user'] ? $this->data['user'] : '';
-        $pass = $this->data['pass'] ? ':' . $this->data['pass'] : '';
+        $pass = $this->data['pass'] ? (':' . $this->data['pass']) : '';
 
         $pass = $user || $pass ? ($pass . '@') : '';
 
@@ -273,7 +294,7 @@ class Url
         } elseif ($scheme === 'file') {
             $scheme .= '://';
 
-            if ($path[0] === '/' && strpos($path, ':') === 2) {
+            if (preg_match('#^[A-Z]:#', $path)) {
                 $scheme .= '/';
             }
         } elseif ($scheme) {

@@ -67,18 +67,24 @@ class Version
      * Set value for a version component
      *
      * @param string $name
-     * @param string|array $value
+     * @param array|int|string $value
      * @throws \Inphinit\Exception
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->data)) {
-            if (($name === 'build' || $name === 'prerelease') && is_array($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' except an array');
-            }
-
-            $this->data[$name] = $value;
+        if (array_key_exists($name, $this->data) === false) {
+            throw new Exception('Invalid version component: ' . $name);
         }
+
+        if ($name === 'build' || $name === 'prerelease') {
+            if (is_array($value) === false) {
+                throw new Exception(get_class($this) . '::$' . $name . ' expects an array');
+            }
+        } elseif (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
+            throw new Exception(get_class($this) . '::$' . $name . ' expects a numeric value');
+        }
+
+        $this->data[$name] = $value;
     }
 
     /**

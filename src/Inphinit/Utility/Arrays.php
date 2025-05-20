@@ -17,7 +17,7 @@ class Arrays
      * @param mixed $obj
      * @return bool
      */
-    public static function iterable(&$obj)
+    public static function iterable($obj)
     {
         return is_array($obj) || $obj instanceof \Traversable;
     }
@@ -28,7 +28,7 @@ class Arrays
      * @param array $array
      * @return bool
      */
-    public static function indexed(array &$array)
+    public static function indexed(array $array)
     {
         $index = 0;
 
@@ -39,17 +39,6 @@ class Arrays
         }
 
         return true;
-    }
-
-    /**
-     * Check if array is associative, like ['bar' => foo', 'baz' => 'bar']
-     *
-     * @param array $array
-     * @return bool
-     */
-    public static function associative(array &$array)
-    {
-        return self::indexed($array) === false;
     }
 
     /**

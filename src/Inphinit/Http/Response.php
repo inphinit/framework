@@ -11,24 +11,28 @@ namespace Inphinit\Http;
 
 use Inphinit\App;
 use Inphinit\Event;
+use Inphinit\Exception;
+use Inphinit\Strings;
 
 class Response
 {
     /**
-     * Get or set status code and return last status code. Note: if the status has changed the Event::on('changestatus') event will be trigged
+     * Get or set status code and return previous status code.
+     * Note: if the status has changed the Event::on('changestatus') event will be trigged
      *
      * @param int $code
-     * @return bool|int
+     * @return int
      */
-    public static function status($code)
+    public static function status($code = 0)
     {
-        $lastCode = http_response_code($code);
+        $previous = http_response_code();
 
-        if ($lastCode && $lastCode !== $code && class_exists('\\Inphinit\\Event', false)) {
+        if ($code > 0 && $previous !== $code && class_exists('\\Inphinit\\Event', false)) {
+            http_response_code($code);
             Event::trigger('changestatus', array($code));
         }
 
-        return $lastCode;
+        return $previous;
     }
 
     /**
@@ -60,7 +64,7 @@ class Response
         if ($type === null) {
             header_remove('Content-Type');
         } else {
-            if ($charset) {
+            if ($charset && ($charset = trim($charset))) {
                 $type .= ';charset=' . $charset;
             }
 
@@ -79,17 +83,13 @@ class Response
     {
         $time = time();
 
-        if ($expires < 1) {
+        if ($expires >= 1) {
+            header('Cache-Control: public, max-age=' . $expires);
+            $date = gmdate('D, d M Y H:i:s', $time + $expires);
+        } else {
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Cache-Control: post-check=0, pre-check=0', false);
-            header('Pragma: no-cache');
-
             $date = gmdate('D, d M Y H:i:s');
-        } else {
-            header('Cache-Control: public, max-age=' . $expires);
-            header('Pragma: max-age=' . $expires);
-
-            $date = gmdate('D, d M Y H:i:s', $time + $expires);
         }
 
         header('Expires: ' . $date . ' GMT');
@@ -99,16 +99,30 @@ class Response
     /**
      * Force download current response
      *
-     * @param string $name
-     * @param int    $length
+     * @param string $name   File name for download (eg.: "report.pdf")
+     * @param int    $length Optional. File size in bytes
      * @return void
      */
     public static function download($name, $length = 0)
     {
-        $name = '; filename="' . rawurlencode($name) . '"';
+        if (basename($name) !== $name) {
+            throw new Exception('Invalid name: ' . $name);
+        }
+
+        if (preg_match('#^[\x00-\x7F]+$#', $name)) {
+            // Only ASCII
+            $filename = '; filename="' . $name . '"';
+        } elseif (preg_match('#^.+$#u', $name)) {
+            // Only UTF-8 + ASCII fallback
+            $filename = '; filename="' . Strings::toAscii($name) . '"';
+            $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
+        } else {
+            // If the string is empty, or has invalid characters or line breaks
+            throw new Exception('Empty string or invalid characters in name: ' . $name);
+        }
 
         header('Content-Transfer-Encoding: Binary');
-        header('Content-Disposition: attachment' . $name);
+        header('Content-Disposition: attachment' . $filename);
 
         if ($length > 0) {
             header('Content-Length: ' . $length);

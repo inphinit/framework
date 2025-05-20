@@ -23,25 +23,29 @@ class Packages
 
     public function __construct()
     {
-        $path = INPHINIT_SYSTEM . '/vendor/composer';
+        $path = realpath(INPHINIT_SYSTEM . '/vendor/composer');
 
-        $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
+        if ($path !== false) {
+            $this->composerPath = str_replace('\\', '/', $path) . '/';
+        }
     }
 
     /**
      * Change composer path
      *
-     * @param string $path Set composer path, like `vendor/composer`.
+     * @param string $path Set composer path, like `vendor/composer`
      * @throws \Inphinit\Exception
      * @return void
      */
     public function setComposer($path)
     {
-        if (is_dir($path) === false) {
+        $path = realpath($path);
+
+        if ($path === false || is_dir($path) === false) {
             throw new Exception('Composer path is not accessible: ' . $path);
         }
 
-        $this->composerPath = str_replace('\\', '/', realpath($path)) . '/';
+        $this->composerPath = str_replace('\\', '/', $path) . '/';
     }
 
     /**
@@ -94,46 +98,47 @@ class Packages
      */
     public function classmap()
     {
-        $path = $this->composerPath . $this->classmapName;
-        $i = 0;
+        $results = 0;
 
-        if (is_file($path)) {
-            $data = include $path;
-
-            foreach ($data as $key => $value) {
-                if (empty($value) === false) {
-                    $this->libs[$key] = $value;
-                    ++$i;
-                }
-            }
-
-            $this->log[] = 'Imported ' . $i . ' classes from classmap';
-        } else {
-            $this->log[] = 'Warn: classmap not found';
+        if ($this->composerPath === null) {
+            $this->log[] = 'Warn: Unable to load classmap, maybe your project is not using composer';
+            return $results;
         }
 
-        return $i;
+        $path = $this->composerPath . $this->classmapName;
+
+        if (is_file($path) === false) {
+            $this->log[] = 'Warn: classmap not found';
+            return $results;
+        }
+
+        $data = include $path;
+
+        if (is_array($data) === false || Arrays::indexed($data) === false) {
+            $this->log[] = 'Warn: classmap is invalid';
+            return $results;
+        }
+
+        foreach ($data as $key => $value) {
+            if (empty($value) === false) {
+                $this->libs[$key] = $value;
+                ++$results;
+            }
+        }
+
+        $this->log[] = 'Imported ' . $results . ' classes from classmap';
+
+        return $results;
     }
 
     /**
      * Load `autoload_namespaces.php` classes, used by PSR-0 packages
      *
      * @return int Return total packages loaded, if `autoload_namespaces.php`
-     *             is not accessible returns `false`
      */
     public function psr0()
     {
-        $i = $this->load($this->composerPath . $this->psrZeroName);
-
-        if ($i !== false) {
-            $this->log[] = 'Imported ' . $i . ' classes from psr0';
-
-            return $i;
-        }
-
-        $this->log[] = 'Warn: psr0 not found';
-
-        return 0;
+        return $this->load('psr0', $this->psrZeroName);
     }
 
     /**
@@ -143,17 +148,42 @@ class Packages
      */
     public function psr4()
     {
-        $i = $this->load($this->composerPath . $this->psrFourName);
+        return $this->load('psr4', $this->psrFourName);
+    }
 
-        if ($i !== false) {
-            $this->log[] = 'Imported ' . $i . ' classes from psr4';
+    private function load($type, $file)
+    {
+        $results = 0;
 
-            return $i;
+        if ($this->composerPath === null) {
+            $this->log[] = 'Warn: Unable to load ' . $type . ', maybe your project is not using composer';
+            return $results;
         }
 
-        $this->log[] = 'Warn: psr4 not found';
+        $path = $this->composerPath . $file;
 
-        return 0;
+        if (is_file($path) === false) {
+            $this->log[] = 'Warn: ' . $type . ' not found';
+            return $results;
+        }
+
+        $data = include $path;
+
+        if (is_array($data) === false || Arrays::indexed($data) === false) {
+            $this->log[] = 'Warn: ' . $type . ' is invalid';
+            return $results;
+        }
+
+        foreach ($data as $key => $value) {
+            if (isset($value[0]) && is_string($value[0])) {
+                $this->libs[$key] = $value[0];
+                ++$results;
+            }
+        }
+
+        $this->log[] = 'Imported ' . $results . ' classes from ' . $type;
+
+        return $results;
     }
 
     /**
@@ -161,9 +191,15 @@ class Packages
      *
      * @param string $prefix
      * @param string $path
+     * @throws \Inphinit\Exception
+     * @return void
      */
     public function setItem($prefix, $path)
     {
+        if (!is_string($prefix) || !is_string($path)) {
+            throw new Exception('Namespace prefix and path must be strings');
+        }
+
         $this->libs[$prefix] = $path;
     }
 
@@ -196,7 +232,7 @@ class Packages
         if (is_file($path)) {
             $original = include $path;
 
-            if (Arrays::associative($original)) {
+            if (is_array($original) && Arrays::indexed($original) === false) {
                 $libs += $original;
             }
         }
@@ -210,71 +246,6 @@ class Packages
         return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }
 
-    /**
-     * Return array of libs
-     *
-     * @return array
-     */
-    public function getLibs()
-    {
-        return $this->libs;
-    }
-
-    /**
-     * Get package version from composer.lock file
-     *
-     * @param string $name Set package for detect version
-     * @return string|null
-     */
-    public static function version($name)
-    {
-        if (self::$composerLock === null) {
-            $file = INPHINIT_ROOT . '/composer.lock';
-
-            if (is_file($file)) {
-                self::$composerLock = json_decode(file_get_contents($file));
-            }
-        }
-
-        $data = self::$composerLock;
-
-        if (empty($data->packages)) {
-            return null;
-        }
-
-        $version = null;
-
-        foreach ($data->packages as $package) {
-            if ($package->name === $name) {
-                $version = $package->version;
-                break;
-            }
-        }
-
-        $data = null;
-
-        return $version;
-    }
-
-    private function load($path)
-    {
-        if (is_file($path) === false) {
-            return false;
-        }
-
-        $data = include $path;
-        $i = 0;
-
-        foreach ($data as $key => $value) {
-            if (isset($value[0]) && is_string($value[0])) {
-                $this->libs[$key] = $value[0];
-                ++$i;
-            }
-        }
-
-        return $i;
-    }
-
     private static function relativePath($path)
     {
         $path = str_replace('\\', '/', $path);
@@ -285,6 +256,68 @@ class Packages
         }
 
         return $path;
+    }
+
+    /**
+     * Get package version from composer.lock file
+     *
+     * @param string $name Set package for detect version
+     * @return string|false
+     */
+    public static function version($name)
+    {
+        if (self::$composerLock === null) {
+            $file = INPHINIT_ROOT . '/composer.lock';
+
+            if (is_file($file) === false) {
+                return false;
+            }
+
+            $contents = file_get_contents($file);
+
+            if ($contents === false) {
+                return false;
+            }
+
+            $contents = json_decode($contents);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception('Error parsing composer.lock');
+            }
+
+            self::$composerLock = $contents;
+        }
+
+        $version = self::findVersion('packages', $name);
+
+        if ($version === false) {
+            $version = self::findVersion('packages-dev', $name);
+        }
+
+        return $version;
+    }
+
+    /**
+     * Return array of libs
+     *
+     * @return array
+     */
+    public function getLibs()
+    {
+        return $this->libs;
+    }
+
+    private static function findVersion($from, $name)
+    {
+        if (isset(self::$composerLock->{$from})) {
+            foreach (self::$composerLock->{$from} as $package) {
+                if ($package->name === $name) {
+                    return $package->version;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function __destruct()

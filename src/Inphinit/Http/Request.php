@@ -9,7 +9,7 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\Utility\Others;
+use Inphinit\Utility\PropertyAccessor;
 
 class Request
 {
@@ -121,7 +121,7 @@ class Request
         return self::data($_COOKIE, $key, $alternative);
     }
 
-    private static function data(&$data, $key, $alternative)
+    private static function data($data, $key, $alternative)
     {
         if (empty($data)) {
             return $alternative;
@@ -129,6 +129,6 @@ class Request
             return isset($data[$key]) ? $data[$key] : $alternative;
         }
 
-        return Others::extract($key, $data, $alternative);
+        return PropertyAccessor::getValue($key, $data, $alternative);
     }
 }

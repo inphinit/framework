@@ -16,7 +16,7 @@ use Inphinit\Utility\Url;
 class File
 {
     private static $infos = array();
-    private static $devStrictMode = false;
+    private static $devStrictMode = true;
 
     /**
      * Enable or disable strictmode for check if file exists with case-sensitive (only avaliable in development mode)
@@ -77,14 +77,14 @@ class File
         }
 
         $path = realpath($path);
-        $from = $full ? 'symbolic' : 'octal';
+        $type = $full ? 'symbolic' : 'octal';
 
-        if (isset(self::$infos[$path][$from])) {
-            return self::$infos[$path][$from];
+        if (isset(self::$infos[$path][$type])) {
+            return self::$infos[$path][$type];
         }
 
         if ($full !== true) {
-            return self::$infos[$path][$from] = substr(sprintf('%o', $perms), -4);
+            return self::$infos[$path][$type] = substr(sprintf('%o', $perms), -4);
         }
 
         switch ($perms & 0xF000) {
@@ -138,7 +138,7 @@ class File
         $info .= $perms & 0x0002 ? 'w' : '-';
         $info .= $perms & 0x0001 ? ($from ? 't' : 'x') : ($from ? 'T' : '-');
 
-        return self::$infos[$path][$from] = $info;
+        return self::$infos[$path][$type] = $info;
     }
 
     /**

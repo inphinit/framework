@@ -36,7 +36,7 @@ final class Status
     const HTTP_SEE_OTHER = 303;
     const HTTP_NOT_MODIFIED = 304;
     const HTTP_USE_PROXY = 305;
-    const HTTP_UNUSED = 306;
+    const HTTP_RESERVED = 306;
     const HTTP_TEMPORARY_REDIRECT = 307;
     const HTTP_PERMANENT_REDIRECT = 308;
 
@@ -63,7 +63,7 @@ final class Status
     const HTTP_UNPROCESSABLE_CONTENT = 422;
     const HTTP_LOCKED = 423;
     const HTTP_FAILED_DEPENDENCY = 424;
-    const HTTP_TOO_EARLY_EXPERIMENTAL = 425;
+    const HTTP_TOO_EARLY = 425;
     const HTTP_UPGRADE_REQUIRED = 426;
     const HTTP_PRECONDITION_REQUIRED = 428;
     const HTTP_TOO_MANY_REQUESTS = 429;
@@ -105,7 +105,7 @@ final class Status
         303 => 'See Other',
         304 => 'Not Modified',
         305 => 'Use Proxy',
-        306 => 'unused',
+        306 => 'Reserved',
         307 => 'Temporary Redirect',
         308 => 'Permanent Redirect',
 
@@ -132,7 +132,7 @@ final class Status
         422 => 'Unprocessable Content',
         423 => 'Locked',
         424 => 'Failed Dependency',
-        425 => 'Too Early Experimental',
+        425 => 'Too Early',
         426 => 'Upgrade Required',
         428 => 'Precondition Required',
         429 => 'Too Many Requests',
@@ -156,7 +156,7 @@ final class Status
      * Get message by HTTP code
      *
      * @param int    $code
-     * @param string $alternative
+     * @param mixed $alternative
      * @return mixed
      */
     public static function message($code, $alternative = null)

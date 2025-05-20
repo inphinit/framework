@@ -9,7 +9,7 @@
 
 namespace Inphinit\Utility;
 
-class Others
+class PropertyAccessor
 {
     /**
      * Read array or object by path using dot
@@ -19,13 +19,13 @@ class Others
      * @param mixed           $alternative
      * @return mixed
      */
-    public static function extract($path, &$items, $alternative = null)
+    public static function getValue($path, $items, $alternative = null)
     {
-        foreach (explode('.', $path) as $value) {
-            if (is_array($items) && array_key_exists($value, $items)) {
-                $items = $items[$value];
-            } elseif (is_object($items) && property_exists($items, $value)) {
-                $items = $items->$value;
+        foreach (explode('.', $path) as $key) {
+            if (is_array($items) && isset($items[$key])) {
+                $items = $items[$key];
+            } elseif (is_object($items) && isset($items->{$key})) {
+                $items = $items->{$key};
             } else {
                 return $alternative;
             }
