@@ -13,3 +13,4 @@ $app = new Inphinit\Debugging\App();
 $debug = new Inphinit\Debugging\Debug();
 
 require INPHINIT_SYSTEM . '/dev.php';
+require __DIR__ . '/sendfile.php';
