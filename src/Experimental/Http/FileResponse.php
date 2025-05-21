@@ -114,7 +114,7 @@ class FileResponse
     {
         $modes = $this->modes;
 
-        if ($modes & (self::ACCEL | self::SENDFILE)) {
+        if (($modes & self::ACCEL) && ($modes & self::SENDFILE)) {
             $message = 'ACCEL and SENDFILE are not supported by server';
         } elseif ($modes & self::ACCEL) {
             $message = 'ACCEL is not supported by server';
