@@ -14,6 +14,10 @@ use Inphinit\Exception;
 
 class Size
 {
+    const COM = 1;
+    const CURL = 2;
+    const SYSTEM = 4;
+
     private $modes;
     private $lastError;
     private static $isWin;
@@ -21,10 +25,6 @@ class Size
     private static $bootCOM;
     private static $bootCurl;
     private static $bootSystem;
-
-    const COM = 1;
-    const CURL = 2;
-    const SYSTEM = 4;
 
     /**
      * Define supported modes
