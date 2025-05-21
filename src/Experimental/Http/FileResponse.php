@@ -15,14 +15,27 @@ use Inphinit\Exception;
 
 class FileResponse
 {
+    /** Use X-Accel-Redirect module (if available) */
     const ACCEL    = 1;
+
+    /** Use X-Sendfile module (if available) */
     const SENDFILE = 2;
+
+    /** Use PHP fallback (not recommended, prefer to configure one of the modules) */
     const FALLBACK = 4;
 
     private $source;
     private $filename;
     private $modes;
 
+    /**
+     * Define routes based on class methods
+     *
+     * @param string $source
+     * @param string $filename
+     * @param FileResponse::ACCEL|FileResponse::SENDFILE|FileResponse::FALLBACK $modes
+     * @throws \Inphinit\Exception
+     */
     public function __construct($source, $filename = '', $modes = 0)
     {
         $allModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
@@ -43,7 +56,13 @@ class FileResponse
         }
     }
 
-    public function available($mode)
+    /**
+     * Check is server module is enabled
+     *
+     * @param FileResponse::ACCEL|FileResponse::SENDFILE|FileResponse::FALLBACK $modes
+     * @return bool
+     */
+    public static function available($mode)
     {
         if ($mode & self::ACCEL) {
             return getenv('MOD_ACCEL_ENABLED') === '1';
@@ -54,6 +73,11 @@ class FileResponse
         return false;
     }
 
+    /**
+     * Send file
+     *
+     * @throws \Inphinit\Exception
+     */
     public function send()
     {
         if (headers_sent()) {
@@ -65,10 +89,10 @@ class FileResponse
         $mode = $this->modes;
         $source = $this->source;
 
-        if (($mode & self::ACCEL) && $this->available(self::ACCEL)) {
+        if (($mode & self::ACCEL) && self::available(self::ACCEL)) {
             $header = 'X-Accel-Redirect';
             // $source = resolveInternal($source); // soon
-        } elseif (($mode & self::SENDFILE) && $this->available(self::SENDFILE)) {
+        } elseif (($mode & self::SENDFILE) && self::available(self::SENDFILE)) {
             $header = 'X-Sendfile';
         }
 
