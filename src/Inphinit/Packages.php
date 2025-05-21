@@ -204,6 +204,16 @@ class Packages
     }
 
     /**
+     * Return array of libs
+     *
+     * @return array
+     */
+    public function getLibs()
+    {
+        return $this->libs;
+    }
+
+    /**
      * Save imported packages path to file in PHP format
      *
      * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
@@ -226,7 +236,11 @@ class Packages
             $x = substr_count($a, strpos($a, '\\') === false ? '\\' : '_');
             $y = substr_count($b, strpos($b, '\\') === false ? '\\' : '_');
 
-            return $y - $x;
+            if ($x === $y) {
+                return 0;
+            }
+
+            return $x < $y ? -1 : 1;
         });
 
         if (is_file($path)) {
@@ -297,16 +311,6 @@ class Packages
         return $version;
     }
 
-    /**
-     * Return array of libs
-     *
-     * @return array
-     */
-    public function getLibs()
-    {
-        return $this->libs;
-    }
-
     private static function findVersion($from, $name)
     {
         if (isset(self::$composerLock->{$from})) {
@@ -318,10 +322,5 @@ class Packages
         }
 
         return false;
-    }
-
-    public function __destruct()
-    {
-        $this->log = $this->libs = null;
     }
 }

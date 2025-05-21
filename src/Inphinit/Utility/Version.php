@@ -117,9 +117,4 @@ class Version
     {
         return preg_match(self::$pattern, $version) === 1;
     }
-
-    public function __destruct()
-    {
-        $this->data = null;
-    }
 }

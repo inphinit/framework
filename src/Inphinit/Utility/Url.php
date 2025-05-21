@@ -306,9 +306,4 @@ class Url
 
         return $scheme . $user . $pass . $host . $port . $path . $query . $fragment;
     }
-
-    public function __destruct()
-    {
-        $this->data = null;
-    }
 }

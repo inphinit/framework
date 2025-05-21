@@ -48,7 +48,7 @@ class Debug
      */
     public function setDefinedView($view)
     {
-        $this->view('defined', $view);
+        $this->setView('defined', $view);
     }
 
     /**
@@ -61,7 +61,7 @@ class Debug
      */
     public function setErrorView($view)
     {
-        $this->view('error', $view);
+        $this->setView('error', $view);
 
         // Check functions are enabled
         if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set')) {
@@ -83,7 +83,7 @@ class Debug
      */
     public function setPerformanceView($view)
     {
-        $this->view('performance', $view);
+        $this->setView('performance', $view);
     }
 
     /**
@@ -204,36 +204,6 @@ class Debug
     }
 
     /**
-     * Get backtrace php scripts
-     *
-     * @param int $level
-     * @param int $limit
-     * @return array
-     */
-    public static function caller($level = 0, $limit = 100)
-    {
-        $trace = debug_backtrace(0, $limit);
-
-        foreach ($trace as $key => &$value) {
-            if (isset($value['file'])) {
-                self::evalFileLocation($value['file'], $value['line']);
-            } else {
-                unset($trace[$key]);
-            }
-        }
-
-        $trace = array_values($trace);
-
-        if ($level < 0) {
-            return $trace;
-        } elseif (isset($trace[$level])) {
-            return $trace = $trace[$level];
-        }
-
-        return array();
-    }
-
-    /**
      * Convert error message into a link for a search engine or
      * online assistant to analyze the error message. See `system/configs/debug.php`
      *
@@ -283,6 +253,7 @@ class Debug
 
         $file = realpath($file);
         $file = str_replace('\\', '/', $file);
+        $line = (string) $line;
 
         $vendor = realpath(INPHINIT_SYSTEM . '/vendor/');
         $vendor = str_replace('\\', '/', $vendor);
@@ -322,7 +293,7 @@ class Debug
         return $message;
     }
 
-    private function view($type, $view)
+    private function setView($type, $view)
     {
         self::boot();
 
@@ -402,7 +373,7 @@ class Debug
             $line = (int) $match[2];
         }
 
-        self::evalFileLocation($file, $line);
+        Inspector::evalSource($file, $file, $line);
 
         switch ($type) {
             case E_ERROR:
@@ -455,18 +426,11 @@ class Debug
         );
     }
 
-    private static function evalFileLocation(&$file, &$line)
-    {
-        if (preg_match('#(.*?)\((\d+)\) : eval\(\)\'d code#', $file, $match)) {
-            $file = $match[1];
-            $line = (int) $match[2];
-        }
-    }
-
     /** some errors prevent spl_autoload from continuing, so it is necessary to include */
     private static function boot()
     {
         if (self::$configs === null) {
+            include_once __DIR__ . '/Inspector.php';
             include_once __DIR__ . '/../Config.php';
             include_once __DIR__ . '/../Exception.php';
             include_once __DIR__ . '/../Filesystem/File.php';

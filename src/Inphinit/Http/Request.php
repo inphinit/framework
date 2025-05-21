@@ -28,35 +28,40 @@ class Request
     /**
      * Check is request is: HTTPS, XMLHttpRequest, Pjax, prefetch, save-data or HTTP methods
      *
-     * @param string $check
+     * @param string $type
      * @return bool
      */
-    public static function is($check)
+    public static function is($type)
     {
-        switch ($check) {
+        switch ($type) {
             case 'pjax':
-                return strcasecmp(self::header('x-pjax', ''), 'true') === 0;
+                return self::headerMatches('x-pjax', 'true');
 
             case 'prefetch':
                 return (
-                    strcasecmp(self::header('sec-purpose', ''), 'prefetch') === 0 ||
-                    strcasecmp(self::header('x-purpose', ''), 'preview') === 0 ||
-                    strcasecmp(self::header('purpose', ''), 'prefetch') === 0 ||
-                    strcasecmp(self::header('x-moz', ''), 'prefetch') === 0
+                    self::headerMatches('sec-purpose', 'prefetch') ||
+                    self::headerMatches('x-purpose', 'preview') ||
+                    self::headerMatches('purpose', 'prefetch') ||
+                    self::headerMatches('x-moz', 'prefetch')
                 );
 
             case 'save':
-                return strcasecmp(self::header('save-data', ''), 'on') === 0;
+                return self::headerMatches('save-data', 'on');
 
             case 'secure':
                 return strpos(INPHINIT_URL, 'https') === 0;
 
             case 'xhr':
-                return strcasecmp(self::header('x-requested-with', ''), 'xmlhttprequest') === 0;
+                return self::headerMatches('x-requested-with', 'xmlhttprequest');
 
             default:
-                return strcasecmp($_SERVER['REQUEST_METHOD'], $check) === 0;
+                return strcasecmp($_SERVER['REQUEST_METHOD'], $type) === 0;
         }
+    }
+
+    private static function headerMatches($header, $target)
+    {
+        return strcasecmp(self::header($header, ''), $target) === 0;
     }
 
     /**

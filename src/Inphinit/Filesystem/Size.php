@@ -114,8 +114,8 @@ class Size
             try {
                 $file = $boot->GetFile($path);
                 return $file->size;
-            } catch (\Exception $ee) {
-                $this->lastError = $ee;
+            } catch (\Exception $e) {
+                $this->lastError = $e;
             }
         }
     }

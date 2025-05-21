@@ -9,7 +9,7 @@
 
 namespace Inphinit;
 
-use Inphinit\Debugging\Debug;
+use Inphinit\Debugging\Inspector;
 
 class Exception extends \Exception
 {
@@ -24,7 +24,7 @@ class Exception extends \Exception
     public function __construct($message, $code = 0, $trace = 2, $previous = null)
     {
         if ($trace > 0) {
-            $data = Debug::caller($trace);
+            $data = Inspector::caller($trace);
 
             $this->file = $data['file'];
             $this->line = $data['line'];

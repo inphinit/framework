@@ -25,30 +25,15 @@ class Negotiation
     const ALL = 3;
 
     /**
-     * Create a Negotiation instance
+     * Create a Negotiation instance from request headers or from a Array
      *
      * @param array $headers Optional. You can set with headers returned by cURL or other way
      */
     public function __construct(array $headers = array())
     {
         if (empty($headers) === false) {
-            $headers = array_change_key_case($headers, CASE_LOWER);
-
-            foreach ($headers as $key => $value) {
-                if ($key === 'accept-ranges' || strpos($key, 'accept-control-') === 0) {
-                    unset($headers[$key]);
-                }
-            }
-
-            $this->headers = $headers;
-
-            $headers = null;
+            $this->headers = array_change_key_case($headers, CASE_LOWER);
         }
-    }
-
-    public function __destruct()
-    {
-        $this->headers = null;
     }
 
     /**
@@ -185,7 +170,7 @@ class Negotiation
 
     private function getFirst($method, $alternative)
     {
-        $getter = $this->{$method};
+        $getter = array($this, $method);
         $headers = $getter();
         return $headers ? key($headers) : $alternative;
     }
@@ -219,7 +204,7 @@ class Negotiation
      * Parse and sort a custom value with q-factor
      *
      * @param string $value
-     * @param int    $sort
+     * @param Negotiation::LOW|Negotiation::HIGH|Negotiation::ALL $sort
      * @throws \Inphinit\Exception
      * @return array
      */

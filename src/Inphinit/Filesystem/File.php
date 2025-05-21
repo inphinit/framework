@@ -40,7 +40,7 @@ class File
     {
         // Removing the file URI scheme for compatibility with realpath() function
         if (stripos($path, 'file:') === 0) {
-            $path = parse_url($path, PHP_URL_PATH);
+            $path = preg_replace('#^file:(/+)?#', '/', $path);
         }
 
         if (realpath($path) === false) {

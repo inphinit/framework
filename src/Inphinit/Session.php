@@ -54,7 +54,7 @@ class Session
 
         $request = false;
 
-        if (isset($_COOKIE[$name])) {
+        if (isset($_COOKIE[$name]) && preg_match('#^\d{1,2}_[a-zA-Z0-9]{8,32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
             $filename = sprintf(self::$filename, $id);
             $this->handle = fopen(self::$tempDir . '/' . $filename, 'c+');
@@ -254,10 +254,6 @@ class Session
         if ($this->handle) {
             fclose($this->handle);
         }
-
-        $this->data =
-        $this->handle =
-        $this->options = null;
     }
 
     private function read()
@@ -272,7 +268,7 @@ class Session
 
         if ($data) {
             try {
-                $data = unserialize($data);
+                $data = unserialize($data, array( 'allowed_classes' => false ));
 
                 if (is_array($data)) {
                     $this->data = $data;
@@ -321,7 +317,7 @@ class Session
 
     private static function tempFile(&$handle)
     {
-        $count = 0.0;
+        $count = 0;
         $max = 100;
         $dir = self::$tempDir;
         $handle = false;
@@ -330,7 +326,7 @@ class Session
         while ($handle === false && $count < $max) {
             ++$count;
 
-            $id = uniqid($count);
+            $id = uniqid("{$count}_");
             $name = sprintf($fname, $id);
             $handle = fopen($dir . '/' . $name, 'x+');
         }

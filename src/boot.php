@@ -32,7 +32,7 @@ function inphinit_check_path($path)
  * @param array  $sandbox_data
  * @return mixed
  */
-function inphinit_sandbox($sandbox_path, &$sandbox_data = null)
+function inphinit_sandbox($sandbox_path, $sandbox_data = null)
 {
     $sandbox_path = INPHINIT_SYSTEM . '/' . $sandbox_path;
 

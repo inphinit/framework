@@ -23,6 +23,10 @@ class Config
      */
     public function __construct($path)
     {
+        if (preg_match('#^[\w.]+$#', $path) !== 1) {
+            throw new \Exception('Invalid config path');
+        }
+
         $this->path = 'configs/' . str_replace('.', '/', $path) . '.php';
 
         $this->exceptionLevel = 3;
@@ -85,10 +89,8 @@ class Config
      */
     public function __set($name, $value)
     {
-        try {
-            serialize($value);
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+        if (!is_scalar($value) && !is_null($value)) {
+            throw new Exception('Invalid value');
         }
 
         $this->data[$name] = $value;
@@ -114,10 +116,5 @@ class Config
     public function __unset($name)
     {
         unset($this->data[$name]);
-    }
-
-    public function __destruct()
-    {
-        $this->data = null;
     }
 }
