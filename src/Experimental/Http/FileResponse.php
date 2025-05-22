@@ -15,115 +15,127 @@ use Inphinit\Exception;
 
 class FileResponse
 {
-    /** Use X-Accel-Redirect module (if available) */
-    const ACCEL    = 1;
+    /** Prefer X-Accel-Redirect header for file delivery (e.g. nginx) */
+    const ACCEL = 1;
 
-    /** Use X-Sendfile module (if available) */
+    /** Prefer X-Sendfile header for file delivery (e.g. Apache, Lighttpd) */
     const SENDFILE = 2;
 
-    /** Use PHP fallback (not recommended, prefer to configure one of the modules) */
+    /** Fallback: deliver file using PHP (less efficient, not recommended) */
     const FALLBACK = 4;
 
-    private $source;
+    private $dispatched = false;
     private $filename;
     private $modes;
+    private $paths = array();
+    private $source;
 
     /**
-     * Define routes based on class methods
+     * Initialize the response with a file path and optional download name
      *
-     * @param string $source
-     * @param string $filename
-     * @param FileResponse::ACCEL|FileResponse::SENDFILE|FileResponse::FALLBACK $modes
-     * @throws \Inphinit\Exception
+     * @param string $source   Absolute file path.
+     * @param string $filename Optional. Set download name (defaults to basename of $source)
      */
-    public function __construct($source, $filename = '', $modes = 0)
+    public function __construct($source, $filename = '')
     {
-        $allModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
-
-        $this->modes = $modes;
+        $this->filename = $filename ? $filename : basename($source);
+        $this->modes = self::ACCEL | self::SENDFILE;
         $this->source = $source;
-
-        if (!$filename) {
-            $this->filename = basename($source);
-        }
-
-        if ($modes === 0) {
-            $this->modes = self::ACCEL | self::SENDFILE;
-        } elseif (is_int($modes) && $allModes & $modes) {
-            $this->modes = $modes;
-        } else {
-            throw new Exception('Invalid mode');
-        }
     }
 
     /**
-     * Check is server module is enabled
+     * Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK)
      *
-     * @param FileResponse::ACCEL|FileResponse::SENDFILE|FileResponse::FALLBACK $modes
+     * @param int $modes
+     * @throws \Inphinit\Exception If response has already been sent or invalid flags are used
+     */
+    public function setModes($modes)
+    {
+        $this->setDispatched();
+
+        $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
+
+        if (!is_int($modes) || ($modes & ~$validModes)) {
+            throw new Exception('Invalid delivery mode(s)');
+        }
+
+        $this->modes = $modes;
+    }
+
+    /**
+     * Check if a specific delivery mode is supported by the server environment
+     * Note: In the built-in web server, all modes will return true, allowing you to use the simulator to deliver the file.
+     *
+     * @param int $mode One of the mode constants (ACCEL or SENDFILE)
      * @return bool
      */
     public static function available($mode)
     {
-        if ($mode & self::ACCEL) {
-            return getenv('MOD_ACCEL_ENABLED') === '1';
-        } elseif ($mode & self::SENDFILE) {
-            return getenv('MOD_X_SENDFILE_ENABLED') === '1';
+        if (PHP_SAPI === 'cli-server') {
+            return true;
+        }
+
+        if ($mode === self::ACCEL) {
+            $env = 'MOD_X_ACCEL_REDIRECT_ENABLED';
+        } elseif ($mode === self::SENDFILE) {
+            $env = 'MOD_X_SENDFILE_ENABLED';
+        } else {
+            return false;
+        }
+
+        if (isset($_SERVER[$env])) {
+            $value = strtolower($_SERVER[$env]);
+            return in_array($value, array('1', 'on'));
         }
 
         return false;
     }
 
     /**
-     * Send file
+     * Dispatch the file using the preferred available delivery method
      *
-     * @throws \Inphinit\Exception
+     * @throws \Inphinit\Exception If headers are already sent or no supported mode is available
+     * @return void
      */
     public function send()
     {
         if (headers_sent()) {
-            throw new Exception('Cannot modify header information - headers already sent');
+            throw new Exception('Cannot dispatch file, headers have already been sent');
         }
 
-        $fallback = ($this->modes & self::FALLBACK) !== 0;
+        $this->setDispatched();
+
+        $modes = $this->modes;
+        $fallback = ($modes & self::FALLBACK) !== 0;
         $header = null;
-        $mode = $this->modes;
         $source = $this->source;
 
-        if (($mode & self::ACCEL) && self::available(self::ACCEL)) {
+        if (($modes & self::ACCEL) && $this->available(self::ACCEL)) {
             $header = 'X-Accel-Redirect';
-            // $source = resolveInternal($source); // soon
-        } elseif (($mode & self::SENDFILE) && self::available(self::SENDFILE)) {
+        } elseif (($modes & self::SENDFILE) && $this->available(self::SENDFILE)) {
             $header = 'X-Sendfile';
         }
 
-        // Send headers with, eg.: Content-Disposition: attachment; ...
+        if ($header === null && !$fallback) {
+            throw new Exception('No supported modes. Check server configuration or enable FALLBACK mode');
+        }
+
+        // Send headers for file download
         Response::download($this->filename);
 
-        if ($fallback) {
-            // If fallback enable, use PHP for send file
-            File::output($this->source);
-        } elseif ($header) {
-            // If available, use server module
+        if ($header) {
             Response::header($header, $source);
-        } else {
-            $this->detectMisconfiguration();
+        } elseif ($fallback) {
+            File::output($this->source);
         }
     }
 
-    private function detectMisconfiguration()
+    private function setDispatched()
     {
-        $modes = $this->modes;
-
-        if (($modes & self::ACCEL) && ($modes & self::SENDFILE)) {
-            $message = 'ACCEL and SENDFILE are not supported by server';
-        } elseif ($modes & self::ACCEL) {
-            $message = 'ACCEL is not supported by server';
-        } elseif ($modes & self::SENDFILE) {
-            $message = 'SENDFILE are not supported by server';
-        } else {
-            $message = 'No supported file delivery mode was configured';
+        if ($this->dispatched) {
+            throw new Exception('The file has already been sent', 0, 3);
         }
 
-        throw new Exception($message, 0, 3);
+        $this->dispatched = true;
     }
 }
