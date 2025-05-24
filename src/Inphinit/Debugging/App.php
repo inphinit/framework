@@ -85,8 +85,16 @@ class App extends \Inphinit\App
      */
     public function setNamespace($prefix)
     {
-        if (substr($prefix, -1) !== '\\' || $prefix[0] !== '\\' || strpos($prefix, '\\\\') !== false) {
-            throw new Exception($prefix . ' controller prefix is not valid');
+        if ($prefix[0] !== '\\') {
+            throw new Exception('The ' . $prefix . ' namespace prefix must start with backslash');
+        }
+
+        if (substr($prefix, -1) !== '\\') {
+            throw new Exception('The ' . $prefix . ' namespace prefix must end with backslash');
+        }
+
+        if (strpos($prefix, '\\\\') !== false) {
+            throw new Exception('The ' . $prefix . ' namespace prefix must cannot contain consecutive backslashes');
         }
 
         parent::setNamespace($prefix);
@@ -99,8 +107,16 @@ class App extends \Inphinit\App
      */
     public function setPath($prefix)
     {
-        if (substr($prefix, -1) !== '/' || $prefix[0] !== '/' || strpos($prefix, '/') !== false) {
-            throw new Exception($prefix . ' path prefix is not valid');
+        if ($prefix[0] !== '/') {
+            throw new Exception('The ' . $prefix . ' path prefix must start with slash');
+        }
+
+        if (substr($prefix, -1) !== '/') {
+            throw new Exception('The ' . $prefix . ' path prefix must end with slash');
+        }
+
+        if (strpos($prefix, '//') !== false) {
+            throw new Exception('The ' . $prefix . ' path prefix must cannot contain consecutive slashes');
         }
 
         parent::setPath($prefix);
@@ -123,8 +139,16 @@ class App extends \Inphinit\App
             throw new Exception('Invalid pattern name: ' . $name);
         }
 
-        if ($regex && preg_match('#' . $regex . '#', '') === false) {
-            throw new Exception('"' . $regex . '" pattern causes PCRE: ' . preg_last_error_msg());
+        if ($regex && preg_match('#' . $regex . '#', 'sample sample sample') === false) {
+            $message = 'The expression "' . $regex . '" has errors';
+
+            $errorDetails = self::regexError();
+
+            if ($errorDetails) {
+                $message .= ': ' . $errorDetails;
+            }
+
+            throw new Exception($message);
         }
 
         parent::setPattern($name, $regex);
@@ -188,5 +212,39 @@ class App extends \Inphinit\App
                 throw new Exception('Invalid patterns: ' . implode(', ', $invalids), 0, 3);
             }
         }
+    }
+
+    private static function regexError()
+    {
+        $error = preg_last_error();
+
+        if ($error === PREG_NO_ERROR) {
+            return null;
+        }
+
+        if (function_exists('preg_last_error_msg')) {
+            return preg_last_error_msg();
+        }
+
+        switch (\preg_last_error()) {
+            case PREG_NO_ERROR:
+                return 'No error';
+            case PREG_INTERNAL_ERROR:
+                return 'Internal error';
+            case PREG_BAD_UTF8_ERROR:
+                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
+            case PREG_BAD_UTF8_OFFSET_ERROR:
+                return 'The offset did not correspond to the beginning of a valid UTF-8 code point';
+            case PREG_BACKTRACK_LIMIT_ERROR:
+                return 'Backtrack limit exhausted';
+            case PREG_RECURSION_LIMIT_ERROR:
+                return 'Recursion limit exhausted';
+            default:
+                if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $error) {
+                    return 'JIT stack limit exhausted';
+                }
+        }
+
+        return 'Unknow error';
     }
 }

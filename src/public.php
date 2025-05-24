@@ -11,7 +11,6 @@ use Inphinit\Filesystem\File;
 
 if (
     INPHINIT_PATH === '/' ||
-    strpos(INPHINIT_PATH, '.') === 0 ||
     strpos(INPHINIT_PATH, '/.') !== false ||
     is_file($_SERVER['DOCUMENT_ROOT'] . INPHINIT_PATH) === false
 ) {

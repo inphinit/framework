@@ -23,9 +23,7 @@ class Exception extends \Exception
      */
     public function __construct($message, $code = 0, $trace = 2, $previous = null)
     {
-        if ($trace > 0) {
-            $data = Inspector::caller($trace);
-
+        if ($trace > 0 && Inspector::caller($trace, $data)) {
             $this->file = $data['file'];
             $this->line = $data['line'];
         }

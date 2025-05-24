@@ -92,7 +92,7 @@ if (INPHINIT_COMPOSER) {
         /*
          * Improved autoload performance for classes from system folder (Controllers, Models, Services, ...)
          * and classes within the Inphinit\ namespace
-         * Nota: Only available in production mode, in developer mode it will do extra checks to avoid failures
+         * Note: Only available in production mode, in developer mode it will do extra checks to avoid failures
          */
         set_include_path(__DIR__ . PATH_SEPARATOR . INPHINIT_SYSTEM);
         spl_autoload_extensions('.php');

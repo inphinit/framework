@@ -12,41 +12,35 @@ namespace Inphinit\Debugging;
 class Inspector
 {
     /**
-     * Get backtrace php scripts
+     * Get caller from backtrace php scripts
      *
-     * @param int $level
-     * @param int $limit
-     * @return array
+     * @param int   $level
+     * @param array $info
+     * @param int   $limit
+     * @return bool
      */
-    public static function caller($level = 0, $limit = 100)
+    public static function caller($level, &$info, $limit = 100)
     {
-        $trace = debug_backtrace(0, $limit);
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $limit);
 
-        foreach ($trace as $key => &$value) {
-            if (isset($value['file'])) {
-                self::evalSource($value['file'], $value['file'], $value['line']);
-            } else {
-                unset($trace[$key]);
-            }
+        if (isset($trace[$level])) {
+            $info = $trace[$level];
+
+            self::evalSource($info['file'], $info['file'], $info['line']);
+
+            return true;
         }
 
-        $trace = array_values($trace);
-
-        if ($level < 0) {
-            return $trace;
-        } elseif (isset($trace[$level])) {
-            return $trace[$level];
-        }
-
-        return array();
+        return false;
     }
 
     /**
      * Identify and get the possible source of an error message caused by eval()
      *
-     * @param int $level
-     * @param int $limit
-     * @return array
+     * @param string $message
+     * @param string $file
+     * @param int    $line
+     * @return void
      */
     public static function evalSource($message, &$file, &$line)
     {
