@@ -20,10 +20,10 @@ class App
     private $routes = array();
     private $paramRoutes = array();
 
-    private $namespacePrefix = '';
-    private $pathPrefix = '/';
-
     private $hasParams = false;
+
+    protected $namespacePrefix = '';
+    protected $pathPrefix = '/';
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
@@ -73,6 +73,10 @@ class App
     {
         $path = $this->pathPrefix . ltrim($path, '/');
 
+        if (is_string($callback) && strpos($callback, '::') !== false) {
+            $callback = $this->namespacePrefix . $callback;
+        }
+
         if (strpos($path, '<') !== false) {
             $routes = &$this->paramRoutes;
 
@@ -102,18 +106,7 @@ class App
      */
     public function setNamespace($prefix)
     {
-        $this->namespacePrefix = $prefix;
-    }
-
-    /**
-     * Prefixes route path in the current scope control
-     *
-     * @param string $prefix
-     * @return void
-     */
-    public function setPath($prefix)
-    {
-        $this->pathPrefix = $prefix;
+        $this->namespacePrefix = $prefix ? (trim($prefix, '\\') . '\\') : '';
     }
 
     /**
@@ -130,7 +123,7 @@ class App
     }
 
     /**
-     * Register a callback for isolate routes
+     * Groups routes within the scope of the defined URI
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback
@@ -165,9 +158,11 @@ class App
                 }
             }
 
+            $previousNamespacePrefix = $this->namespacePrefix;
+
             $callback($this, $params);
 
-            $this->namespacePrefix = '';
+            $this->namespacePrefix = $previousNamespacePrefix;
             $this->pathPrefix = '/';
         }
     }
@@ -216,7 +211,7 @@ class App
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
                 $parsed = explode('::', $callback, 2);
-                $callback = '\\Controllers\\' . $this->namespacePrefix . $parsed[0];
+                $callback = '\\Controllers\\' . $parsed[0];
                 $callback = array(new $callback(), $parsed[1]);
             }
 

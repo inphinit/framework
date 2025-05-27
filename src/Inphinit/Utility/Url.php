@@ -280,7 +280,7 @@ class Url
         if (isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] === $port) {
             $port = '';
         } else {
-            $port = $this->data['port'] ? ':' . $this->data['port'] : '';
+            $port = $this->data['port'] ? (':' . $this->data['port']) : '';
         }
 
         $path = $this->data['path'] ? $this->data['path'] : '';
@@ -301,8 +301,8 @@ class Url
             $scheme .= ':';
         }
 
-        $query = $this->data['query'] ? '?' . $this->data['query'] : '';
-        $fragment = $this->data['fragment'] ? '#' . $this->data['fragment'] : '';
+        $query = $this->data['query'] ? ('?' . $this->data['query']) : '';
+        $fragment = $this->data['fragment'] ? ('#' . $this->data['fragment']) : '';
 
         return $scheme . $user . $pass . $host . $port . $path . $query . $fragment;
     }

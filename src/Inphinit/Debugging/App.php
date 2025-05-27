@@ -49,9 +49,9 @@ class App extends \Inphinit\App
         $this->checkPatterns($path);
 
         if (is_string($callback) && strpos($callback, '::') !== false) {
-            list($className, $method) = explode('::', $callback);
+            list($className, $method) = explode('::', $callback, 2);
 
-            $className = '\\Controllers\\' . $className;
+            $className = '\\Controllers\\' . $this->namespacePrefix . $className;
             $classAndMethod = "{$className}::{$method}()";
 
             if (method_exists($className, $method) === false) {
@@ -69,7 +69,7 @@ class App extends \Inphinit\App
             }
 
             if ($reflection->isConstructor() || $reflection->isDestructor()) {
-                throw new Exception($classAndMethod . ' is not valid');
+                throw new Exception($classAndMethod . ' is invalid');
             }
         } elseif (is_callable($callback) === false) {
             throw new Exception('Callback is not callable');
@@ -85,41 +85,15 @@ class App extends \Inphinit\App
      */
     public function setNamespace($prefix)
     {
-        if ($prefix[0] !== '\\') {
-            throw new Exception('The ' . $prefix . ' namespace prefix must start with backslash');
-        }
-
-        if (substr($prefix, -1) !== '\\') {
-            throw new Exception('The ' . $prefix . ' namespace prefix must end with backslash');
-        }
-
         if (strpos($prefix, '\\\\') !== false) {
-            throw new Exception('The ' . $prefix . ' namespace prefix must cannot contain consecutive backslashes');
+            throw new Exception('The "' . $prefix . '" namespace prefix must cannot contain consecutive backslashes');
+        }
+
+        if ($prefix !== '' && preg_match('#^[A-Z][\w\\_]+$#', $prefix) !== 1) {
+            throw new Exception('The "' . $prefix . '" is invalid');
         }
 
         parent::setNamespace($prefix);
-    }
-
-    /**
-     * Validate path prefix, if valid define route prefix paths on scope
-     *
-     * @param string $prefix Set path prefix
-     */
-    public function setPath($prefix)
-    {
-        if ($prefix[0] !== '/') {
-            throw new Exception('The ' . $prefix . ' path prefix must start with slash');
-        }
-
-        if (substr($prefix, -1) !== '/') {
-            throw new Exception('The ' . $prefix . ' path prefix must end with slash');
-        }
-
-        if (strpos($prefix, '//') !== false) {
-            throw new Exception('The ' . $prefix . ' path prefix must cannot contain consecutive slashes');
-        }
-
-        parent::setPath($prefix);
     }
 
     /**

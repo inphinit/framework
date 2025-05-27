@@ -78,10 +78,10 @@ class Version
 
         if ($name === 'build' || $name === 'prerelease') {
             if (is_array($value) === false) {
-                throw new Exception(get_class($this) . '::$' . $name . ' expects an array');
+                throw new Exception($name . ' expects an array');
             }
         } elseif (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
-            throw new Exception(get_class($this) . '::$' . $name . ' expects a numeric value');
+            throw new Exception($name . ' expects a numeric value');
         }
 
         $this->data[$name] = $value;

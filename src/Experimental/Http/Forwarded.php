@@ -61,7 +61,7 @@ class Forwarded
      * @param mixed  $alternative Value returned if not found.
      *
      * @return string|null
-     * @throws Exception If the type is invalid or index is out of range.
+     * @throws Exception If the type is invalid or the index is out of range.
      */
     public function getParam($type, $index = -1, $alternative = null)
     {
