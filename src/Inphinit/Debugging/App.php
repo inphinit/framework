@@ -92,11 +92,11 @@ class App extends \Inphinit\App
     public function setNamespace($prefix)
     {
         if (strpos($prefix, '\\\\') !== false) {
-            throw new Exception('The "' . $prefix . '" namespace prefix must cannot contain consecutive backslashes');
+            throw new Exception("The namespace prefix '{$prefix}' must not contain consecutive backslashes");
         }
 
         if ($prefix !== '' && preg_match('#^[A-Z][\w\\_]+$#', $prefix) !== 1) {
-            throw new Exception('The "' . $prefix . '" is invalid');
+            throw new Exception("The '{$prefix}' is invalid");
         }
 
         parent::setNamespace($prefix);
@@ -143,7 +143,7 @@ class App extends \Inphinit\App
     public function scope($pattern, \Closure $callback)
     {
         if (!preg_match('#^([a-z*]+)://([^\#?/]+)(\:[\d*]+)?(/([^\#?]+)/)?$#', $pattern)) {
-            throw new Exception('Invalid match url pattern format, excepeted: {scheme}://{host}:{port}/{path}/ (including wildcard)');
+            throw new Exception('Invalid match url pattern format, expected: {scheme}://{host}:{port}/{path}/ (including wildcard)');
         }
 
         $this->checkPatterns($pattern);
@@ -220,11 +220,13 @@ class App extends \Inphinit\App
             // removes items that do not have defined patterns
             $patterns = array_filter($matches[3]);
 
+            $paramPatterns = array_keys($this->paramPatterns);
+
             // Compare patterns in scope or routes with paramPatterns
-            $invalids = array_diff($patterns, array_keys($this->paramPatterns));
+            $invalids = array_diff($patterns, $paramPatterns);
 
             if (count($invalids)) {
-                throw new Exception('Invalid patterns: ' . implode(', ', $invalids), 0, 3);
+                throw new Exception('Invalid patterns: ' . self::getParamSugestions($invalids, $paramPatterns), 0, 3);
             }
         }
     }
@@ -260,6 +262,31 @@ class App extends \Inphinit\App
                 }
         }
 
-        return 'Unknow error';
+        return 'Unknown error';
+    }
+
+    private function getParamSugestions(array $words, array $sugestions)
+    {
+        foreach ($words as &$word) {
+            $currentDistance = -1;
+            $currentSugestion = null;
+
+            foreach ($sugestions as $sugestion) {
+                $distance = levenshtein($word, $sugestion);
+
+                if ($distance < 3 && ($currentDistance === -1 || $distance < $currentDistance)) {
+                    $currentDistance = $distance;
+                    $currentSugestion = $sugestion;
+                }
+            }
+
+            $word = ":{$word}";
+
+            if ($currentSugestion !== null) {
+                $word .= " (sugestion :{$currentSugestion})";
+            }
+        }
+
+        return implode(', ', $words);
     }
 }
