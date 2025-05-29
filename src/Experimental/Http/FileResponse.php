@@ -55,7 +55,7 @@ class FileResponse
 
         $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
 
-        if (!is_int($modes) || ($modes & ~$validModes)) {
+        if (!is_int($modes) || ($modes & ~$validModes) !== 0) {
             throw new Exception('Invalid delivery mode(s)');
         }
 
@@ -126,7 +126,7 @@ class FileResponse
         if ($header) {
             Response::header($header, $source);
         } elseif ($fallback) {
-            File::output($this->source);
+            File::output($source);
         }
     }
 

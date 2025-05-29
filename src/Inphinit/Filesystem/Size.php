@@ -42,7 +42,7 @@ class Size
 
         if ($modes === 0) {
             $this->modes = $allModes;
-        } elseif (is_int($modes) && $allModes & $modes) {
+        } elseif (is_int($modes) && ($allModes & $modes)) {
             $this->modes = $modes;
         } else {
             throw new Exception('Invalid mode');

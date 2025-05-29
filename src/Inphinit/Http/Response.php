@@ -37,18 +37,26 @@ class Response
 
     /**
      * Shortcut for set header
+     * Note: While PHP discards headers containing line breaks and issues a warning, line breaks
+     *       aren't expected. This function will now throw an exception if it encounters one,
+     *       preventing silent issues.
      *
-     * @param string $header
+     * @param string $name
      * @param string $value
      * @param bool   $replace
+     * @throws \Inphinit\Exception
      * @return void
      */
-    public static function header($header, $value, $replace = true)
+    public static function header($name, $value, $replace = true)
     {
         if ($value === null) {
-            header_remove($header);
+            self::checkHeaderContent($name);
+
+            header_remove($name);
         } else {
-            header($header . ': ' . $value, $replace);
+            self::checkHeaderContent($value);
+
+            header($name . ': ' . $value, $replace);
         }
     }
 
@@ -73,22 +81,23 @@ class Response
     }
 
     /**
-     * Set HTTP cache
+     * Set HTTP cache or no-cache
      *
-     * @param int $expires
-     * @param int $modified
+     * @param int $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled.
+     * @param int $modified Optional. Last modified timestamp. Defaults to the current time.
      * @return void
      */
-    public static function cache($expires, $modified = 0)
+    public static function cache($seconds, $modified = 0)
     {
         $time = time();
 
-        if ($expires >= 1) {
-            header('Cache-Control: public, max-age=' . $expires);
-            $date = gmdate('D, d M Y H:i:s', $time + $expires);
+        if ($seconds > 0) {
+            header('Cache-Control: public, max-age=' . $seconds);
+            $date = gmdate('D, d M Y H:i:s', $time + $seconds);
         } else {
             header('Cache-Control: no-store, no-cache, must-revalidate');
             header('Cache-Control: post-check=0, pre-check=0', false);
+            header('Pragma: no-cache');
             $date = gmdate('D, d M Y H:i:s');
         }
 
@@ -126,6 +135,13 @@ class Response
 
         if ($length > 0) {
             header('Content-Length: ' . $length);
+        }
+    }
+
+    private static function checkHeaderContent($data)
+    {
+        if (preg_match('#[\r\n]#', $data)) {
+            throw new Exception("Header may not contain more than a single header, new line detected", 0, 3);
         }
     }
 }

@@ -114,7 +114,7 @@ class Packages
 
         $data = include $path;
 
-        if (is_array($data) === false || Arrays::indexed($data) === false) {
+        if (is_array($data) === false) {
             $this->log[] = 'Warn: classmap is invalid';
             return $results;
         }
@@ -233,8 +233,8 @@ class Packages
 
         // Namespaces with more separators stay at the top.
         uksort($libs, function ($a, $b) {
-            $x = substr_count($a, strpos($a, '\\') === false ? '\\' : '_');
-            $y = substr_count($b, strpos($b, '\\') === false ? '\\' : '_');
+            $x = substr_count($a, strpos($a, '\\') !== false ? '\\' : '_');
+            $y = substr_count($b, strpos($b, '\\') !== false ? '\\' : '_');
 
             if ($x === $y) {
                 return 0;

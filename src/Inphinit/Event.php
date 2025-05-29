@@ -12,12 +12,13 @@ namespace Inphinit;
 class Event
 {
     private static $events = array();
+    private static $nonSorted = true;
     private static $uniques = array(
         'done' => false
     );
 
     /**
-     * Trigger registered event
+     * Trigger registered events
      *
      * @param string $name
      * @param array  $args
@@ -39,16 +40,22 @@ class Event
 
         $listen = &self::$events[$name];
 
-        usort($listen, function ($a, $b) {
-            if ($a[1] === $b[1]) {
-                return 0;
-            }
+        if (self::$nonSorted) {
+            self::$nonSorted = false;
 
-            return $a[1] > $b[1] ? 1 : -1;
-        });
+            usort($listen, function ($a, $b) {
+                if ($a[1] === $b[1]) {
+                    return 0;
+                }
+
+                return $a[1] > $b[1] ? 1 : -1;
+            });
+        }
 
         foreach ($listen as $callback) {
-            call_user_func_array($callback[0], $args);
+            if (call_user_func_array($callback[0], $args) === false) {
+                break;
+            }
         }
 
         return true;
@@ -70,6 +77,7 @@ class Event
             }
 
             self::$events[$name][] = array($callback, $priority);
+            self::$nonSorted = true;
         }
     }
 

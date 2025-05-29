@@ -13,9 +13,15 @@ use Inphinit\Exception;
 
 class App extends \Inphinit\App
 {
+    private $reflection;
     private static $allowedMethods = array(
         'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'
     );
+
+    public function __construct()
+    {
+        $this->reflection = new \ReflectionClass($this);
+    }
 
     /**
      * Validate method and callback, if valid register callable or controller for a route
@@ -39,7 +45,7 @@ class App extends \Inphinit\App
         $diffMethods = array_diff($checkMethods, self::$allowedMethods);
 
         if ($diffMethods) {
-            throw new Exception('Invalid methods: ' . implode(', ', $diffMethods));
+            throw new Exception('Invalid method(s): ' . implode(', ', $diffMethods));
         }
 
         if (count($checkMethods) !== count(array_unique($checkMethods))) {
@@ -145,11 +151,46 @@ class App extends \Inphinit\App
         parent::scope($pattern, $callback);
     }
 
+    public function __get($name)
+    {
+        $this->checkVisibity($name);
+
+        return parent::__get($name);
+    }
+
+    public function __set($name, $value)
+    {
+        $this->checkVisibity($name);
+
+        parent::__set($name, $value);
+    }
+
+    private function checkVisibity($name)
+    {
+        try {
+            $property = $this->reflection->getProperty($name);
+
+            $sourceClass = $property->{'class'};
+
+            if ($property->isPrivate()) {
+                $type = 'private';
+            } elseif ($property->isProtected()) {
+                $type = 'protected';
+            } else {
+                $type = null;
+            }
+        } catch (\ReflectionException $e) {
+            $type = null;
+        }
+
+        if ($type) {
+            throw new Exception("Cannot access {$type} property {$sourceClass}::\${$name}", 0, 3);
+        }
+    }
+
     private function checkPatterns($pattern)
     {
         if (strpos($pattern, '<') !== false && preg_match_all('#[<](.*?)(\:(.*?))?[>]#', $pattern, $matches)) {
-            $check = '#^[a-z]\w*$#';
-
             $bases = $matches[0];
             $names = $matches[1];
             $patterns = $matches[2];
@@ -167,7 +208,7 @@ class App extends \Inphinit\App
                 }
 
                 // Check invalid patterns
-                if ($pattern !== '' && preg_match('#^:[a-z]\w*$#', $pattern) !== 1) {
+                if ($pattern !== '' && preg_match('#^\:[a-z]\w*$#', $pattern) !== 1) {
                     throw new Exception('Invalid pattern: ' . $base, 0, 3);
                 }
             }

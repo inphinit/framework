@@ -212,6 +212,7 @@ class Url
         $prependSeparator = substr($path, 0, 1) === $separator;
         $appendSeparator = substr($path, -1) === $separator;
 
+        $path = str_replace('/./', '/', $path);
         $parts = explode($separator, trim($path, $separator));
         $rebuild = array();
 

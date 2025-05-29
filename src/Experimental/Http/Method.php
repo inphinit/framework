@@ -29,7 +29,7 @@ class Method
     );
 
     /**
-     * Create instace
+     * Create a Method instace
      *
      * @param bool $reset Optional. Reset sources
      */
@@ -45,7 +45,7 @@ class Method
     }
 
     /**
-     * Set allowed methods
+     * Defines which HTTP methods can be used to override the original method
      *
      * @param array $methods
      */
@@ -55,7 +55,7 @@ class Method
     }
 
     /**
-     * Adds a request header that can be used to inform a different HTTP method than the one initially used in a request
+     * Adds a request header as an alternative source for determining the HTTP method
      *
      * @param bool $header
      * @param int  $priority
@@ -66,7 +66,7 @@ class Method
     }
 
     /**
-     * Adds a param (request body or querystring) that can be used to inform a different HTTP method than the one initially used in a request
+     * Adds a parameter (request body or querystring) as an alternative source for determining the HTTP method
      *
      * @param bool $param
      * @param int  $priority
@@ -113,7 +113,7 @@ class Method
     }
 
     /**
-     * Override `$_SERVER['REQUEST_METHOD']`
+     * Overrides `$_SERVER['REQUEST_METHOD']` with the detected alternative method
      */
     public static function override()
     {
@@ -129,7 +129,7 @@ class Method
     }
 
     /**
-     * Gets the original/initial method value.
+     * Gets the original HTTP method of the request, before any overrides
      *
      * @return string
      */
