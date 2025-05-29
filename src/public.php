@@ -81,11 +81,15 @@ $inphinit_type_from_extension = [
 
 $inphinit_path_extension = pathinfo(INPHINIT_PATH, PATHINFO_EXTENSION);
 
-foreach ($inphinit_type_from_extension as $mime => $extensions) {
-    if (in_array($inphinit_path_extension, $extensions)) {
-        header('Content-Type: ' . $mime, true);
-        File::output($_SERVER['DOCUMENT_ROOT'] . INPHINIT_PATH);
-        exit;
+if ($inphinit_path_extension) {
+    $inphinit_path_extension = strtolower($inphinit_path_extension);
+
+    foreach ($inphinit_type_from_extension as $mime => $extensions) {
+        if (in_array($inphinit_path_extension, $extensions)) {
+            header('Content-Type: ' . $mime, true);
+            File::output($_SERVER['DOCUMENT_ROOT'] . INPHINIT_PATH);
+            exit;
+        }
     }
 }
 

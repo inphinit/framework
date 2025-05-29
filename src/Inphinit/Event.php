@@ -18,7 +18,7 @@ class Event
     );
 
     /**
-     * Trigger registered events
+     * Trigger an event
      *
      * @param string $name
      * @param array  $args
@@ -48,7 +48,7 @@ class Event
                     return 0;
                 }
 
-                return $a[1] > $b[1] ? 1 : -1;
+                return $a[1] < $b[1] ? 1 : -1;
             });
         }
 
@@ -62,7 +62,7 @@ class Event
     }
 
     /**
-     * Register an event
+     * Subscribe an action to an event. Events with higher priority will be executed first.
      *
      * @param string   $name
      * @param callable $callback
@@ -82,7 +82,7 @@ class Event
     }
 
     /**
-     * Unregister 1 or all events
+     * Unsubscribe 1 or all events
      *
      * @param string   $name
      * @param callable $callback
