@@ -133,6 +133,10 @@ class App
     {
         $this->refreshPatterns();
 
+        if ($pattern[0] === '/') {
+            $pattern = '*://*:*' . $pattern;
+        }
+
         $patterns = &$this->paramPatterns;
 
         $getParams = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';

@@ -11,6 +11,9 @@ namespace Inphinit;
 
 class Event
 {
+    const HIGH_PRIORITY = 1;
+    const LOW_PRIORITY = -1;
+
     private static $events = array();
     private static $nonSorted = true;
     private static $uniques = array(
@@ -82,6 +85,17 @@ class Event
     }
 
     /**
+     * Makes an event unique
+     *
+     * @param string $name
+     * @return void
+     */
+    public static function once($name)
+    {
+        self::$uniques[$name] = false;
+    }
+
+    /**
      * Unsubscribe 1 or all events
      *
      * @param string   $name
@@ -101,5 +115,17 @@ class Event
                 }
             }
         }
+    }
+
+    /**
+     * Clear all events
+     *
+     * @return void
+     */
+    public static function clear()
+    {
+        self::$events = array();
+        self::$uniques = array();
+        self::$nonSorted = true;
     }
 }
