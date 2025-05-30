@@ -11,7 +11,10 @@ namespace Inphinit;
 
 class Event
 {
+    /** Priority level for events that should be executed before others */
     const HIGH_PRIORITY = 1;
+
+    /** Priority level for events that should be executed after higher-priority ones */
     const LOW_PRIORITY = -1;
 
     private static $events = array();
@@ -21,11 +24,11 @@ class Event
     );
 
     /**
-     * Trigger an event
+     * Triggers all callbacks registered for a given event
      *
-     * @param string $name
-     * @param array  $args
-     * @return bool
+     * @param string $name Event name
+     * @param array  $args Arguments to pass to the callbacks
+     * @return bool        Returns false if no listeners are registered or if the event was marked as unique and already triggered
      */
     public static function trigger($name, array $args = array())
     {
@@ -65,17 +68,18 @@ class Event
     }
 
     /**
-     * Subscribe an action to an event. Events with higher priority will be executed first.
+     * Registers a callback to an event with optional priority. Note: If any subscribed callback
+     * returns a boolean false, further execution of subsequent callbacks will be halted
      *
-     * @param string   $name
-     * @param callable $callback
-     * @param int      $priority
+     * @param string   $name     Event name
+     * @param callable $callback Callback to execute when the event is triggered
+     * @param int      $priority Execution priority (higher numbers run earlier). Default is 0
      * @return void
      */
     public static function on($name, callable $callback, $priority = 0)
     {
         if (is_string($name)) {
-            if (isset(self::$events[$name]) === false) {
+            if (!isset(self::$events[$name])) {
                 self::$events[$name] = array();
             }
 
@@ -85,9 +89,9 @@ class Event
     }
 
     /**
-     * Makes an event unique
+     * Marks an event as unique, ensuring it can only be triggered once
      *
-     * @param string $name
+     * @param string $name Event name
      * @return void
      */
     public static function once($name)
@@ -96,10 +100,10 @@ class Event
     }
 
     /**
-     * Unsubscribe 1 or all events
+     * Removes a specific callback or all callbacks from an event.
      *
-     * @param string   $name
-     * @param callable $callback
+     * @param string        $name     Event name
+     * @param callable|null $callback Specific callback to remove, or null to remove all
      * @return void
      */
     public static function off($name, $callback = null)
@@ -118,14 +122,14 @@ class Event
     }
 
     /**
-     * Clear all events
+     * Clears all registered events and uniqueness flags
      *
      * @return void
      */
     public static function clear()
     {
         self::$events = array();
-        self::$uniques = array();
         self::$nonSorted = true;
+        self::$uniques = array('done' => false);
     }
 }
