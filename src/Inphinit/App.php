@@ -133,10 +133,6 @@ class App
     {
         $this->refreshPatterns();
 
-        if ($pattern[0] === '/') {
-            $pattern = '*://*:*' . $pattern;
-        }
-
         $patterns = &$this->paramPatterns;
 
         $getParams = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
@@ -149,8 +145,11 @@ class App
             ) . ')';
         }, $scopeRegex);
 
-        if (preg_match('#^' . $scopeRegex . '#', INPHINIT_URL . INPHINIT_PATH, $params)) {
-            $path = substr($params[0], strlen(INPHINIT_URL));
+        $full = $pattern[0] !== '/';
+        $subject = $full ? (INPHINIT_URL . INPHINIT_PATH) : INPHINIT_PATH;
+
+        if (preg_match('#^' . $scopeRegex . '#', $subject, $params)) {
+            $path = $full ? substr($params[0], strlen(INPHINIT_URL)) : $params[0];
 
             if ($path) {
                 $this->pathPrefix = $path;
