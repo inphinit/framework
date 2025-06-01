@@ -98,16 +98,16 @@ class Checkup
         if (is_dir($folder) && is_writable($folder) === false) {
             $this->errors[] = '`' . ($this->sensitive ? $folder : './storage') . '` directory requires write permissions';
         }
-
-        if (class_exists('\\Transliterator', false) === false) {
-            $this->errors[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String` and `Inphinit\Utility\Url`. Enable it in ' . $directives;
-        }
     }
 
     private function collectWarnings()
     {
         if ($this->development === false && $this->iniGet) {
             $directives = $this->getDirectives();
+
+            if (class_exists('\\Transliterator', false) === false) {
+                $this->warnings[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String` and `Inphinit\Utility\Url`. Enable it in ' . $directives;
+            }
 
             if (function_exists('apc_cache_info') && $this->flag('apc.enabled')) {
                 $this->warnings[] = sprintf($this->devAdvice, 'apc.enabled', $directives);

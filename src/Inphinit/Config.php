@@ -23,7 +23,7 @@ class Config
      */
     public function __construct($path)
     {
-        if (preg_match('#^[\w.]+$#', $path) !== 1) {
+        if (preg_match('#^\w+(\.\w[\w\.]+)?$#', $path) !== 1) {
             throw new Exception('Invalid config path');
         }
 

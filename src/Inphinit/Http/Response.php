@@ -114,20 +114,17 @@ class Response
      */
     public static function download($name, $length = 0)
     {
-        if (basename($name) !== $name) {
-            throw new Exception('Invalid name: ' . $name);
+        if (is_string($name) === false || $name === '' || basename($name) !== $name) {
+            throw new Exception('Invalid name');
         }
 
         if (preg_match('#^[\x00-\x7F]+$#', $name)) {
             // Only ASCII
             $filename = '; filename="' . $name . '"';
-        } elseif (preg_match('#^.+$#u', $name)) {
+        } else {
             // Only UTF-8 + ASCII fallback
             $filename = '; filename="' . Strings::toAscii($name) . '"';
             $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
-        } else {
-            // If the string is empty, or has invalid characters or line breaks
-            throw new Exception('Empty string or invalid characters in name: ' . $name);
         }
 
         header('Content-Transfer-Encoding: Binary');

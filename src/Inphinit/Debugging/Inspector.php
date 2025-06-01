@@ -40,7 +40,7 @@ class Inspector
      * @param string $message
      * @param string $file
      * @param int    $line
-     * @return void
+     * @return bool
      */
     public static function evalSource($message, &$file, &$line)
     {
@@ -49,6 +49,10 @@ class Inspector
         if (preg_match('#(.*)\((\d+)\)\s+:\s+eval\(\)\'d\s+code(\s+on\s+line\s+\d+)?$#', $message, $match)) {
             $file = $match[1];
             $line = (int) $match[2];
+
+            return true;
         }
+
+        return false;
     }
 }
