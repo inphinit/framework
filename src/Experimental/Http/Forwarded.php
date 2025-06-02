@@ -40,15 +40,15 @@ class Forwarded
             self::PARAM_PROTO
         ];
 
-        if ($header) {
+        if ($header !== null) {
             $this->source = $header;
         } else {
             $source = Request::header('forwarded');
 
-            if ($fallback) {
-                $this->getFromFallback();
-            } else {
+            if ($source) {
                 $this->source = $source;
+            } else if ($fallback) {
+                $this->getFromFallback();
             }
         }
     }

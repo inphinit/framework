@@ -95,8 +95,8 @@ class App extends \Inphinit\App
             throw new Exception("The namespace prefix '{$prefix}' must not contain consecutive backslashes");
         }
 
-        if ($prefix !== '' && preg_match('#^[A-Z][\w\\_]+$#', $prefix) !== 1) {
-            throw new Exception("The '{$prefix}' is invalid");
+        if ($prefix !== '' && preg_match('#^[A-Z][\w\\\\]+$#', $prefix) !== 1) {
+            throw new Exception("Invalid namespace prefix: '{$prefix}'");
         }
 
         parent::setNamespace($prefix);

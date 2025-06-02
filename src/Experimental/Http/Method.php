@@ -51,7 +51,7 @@ class Method
      */
     public function setAllowed(array $methods)
     {
-        $this->allowed = $methods;
+        $this->allowed = array_map('strtolower', $methods);
     }
 
     /**
