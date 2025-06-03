@@ -271,7 +271,7 @@ class Session
                 if (PHP_VERSION_ID < 70000) {
                     $data = unserialize($data);
                 } else {
-                    $data = unserialize($data, array( 'allowed_classes' => false ));
+                    $data = unserialize($data, array('allowed_classes' => false));
                 }
 
                 if (is_array($data)) {

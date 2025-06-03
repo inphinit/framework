@@ -24,10 +24,8 @@ class FileResponse
     /** Fallback: deliver file using PHP (less efficient, not recommended) */
     const FALLBACK = 4;
 
-    private $dispatched = false;
     private $filename;
     private $modes;
-    private $paths = array();
     private $source;
 
     /**
@@ -35,8 +33,9 @@ class FileResponse
      *
      * @param string $source   Absolute file path.
      * @param string $filename Optional. Set download name (defaults to basename of $source)
+     * @param int    $modes    Opcional. Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK)
      */
-    public function __construct($source, $filename = '')
+    public function __construct($source, $filename = '', $modes = 0)
     {
         if (preg_match('#[\r\n]#', $source)) {
             throw new Exception('$source may not contain more than a single header, new line detected', 0, 3);
@@ -47,23 +46,13 @@ class FileResponse
         }
 
         $this->filename = $filename ? $filename : basename($source);
-        $this->modes = self::ACCEL | self::SENDFILE;
         $this->source = $source;
-    }
-
-    /**
-     * Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK)
-     *
-     * @param int $modes
-     * @throws \Inphinit\Exception If response has already been sent or invalid flags are used
-     */
-    public function setModes($modes)
-    {
-        $this->setDispatched();
 
         $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
 
-        if (!is_int($modes) || ($modes & ~$validModes) !== 0) {
+        if ($modes === 0) {
+            $modes = self::ACCEL | self::SENDFILE;
+        } elseif (!is_int($modes) || ($modes & ~$validModes) !== 0) {
             throw new Exception('Invalid delivery mode(s)');
         }
 
@@ -93,7 +82,7 @@ class FileResponse
 
         if (isset($_SERVER[$env])) {
             $value = strtolower($_SERVER[$env]);
-            return in_array($value, array('1', 'on'));
+            return in_array($value, array('1', 'on', 'true', 'yes'));
         }
 
         return false;
@@ -102,21 +91,22 @@ class FileResponse
     /**
      * Dispatch the file using the preferred available delivery method
      *
+     * @param bool $overwrite      Optional. Overwrite all possible related headers
      * @throws \Inphinit\Exception If headers are already sent or no supported mode is available
      * @return void
      */
-    public function send()
+    public function send($overwrite = false)
     {
         if (headers_sent()) {
             throw new Exception('Cannot dispatch file, headers have already been sent');
         }
 
-        $this->setDispatched();
+        $this->checkDispatched($overwrite);
 
         $modes = $this->modes;
         $fallback = ($modes & self::FALLBACK) !== 0;
-        $header = null;
         $source = $this->source;
+        $header = null;
 
         if (($modes & self::ACCEL) && $this->available(self::ACCEL)) {
             $header = 'X-Accel-Redirect';
@@ -138,12 +128,20 @@ class FileResponse
         }
     }
 
-    private function setDispatched()
+    private function checkDispatched($overwrite)
     {
-        if ($this->dispatched) {
-            throw new Exception('The file has already been sent', 0, 3);
-        }
+        $accelHeader = 'X-Accel-Redirect';
+        $sendHeader = 'X-Sendfile';
 
-        $this->dispatched = true;
+        if ($overwrite) {
+            Response::header($accelHeader, null);
+            Response::header($sendHeader, null);
+        } else {
+            foreach (headers_list() as $header) {
+                if (stripos($header, $accelHeader) === 0 || stripos($header, $sendHeader) === 0) {
+                    throw new Exception('Conflicting file delivery headers detected', 0, 3);
+                }
+            }
+        }
     }
 }

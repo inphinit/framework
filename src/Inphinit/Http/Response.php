@@ -41,9 +41,9 @@ class Response
      *       aren't expected. This function will now throw an exception if it encounters one,
      *       preventing silent issues.
      *
-     * @param string $name
-     * @param string $value
-     * @param bool   $replace
+     * @param string      $name
+     * @param string|null $value
+     * @param bool        $replace
      * @throws \Inphinit\Exception
      * @return void
      */

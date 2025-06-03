@@ -207,8 +207,7 @@ class App
 
         if ($code !== 200) {
             Response::status($code);
-            $details = array('code' => $code);
-            inphinit_sandbox('errors.php', $details);
+            inphinit_sandbox('errors.php', array('code' => $code));
 
             $output = null;
         } else {

@@ -56,12 +56,11 @@ class Forwarded
     /**
      * Returns a value from a specific Forwarded field.
      *
-     * @param string $type        One of the PARAM_* constants: by, for, host, proto.
-     * @param int    $index       Optional index. Defaults to last (-1).
-     * @param mixed  $alternative Value returned if not found.
-     *
+     * @param string $type         One of the PARAM_* constants: by, for, host, proto.
+     * @param int    $index        Optional index. Defaults to last (-1).
+     * @param mixed  $alternative  Value returned if not found.
+     * @throws \Inphinit\Exception If the type is invalid or the index is out of range.
      * @return string|null
-     * @throws Exception If the type is invalid or the index is out of range.
      */
     public function getParam($type, $index = -1, $alternative = null)
     {
