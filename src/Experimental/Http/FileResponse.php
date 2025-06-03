@@ -31,9 +31,9 @@ class FileResponse
     /**
      * Initialize the response with a file path and optional download name
      *
-     * @param string $source   Absolute file path.
+     * @param string $source   Absolute file path
      * @param string $filename Optional. Set download name (defaults to basename of $source)
-     * @param int    $modes    Opcional. Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK)
+     * @param int    $modes    Optional. Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK). Default is ACCEL | SENDFILE
      */
     public function __construct($source, $filename = '', $modes = 0)
     {
@@ -51,17 +51,17 @@ class FileResponse
         $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
 
         if ($modes === 0) {
-            $modes = self::ACCEL | self::SENDFILE;
+            $this->modes = self::ACCEL | self::SENDFILE;
         } elseif (!is_int($modes) || ($modes & ~$validModes) !== 0) {
             throw new Exception('Invalid delivery mode(s)');
+        } else {
+            $this->modes = $modes;
         }
-
-        $this->modes = $modes;
     }
 
     /**
      * Check if a specific delivery mode is supported by the server environment
-     * Note: In the built-in web server, all modes will return true, allowing you to use the simulator to deliver the file.
+     * Note: In the built-in web server, all modes will return true, allowing you to use the simulator to deliver the file
      *
      * @param int $mode One of the mode constants (ACCEL or SENDFILE)
      * @return bool
@@ -72,16 +72,18 @@ class FileResponse
             return true;
         }
 
+        $envVarName = null;
+
         if ($mode === self::ACCEL) {
-            $env = 'MOD_X_ACCEL_REDIRECT_ENABLED';
+            $envVarName = 'MOD_X_ACCEL_REDIRECT_ENABLED';
         } elseif ($mode === self::SENDFILE) {
-            $env = 'MOD_X_SENDFILE_ENABLED';
+            $envVarName = 'MOD_X_SENDFILE_ENABLED';
         } else {
             return false;
         }
 
-        if (isset($_SERVER[$env])) {
-            $value = strtolower($_SERVER[$env]);
+        if (isset($_SERVER[$envVarName])) {
+            $value = strtolower($_SERVER[$envVarName]);
             return in_array($value, array('1', 'on', 'true', 'yes'));
         }
 
@@ -103,14 +105,13 @@ class FileResponse
 
         $this->checkDispatched($overwrite);
 
+        $fallback = ($this->modes & self::FALLBACK) !== 0;
         $modes = $this->modes;
-        $fallback = ($modes & self::FALLBACK) !== 0;
-        $source = $this->source;
         $header = null;
 
-        if (($modes & self::ACCEL) && $this->available(self::ACCEL)) {
+        if (($modes & self::ACCEL) && self::available(self::ACCEL)) {
             $header = 'X-Accel-Redirect';
-        } elseif (($modes & self::SENDFILE) && $this->available(self::SENDFILE)) {
+        } elseif (($modes & self::SENDFILE) && self::available(self::SENDFILE)) {
             $header = 'X-Sendfile';
         }
 
@@ -122,9 +123,9 @@ class FileResponse
         Response::download($this->filename);
 
         if ($header) {
-            Response::header($header, $source);
+            Response::header($header, $this->source);
         } elseif ($fallback) {
-            File::output($source);
+            File::output($this->source);
         }
     }
 
