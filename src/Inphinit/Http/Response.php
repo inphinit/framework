@@ -25,10 +25,9 @@ class Response
      */
     public static function status($code = 0)
     {
-        $previous = http_response_code();
+        $previous = http_response_code($code);
 
-        if ($code > 0 && $previous !== $code && class_exists('\\Inphinit\\Event', false)) {
-            http_response_code($code);
+        if ($code !== 0 && $previous !== $code && class_exists('\\Inphinit\\Event', false)) {
             Event::trigger('changestatus', array($code));
         }
 
@@ -37,9 +36,10 @@ class Response
 
     /**
      * Shortcut for set header
-     * Note: While PHP discards headers containing line breaks and issues a warning, line breaks
-     *       aren't expected. This function will now throw an exception if it encounters one,
-     *       preventing silent issues.
+     * Note: While PHP internally discards headers containing line breaks and issues a warning,
+     *       such content is explicitly forbidden by this function. An exception will now
+     *       be thrown if line breaks are detected, preventing both silent issues and potential
+     *       misinterpretations of header behavior.
      *
      * @param string      $name
      * @param string|null $value
@@ -49,9 +49,9 @@ class Response
      */
     public static function header($name, $value, $replace = true)
     {
-        if ($value === null) {
-            self::checkHeaderContent($name);
+        self::checkHeaderContent($name);
 
+        if ($value === null) {
             header_remove($name);
         } else {
             self::checkHeaderContent($value);
@@ -72,7 +72,11 @@ class Response
         if ($type === null) {
             header_remove('Content-Type');
         } else {
+            self::checkHeaderContent($type);
+
             if ($charset && ($charset = trim($charset))) {
+                self::checkHeaderContent($charset);
+
                 $type .= ';charset=' . $charset;
             }
 
@@ -115,7 +119,7 @@ class Response
     public static function download($name, $length = 0)
     {
         if (is_string($name) === false || $name === '' || basename($name) !== $name) {
-            throw new Exception('Invalid name');
+            throw new Exception('Invalid name: ' . $name);
         }
 
         if (preg_match('#^[\x00-\x7F]+$#', $name)) {
@@ -124,7 +128,10 @@ class Response
         } else {
             // Only UTF-8 + ASCII fallback
             $filename = '; filename="' . Strings::toAscii($name) . '"';
-            $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
+
+            if (preg_match('//u', $name)) {
+                $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
+            }
         }
 
         header('Content-Transfer-Encoding: Binary');

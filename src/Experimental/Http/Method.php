@@ -35,9 +35,7 @@ class Method
      */
     public function __construct($reset = false)
     {
-        if (self::$initial === null) {
-            self::$initial = $_SERVER['REQUEST_METHOD'];
-        }
+        self::original();
 
         if ($reset) {
             $this->sources = array();
@@ -113,7 +111,7 @@ class Method
     }
 
     /**
-     * Overrides `$_SERVER['REQUEST_METHOD']` with the detected alternative method
+     * Replaces `$_SERVER['REQUEST_METHOD']` with the detected alternative method, using the default settings
      */
     public static function override()
     {
@@ -135,6 +133,10 @@ class Method
      */
     public static function original()
     {
+        if (self::$initial === null) {
+            self::$initial = $_SERVER['REQUEST_METHOD'];
+        }
+
         return self::$initial;
     }
 }

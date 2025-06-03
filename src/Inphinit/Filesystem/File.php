@@ -70,13 +70,13 @@ class File
     {
         self::checkInDevMode($path);
 
+        $path = realpath($path);
         $perms = fileperms($path);
 
-        if ($perms === false) {
-            return $perms;
+        if ($path === false || $perms === false) {
+            return false;
         }
 
-        $path = realpath($path);
         $type = $full ? 'symbolic' : 'octal';
 
         if (isset(self::$infos[$path][$type])) {
@@ -162,8 +162,8 @@ class File
 
         $buffer = ob_get_level() !== 0;
 
-        if (is_int($length) && $length > 0) {
-            $length = 102400;
+        if (!is_int($length) || $length < 1) {
+            $length = 262144;
         }
 
         while (feof($handle) === false) {
@@ -179,6 +179,8 @@ class File
 
             flush();
         }
+
+        fclose($handle);
 
         return true;
     }
@@ -214,31 +216,31 @@ class File
 
         $handle = fopen($path, 'rb');
 
-        if ($handle) {
-            $i = 0;
-            $output = '';
-            $max = $max + $offset - 1;
-
-            while (feof($handle) === false) {
-                $data = fgets($handle);
-
-                if ($i >= $offset) {
-                    $output .= $data;
-
-                    if ($i === $max) {
-                        break;
-                    }
-                }
-
-                ++$i;
-            }
-
-            fclose($handle);
-
-            return $output;
+        if ($handle === false) {
+            return false;
         }
 
-        return false;
+        $i = 0;
+        $output = '';
+        $max = $max + $offset - 1;
+
+        while (feof($handle) === false) {
+            $data = fgets($handle);
+
+            if ($i >= $offset) {
+                $output .= $data;
+
+                if ($i === $max) {
+                    break;
+                }
+            }
+
+            ++$i;
+        }
+
+        fclose($handle);
+
+        return $output;
     }
 
     /**

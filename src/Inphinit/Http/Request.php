@@ -128,7 +128,7 @@ class Request
 
     private static function data($data, $key, $alternative)
     {
-        if (in_array($data) === false || count($data) === 0) {
+        if (empty($data) || is_array($data) === false) {
             return $alternative;
         } elseif (strpos($key, '.') === false) {
             return isset($data[$key]) ? $data[$key] : $alternative;
