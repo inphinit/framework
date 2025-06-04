@@ -13,6 +13,13 @@ use Inphinit\Exception;
 
 class Version
 {
+    /**
+     * Define version pattern
+     *
+     * @var string
+     */
+    protected static $pattern = '#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#';
+
     private $data = array(
         'major' => '0',
         'minor' => '0',
@@ -21,12 +28,7 @@ class Version
         'build' => null
     );
 
-    /**
-     * Define version pattern
-     *
-     * @var string
-     */
-    protected static $pattern = '#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#';
+    private $cache;
 
     /**
      * Parse version format
@@ -66,8 +68,8 @@ class Version
     /**
      * Set value for a version component
      *
-     * @param string $name
-     * @param array|int|string $value
+     * @param string                $name
+     * @param array|int|string|null $value
      * @throws \Inphinit\Exception
      */
     public function __set($name, $value)
@@ -76,12 +78,26 @@ class Version
             throw new Exception('Invalid version component: ' . $name);
         }
 
-        if ($name === 'build' || $name === 'prerelease') {
-            if (is_array($value) === false) {
-                throw new Exception($name . ' expects an array');
+        if ($value !== null) {
+            if ($name === 'build' || $name === 'prerelease') {
+                if (is_array($value) === false) {
+                    throw new Exception($name . ' expects an array');
+                }
+
+                if ($name === 'prerelease') {
+                    $idRegex = '#^(?:0|[1-9]\d*|[a-zA-Z-][\da-zA-Z-]*)$#';
+                } else {
+                    $idRegex = '#^[\da-zA-Z-]+$#';
+                }
+
+                foreach ($value as $id) {
+                    if (is_string($id) === false || preg_match($idRegex, $id) !== 1) {
+                        throw new Exception("Invalid identifier '{$id}' for {$name} component");
+                    }
+                }
+            } elseif (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
+                throw new Exception($name . ' expects a numeric value');
             }
-        } elseif (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
-            throw new Exception($name . ' expects a numeric value');
         }
 
         $this->data[$name] = $value;
@@ -94,6 +110,10 @@ class Version
      */
     public function __toString()
     {
+        if ($this->cache !== null) {
+            return $this->cache;
+        }
+
         $output = $this->data['major'] . '.' . $this->data['minor'] . '.' . $this->data['patch'];
 
         if ($this->data['prerelease']) {
@@ -104,7 +124,7 @@ class Version
             $output .= '+' . implode('.', $this->data['build']);
         }
 
-        return $output;
+        return $this->cache = $output;
     }
 
     /**

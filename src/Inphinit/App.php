@@ -235,7 +235,7 @@ class App
         return $this->routes + $this->paramRoutes;
     }
 
-    public static function forward(&$output = null)
+    public static function forward($output = null)
     {
         if (class_exists('\\Inphinit\\Viewing\\View', false)) {
             View::dispatch();

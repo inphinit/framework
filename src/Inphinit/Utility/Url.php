@@ -33,7 +33,6 @@ class Url
     );
 
     private $data = array(
-        'source' => null,
         'scheme' => null,
         'host' => null,
         'port' => null,
@@ -44,58 +43,33 @@ class Url
         'fragment' => null
     );
 
+    private $cache;
+
     /**
      * Parse URL
      *
      * @param string $url
+     * @throws \Inphinit\Exception
      */
     public function __construct($url)
     {
-        $source = $url;
-        $fragment = null;
-        $querystring = null;
-
-        if (strpos($url, '#') !== false) {
-            list($url, $fragment) = explode('#', $url, 2);
-        }
-
-        if (strpos($url, '?') !== false) {
-            list($url, $querystring) = explode('?', $url, 2);
-        }
-
         if (preg_match('#^[A-Z]\:#i', $url)) {
             $url = 'file:///' . $url;
         }
 
-        $restore = array('%40' => '@', '%3A' => ':', '%5C' => '\\');
-        $extract = explode('/', $url);
+        $encoded = self::urleEncode($url);
 
-        foreach ($extract as &$value) {
-            $value = strtr(rawurlencode($value), $restore);
+        $parsed = parse_url($encoded);
+
+        if ($parsed === false) {
+            throw new Exception('Unrecognized or corrupted URL format: ' . $url);
         }
 
-        $url = implode('/', $extract);
-
-        $data = parse_url($url);
-
-        if ($data === false) {
-            throw new Exception('Invalid URL');
+        foreach ($parsed as &$value) {
+            $value = urldecode($value);
         }
 
-        foreach ($data as &$value) {
-            $value = rawurldecode($value);
-        }
-
-        $data += $this->data;
-        $data['fragment'] = $fragment;
-        $data['query'] = $querystring;
-        $data['source'] = $source;
-
-        if (isset($data['scheme']) && strcasecmp($data['scheme'], 'file') === 0) {
-            $data['path'] = '/' . ltrim($data['path'], '/');
-        }
-
-        $this->data = $data + $this->data;
+        $this->data = $parsed + $this->data;
     }
 
     /**
@@ -257,14 +231,27 @@ class Url
     /**
      * Set value for a URL component
      *
-     * @param string $name
-     * @param string $value|null
+     * @param string      $name
+     * @param string|null $value
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->data)) {
-            $this->data[$name] = $value ? (string) $value : null;
+        if (array_key_exists($name, $this->data) === false) {
+            throw new Exception('Invalid URL component: ' . $name);
         }
+
+        if ($value !== null) {
+            if ($name === 'port') {
+                if (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
+                    throw new Exception('port expects a numeric value');
+                }
+            } elseif (is_string($value) === false || $value === '') {
+                throw new Exception($name . ' expects a non-empty string');
+            }
+        }
+
+        $this->cache = null;
+        $this->data[$name] = $value;
     }
 
     /**
@@ -274,21 +261,27 @@ class Url
      */
     public function __toString()
     {
-        $scheme = $this->data['scheme'];
-        $host = $this->data['host'] ? $this->data['host'] : '';
-        $port = $this->data['port'];
-
-        if (isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] === $port) {
-            $port = '';
-        } else {
-            $port = $this->data['port'] ? (':' . $this->data['port']) : '';
+        if ($this->cache !== null) {
+            return $this->cache;
         }
 
-        $path = $this->data['path'] ? $this->data['path'] : '';
-        $user = $this->data['user'] ? $this->data['user'] : '';
-        $pass = $this->data['pass'] ? (':' . $this->data['pass']) : '';
+        $data = $this->data;
 
-        $pass = $user || $pass ? ($pass . '@') : '';
+        $scheme = $data['scheme'];
+        $host = $data['host'] ? $data['host'] : '';
+        $port = $data['port'];
+
+        if (isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] == $port) {
+            $port = '';
+        } else {
+            $port = $data['port'] ? (':' . $data['port']) : '';
+        }
+
+        $path = $data['path'] ? $data['path'] : '';
+        $user = $data['user'] ? $data['user'] : '';
+        $pass = $user && $data['pass'] ? (':' . $data['pass'] . '@') : '';
+        $query = $data['query'] ? ('?' . $data['query']) : '';
+        $fragment = $data['fragment'] ? ('#' . $data['fragment']) : '';
 
         if ($host) {
             $scheme .= '://';
@@ -302,9 +295,15 @@ class Url
             $scheme .= ':';
         }
 
-        $query = $this->data['query'] ? ('?' . $this->data['query']) : '';
-        $fragment = $this->data['fragment'] ? ('#' . $this->data['fragment']) : '';
+        $this->cache = self::urleEncode($scheme . $user . $pass . $host . $port . $path . $query . $fragment);
 
-        return $scheme . $user . $pass . $host . $port . $path . $query . $fragment;
+        return $this->cache;
+    }
+
+    private static function urleEncode($url)
+    {
+        return preg_replace_callback('~[^:/@?&=#]+~usD', function ($matches) {
+            return urlencode($matches[0]);
+        }, $url);
     }
 }

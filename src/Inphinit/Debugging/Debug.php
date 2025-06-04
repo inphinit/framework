@@ -432,10 +432,12 @@ class Debug
         if (self::$configs === null) {
             include_once __DIR__ . '/Inspector.php';
             include_once __DIR__ . '/../Config.php';
+            include_once __DIR__ . '/../Event.php';
             include_once __DIR__ . '/../Exception.php';
             include_once __DIR__ . '/../Filesystem/File.php';
             include_once __DIR__ . '/../Http/Request.php';
             include_once __DIR__ . '/../Http/Response.php';
+            include_once __DIR__ . '/../Viewing/View.php';
 
             self::$configs = new Config('debug');
             self::$configs->assistant; // Test
