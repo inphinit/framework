@@ -19,19 +19,24 @@ class Forwarded
     const PARAM_HOST  = 'host';
     const PARAM_PROTO = 'proto';
 
-    private $data = [];
+    private $data = array();
     private $done = false;
+    private $fallback;
+    private $limit;
     private $source;
 
     private $alloweds;
+
+    private static $delimiters = "()<>@,;:\\\"/[]?={} \t";
 
     /**
      * Constructor.
      *
      * @param string|null $header   Optional raw "Forwarded" header value.
+     * @param int         $limit    Optional limit.
      * @param bool        $fallback Whether to use "X-Forwarded-*" headers as fallback.
      */
-    public function __construct($header = null, $fallback = true)
+    public function __construct($header = null, $fallback = true, $limit = 100)
     {
         $this->alloweds = [
             self::PARAM_BY,
@@ -40,17 +45,9 @@ class Forwarded
             self::PARAM_PROTO
         ];
 
-        if ($header !== null) {
-            $this->source = $header;
-        } else {
-            $source = Request::header('forwarded');
-
-            if ($source) {
-                $this->source = $source;
-            } else if ($fallback) {
-                $this->getFromFallback();
-            }
-        }
+        $this->fallback = $fallback;
+        $this->limit = $limit;
+        $this->source = $header === null ? Request::header('forwarded') : $header;
     }
 
     /**
@@ -64,7 +61,7 @@ class Forwarded
      */
     public function getParam($type, $index = -1, $alternative = null)
     {
-        $this->parseHeaderValue();
+        $this->parseSource();
 
         if (!in_array($type, $this->alloweds)) {
             throw new Exception("Invalid type: {$type}");
@@ -88,57 +85,189 @@ class Forwarded
      */
     public function getAll()
     {
-        $this->parseHeaderValue();
+        $this->parseSource();
+
         return $this->data;
     }
 
-    private function parseHeaderValue()
+    private function parseSource()
     {
-        if (!$this->done && $this->source) {
-            $blocks = explode(',', $this->source);
+        if ($this->done) return;
 
-            if (count($blocks) > 100) {
+        $source = $this->source;
+
+        if (!$source && $this->fallback) {
+            return $this->parseFallback();
+        }
+
+        $data = array();
+        $forwarded = array();
+        $length = strlen($source);
+
+        $inQuotes = false;
+        $isEscaping = false;
+        $mustUnescape = false;
+        $parameter = null;
+
+        $start = -1;
+        $end = -1;
+
+        $found = 0;
+        $limit = $this->limit;
+        $tabChar = "\t";
+
+        for ($i = 0; $i < $length; ++$i) {
+            if ($found > $limit) {
                 throw new Exception('Excessive number of Forwarded blocks', 0, 3);
             }
 
-            foreach ($blocks as $index => $block) {
-                $total = preg_match_all('#(\w+)=(".*?"|\[.*?\]|[^";\s]+)#', trim($block), $matches);
+            $char = $source[$i];
 
-                if ($total > 4) {
-                    throw new Exception("Unexpected format in the group {$index}: {$block}", 0, 3);
+            if ($parameter === null) {
+                if ($start === -1 && ($char === ' ' || $char === $tabChar)) continue;
+
+                if (self::isTokenChar($char)) {
+                    if ($start === -1) $start = $i;
+                } elseif ($char === '=') {
+                    if ($start === -1) self::unexpectedCharacter($source, $i);
+
+                    $parameter = strtolower(substr($source, $start, $i - $start));
+                    $start = -1;
+                } else {
+                    self::unexpectedCharacter($source, $i);
                 }
-
-                $keys = array_map('strtolower', $matches[1]);
-
-                if ($total > count(array_unique($keys))) {
-                    throw new Exception("There are duplicate keys in the group {$index}: {$block}", 0, 3);
+            } elseif ($isEscaping) {
+                if ($char === $tabChar || ctype_print($char) || self::isExtended($char)) {
+                    $isEscaping = false;
+                } else {
+                    self::unexpectedCharacter($source, $i);
                 }
+            } elseif ($inQuotes) {
+                if ($char === '\\') {
+                    $isEscaping = true;
+                    $mustUnescape = true;
 
-                if ($invalids = array_diff($keys, $this->alloweds)) {
-                    throw new Exception("Invalid keys in group {$index}: " . implode(', ', $invalids), 0, 3);
+                    if ($start === -1) $start = $i;
+                } elseif ($char === '"') {
+                    $inQuotes = false;
+                    $end = $i;
+                } elseif ($start === -1) {
+                    $start = $i;
                 }
+            } elseif (self::isTokenChar($char)) {
+                if ($end !== -1) self::unexpectedCharacter($source, $i);
 
-                $values = $matches[2];
+                if ($start === -1) $start = $i;
+            } elseif ($char === '"' && $i > 0 && $source[$i - 1] === '=') {
+                $inQuotes = true;
+            } elseif (self::isDelimiter($char) || self::isExtended($char)) {
+                if (($char === ',' || $char === ';') && ($start !== -1 || $end !== -1)) {
+                    self::completeParameter($source, $mustUnescape, $i, $start, $end, $forwarded[$parameter]);
 
-                foreach ($values as &$value) {
-                    $value = trim($value, '"[]');
+                    if ($char === ',') {
+                        ++$found;
+                        $data[] = $forwarded;
+                        $forwarded = array();
+                    }
+
+                    $mustUnescape = false;
+                    $parameter = null;
+                    $start = $end = -1;
+                } elseif ($inQuotes) {
+                    if ($start === -1) $start = $i;
+                } else {
+                    self::unexpectedCharacter($source, $i);
                 }
+            } elseif ($char === ' ' || $char === $tabChar) {
+                if ($end !== -1) continue;
 
-                $this->data[] = array_combine($keys, $values);
+                if ($start === -1) self::unexpectedCharacter($source, $i);
+
+                $end = $i;
+            } else {
+                self::unexpectedCharacter($source, $i);
+            }
+        }
+
+        // check if the end failed
+        if ($parameter === null || $inQuotes) {
+            throw new Exception('Unexpected end of input: ' . $source, 0, 3);
+        }
+
+        self::completeParameter($source, $mustUnescape, $length, $start, $end, $forwarded[$parameter]);
+
+        $data[] = $forwarded;
+
+        $this->data = $data;
+        $this->done = true;
+    }
+
+    private function parseFallback()
+    {
+        $entries = array();
+
+        if ($forHeader = Request::header('x-forwarded-for')) {
+            $forEntries = explode(',', $forHeader);
+
+            if ($forEntries > $this->limit) {
+                throw new Exception('Excessive number of Forwarded blocks', 0, 3);
             }
 
-            $this->done = true;
+            foreach ($forEntries as &$entry) {
+                $entries[] = array(self::PARAM_FOR => $entry);
+            }
+        }
+
+        if (empty($entries)) $entries[] = array();
+
+        if ($hostHeader = Request::header('x-forwarded-host')) {
+            $entries[0][self::PARAM_HOST] = trim($hostHeader);
+        }
+
+        if ($protoHeader = Request::header('x-forwarded-proto')) {
+            $entries[0][self::PARAM_PROTO] = trim($protoHeader);
+        }
+
+        if (empty($entry) === false) {
+            $this->data = $entry;
+        }
+
+        $this->done = true;
+    }
+
+    private static function completeParameter($header, $mustUnescape, $index, $start, &$end, &$targetValue)
+    {
+        if ($start !== -1) {
+            if ($end === -1) $end = $index;
+
+            $value = substr($header, $start, $end - $start);
+
+            if ($mustUnescape) $value = preg_replace('#\\\\(.)#', '$1', $value);
+
+            $targetValue = $value;
+        } else {
+            $targetValue = '';
         }
     }
 
-    private function getFromFallback()
+    private static function isDelimiter($char)
     {
-        $this->data[] = [
-            self::PARAM_FOR   => Request::header('x-forwarded-for'),
-            self::PARAM_HOST  => Request::header('x-forwarded-host'),
-            self::PARAM_PROTO => Request::header('x-forwarded-proto'),
-        ];
+        return strpos(self::$delimiters, $char) !== false;
+    }
 
-        $this->done = true;
+    private static function isTokenChar($char)
+    {
+        $code = ord($char);
+        return $code > 31 && $code !== 127 && !self::isDelimiter($char);
+    }
+
+    private static function isExtended($char)
+    {
+        return ord($char) > 127;
+    }
+
+    private static function unexpectedCharacter($header, $pos)
+    {
+        throw new Exception(sprintf('Unexpected character `%s` at index %d', $header[$pos], $pos), 0, 4);
     }
 }
