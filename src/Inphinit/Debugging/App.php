@@ -40,7 +40,7 @@ class App extends \Inphinit\App
             throw new Exception('value expects a scalar value');
         }
 
-        parent::config($key, $value);
+        return parent::config($key, $value);
     }
 
     /**
