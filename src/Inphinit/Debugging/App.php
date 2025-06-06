@@ -36,7 +36,7 @@ class App extends \Inphinit\App
             throw new Exception('key expects a non-empty string');
         }
 
-        if (is_scalar($value) === false) {
+        if ($value !== null && is_scalar($value) === false) {
             throw new Exception('value expects a scalar value');
         }
 
