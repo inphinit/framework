@@ -38,12 +38,12 @@ class Forwarded
      */
     public function __construct($header = null, $fallback = true, $limit = 100)
     {
-        $this->alloweds = [
+        $this->alloweds = array(
             self::PARAM_BY,
             self::PARAM_FOR,
             self::PARAM_HOST,
             self::PARAM_PROTO
-        ];
+        );
 
         $this->fallback = $fallback;
         $this->limit = $limit;
@@ -209,7 +209,7 @@ class Forwarded
         if ($forHeader = Request::header('x-forwarded-for')) {
             $forEntries = explode(',', $forHeader);
 
-            if ($forEntries > $this->limit) {
+            if (count($forEntries) > $this->limit) {
                 throw new Exception('Excessive number of Forwarded blocks', 0, 3);
             }
 

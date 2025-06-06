@@ -251,11 +251,11 @@ class Packages
             }
         }
 
-        $contents = [
+        $contents = array(
             '<?php',
             '// Namespaces with more separators stay at the top.',
             'return ' . var_export($libs, true) . ";\n"
-        ];
+        );
 
         return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }

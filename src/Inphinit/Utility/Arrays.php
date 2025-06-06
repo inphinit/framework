@@ -51,16 +51,16 @@ class Arrays
      */
     public static function ksort(array &$array, $flags = \SORT_REGULAR, $descending = false)
     {
-        foreach ($array as &$item) {
-            if (is_array($item)) {
-                self::ksort($item, $flags, $descending);
-            }
-        }
-
         if ($descending) {
             krsort($array, $flags);
         } else {
             ksort($array, $flags);
+        }
+
+        foreach ($array as &$item) {
+            if (is_array($item)) {
+                self::ksort($item, $flags, $descending);
+            }
         }
     }
 }

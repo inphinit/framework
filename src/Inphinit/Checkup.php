@@ -40,10 +40,10 @@ class Checkup
                 $this->collectErrors();
                 $this->collectWarnings();
             } else {
-                $this->errors[] = '`php.ini` is not configured on your server';
+                $this->warnings[] = '`php.ini` is not configured on your server';
             }
         } else {
-            $this->errors[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
+            $this->warnings[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
         }
     }
 
@@ -102,7 +102,7 @@ class Checkup
 
     private function collectWarnings()
     {
-        if ($this->development === false && $this->iniGet) {
+        if ($this->development && $this->iniGet) {
             $directives = $this->getDirectives();
 
             if (class_exists('\\Transliterator', false) === false) {
