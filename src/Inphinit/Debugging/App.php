@@ -24,6 +24,26 @@ class App extends \Inphinit\App
     }
 
     /**
+     * Get or set application configs
+     *
+     * @param string $key
+     * @param scalar $value
+     * @return scalar
+     */
+    public static function config($key, $value = null)
+    {
+        if (is_string($key) === false || empty($key)) {
+            throw new Exception('key expects a non-empty string');
+        }
+
+        if (is_scalar($value) === false) {
+            throw new Exception('value expects a scalar value');
+        }
+
+        parent::config($key, $value);
+    }
+
+    /**
      * Validate method and callback, if valid register callable or controller for a route
      *
      * @param string|array    $methods
@@ -95,7 +115,7 @@ class App extends \Inphinit\App
             throw new Exception("The namespace prefix '{$prefix}' must not contain consecutive backslashes");
         }
 
-        if ($prefix !== '' && preg_match('#^[A-Z][\w\\\\]+$#', $prefix) !== 1) {
+        if ($prefix !== '' && preg_match('#^[A-Z][\w\\\\]*$#', $prefix) !== 1) {
             throw new Exception("Invalid namespace prefix: '{$prefix}'");
         }
 

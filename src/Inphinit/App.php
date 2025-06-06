@@ -24,6 +24,7 @@ class App
 
     protected $namespacePrefix = '';
     protected $pathPrefix = '/';
+    protected $filter;
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
@@ -43,8 +44,8 @@ class App
      * Get or set application configs
      *
      * @param string $key
-     * @param string $value
-     * @return mixed
+     * @param scalar $value
+     * @return scalar
      */
     public static function config($key, $value = null)
     {
@@ -52,11 +53,9 @@ class App
             self::$configs = inphinit_sandbox('configs/app.php');
         }
 
-        if (isset(self::$configs[$key])) {
-            if ($value === null) {
-                return self::$configs[$key];
-            }
-
+        if ($value === null) {
+            return isset(self::$configs[$key]) ? self::$configs[$key] : null;
+        } elseif (is_scalar($value)) {
             self::$configs[$key] = $value;
         }
     }
@@ -107,6 +106,17 @@ class App
     public function setNamespace($prefix)
     {
         $this->namespacePrefix = $prefix ? (trim($prefix, '\\') . '\\') : '';
+    }
+
+    /**
+     * Set route filter in the current scope control
+     *
+     * @param callable $callback
+     * @return void
+     */
+    public function setFilter(callable $callback)
+    {
+        $this->filter = $callback;
     }
 
     /**
@@ -161,10 +171,12 @@ class App
                 }
             }
 
+            $previousFilter = $this->filter;
             $previousNamespacePrefix = $this->namespacePrefix;
 
             $callback($this, $params);
 
+            $this->filter = $previousFilter;
             $this->namespacePrefix = $previousNamespacePrefix;
             $this->pathPrefix = '/';
         }
@@ -180,6 +192,7 @@ class App
         $code = self::$configs['maintenance'] ? 503 : http_response_code();
         $params = null;
         $callback = null;
+        $output = null;
 
         if ($code === 200) {
             if (PHP_SAPI === 'cli-server' && (include __DIR__ . '/../public.php')) {
@@ -193,7 +206,7 @@ class App
             if (isset($this->routes[$path])) {
                 $routes = &$this->routes[$path];
             } elseif ($this->hasParams) {
-                $this->params($routes, $params);
+                $this->routesMatch($routes, $params);
             }
 
             if (isset($routes[$method])) {
@@ -208,8 +221,6 @@ class App
         if ($code !== 200) {
             Response::status($code);
             inphinit_sandbox('errors.php', array('code' => $code));
-
-            $output = null;
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
                 $parsed = explode('::', $callback, 2);
@@ -217,7 +228,9 @@ class App
                 $callback = array(new $callback(), $parsed[1]);
             }
 
-            $output = $callback($this, $params);
+            if ($this->filter === null || $this->filter($this, $method, $path, $params) !== false) {
+                $output = $callback($this, $params);
+            }
         }
 
         self::forward($output);
@@ -258,7 +271,7 @@ class App
         $this->data[$name] = $value;
     }
 
-    private function params(&$routes, &$params)
+    private function routesMatch(&$routes, &$params)
     {
         $this->refreshPatterns();
 
