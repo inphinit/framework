@@ -269,6 +269,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function loadXML($source, $options = 0)
     {
         return $this->resource('loadXML', $source, $options);
@@ -282,6 +283,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function load($filename, $options = 0)
     {
         return $this->resource('load', $filename, $options);
@@ -295,6 +297,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function loadHTML($source, $options = 0)
     {
         return $this->resource('loadHTML', $source, $options);
@@ -308,6 +311,7 @@ class Document extends \DOMDocument
      * @throws \Inphinit\Dom\DomException
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function loadHTMLFile($filename, $options = 0)
     {
         return $this->resource('loadHTMLFile', $filename, $options);

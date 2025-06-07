@@ -21,6 +21,7 @@ class App
     private static $configs;
     private static $events = array();
     private static $state = 0;
+    private static $unorderedEvents = array();
 
     /**
      * Get application configs
@@ -35,37 +36,11 @@ class App
         }
 
         if (array_key_exists($key, self::$configs)) {
-            if ($value == null) {
+            if ($value === null) {
                 return self::$configs[$key];
             }
 
             self::$configs[$key] = $value;
-        }
-    }
-
-    /**
-     * Trigger registered event
-     *
-     * @param string $name
-     * @param array  $args
-     * @return void
-     */
-    public static function trigger($name, array $args = array())
-    {
-        if ($name === 'error') {
-            self::$state = 5;
-        }
-
-        if (isset(self::$events[$name])) {
-            $listen = &self::$events[$name];
-
-            usort($listen, function ($a, $b) {
-                return $b[1] >= $a[1];
-            });
-
-            foreach ($listen as $callback) {
-                call_user_func_array($callback[0], $args);
-            }
         }
     }
 
@@ -104,6 +79,7 @@ class App
             }
 
             self::$events[$name][] = array($callback, $priority);
+            self::$unorderedEvents[$name] = true;
         }
     }
 
@@ -127,6 +103,42 @@ class App
                 }
             } else {
                 self::$events[$name] = array();
+            }
+        }
+    }
+
+    /**
+     * Trigger registered event
+     *
+     * @param string $name
+     * @param array  $args
+     * @return void
+     */
+    public static function trigger($name, array $args = array())
+    {
+        if ($name === 'error') {
+            self::$state = 5;
+        }
+
+        if (isset(self::$events[$name])) {
+            $listen = &self::$events[$name];
+
+            if (self::$unorderedEvents[$name]) {
+                self::$unorderedEvents[$name] = false;
+
+                usort($listen, function ($a, $b) {
+                    if ($a[1] === $b[1]) {
+                        return 0;
+                    }
+
+                    return $a[1] < $b[1] ? 1 : -1;
+                });
+            }
+
+            foreach ($listen as $callback) {
+                if (call_user_func_array($callback[0], $args) === false) {
+                    break;
+                }
             }
         }
     }

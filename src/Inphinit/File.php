@@ -245,7 +245,7 @@ class File
     }
 
     /**
-     * Clear state files and clear size files in `Inphinit\File::size`
+     * Clear state files
      *
      * @param string $path
      * @throws \Inphinit\Exception
