@@ -18,10 +18,8 @@ class Event
     const LOW_PRIORITY = -1;
 
     private static $events = array();
-    private static $nonSorted = true;
-    private static $uniques = array(
-        'done' => false
-    );
+    private static $uniques = array('done' => false);
+    private static $unordered = array();
 
     /**
      * Triggers all callbacks registered for a given event
@@ -46,8 +44,8 @@ class Event
 
         $listen = &self::$events[$name];
 
-        if (self::$nonSorted) {
-            self::$nonSorted = false;
+        if (self::$unordered[$name]) {
+            self::$unordered[$name] = false;
 
             usort($listen, function ($a, $b) {
                 if ($a[1] === $b[1]) {
@@ -84,7 +82,7 @@ class Event
             }
 
             self::$events[$name][] = array($callback, $priority);
-            self::$nonSorted = true;
+            self::$unordered[$name] = true;
         }
     }
 
@@ -129,7 +127,7 @@ class Event
     public static function clear()
     {
         self::$events = array();
-        self::$nonSorted = true;
         self::$uniques = array('done' => false);
+        self::$unordered = array();
     }
 }
