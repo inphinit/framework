@@ -82,6 +82,8 @@ register_shutdown_function(function () {
         App::dispatch();
         inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
     }
+
+    App::trigger('terminate');
 });
 
 if (INPHINIT_COMPOSER) {
