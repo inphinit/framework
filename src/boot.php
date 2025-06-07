@@ -11,6 +11,10 @@ use Inphinit\App;
 
 header_remove('X-Powered-By');
 
+require 'Inphinit/App.php';
+require 'Inphinit/Routing/Router.php';
+require 'Inphinit/Routing/Route.php';
+
 /**
  * case-sensitive check path
  *
@@ -19,7 +23,7 @@ header_remove('X-Powered-By');
  */
 function inphinit_check_path($path)
 {
-    return str_replace('\\', '/', $path) === str_replace('\\', '/', realpath($path));
+    return realpath($path) === str_replace(array('\\', '/'), DIRECTORY_SEPARATOR, $path);
 }
 
 /**
@@ -27,8 +31,9 @@ function inphinit_check_path($path)
  *
  * @param string $sandbox_path
  * @param array  $sandbox_data
+ * @return mixed
  */
-function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
+function inphinit_sandbox($sandbox_path, array $sandbox_data = array())
 {
     $sandbox_path = INPHINIT_SYSTEM . '/' . $sandbox_path;
 
@@ -42,14 +47,14 @@ function inphinit_sandbox($sandbox_path, array &$sandbox_data = null)
 }
 
 /**
- * Function used from `set_error_handler` and trigger `App::trigger('error')`
+ * Function used by `set_error_handler` and `App::trigger('error')`
  *
  * @param int    $type
  * @param string $message
  * @param string $file
  * @param int    $line
  * @param array  $context
- * @return bool
+ * @return false
  */
 function inphinit_error($type, $message, $file, $line, $context = null)
 {
@@ -79,13 +84,16 @@ register_shutdown_function(function () {
     }
 });
 
-
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
-    $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
+    spl_autoload_register(function ($class) {
+        static $prefixes;
 
-    spl_autoload_register(function ($class) use (&$prefixes) {
+        if ($prefixes === null) {
+            $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
+        }
+
         $class = ltrim($class, '\\');
 
         if (isset($prefixes[$class]) && pathinfo($prefixes[$class], PATHINFO_EXTENSION)) {
@@ -96,7 +104,7 @@ if (INPHINIT_COMPOSER) {
             foreach ($prefixes as $prefix => $path) {
                 if (stripos($class, $prefix) === 0) {
                     $class = substr($class, strlen($prefix));
-                    // substr($prefix, -1) returns \ (PSR-4) or _ (PSR-0)
+                    // substr($prefix, -1) -> '\' (PSR-4) or '_' (PSR-0)
                     $base = $path . '/' . str_replace(substr($prefix, -1), '/', $class) . '.php';
                     break;
                 }
@@ -104,7 +112,7 @@ if (INPHINIT_COMPOSER) {
         }
 
         if ($base !== null) {
-            // if not starts with / or not contains :, $base request a file
+            // if $base does not start with '/' nor contain ':', $base will request a file
             if ($base[0] !== '/' && strpos($base, ':') === false) {
                 $base = INPHINIT_SYSTEM . '/' . $base;
             }
@@ -124,10 +132,6 @@ if (PHP_SAPI !== 'cli-server') {
 
 define('INPHINIT_PATH', $inphinit_path);
 define('REQUEST_TIME', time());
-
-require 'Inphinit/App.php';
-require 'Inphinit/Routing/Router.php';
-require 'Inphinit/Routing/Route.php';
 
 if (App::config('development')) {
     require 'development.php';
