@@ -211,7 +211,7 @@ class Debug
      * @param string $target
      * @return string
      */
-    public static function assistant($message, $target='_blank')
+    public static function assistant($message, $target = '_blank')
     {
         self::boot();
 
@@ -271,9 +271,7 @@ class Debug
                     $link = 'vscode://file/{path}:{line}:0';
                     break;
                 case 'sublimetext':
-                    /*
-                     * Requires: https://packagecontrol.io/packages/subl%20protocol
-                     */
+                    // Requires: https://packagecontrol.io/packages/subl%20protocol
                     $link = 'subl://{path}:{line}';
                     break;
             }
@@ -327,7 +325,7 @@ class Debug
 
             Response::cache(0);
             Response::status(500);
-            Response::content('application/json');
+            Response::type('application/json');
 
             echo json_encode($data);
             exit;

@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Debugging;
 
 class Checkup
 {
@@ -72,7 +72,7 @@ class Checkup
      *
      * @param bool $display
      */
-    public function displaySensitive($display)
+    public function setDisplaySensitive($display)
     {
         $this->sensitive = $display;
     }
@@ -139,8 +139,8 @@ class Checkup
 
     private function flag($key)
     {
-        $value = strtolower(ini_get($key));
-        return in_array($value, array('on', '1'));
+        $value = ini_get($key);
+        return $value ? in_array(strtolower($value), array('on', '1')) : false;
     }
 
     private function getDirectives()

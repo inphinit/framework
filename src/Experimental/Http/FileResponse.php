@@ -52,10 +52,10 @@ class FileResponse
 
         if ($modes === 0) {
             $this->modes = self::ACCEL | self::SENDFILE;
-        } elseif (!is_int($modes) || ($modes & ~$validModes) !== 0) {
-            throw new Exception('Invalid delivery mode(s)');
-        } else {
+        } elseif (is_int($modes) && ($modes & ~$validModes) === 0) {
             $this->modes = $modes;
+        } else {
+            throw new Exception('Invalid delivery mode(s)');
         }
     }
 

@@ -63,24 +63,24 @@ class Response
     /**
      * Set Content-Type header or remove previously headers
      *
-     * @param string|null $type
+     * @param string|null $value
      * @param string|null $charset
      * @return void
      */
-    public static function type($type, $charset = null)
+    public static function type($value, $charset = null)
     {
-        if ($type === null) {
+        if ($value === null) {
             header_remove('Content-Type');
         } else {
-            self::checkHeaderContent($type);
+            self::checkHeaderContent($value);
 
             if ($charset && ($charset = trim($charset))) {
                 self::checkHeaderContent($charset);
 
-                $type .= ';charset=' . $charset;
+                $value .= ';charset=' . $charset;
             }
 
-            header('Content-Type: ' . $type);
+            header('Content-Type: ' . $value);
         }
     }
 

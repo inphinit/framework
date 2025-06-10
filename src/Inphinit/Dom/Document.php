@@ -77,8 +77,8 @@ class Document
     {
         $levels = self::ERROR | self::FATAL | self::WARNING;
 
-        if ($options !== 0 && !($levels & $options)) {
-            throw new Exception('Invalid reporting options');
+        if (is_int($modes) === false || ($modes & ~$validModes) !== 0) {
+            throw new Exception('Invalid severity level(s)');
         }
 
         self::$severityLevels = $options;

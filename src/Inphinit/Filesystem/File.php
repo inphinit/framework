@@ -38,11 +38,6 @@ class File
      */
     public static function exists($path)
     {
-        // Removing the file URI scheme for compatibility with realpath() function
-        if (stripos($path, 'file:') === 0) {
-            $path = preg_replace('#^file:(/+)?#', '/', $path);
-        }
-
         if (realpath($path) === false) {
             return false;
         }

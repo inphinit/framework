@@ -38,14 +38,14 @@ class Size
             self::$isWin = stripos(PHP_OS, 'WIN') === 0;
         }
 
-        $allModes = self::COM | self::CURL | self::SYSTEM;
+        $validModes = self::COM | self::CURL | self::SYSTEM;
 
         if ($modes === 0) {
-            $this->modes = $allModes;
-        } elseif (is_int($modes) && ($allModes & $modes)) {
+            $this->modes = $validModes;
+        } elseif (is_int($modes) && ($modes & ~$validModes) === 0) {
             $this->modes = $modes;
         } else {
-            throw new Exception('Invalid mode');
+            throw new Exception('Invalid filesize mode(s)');
         }
     }
 
