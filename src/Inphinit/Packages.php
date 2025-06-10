@@ -282,7 +282,7 @@ class Packages
                 return 0;
             }
 
-            return $x < $y ? -1 : 1;
+            return $x < $y ? 1 : -1;
         });
 
         if (is_file($path)) {
