@@ -305,12 +305,17 @@ class Packages
     /**
      * Save imported autoload files path to file in PHP format
      *
-     * @param string $path File to save packages paths, eg. `/foo/files.php`
+     * @param string $path      File to save packages paths, eg. `/foo/files.php`
+     * @param bool $removeEmpty Remove the destination file if there are no files to be included
      * @return bool
      */
-    public function saveFiles($path)
+    public function saveFiles($path, $removeEmpty = false)
     {
         if (empty($this->sourceFiles)) {
+            if ($removeEmpty && is_file($path)) {
+                unlink($path);
+            }
+
             return false;
         }
 
