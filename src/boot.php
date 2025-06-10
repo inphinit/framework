@@ -101,9 +101,19 @@ if (INPHINIT_COMPOSER) {
 
     spl_autoload_register(function ($class) {
         static $prefixes;
+        static $load_files;
 
         if ($prefixes === null) {
             $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
+        }
+
+        // Load autoload.files (composer.json)
+        if ($load_files === null) {
+            $load_files = INPHINIT_SYSTEM . '/boot/files.php';
+
+            if (is_file($load_files)) {
+                require __DIR__ . '/require_files.php';
+            }
         }
 
         $class = ltrim($class, '\\');
