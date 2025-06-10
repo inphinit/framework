@@ -70,18 +70,18 @@ class Document
     /**
      * Define libXML errors as exceptions
      *
-     * @param int $options
+     * @param int $levels
      * @return void
      */
-    public static function setSeverityLevels($options)
+    public static function setSeverityLevels($levels)
     {
-        $levels = self::ERROR | self::FATAL | self::WARNING;
+        $validLevels = self::ERROR | self::FATAL | self::WARNING;
 
-        if (is_int($modes) === false || ($modes & ~$validModes) !== 0) {
+        if (is_int($levels) === false || ($levels & ~$validLevels) !== 0) {
             throw new Exception('Invalid severity level(s)');
         }
 
-        self::$severityLevels = $options;
+        self::$severityLevels = $levels;
     }
 
     /**
