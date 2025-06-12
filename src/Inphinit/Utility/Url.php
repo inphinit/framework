@@ -12,6 +12,16 @@ namespace Inphinit\Utility;
 use Inphinit\Exception;
 use Inphinit\Http\Request;
 
+/**
+ * @property string $scheme
+ * @property string $host
+ * @property string $port
+ * @property string $user
+ * @property string $pass
+ * @property string $path
+ * @property string $query
+ * @property string $fragment
+ */
 class Url
 {
     const PATH_ASCII = 1;
@@ -172,9 +182,6 @@ class Url
      */
     public static function canonpath($path)
     {
-        $slash = strpos($path, '/');
-        $backSlash = strpos($path, '\\');
-
         if (strpos($path, '\\') !== false) {
             $separator = '\\';
         } elseif (strpos($path, '/') !== false) {

@@ -28,11 +28,11 @@ class App
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
-        'decimal' => '(\d|[1-9]\d+)\.\d+',
+        'decimal' => '(0|[1-9]\d*)\.\d+',
         'nospace' => '[^/\s]+',
         'num' => '\d+',
         'uuid' => '[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}',
-        'version' => '\d+\.\d+(\.\d+(-[\da-zA-Z]+(\.[\da-zA-Z]+)*(\+[\da-zA-Z]+(\.[\da-zA-Z]+)*)?)?)?'
+        'version' => '(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)'
     );
 
     private $patternNames;

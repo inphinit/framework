@@ -11,6 +11,13 @@ namespace Inphinit\Utility;
 
 use Inphinit\Exception;
 
+/**
+ * @property string     $major
+ * @property string     $minor
+ * @property string     $patch
+ * @property array|null $prerelease
+ * @property array|null $build
+ */
 class Version
 {
     /**
@@ -55,10 +62,21 @@ class Version
     }
 
     /**
+     * Compare current version with another version
+     *
+     * @param \Inphinit\Utility\Version $version
+     * @return int
+     */
+    public function compare(Version $version)
+    {
+        return version_compare((string) $this, (string) $version);
+    }
+
+    /**
      * Get value for a version component
      *
      * @param string $name
-     * @return array|string|null
+     * @return array|int|string|null
      */
     public function __get($name)
     {
