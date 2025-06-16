@@ -253,9 +253,7 @@ class App extends \Inphinit\App
 
     private static function regexError()
     {
-        $error = preg_last_error();
-
-        if ($error === PREG_NO_ERROR) {
+        if (preg_last_error() === PREG_NO_ERROR) {
             return null;
         }
 
@@ -263,7 +261,7 @@ class App extends \Inphinit\App
             return preg_last_error_msg();
         }
 
-        switch (\preg_last_error()) {
+        switch (preg_last_error()) {
             case PREG_NO_ERROR:
                 return 'No error';
             case PREG_INTERNAL_ERROR:

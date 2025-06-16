@@ -64,7 +64,7 @@ $inphinit_type_from_extension = [
     'text/html' => ['html', 'htm'],
     'text/markdown' => ['md'],
     'text/plain' => ['txt', 'reg'],
-    'text/tab-separated-values' => ['tsv'],
+    'text/tab-separated-values' => ['tab', 'tsv'],
     'text/yaml' => ['yaml'],
     'video/3gpp' => ['3gp'],
     'video/mp4' => ['mp4'],
@@ -76,7 +76,7 @@ $inphinit_type_from_extension = [
     'video/x-matroska' => ['mkv'],
     'video/x-ms-vob' => ['vob'],
     'video/x-ms-wmv' => ['wmv'],
-    'video/x-msvideo' => ['avi']
+    'video/x-msvideo' => ['avi'],
 ];
 
 $inphinit_path_extension = pathinfo(INPHINIT_PATH, PATHINFO_EXTENSION);

@@ -32,9 +32,9 @@ class Forwarded
     /**
      * Constructor.
      *
-     * @param string|null $header   Optional raw "Forwarded" header value.
-     * @param int         $limit    Optional limit.
-     * @param bool        $fallback Whether to use "X-Forwarded-*" headers as fallback.
+     * @param string|null $header   Optional raw "Forwarded" header value
+     * @param int         $limit    Optional limit
+     * @param bool        $fallback Whether to use "X-Forwarded-*" headers as fallback
      */
     public function __construct($header = null, $fallback = true, $limit = 100)
     {
