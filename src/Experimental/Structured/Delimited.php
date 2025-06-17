@@ -27,7 +27,7 @@ abstract class Delimited
     protected $separator;
     protected $separators = array();
 
-    protected $lineLength;
+    protected $readingLength;
 
     protected $fillEntries;
     protected $headers;
@@ -54,7 +54,7 @@ abstract class Delimited
         }
 
         $this->stream = $handle;
-        $this->setLineLength(0, false);
+        $this->setReadingLength(0, false);
         $this->boot();
     }
 
@@ -73,12 +73,12 @@ abstract class Delimited
     }
 
     /**
-     * Set CSV line length
+     * Set the length of CSV lines read
      *
      * @param int|null $length
      * @param bool $refresh
      */
-    public function setLineLength($length, $refresh = true)
+    public function setReadingLength($length, $refresh = true)
     {
         if ($length !== null && (is_int($length) === false || $length < 0)) {
             throw new Exception('Invalid length');
@@ -90,11 +90,11 @@ abstract class Delimited
             $length = null;
         }
 
-        if ($this->lineLength !== $length) {
+        if ($this->readingLength !== $length) {
             $this->boot();
         }
 
-        $this->lineLength = $length;
+        $this->readingLength = $length;
     }
 
     /**
@@ -137,7 +137,7 @@ abstract class Delimited
     public function rewind()
     {
         rewind($this->stream);
-        $this->streaming = feof($this->stream) === false && $this->getLine($this->separator) !== false;
+        $this->streaming = $this->getLine($this->separator) !== false;
     }
 
     /**
@@ -152,7 +152,7 @@ abstract class Delimited
         $entry = false;
 
         if ($this->streaming) {
-            if (feof($this->stream) === false && ($entry = $this->getLine($this->separator)) !== false) {
+            if (($entry = $this->getLine($this->separator)) !== false) {
                 $lineSize = count($entry);
                 $headersSize = count($this->headers);
 
@@ -318,7 +318,11 @@ abstract class Delimited
 
     protected function getLine($separator)
     {
-        return fgetcsv($this->stream, $this->lineLength, $separator, $this->enclosure, $this->escape);
+        if (feof($this->stream)) {
+            return false;
+        }
+
+        return fgetcsv($this->stream, $this->readingLength, $separator, $this->enclosure, $this->escape);
     }
 
     protected function boot()
