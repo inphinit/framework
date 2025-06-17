@@ -23,7 +23,7 @@ abstract class Delimited
     protected $indexSize;
 
     protected $enclosure = '"';
-    protected $escape = '\\';
+    protected $escape = '';
     protected $separator;
     protected $separators = array();
 
@@ -59,9 +59,18 @@ abstract class Delimited
     }
 
     /**
-     * Enable/disable decoding
+     * Enable or disable decoding of escaped sequences (e.g. \t, \n, \\) in field values.
      *
-     * @param bool $enable
+     * This is an optional convenience feature for CSV and TSV formats, commonly used
+     * in real-world TSV files where escaping is not formally specified but often applied.
+     * When enabled, each field value will be processed through stripcslashes().
+     *
+     * This does not affect file export (save and saveCsv), ensuring data integrity. Decoding is only
+     * applied at read-time and should be used when you expect backslash-escaped sequences
+     * in your source document.
+     *
+     * @throws \Exception If the argument is not a boolean
+     * @param bool $enable True to enable decoding, false to disable
      */
     public function enableDecoding($enable)
     {
@@ -290,7 +299,7 @@ abstract class Delimited
      *
      * @param string $path
      */
-    public function saveCsv($path, $separator = ',', $enclosure = '"', $escape = "\\", $eol = "\r\n")
+    public function saveCsv($path, $separator = ',', $enclosure = '"', $escape = '', $eol = "\r\n")
     {
         $handle = $this->saveStream($path);
 

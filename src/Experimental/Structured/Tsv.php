@@ -30,4 +30,3 @@ class Tsv extends Delimited
         return explode($separator, rtrim($line, self::$breakLine));
     }
 }
-
