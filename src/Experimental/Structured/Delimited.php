@@ -99,11 +99,7 @@ abstract class Delimited
             $length = null;
         }
 
-        if ($this->readingLength !== $length) {
-            $this->boot();
-        }
-
-        $this->readingLength = $length;
+        $this->refreshBoot('readingLength', $length, $refresh);
     }
 
     /**
@@ -113,9 +109,7 @@ abstract class Delimited
      */
     public function setEol($eol)
     {
-        if (empty($eol) || is_string($eol) === false) {
-            throw new Exception('Invalid line break');
-        }
+        self::isValid($eol, 'eol', 3);
 
         $this->eol = $eol;
     }
@@ -186,20 +180,14 @@ abstract class Delimited
                 }
 
                 if ($mode === self::MODE_INDEX) {
-                    foreach ($entry as &$item) {
-                        $item = self::normalize($item);
-                    }
-
                     return $entry;
                 }
 
                 $indexSize = $this->indexSize;
 
                 for ($index = 0; $index < $indexSize; ++$index) {
-                    $item = self::normalize($entry[$index]);
                     $header = $this->headers[$index];
-                    $entry[$index] = $item;
-                    $entry[$header] = $item;
+                    $entry[$header] = $entry[$index];
                 }
 
                 if ($mode === self::MODE_COLUMN) {
@@ -253,9 +241,9 @@ abstract class Delimited
             fwrite($handle, $bof);
         }
 
+        $eol = $this->eol;
         $tab = "\t";
         $space = ' ';
-        $eol = $this->eol;
 
         if ($format === self::TSV) {
             $items = str_replace($tab, $space, $this->headers);
@@ -299,8 +287,13 @@ abstract class Delimited
      *
      * @param string $path
      */
-    public function saveCsv($path, $separator = ',', $enclosure = '"', $escape = '', $eol = "\r\n")
+    public function saveCsv($path, $separator = null, $enclosure = null, $escape = null, $eol = null)
     {
+        $this->fallbackControl('separator', $separator);
+        $this->fallbackControl('enclosure', $enclosure);
+        $this->fallbackControl('escape', $escape);
+        $this->fallbackControl('eol', $eol);
+
         $handle = $this->saveStream($path);
 
         $this->rewind();
@@ -365,14 +358,41 @@ abstract class Delimited
             throw new Exception($hasSeparator ? "Invalid document for current separator: {$separator}" : 'Invalid document', 0, 3);
         }
 
-        foreach ($headers as &$header) {
-            $header = self::normalize($header);
+        if (isset($headers[0])) {
+            $headers[0] = self::normalize($headers[0]);
         }
 
         $this->headers = $headers;
         $this->indexSize = $indexSize;
         $this->separator = $inferredSeparator;
         $this->streaming = true;
+    }
+
+    protected static function isValid($hint, $value, $exLevel)
+    {
+        if (empty($value) || is_string($value) === false) {
+            throw new Exception('Invalid ' . $hint, 0, $exLevel);
+        }
+    }
+
+    protected function refreshBoot($property, $value, $refresh)
+    {
+        if ($this->{$property} !== $value) {
+            $this->{$property} = $value;
+
+            if ($refresh) {
+                $this->boot();
+            }
+        }
+    }
+
+    private function fallbackControl($property, &$value)
+    {
+        if ($value !== null) {
+            self::isValid($property, $value, 4);
+        } else {
+            $value = $this->{$property};
+        }
     }
 
     private static function normalize($input)
