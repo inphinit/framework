@@ -20,74 +20,51 @@ abstract class Delimited
     const MODE_COLUMN = 5;
 
     protected $stream;
-    protected $indexSize;
-
+    protected $chunk;
+    protected $separator;
     protected $enclosure = '"';
     protected $escape = '';
-    protected $separator;
     protected $separators = array();
-
-    protected $readingLength;
-
-    protected $fillEntries;
-    protected $headers;
-    protected $streaming;
-    protected $decoding = false;
-
     protected $eol = "\r\n";
 
     protected static $bom = "\xEF\xBB\xBF";
     protected static $nullChar = "\x00";
 
-    /**
-     * Open CSV file
-     *
-     * @param string $path
-     * @param string $mode
-     */
-    public function __construct($path)
-    {
-        $handle = fopen($path, 'r');
+    private $useHeaders;
+    private $headers = array();
+    private $fillEntries;
+    private $firstLine = true;
+    private $decoding = false;
+    private $streamEof = false;
+    private $indexSize;
+    private $saveStream;
 
-        if ($handle === false) {
-            $this->raise(3);
+    /**
+     * Open file with delimiter-separated values
+     *
+     * @param string $path  Set file path
+     * @param bool $headers Set true will make the first line the header, if false there will be no headers
+     * @throws \Inphinit\Exception
+     */
+    public function __construct($path, $headers = true)
+    {
+        $this->stream = fopen($path, 'r');
+
+        if ($this->stream === false) {
+            self::raise(3);
         }
 
-        $this->stream = $handle;
-        $this->setReadingLength(0, false);
+        $this->useHeaders = $headers;
+
         $this->boot();
     }
 
     /**
-     * Enable or disable decoding of escaped sequences (e.g. \t, \n, \\) in field values.
-     *
-     * This is an optional convenience feature for CSV and TSV formats, commonly used
-     * in real-world TSV files where escaping is not formally specified but often applied.
-     * When enabled, each field value will be processed through stripcslashes().
-     *
-     * This does not affect file export (save and saveCsv), ensuring data integrity. Decoding is only
-     * applied at read-time and should be used when you expect backslash-escaped sequences
-     * in your source document.
-     *
-     * @throws \Exception If the argument is not a boolean
-     * @param bool $enable True to enable decoding, false to disable
-     */
-    public function enableDecoding($enable)
-    {
-        if (is_bool($enable) === false) {
-            throw new Exception('A boolean value is expected');
-        }
-
-        $this->decoding = $enable;
-    }
-
-    /**
-     * Set the length of CSV lines read
+     * Set maximum line length
      *
      * @param int|null $length
-     * @param bool $refresh
      */
-    public function setReadingLength($length, $refresh = true)
+    public function setChunk($length, $refresh)
     {
         if ($length !== null && (is_int($length) === false || $length < 0)) {
             throw new Exception('Invalid length');
@@ -99,23 +76,45 @@ abstract class Delimited
             $length = null;
         }
 
-        $this->refreshBoot('readingLength', $length, $refresh);
+        $this->updateControl('chunk', $length, $refresh);
     }
 
     /**
-     * Set line break used by save() method
+     * Set line break used by `save()` and `saveCsv()` methods
      *
      * @param string $eol
      */
     public function setEol($eol)
     {
-        self::isValid($eol, 'eol', 3);
-
+        $this->isValid('eol', $eol);
         $this->eol = $eol;
     }
 
     /**
-     * Get headers from CSV file
+     * Enable or disable decoding of escaped sequences (e.g. `\t`, `\n`, `\\`) in field values.
+     *
+     * This is an optional convenience feature for CSV and TSV formats, commonly used
+     * in real-world TSV files where escaping is not formally specified but often applied.
+     * When enabled, each field value will be processed through `stripcslashes()`.
+     *
+     * This does not affect file export (`save()` and `saveCsv()`), ensuring data integrity. Decoding is only
+     * applied at read-time and should be used when you expect backslash-escaped sequences
+     * in your source document.
+     *
+     * @param bool $enable Set true to enable decoding, false to disable
+     * @throws \Inphinit\Exception If the argument is not a boolean
+     */
+    public function enableDecoding($enable)
+    {
+        if (is_bool($enable) === false) {
+            throw new Exception('A boolean value is expected');
+        }
+
+        $this->decoding = $enable;
+    }
+
+    /**
+     * Get headers from file
      *
      * @return array<string>
      */
@@ -140,63 +139,70 @@ abstract class Delimited
     public function rewind()
     {
         rewind($this->stream);
-        $this->streaming = $this->getLine($this->separator) !== false;
+
+        if ($this->useHeaders === false || $this->getLine($this->separator) !== false) {
+            $this->streamEof = false;
+        }
     }
 
     /**
-     * Fetch a row from file pointer and parse for CSV fields
+     * Fetch a row from file pointer
      *
-     * @param int $mode
-     * @param bool $decoding
-     * @return array|false
+     * @param int  $mode
+     * @throws \Inphinit\Exception
+     * @return array<string, string>|array<int, string>|false
      */
     public function fetch($mode = 0)
     {
-        $entry = false;
+        if ($this->streamEof) {
+            return false;
+        }
 
-        if ($this->streaming) {
-            if (($entry = $this->getLine($this->separator)) !== false) {
-                $lineSize = count($entry);
-                $headersSize = count($this->headers);
+        if ($this->useHeaders === false && $mode === self::MODE_COLUMN) {
+            throw new Exception('This instance is configured to not use headers');
+        }
 
-                if ($entry[0] === self::$nullChar && $lineSize === 1) {
-                    return false;
-                }
+        $entry = $this->getLine($this->separator);
 
-                if ($this->decoding) {
-                    foreach ($entry as &$item) {
-                        $item = stripcslashes($item);
-                    }
-                }
+        if ($entry === false || self::isNull($entry)) {
+            $this->streamEof = true;
+            return false;
+        }
 
-                if ($lineSize > $headersSize) {
-                    array_splice($entry, $headersSize);
-                } elseif ($lineSize < $headersSize) {
-                    if ($this->fillEntries === null) {
-                        $this->fillEntries = array_fill(0, $headersSize, '');
-                    }
+        if ($this->firstLine) {
+            self::withoutBom($entry[0]);
+            $this->firstLine = false;
+        }
 
-                    $entry += $this->fillEntries;
-                }
+        if ($this->decoding) {
+            foreach ($entry as &$item) {
+                $item = stripcslashes($item);
+            }
+        }
 
-                if ($mode === self::MODE_INDEX) {
-                    return $entry;
-                }
+        $indexSize = $this->indexSize;
+        $lineSize = count($entry);
 
-                $indexSize = $this->indexSize;
+        if ($lineSize > $indexSize) {
+            array_splice($entry, $indexSize);
+        } elseif ($lineSize < $indexSize) {
+            if ($this->fillEntries === null) {
+                $this->fillEntries = array_fill(0, $indexSize, '');
+            }
 
+            $entry += $this->fillEntries;
+        }
+
+        if ($this->useHeaders && $mode !== self::MODE_INDEX) {
+            for ($index = 0; $index < $indexSize; ++$index) {
+                $header = $this->headers[$index];
+                $entry[$header] = $entry[$index];
+            }
+
+            if ($mode === self::MODE_COLUMN) {
                 for ($index = 0; $index < $indexSize; ++$index) {
-                    $header = $this->headers[$index];
-                    $entry[$header] = $entry[$index];
+                    unset($entry[$index]);
                 }
-
-                if ($mode === self::MODE_COLUMN) {
-                    for ($index = 0; $index < $indexSize; ++$index) {
-                        unset($entry[$index]);
-                    }
-                }
-            } else {
-                $this->streaming = false;
             }
         }
 
@@ -212,10 +218,11 @@ abstract class Delimited
      *
      * @param string $path
      * @param int $format
+     * @throws \Inphinit\Exception
      */
     public function save($path, $format)
     {
-        $handle = $this->saveStream($path);
+        $handle = $this->openSaveStream($path);
 
         $bof = null;
         $eof = null;
@@ -226,6 +233,10 @@ abstract class Delimited
             $bof = '[';
             $eof = ']';
         } elseif ($format === self::JSON_PAIRS) {
+            if ($this->useHeaders === false) {
+                throw new Exception('This instance is configured to not use headers');
+            }
+
             $mode = self::MODE_COLUMN;
             $bof = '[';
             $eof = ']';
@@ -245,12 +256,14 @@ abstract class Delimited
         $tab = "\t";
         $space = ' ';
 
-        if ($format === self::TSV) {
-            $items = str_replace($tab, $space, $this->headers);
-            fwrite($handle, implode($tab, $items) . $eol);
-        } elseif ($format === self::JSON_INDEX) {
-            fwrite($handle, json_encode($this->headers));
-            $firstEntryWritten = true;
+        if ($this->useHeaders) {
+            if ($format === self::TSV) {
+                $items = str_replace($tab, $space, $this->headers);
+                fwrite($handle, implode($tab, $items) . $eol);
+            } elseif ($format === self::JSON_INDEX) {
+                fwrite($handle, json_encode($this->headers));
+                $firstEntryWritten = true;
+            }
         }
 
         $originalDecoding = $this->decoding;
@@ -278,23 +291,27 @@ abstract class Delimited
             fwrite($handle, $eof);
         }
 
-        flock($handle, LOCK_UN);
-        fclose($handle);
+        $this->closeSaveStream();
     }
 
     /**
-     * Saves a copy of file in CSV format (supports php:// output streams)
+     * Saves a copy of file in CSV format (supports `php://` output streams).
      *
-     * @param string $path
+     * @param string      $path      The output file path or stream (e.g., 'php://output').
+     * @param string|null $separator The CSV separator character for saving. Defaults to current instance separator.
+     * @param string|null $enclosure The CSV enclosure character for saving. Defaults to current instance enclosure.
+     * @param string|null $escape    The CSV escape character for saving. Defaults to current instance escape.
+     * @param string|null $eol       The end-of-line character(s) for saving. Defaults to current instance EOL.
+     * @throws \Inphinit\Exception   If any of the optional parameters are invalid.
      */
     public function saveCsv($path, $separator = null, $enclosure = null, $escape = null, $eol = null)
     {
-        $this->fallbackControl('separator', $separator);
-        $this->fallbackControl('enclosure', $enclosure);
-        $this->fallbackControl('escape', $escape);
-        $this->fallbackControl('eol', $eol);
+        $this->isValid('separator', $separator, true);
+        $this->isValid('enclosure', $enclosure, true);
+        $this->isValid('escape', $escape, true);
+        $this->isValid('eol', $eol, true);
 
-        $handle = $this->saveStream($path);
+        $handle = $this->openSaveStream($path);
 
         $this->rewind();
 
@@ -307,75 +324,26 @@ abstract class Delimited
             fputcsv($handle, $items, $separator, $enclosure, $escape, $eol);
         }
 
-        flock($handle, LOCK_UN);
-        fclose($handle);
+        $this->closeSaveStream();
     }
 
     public function __destruct()
     {
-        if ($this->stream) {
-            fclose($this->stream);
-        }
+        $this->closeSaveStream();
+
+        fclose($this->stream);
     }
 
-    protected function getLine($separator)
+    protected function isValid($property, &$value, $fallback = false)
     {
-        if (feof($this->stream)) {
-            return false;
-        }
-
-        return fgetcsv($this->stream, $this->readingLength, $separator, $this->enclosure, $this->escape);
-    }
-
-    protected function boot()
-    {
-        $this->streaming = false;
-
-        $headers = null;
-        $inferredSeparator = null;
-        $separator = $this->separator;
-        $hasSeparator = $this->separator !== null;
-        $separators = $hasSeparator ? array($separator) : $this->separators;
-
-        foreach ($separators as $separator) {
-            rewind($this->stream);
-
-            $headers = $this->getLine($separator);
-
-            if ($headers === false) {
-                $this->raise(4);
-            }
-
-            $indexSize = count($headers);
-
-            if ($indexSize > 1) {
-                $inferredSeparator = $separator;
-                break;
-            }
-        }
-
-        if ($inferredSeparator === null) {
-            throw new Exception($hasSeparator ? "Invalid document for current separator: {$separator}" : 'Invalid document', 0, 3);
-        }
-
-        if (isset($headers[0])) {
-            $headers[0] = self::normalize($headers[0]);
-        }
-
-        $this->headers = $headers;
-        $this->indexSize = $indexSize;
-        $this->separator = $inferredSeparator;
-        $this->streaming = true;
-    }
-
-    protected static function isValid($hint, $value, $exLevel)
-    {
-        if (empty($value) || is_string($value) === false) {
-            throw new Exception('Invalid ' . $hint, 0, $exLevel);
+        if ($fallback && $value === null) {
+            $value = $this->{$property};
+        } elseif (is_string($value) === false || empty($value)) {
+            throw new Exception('Invalid ' . $property. " => {$value}", 0, 3);
         }
     }
 
-    protected function refreshBoot($property, $value, $refresh)
+    protected function updateControl($property, $value, $refresh)
     {
         if ($this->{$property} !== $value) {
             $this->{$property} = $value;
@@ -386,18 +354,61 @@ abstract class Delimited
         }
     }
 
-    private function fallbackControl($property, &$value)
+    protected function getLine($separator)
     {
-        if ($value !== null) {
-            self::isValid($property, $value, 4);
+        while (feof($this->stream) === false) {
+            $line = fgetcsv($this->stream, $this->chunk, $separator, $this->enclosure, $this->escape);
+
+            if (isset($line[1]) || empty($line[0]) === false) {
+                return $line;
+            }
+        }
+
+        return false;
+    }
+
+    private function boot()
+    {
+        $indexSize = 0;
+        $entry = null;
+        $inferredSeparator = null;
+
+        foreach ($this->separators as $separator) {
+            rewind($this->stream);
+
+            $entry = $this->getLine($separator);
+
+            if ($entry === false) {
+                self::raise(4);
+            }
+
+            $indexSize = count($entry);
+
+            if ($indexSize > 1) {
+                $inferredSeparator = $separator;
+                break;
+            }
+        }
+
+        if ($inferredSeparator === null) {
+            throw new Exception('Invalid document', 0, 3);
+        }
+
+        $this->indexSize = $indexSize;
+        $this->separator = $inferredSeparator;
+
+        if ($this->useHeaders) {
+            self::withoutBom($entry[0]);
+            $this->firstLine = false;
+            $this->headers = $entry;
         } else {
-            $value = $this->{$property};
+            rewind($this->stream);
         }
     }
 
-    private static function normalize($input)
+    private static function isNull($entry)
     {
-        return strncmp($input, self::$bom, 3) === 0 ? substr($input, 3) : $input;
+        return $entry[0] === self::$nullChar && count($entry) === 1;
     }
 
     private static function raise($level)
@@ -406,15 +417,35 @@ abstract class Delimited
         throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, $level);
     }
 
-    private function saveStream($path)
+    private function openSaveStream($path)
     {
         $handle = fopen($path, 'w');
 
         if ($handle === false || (strpos($path, 'php://') !== 0 && flock($handle, LOCK_EX) === false)) {
-            $this->raise(4);
+            self::raise(4);
         }
 
-        return $handle;
+        return $this->saveStream = $handle;
+    }
+
+    private function closeSaveStream()
+    {
+        if ($this->saveStream) {
+            $meta = stream_get_meta_data($this->saveStream);
+
+            if (strpos($meta['uri'], 'php://') !== 0) {
+                flock($this->saveStream, LOCK_UN);
+            }
+
+            fclose($this->saveStream);
+            $this->saveStream = null;
+        }
+    }
+
+    private static function withoutBom(&$item)
+    {
+        if (strncmp($item, self::$bom, 3) === 0) {
+            $item = substr($item, 3);
+        }
     }
 }
-

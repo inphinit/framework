@@ -23,8 +23,8 @@ class Csv extends Delimited
      */
     public function setEnclosure($enclosure, $refresh = true)
     {
-        self::isValid($enclosure, 'enclosure', 3);
-        $this->refreshBoot('enclosure', $enclosure, $refresh);
+        $this->isValid('enclosure', $enclosure);
+        $this->updateControl('enclosure', $enclosure, $refresh);
     }
 
     /**
@@ -35,8 +35,8 @@ class Csv extends Delimited
      */
     public function setEscape($escape, $refresh = true)
     {
-        self::isValid($escape, 'escape', 3);
-        $this->refreshBoot('escape', $escape, $refresh);
+        $this->isValid('escape', $escape);
+        $this->updateControl('escape', $escape, $refresh);
     }
 
     /**
@@ -47,8 +47,17 @@ class Csv extends Delimited
      */
     public function setSeparator($separator, $refresh = true)
     {
-        self::isValid($separator, 'separator', 3);
-        $this->refreshBoot('separator', $separator, $refresh);
+        $this->isValid('separator', $separator);
+
+        $newValue = array($separator);
+
+        if ($this->separators !== $newValue) {
+            $this->separators = $newValue;
+
+            if ($refresh) {
+                $this->boot();
+            }
+        }
     }
 }
 

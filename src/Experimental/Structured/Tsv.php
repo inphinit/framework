@@ -21,7 +21,7 @@ class Tsv extends Delimited
             return false;
         }
 
-        $line = fgets($this->stream, $this->readingLength);
+        $line = fgets($this->stream, $this->chunk);
 
         if ($line === false || strpos($line, $separator) === false) {
             return false;
