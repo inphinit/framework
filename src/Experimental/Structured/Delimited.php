@@ -63,9 +63,10 @@ abstract class Delimited
      * Set maximum line length
      *
      * @param int|null $length
+     * @param bool     $refresh
      * @throws \Inphinit\Exception
      */
-    public function setChunk($length, $refresh)
+    public function setChunk($length, $refresh = true)
     {
         if ($length !== null && (is_int($length) === false || $length < 0)) {
             throw new Exception('Invalid length');
@@ -81,7 +82,7 @@ abstract class Delimited
     }
 
     /**
-     * Set line break used by `save()` and `saveCsv()` methods
+     * Set custom End of Line sequence used by `save()` and `saveCsv()` methods
      *
      * @param string $eol
      * @throws \Inphinit\Exception
@@ -213,9 +214,9 @@ abstract class Delimited
 
     /**
      * Saves a copy of file in the following formats (supports `php://` output streams):
-     * - TSV: in this format the separators are TABs.
-     * - JSON_INDEX: will generate a file with `[["header 1","header2"],["foo","bar"],["baz","boo"]]`.
-     * - JSON_PAIRS: will generate a file with `[{"header 1":"foo","header2":"bar"},{"header 1":"baz","header2":"boo"}]`.
+     * - TSV: in this format the separators are TABs
+     * - JSON_INDEX: will generate a file with `[["header 1","header2"],["foo","bar"],["baz","boo"]]`
+     * - JSON_PAIRS: will generate a file with `[{"header 1":"foo","header2":"bar"},{"header 1":"baz","header2":"boo"}]`
      *
      * @param string $path
      * @param int $format
@@ -297,29 +298,27 @@ abstract class Delimited
     }
 
     /**
-     * Saves a copy of file in CSV format (supports `php://` output streams).
+     * Saves a copy of file in CSV format (supports `php://` output streams)
      *
-     * @param string      $path      The output file path or stream (e.g., 'php://output').
-     * @param string|null $separator The CSV separator character for saving. Defaults to current instance separator.
-     * @param string|null $enclosure The CSV enclosure character for saving. Defaults to current instance enclosure.
-     * @param string|null $escape    The CSV escape character for saving. Defaults to current instance escape.
-     * @param string|null $eol       The end-of-line character(s) for saving. Defaults to current instance EOL.
-     * @throws \Inphinit\Exception   If any of the optional parameters are invalid.
+     * @param string      $path      The output file path or stream (e.g., 'php://output')
+     * @param string|null $separator The CSV separator character for saving. Defaults to current instance separator
+     * @param string|null $enclosure The CSV enclosure character for saving. Defaults to current instance enclosure
+     * @param string|null $escape    The CSV escape character for saving. Defaults to current instance escape
+     * @throws \Inphinit\Exception   If any of the optional parameters are invalid
      */
-    public function saveCsv($path, $separator = null, $enclosure = null, $escape = null, $eol = null)
+    public function saveCsv($path, $separator = null, $enclosure = null, $escape = null)
     {
         $this->isValid('separator', $separator, true);
         $this->isValid('enclosure', $enclosure, true);
         $this->isValid('escape', $escape, true);
-        $this->isValid('eol', $eol, true);
 
         $handle = $this->openSaveStream($path);
 
         $this->rewind();
 
+        $eol = $this->eol;
         $tab = "\t";
         $space = ' ';
-        $eol = $this->eol;
         $mode = self::MODE_INDEX;
 
         while ($items = $this->fetch($mode)) {

@@ -27,6 +27,6 @@ class Tsv extends Delimited
             return false;
         }
 
-        return explode($separator, rtrim($line, self::$breakLine));
+        return explode($separator, trim($line, self::$breakLine));
     }
 }
