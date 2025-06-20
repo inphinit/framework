@@ -20,6 +20,7 @@ class Csv extends Delimited
      *
      * @param string $enclosure
      * @param bool $refresh
+     * @throws \Inphinit\Exception
      */
     public function setEnclosure($enclosure, $refresh = true)
     {
@@ -32,6 +33,7 @@ class Csv extends Delimited
      *
      * @param string $escape
      * @param bool $refresh
+     * @throws \Inphinit\Exception
      */
     public function setEscape($escape, $refresh = true)
     {
@@ -44,6 +46,7 @@ class Csv extends Delimited
      *
      * @param string $separator
      * @param bool $refresh
+     * @throws \Inphinit\Exception
      */
     public function setSeparator($separator, $refresh = true)
     {

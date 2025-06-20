@@ -43,7 +43,7 @@ abstract class Delimited
      * Open file with delimiter-separated values
      *
      * @param string $path  Set file path
-     * @param bool $headers Set true will make the first line the header, if false there will be no headers
+     * @param bool $headers Set true to treat the first line as headers, set false otherwise
      * @throws \Inphinit\Exception
      */
     public function __construct($path, $headers = true)
@@ -63,6 +63,7 @@ abstract class Delimited
      * Set maximum line length
      *
      * @param int|null $length
+     * @throws \Inphinit\Exception
      */
     public function setChunk($length, $refresh)
     {
@@ -83,6 +84,7 @@ abstract class Delimited
      * Set line break used by `save()` and `saveCsv()` methods
      *
      * @param string $eol
+     * @throws \Inphinit\Exception
      */
     public function setEol($eol)
     {
@@ -101,8 +103,8 @@ abstract class Delimited
      * applied at read-time and should be used when you expect backslash-escaped sequences
      * in your source document.
      *
-     * @param bool $enable Set true to enable decoding, false to disable
-     * @throws \Inphinit\Exception If the argument is not a boolean
+     * @param bool $enable
+     * @throws \Inphinit\Exception
      */
     public function enableDecoding($enable)
     {
@@ -116,7 +118,7 @@ abstract class Delimited
     /**
      * Get headers from file
      *
-     * @return array<string>
+     * @return array<int, string>
      */
     public function getHeaders()
     {
@@ -148,7 +150,7 @@ abstract class Delimited
     /**
      * Fetch a row from file pointer
      *
-     * @param int  $mode
+     * @param int $mode
      * @throws \Inphinit\Exception
      * @return array<string, string>|array<int, string>|false
      */
@@ -164,7 +166,7 @@ abstract class Delimited
 
         $entry = $this->getLine($this->separator);
 
-        if ($entry === false || self::isNull($entry)) {
+        if ($entry === false || $entry[0] === self::$nullChar) {
             $this->streamEof = true;
             return false;
         }
@@ -210,8 +212,7 @@ abstract class Delimited
     }
 
     /**
-     * Saves a copy of file in the following formats (supports php:// output streams):
-     * - CSV: will generate a CSV file. Before saving the document you can use the setX, setY and setZ methods to change the output.
+     * Saves a copy of file in the following formats (supports `php://` output streams):
      * - TSV: in this format the separators are TABs.
      * - JSON_INDEX: will generate a file with `[["header 1","header2"],["foo","bar"],["baz","boo"]]`.
      * - JSON_PAIRS: will generate a file with `[{"header 1":"foo","header2":"bar"},{"header 1":"baz","header2":"boo"}]`.
@@ -339,7 +340,7 @@ abstract class Delimited
         if ($fallback && $value === null) {
             $value = $this->{$property};
         } elseif (is_string($value) === false || empty($value)) {
-            throw new Exception('Invalid ' . $property. " => {$value}", 0, 3);
+            throw new Exception('Invalid value for ' . $property . ' property', 0, 3);
         }
     }
 
@@ -404,11 +405,6 @@ abstract class Delimited
         } else {
             rewind($this->stream);
         }
-    }
-
-    private static function isNull($entry)
-    {
-        return $entry[0] === self::$nullChar && count($entry) === 1;
     }
 
     private static function raise($level)
