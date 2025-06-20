@@ -293,6 +293,7 @@ abstract class Delimited
         }
 
         $this->closeSaveStream();
+        $this->rewind();
     }
 
     /**
@@ -326,6 +327,7 @@ abstract class Delimited
         }
 
         $this->closeSaveStream();
+        $this->rewind();
     }
 
     public function __destruct()
