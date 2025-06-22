@@ -228,7 +228,9 @@ class App
                 $callback = array(new $callback(), $parsed[1]);
             }
 
-            if ($this->filter === null || $this->filter($this, $method, $path, $params) !== false) {
+            $filter = $this->filter;
+
+            if ($filter === null || $filter($this, $method, $path, $params) !== false) {
                 $output = $callback($this, $params);
             }
         }
