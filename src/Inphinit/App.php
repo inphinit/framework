@@ -24,7 +24,7 @@ class App
 
     protected $namespacePrefix = '';
     protected $pathPrefix = '/';
-    protected $filter;
+    protected $filters = array();
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
@@ -109,14 +109,14 @@ class App
     }
 
     /**
-     * Set route filter in the current scope control
+     * Add a filter for routes in the current scope
      *
      * @param callable $callback
      * @return void
      */
-    public function setFilter(callable $callback)
+    public function useFilter(callable $callback)
     {
-        $this->filter = $callback;
+        $this->filters[] = $callback;
     }
 
     /**
@@ -171,12 +171,12 @@ class App
                 }
             }
 
-            $previousFilter = $this->filter;
+            $previousFilters = $this->filters;
             $previousNamespacePrefix = $this->namespacePrefix;
 
             $callback($this, $params);
 
-            $this->filter = $previousFilter;
+            $this->filters = $previousFilters;
             $this->namespacePrefix = $previousNamespacePrefix;
             $this->pathPrefix = '/';
         }
@@ -228,9 +228,16 @@ class App
                 $callback = array(new $callback(), $parsed[1]);
             }
 
-            $filter = $this->filter;
+            if (empty($this->filters) === false) {
+                foreach ($this->filters as $filter) {
+                    if ($filter($this, $method, $path, $params) === false) {
+                        $callback = null;
+                        break;
+                    }
+                }
+            }
 
-            if ($filter === null || $filter($this, $method, $path, $params) !== false) {
+            if ($callback) {
                 $output = $callback($this, $params);
             }
         }

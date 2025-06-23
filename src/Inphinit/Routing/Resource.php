@@ -23,7 +23,7 @@ abstract class Resource
     /**
      * Define methods and routes
      *
-     * @var array
+     * @var array<string, array{0: string|array<string>, 1: string, 2: string|null}>
      */
     protected static $valids = array(
         'index'   => array('GET', '/', null),
