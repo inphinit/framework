@@ -24,7 +24,7 @@ class Checkup
 
     public function __construct()
     {
-        $this->development = App::config('development');
+        $this->development = \Inphinit\App::config('development');
 
         $this->sensitive = $this->development;
 

@@ -230,8 +230,6 @@ class Debug
         $linkMessage = str_replace(array('"', '\''), '', $message);
 
         $link = str_replace('{error}', rawurlencode($linkMessage), $link);
-        $link = htmlentities($link);
-        $message = htmlentities($message);
 
         return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
     }
@@ -318,9 +316,9 @@ class Debug
             die("Fatal error: {$message} in {$file} on line {$line}");
         }
 
-        if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
-            $data = self::details($type, $file, $line, false);
+        $data = self::details($type, $message, $file, $line);
 
+        if (headers_sent() === false && strpos(Request::header('accept'), 'application/json') === 0) {
             $this->unregister();
 
             Response::cache(0);
@@ -332,8 +330,6 @@ class Debug
         }
 
         View::dispatch();
-
-        $data = self::details($type, $message, $file, $line, true);
 
         $this->render($view, $data);
     }
@@ -362,7 +358,7 @@ class Debug
         View::render($view, $data);
     }
 
-    private static function details($type, $message, $file, $line, $htmlentities = true)
+    private static function details($type, $message, $file, $line)
     {
         $match = array();
 
@@ -408,12 +404,6 @@ class Debug
 
         if ($line > -1) {
             $source = self::source($file, $line);
-
-            if ($htmlentities && $source) {
-                foreach ($source['preview'] as &$entry) {
-                    $entry = strtr($entry, array('<' => '&lt;', '>' => '&gt;'));
-                }
-            }
         }
 
         return array(

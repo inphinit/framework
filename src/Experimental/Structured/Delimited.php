@@ -322,7 +322,11 @@ abstract class Delimited
         $mode = self::MODE_INDEX;
 
         while ($items = $this->fetch($mode)) {
-            fputcsv($handle, $items, $separator, $enclosure, $escape, $eol);
+            if (PHP_VERSION_ID < 80100) {
+                fputcsv($handle, $items, $separator, $enclosure, $escape);
+            } else {
+                fputcsv($handle, $items, $separator, $enclosure, $escape, $eol);
+            }
         }
 
         $this->closeSaveStream();
