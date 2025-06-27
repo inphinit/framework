@@ -143,8 +143,15 @@ class Url
             }
 
             if ($configs & self::PATH_ASCII) {
-                $path = Strings::toAscii($path);
-                $path = \strtolower($path);
+                $items = explode('/', $path);
+
+                foreach ($items as &$item) {
+                    $item = Strings::toAscii($item);
+                    $item = str_replace('/', '-', $item);
+                }
+
+                $path = implode('/', $items);
+                $path = strtolower($path);
             } elseif ($configs & self::PATH_UNICODE) {
                 if (self::$transliterator === null) {
                     self::$transliterator = \Transliterator::create('Any-Lower');
@@ -155,7 +162,7 @@ class Url
 
             if ($configs & self::PATH_SLUG) {
                 $path = strtr($path, self::$slugDict);
-                $path = preg_replace('#[^\/\-\pL\pN\s_]+#u', '', $path);
+                $path = preg_replace('#[^\(\)\[\]\/\-\pL\pN\s_]+#u', '', $path);
                 $path = preg_replace('#[\s\-_]+#', '-', $path);
                 $path = str_replace(array('/-', '-/'), '/', $path);
                 $path = preg_replace('#//+#', '/', $path);

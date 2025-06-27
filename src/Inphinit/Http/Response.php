@@ -77,7 +77,7 @@ class Response
             if ($charset && ($charset = trim($charset))) {
                 self::checkHeaderContent($charset);
 
-                $value .= ';charset=' . $charset;
+                $value .= '; charset=' . $charset;
             }
 
             header('Content-Type: ' . $value);
