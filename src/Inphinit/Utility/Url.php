@@ -169,6 +169,7 @@ class Url
             }
 
             $this->data['path'] = $path;
+            $this->cache = null;
         }
 
         if ($this->data['query'] && ($configs & self::SORT_QUERY)) {
@@ -177,6 +178,7 @@ class Url
             if ($query) {
                 Arrays::ksort($query);
                 $this->data['query'] = http_build_query($query);
+                $this->cache = null;
             }
         }
     }

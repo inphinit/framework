@@ -125,10 +125,12 @@ class View
     private static function escape(array &$data, $mode)
     {
         foreach ($data as &$item) {
-            if (is_string($item)) {
-                $item = htmlspecialchars((string) $item, $mode, self::$encoding);
-            } elseif (is_array($item)) {
+            if (is_array($item)) {
                 self::escape($item, $mode);
+            } elseif (is_string($item)) {
+                $item = htmlspecialchars($item, $mode, self::$encoding);
+            } elseif (is_object($item) && method_exists($item, '__toString')) {
+                $item = htmlspecialchars((string) $item, $mode, self::$encoding);
             }
         }
     }

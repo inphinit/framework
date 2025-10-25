@@ -26,14 +26,17 @@ class Request
     }
 
     /**
-     * Check is request is: HTTPS, XMLHttpRequest, Pjax, prefetch, save-data or HTTP methods
+     * Checks if the request matches a specific type: HTTPS, XHR, Pjax, prefetch, save-data, GPC, or a standard HTTP method (eg.: GET, POST).
      *
-     * @param string $type
+     * @param string $type The type to check (eg.: 'gpc', 'pjax', 'prefetch', 'save', 'secure', 'xhr', 'POST', 'HEAD').
      * @return bool
      */
     public static function is($type)
     {
         switch ($type) {
+            case 'gpc':
+                return self::header('sec-gpc', '') === '1';
+
             case 'pjax':
                 return self::headerMatches('x-pjax', 'true');
 
