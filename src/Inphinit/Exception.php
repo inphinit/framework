@@ -14,7 +14,8 @@ use Inphinit\Debugging\Inspector;
 class Exception extends \Exception
 {
     /**
-     * Raise an exception
+     * Create a new exception instance, optionally adjusting file and line
+     * based on a specific stack trace depth.
      *
      * @param string     $message
      * @param int        $code

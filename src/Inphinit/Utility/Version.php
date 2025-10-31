@@ -57,7 +57,7 @@ class Version
                 $this->data['build'] = explode('.', $matches[5]);
             }
         } else {
-            throw new Exception($version . ' not matches with semversion');
+            throw new Exception('Invalid version format: ' . $version . ' does not match SemVer');
         }
     }
 
@@ -65,7 +65,8 @@ class Version
      * Compare current version with another version
      *
      * @param \Inphinit\Utility\Version $version
-     * @return int
+     * @return int returns -1 if the current version is lower than the second,
+     *                     0 if they are equal, and 1 if the second is lower.
      */
     public function compare(Version $version)
     {
@@ -119,6 +120,7 @@ class Version
         }
 
         $this->data[$name] = $value;
+        $this->cache = null;
     }
 
     /**

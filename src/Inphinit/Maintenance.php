@@ -25,7 +25,7 @@ class Maintenance
     }
 
     /**
-     * Down site to maintenance mode
+     * Put the application into maintenance mode
      *
      * @return bool
      */
@@ -35,7 +35,7 @@ class Maintenance
     }
 
     /**
-     * Up site
+     * Bring the application out of maintenance mode
      *
      * @return bool
      */

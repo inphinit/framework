@@ -29,7 +29,7 @@ class Method
     );
 
     /**
-     * Create a Method instace
+     * Create a Method instance
      *
      * @param bool $reset Optional. Reset sources
      */
@@ -55,8 +55,8 @@ class Method
     /**
      * Adds a request header as an alternative source for determining the HTTP method
      *
-     * @param bool $header
-     * @param int  $priority
+     * @param string $header
+     * @param int    $priority
      */
     public function addHeader($header, $priority = 0)
     {
@@ -66,8 +66,8 @@ class Method
     /**
      * Adds a parameter (request body or querystring) as an alternative source for determining the HTTP method
      *
-     * @param bool $param
-     * @param int  $priority
+     * @param string $param
+     * @param int    $priority
      */
     public function addParam($param, $priority = 0)
     {
@@ -107,7 +107,7 @@ class Method
             }
         }
 
-        return '';
+        return self::$initial;
     }
 
     /**

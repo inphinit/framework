@@ -57,28 +57,33 @@ class File
      * Return `false` if file is not found
      *
      * @param string $path
-     * @param bool   $full
+     * @param bool   $symbolic
      * @throws \Inphinit\Exception
      * @return string|false
      */
-    public static function permissions($path, $full = false)
+    public static function permissions($path, $symbolic = false)
     {
         self::checkInDevMode($path);
 
         $path = realpath($path);
-        $perms = fileperms($path);
 
-        if ($path === false || $perms === false) {
+        if ($path === false) {
             return false;
         }
 
-        $type = $full ? 'symbolic' : 'octal';
+        $perms = fileperms($path);
+
+        if ($perms === false) {
+            return false;
+        }
+
+        $type = $symbolic ? 'symbolic' : 'octal';
 
         if (isset(self::$infos[$path][$type])) {
             return self::$infos[$path][$type];
         }
 
-        if ($full !== true) {
+        if ($symbolic !== true) {
             return self::$infos[$path][$type] = substr(sprintf('%o', $perms), -4);
         }
 

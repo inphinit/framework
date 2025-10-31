@@ -73,7 +73,9 @@ abstract class Delimited
         }
 
         if (PHP_VERSION_ID < 80000) {
-            if ($length === null) $length = 0;
+            if ($length === null) {
+                $length = 0;
+            }
         } elseif ($length < 1) {
             $length = null;
         }
@@ -213,7 +215,7 @@ abstract class Delimited
     }
 
     /**
-     * Saves a copy of file in the following formats (supports `php://` output streams):
+     * Saves a copy to file in the following formats (supports `php://` output streams):
      * - TSV: in this format the separators are TABs
      * - JSON_INDEX: will generate a file with `[["header 1","header2"],["foo","bar"],["baz","boo"]]`
      * - JSON_PAIRS: will generate a file with `[{"header 1":"foo","header2":"bar"},{"header 1":"baz","header2":"boo"}]`
@@ -317,8 +319,6 @@ abstract class Delimited
         $this->rewind();
 
         $eol = $this->eol;
-        $tab = "\t";
-        $space = ' ';
         $mode = self::MODE_INDEX;
 
         while ($items = $this->fetch($mode)) {

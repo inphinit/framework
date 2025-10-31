@@ -100,7 +100,7 @@ class FileResponse
     public function send($overwrite = false)
     {
         if (headers_sent()) {
-            throw new Exception('Cannot dispatch file, headers have already been sent');
+            throw new Exception('Cannot dispatch file, headers already sent');
         }
 
         $this->checkDispatched($overwrite);

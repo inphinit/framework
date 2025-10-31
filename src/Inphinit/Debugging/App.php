@@ -28,6 +28,7 @@ class App extends \Inphinit\App
      *
      * @param string $key
      * @param scalar $value
+     * @throws \Inphinit\Exception
      * @return scalar
      */
     public static function config($key, $value = null)
@@ -108,6 +109,7 @@ class App extends \Inphinit\App
      * Validate namespace prefix, if valid define controller prefix on scope
      *
      * @param string $prefix Set controller prefix
+     * @throws \Inphinit\Exception
      */
     public function setNamespace($prefix)
     {
@@ -127,6 +129,7 @@ class App extends \Inphinit\App
      *
      * @param string $name
      * @param string $regex
+     * @throws \Inphinit\Exception
      * @return void
      */
     public function setPattern($name, $regex)
@@ -159,6 +162,7 @@ class App extends \Inphinit\App
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback
+     * @throws \Inphinit\Exception
      */
     public function scope($pattern, \Closure $callback)
     {
@@ -173,19 +177,19 @@ class App extends \Inphinit\App
 
     public function __get($name)
     {
-        $this->checkVisibity($name);
+        $this->checkVisibility($name);
 
         return parent::__get($name);
     }
 
     public function __set($name, $value)
     {
-        $this->checkVisibity($name);
+        $this->checkVisibility($name);
 
         parent::__set($name, $value);
     }
 
-    private function checkVisibity($name)
+    private function checkVisibility($name)
     {
         try {
             $property = $this->reflection->getProperty($name);
@@ -246,7 +250,7 @@ class App extends \Inphinit\App
             $invalids = array_diff($patterns, $paramPatterns);
 
             if (count($invalids)) {
-                throw new Exception('Invalid patterns: ' . self::getParamSugestions($invalids, $paramPatterns), 0, 3);
+                throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $paramPatterns), 0, 3);
             }
         }
     }
@@ -261,7 +265,9 @@ class App extends \Inphinit\App
             return preg_last_error_msg();
         }
 
-        switch (preg_last_error()) {
+        $error = preg_last_error();
+
+        switch ($error) {
             case PREG_NO_ERROR:
                 return 'No error';
             case PREG_INTERNAL_ERROR:
@@ -283,25 +289,25 @@ class App extends \Inphinit\App
         return 'Unknown error';
     }
 
-    private function getParamSugestions(array $words, array $sugestions)
+    private function getParamSuggestions(array $words, array $suggestions)
     {
         foreach ($words as &$word) {
             $currentDistance = -1;
-            $currentSugestion = null;
+            $currentSuggestion = null;
 
-            foreach ($sugestions as $sugestion) {
-                $distance = levenshtein($word, $sugestion);
+            foreach ($suggestions as $suggestion) {
+                $distance = levenshtein($word, $suggestion);
 
                 if ($distance < 3 && ($currentDistance === -1 || $distance < $currentDistance)) {
                     $currentDistance = $distance;
-                    $currentSugestion = $sugestion;
+                    $currentSuggestion = $suggestion;
                 }
             }
 
             $word = ":{$word}";
 
-            if ($currentSugestion !== null) {
-                $word .= " (sugestion :{$currentSugestion})";
+            if ($currentSuggestion !== null) {
+                $word .= " (suggestion: {$currentSuggestion})";
             }
         }
 

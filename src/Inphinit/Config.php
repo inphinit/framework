@@ -52,9 +52,7 @@ class Config
             throw new Exception($this->path . ' configurations cannot be loaded or format is invalid', 0, $level);
         }
 
-        foreach ($configs as $key => $value) {
-            $this->data[$key] = $value;
-        }
+        $this->data = $configs;
     }
 
     /**

@@ -113,7 +113,7 @@ class Negotiation
     }
 
     /**
-     * Get the first language with with the greatest q-factor,
+     * Get the first language with the greatest q-factor,
      * if it does not exist then return the value of `$alternative`
      *
      * @param mixed $alternative Define alternative value, this value will be
@@ -127,7 +127,7 @@ class Negotiation
     }
 
     /**
-     * Get the first charset with with the greatest q-factor,
+     * Get the first charset with the greatest q-factor,
      * if it does not exist then return the value of `$alternative`
      *
      * @param mixed $alternative Define alternative value, this value will be
@@ -141,7 +141,7 @@ class Negotiation
     }
 
     /**
-     * Get the first encoding with with the greatest q-factor,
+     * Get the first encoding with the greatest q-factor,
      * if it does not exist then return the value of `$alternative`
      *
      * @param mixed $alternative Define alternative value, this value will be

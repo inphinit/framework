@@ -152,9 +152,9 @@ if (PHP_SAPI === 'cli') {
 
 $inphinit_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
 
-$inphinit_proto = App::config('fowarded_proto');
-$inphinit_host = App::config('fowarded_host');
-$inphinit_port = App::config('fowarded_port');
+$inphinit_proto = App::config('forwarded_proto');
+$inphinit_host = App::config('forwarded_host');
+$inphinit_port = App::config('forwarded_port');
 
 if ($inphinit_proto === null) {
     $inphinit_proto = $inphinit_https ? 'https' : 'http';

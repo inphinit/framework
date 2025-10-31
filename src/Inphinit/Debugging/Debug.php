@@ -160,7 +160,13 @@ class Debug
      */
     public static function constants()
     {
-        $data = get_defined_constants(true)['user'];
+        $data = get_defined_constants(true);
+
+        if (empty($data['user'])) {
+            return array();
+        }
+
+        $data = $data['user'];
 
         ksort($data);
 

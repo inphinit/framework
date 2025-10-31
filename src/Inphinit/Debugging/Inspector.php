@@ -23,7 +23,7 @@ class Inspector
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, $limit);
 
-        if (isset($trace[$level])) {
+        if (isset($trace[$level]['file'], $trace[$level]['line'])) {
             $info = $trace[$level];
 
             self::evalSource($info['file'], $info['file'], $info['line']);
