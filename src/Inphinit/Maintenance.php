@@ -12,10 +12,10 @@ namespace Inphinit;
 class Maintenance
 {
     /**
-     * Condition to bypass maintenance mode
+     * Adds a callback to disable maintenance mode at runtime.
+     * If the callback returns true, maintenance mode will be turned off for the current request.
      *
-     * @param callable $callback
-     * @return void
+     * @param callable $callback A function that determines whether maintenance mode should be bypassed.
      */
     public static function bypass(callable $callback)
     {

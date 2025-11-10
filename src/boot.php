@@ -15,7 +15,8 @@ header_remove('X-Powered-By');
 require 'Inphinit/App.php';
 
 /**
- * case-sensitive check path
+ * Checks whether the file exists using a case-sensitive comparison, regardless of the operating system.
+ * Used internally by the framework for components such as the autoloader, controllers, and others.
  *
  * @param string $path
  * @return bool

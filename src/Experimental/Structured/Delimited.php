@@ -96,7 +96,7 @@ abstract class Delimited
     }
 
     /**
-     * Enable or disable decoding of escaped sequences (e.g. `\t`, `\n`, `\\`) in field values.
+     * Enable or disable decoding of escaped sequences (e.g., `\t`, `\n`, `\\`) in field values.
      *
      * This is an optional convenience feature for CSV and TSV formats, commonly used
      * in real-world TSV files where escaping is not formally specified but often applied.

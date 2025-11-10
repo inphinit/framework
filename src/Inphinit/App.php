@@ -66,7 +66,6 @@ class App
      * @param string|array $methods
      * @param string       $path
      * @param callable     $callback
-     * @return void
      */
     public function action($methods, $path, $callback)
     {
@@ -101,7 +100,6 @@ class App
      * Prefixes the namespace in the current scope control
      *
      * @param string $prefix
-     * @return void
      */
     public function setNamespace($prefix)
     {
@@ -112,7 +110,6 @@ class App
      * Add a filter for routes in the current scope
      *
      * @param callable $callback
-     * @return void
      */
     public function useFilter(callable $callback)
     {
@@ -124,7 +121,6 @@ class App
      *
      * @param string $name
      * @param string $regex
-     * @return void
      */
     public function setPattern($name, $regex)
     {
@@ -137,7 +133,6 @@ class App
      *
      * @param string   $pattern  URI pattern
      * @param \Closure $callback Callback
-     * @return void
      */
     public function scope($pattern, \Closure $callback)
     {
@@ -223,9 +218,8 @@ class App
             inphinit_sandbox('errors.php', array('code' => $code));
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
-                $parsed = explode('::', $callback, 2);
-                $callback = '\\Controllers\\' . $parsed[0];
-                $callback = array(new $callback(), $parsed[1]);
+                $controller = '\\Controllers\\' . strtok($callback, '::');
+                $callback = array(new $controller(), strtok('::'));
             }
 
             if (empty($this->filters) === false) {

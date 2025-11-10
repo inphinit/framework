@@ -26,9 +26,9 @@ class Request
     }
 
     /**
-     * Checks if the request matches a specific type: HTTPS, XHR, Pjax, prefetch, save-data, GPC, or a standard HTTP method (eg.: GET, POST).
+     * Checks if the request matches a specific type: HTTPS, XHR, Pjax, prefetch, save-data, GPC, or a standard HTTP method (e.g., GET, POST).
      *
-     * @param string $type The type to check (eg.: 'gpc', 'pjax', 'prefetch', 'save', 'secure', 'xhr', 'POST', 'HEAD').
+     * @param string $type The type to check (e.g., `gpc`, `pjax`, `prefetch`, `save`, `secure`, `xhr`, `POST`, `HEAD`).
      * @return bool
      */
     public static function is($type)
@@ -81,7 +81,7 @@ class Request
     }
 
     /**
-     * Get querystring - Note: same as $_SERVER['QUERY_STRING'], but with framework adjustments on IIS web server
+     * Get querystring - Note: same as `$_SERVER['QUERY_STRING']`, but with framework adjustments on IIS web server
      *
      * @return string|null
      */
@@ -92,7 +92,7 @@ class Request
 
     /**
      * Get a value from `$_GET`, if `$_GET` is a array multidimensional, you can use dot like path:
-     * If `$_GET['foo']` returns this `array('baz' => 'bar' => 1);` use `Request::get('foo.bar.baz');`
+     * If `$_GET['foo']` returns this `['baz' => ['baz' => 1]]` use `Request::get('foo.bar.baz')`
      * for return `1`
      *
      * @param string $key
@@ -105,8 +105,8 @@ class Request
     }
 
     /**
-     * Get a value from $_POST, if $_POST is a array multidimensional, you can use dot like path:
-     * If $_POST['foo'] returns this array('baz' => 'bar' => 1); use Request::post('foo.bar.baz');
+     * Get a value from `$_POST`, if `$_POST` is a array multidimensional, you can use dot like path:
+     * If `$_POST['foo']` returns this `['baz' => ['baz' => 1]]` use `Request::post('foo.bar.baz')`
      *
      * @param string $key
      * @param mixed  $alternative

@@ -13,24 +13,16 @@ use Inphinit\App;
 
 abstract class Treaty
 {
-    /** Create a route with slash at the end, like: `/foo/` */
+    /** @var int Create a route with slash at the end, like: `/foo/` */
     const SLASH = 1;
 
-    /** Create a route without slash at the end, like: `/foo` */
+    /** @var int Create a route without slash at the end, like: `/foo` */
     const NOSLASH = 2;
 
-    /**
-     * Define path format, possible values: self::SLASH, self::NOSLASH, self::SLASH|self::NOSLASH
-     *
-     * @var int
-     */
+    /** @var int Define path format, possible values: `self::SLASH`, `self::NOSLASH`, `self::SLASH|self::NOSLASH` */
     protected $format;
 
-    /**
-     * Define regex for match public methods from controller
-     *
-     * @var string
-     */
+    /** @var string Define regex for match public methods from controller */
     protected static $valids = '#^(any|delete|get|head|options|patch|post|put)([A-Z0-9]\w+)$#';
 
     private $context;

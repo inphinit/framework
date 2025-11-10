@@ -37,7 +37,6 @@ class Packages
      *
      * @param string $path Set composer path, like `vendor/composer`
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setComposer($path)
     {
@@ -234,7 +233,6 @@ class Packages
      * @param string $prefix
      * @param string $path
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setItem($prefix, $path)
     {
@@ -258,7 +256,7 @@ class Packages
     /**
      * Save imported packages path to file in PHP format
      *
-     * @param string $path File to save packages paths, eg. `/foo/namespaces.php`
+     * @param string $path File to save packages paths (e.g., `/foo/namespaces.php`)
      * @return bool
      */
     public function save($path)
@@ -305,7 +303,7 @@ class Packages
     /**
      * Save imported autoload files path to file in PHP format
      *
-     * @param string $path      File to save packages paths, eg. `/foo/files.php`
+     * @param string $path      File to save packages paths (e.g., `/foo/files.php`)
      * @param bool $removeEmpty Remove the destination file if there are no files to be included
      * @return bool
      */

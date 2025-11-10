@@ -14,8 +14,28 @@ use Inphinit\Exception;
 
 class Size
 {
+    /**
+     * Defines the instance to use the COM module to calculate the file size.
+     * Note: It can be combined with the other modes, which will serve as alternatives
+     *
+     * @var int
+     * */
     const COM = 1;
+
+    /**
+     * Defines the instance to use the cURL module to calculate the file size.
+     * Note: It can be combined with the other modes, which will serve as alternatives
+     *
+     * @var int
+     * */
     const CURL = 2;
+
+    /**
+     * Defines the instance to use shell commands to calculate the file size.
+     * Note: It can be combined with the other modes, which will serve as alternatives
+     *
+     * @var int
+     * */
     const SYSTEM = 4;
 
     private $modes;
@@ -114,7 +134,7 @@ class Size
             try {
                 $file = $boot->GetFile($path);
                 return $file->size;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->lastError = $e;
             }
         }

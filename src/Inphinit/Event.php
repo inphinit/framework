@@ -11,10 +11,10 @@ namespace Inphinit;
 
 class Event
 {
-    /** Priority level for events that should be executed before others */
+    /** @var int Priority level for events that should be executed before others */
     const HIGH_PRIORITY = 1;
 
-    /** Priority level for events that should be executed after higher-priority ones */
+    /** @var int Priority level for events that should be executed after higher-priority ones */
     const LOW_PRIORITY = -1;
 
     private static $events = array();
@@ -72,7 +72,6 @@ class Event
      * @param string   $name     Event name
      * @param callable $callback Callback to execute when the event is triggered
      * @param int      $priority Execution priority (higher numbers run earlier). Default is 0
-     * @return void
      */
     public static function on($name, callable $callback, $priority = 0)
     {
@@ -90,7 +89,6 @@ class Event
      * Marks an event as unique, ensuring it can only be triggered once
      *
      * @param string $name Event name
-     * @return void
      */
     public static function once($name)
     {
@@ -102,7 +100,6 @@ class Event
      *
      * @param string        $name     Event name
      * @param callable|null $callback Specific callback to remove, or null to remove all
-     * @return void
      */
     public static function off($name, $callback = null)
     {
@@ -122,7 +119,6 @@ class Event
     /**
      * Clears all registered events and uniqueness flags
      *
-     * @return void
      */
     public static function clear()
     {

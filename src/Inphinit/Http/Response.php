@@ -18,7 +18,7 @@ class Response
 {
     /**
      * Get or set status code and return previous status code.
-     * Note: if the status has changed the Event::on('changestatus') event will be trigged
+     * Note: If the status has changed, the `Event::on('changestatus')` event will be triggered
      *
      * @param int $code
      * @return int
@@ -45,7 +45,6 @@ class Response
      * @param string|null $value
      * @param bool        $replace
      * @throws \Inphinit\Exception
-     * @return void
      */
     public static function header($name, $value, $replace = true)
     {
@@ -65,7 +64,6 @@ class Response
      *
      * @param string|null $value
      * @param string|null $charset
-     * @return void
      */
     public static function type($value, $charset = null)
     {
@@ -89,7 +87,6 @@ class Response
      *
      * @param int $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled.
      * @param int $modified Optional. Last modified timestamp. Defaults to the current time.
-     * @return void
      */
     public static function cache($seconds, $modified = 0)
     {
@@ -112,9 +109,8 @@ class Response
     /**
      * Force download current response
      *
-     * @param string $name   File name for download (eg.: "report.pdf")
+     * @param string $name   File name for download (e.g., "report.pdf")
      * @param int    $length Optional. File size in bytes
-     * @return void
      */
     public static function download($name, $length = 0)
     {

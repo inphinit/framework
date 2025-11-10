@@ -51,7 +51,6 @@ class App extends \Inphinit\App
      * @param string          $path
      * @param string|callable $callback
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function action($methods, $path, $callback)
     {
@@ -76,16 +75,15 @@ class App extends \Inphinit\App
         $this->checkPatterns($path);
 
         if (is_string($callback) && strpos($callback, '::') !== false) {
-            list($className, $method) = explode('::', $callback, 2);
+            $controller = '\\Controllers\\' . $this->namespacePrefix . strtok($callback, '::');
+            $method = strtok('::');
+            $classAndMethod = "{$controller}::{$method}()";
 
-            $className = '\\Controllers\\' . $this->namespacePrefix . $className;
-            $classAndMethod = "{$className}::{$method}()";
-
-            if (method_exists($className, $method) === false) {
+            if (method_exists($controller, $method) === false) {
                 throw new Exception($classAndMethod . ' is invalid');
             }
 
-            $reflection = new \ReflectionMethod($className, $method);
+            $reflection = new \ReflectionMethod($controller, $method);
 
             if ($reflection->isPublic() === false) {
                 throw new Exception($classAndMethod . ' is not public');
@@ -130,7 +128,6 @@ class App extends \Inphinit\App
      * @param string $name
      * @param string $regex
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setPattern($name, $regex)
     {

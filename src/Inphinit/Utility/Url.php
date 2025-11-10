@@ -86,7 +86,6 @@ class Url
      * Sets default ports
      *
      * @param array $dict
-     * @return void
      */
     public static function setDefaultPorts(array $ports)
     {
@@ -97,7 +96,6 @@ class Url
      * Sets slug dictionary
      *
      * @param array $dict
-     * @return void
      */
     public static function setSlugDict(array $dict)
     {
@@ -125,7 +123,6 @@ class Url
      * Normalize path and querystring
      *
      * @param int $configs
-     * @return void
      */
     public function normalize($configs = 0)
     {

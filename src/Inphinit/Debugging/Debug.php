@@ -19,6 +19,24 @@ use Inphinit\Viewing\View;
 
 class Debug
 {
+    /** @var array<string, string> List of shortcuts to link errors to external assistants */
+    protected static $assistants = array(
+        'chatgpt' => 'https://chat.openai.com/?q={error}',
+        'claude' => 'https://claude.ai/new?q={error}',
+        'duck.ai' => 'https://duckduckgo.com/?q={error}&amp;ia=chat',
+        'duckduckgo' => 'https://duckduckgo.com/?q={error}',
+        'google' => 'https://www.google.com/search?q={error}',
+        'google.ai' => 'https://www.google.com/search?q={error}&amp;udm=50',
+        'perplexity' => 'https://www.perplexity.ai/search?q={error}',
+    );
+
+    /** @var array<string, string> List of shortcuts for linking problematic files via link to external editors */
+    protected static $editors = array(
+        // Requires: https://packagecontrol.io/packages/subl%20protocol
+        'sublimetext' => 'subl://{path}:{line}',
+        'vscode' => 'vscode://file/{path}:{line}:0',
+    );
+
     private $rendered = false;
     private $beforeView;
     private $views = array();
@@ -29,7 +47,6 @@ class Debug
      * Note: This method does not affect behavior in the CLI environment
      *
      * @param string $view
-     * @return void
      */
     public function setBeforeView($view)
     {
@@ -44,7 +61,6 @@ class Debug
      *
      * @param string $view
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setDefinedView($view)
     {
@@ -57,7 +73,6 @@ class Debug
      *
      * @param string $view
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setErrorView($view)
     {
@@ -79,7 +94,6 @@ class Debug
      *
      * @param string $view
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function setPerformanceView($view)
     {
@@ -89,7 +103,6 @@ class Debug
     /**
      * Unregister debug events and views
      *
-     * @return void
      */
     public function unregister()
     {
@@ -147,6 +160,12 @@ class Debug
     public static function functions()
     {
         $data = get_defined_functions()['user'];
+
+        if (empty($data['user'])) {
+            return array();
+        }
+
+        $data = $data['user'];
 
         sort($data);
 
@@ -221,23 +240,31 @@ class Debug
     {
         self::boot();
 
-        $link = self::$configs->assistant;
+        $link = null;
 
-        if (strpos($link, '{error}') === false) {
-            return $message;
+        $option = self::$configs->assistant;
+
+        if ($option) {
+            $link = isset(self::$assistants[$option]) ? self::$assistants[$option] : $option;
         }
 
-        $pos = strrpos($message, ' in ');
+        if ($link && strpos($link, '{error}') !== false) {
+            $pos = strrpos($message, ' in ');
 
-        if ($pos !== false) {
-            $message = substr($message, 0, $pos);
+            if ($pos !== false) {
+                $message = substr($message, 0, $pos);
+            }
+
+            $linkMessage = html_entity_decode($message);
+            $linkMessage = str_replace(array('"', '\''), '', $linkMessage);
+            $linkMessage = rawurlencode($linkMessage);
+
+            $link = str_replace('{error}', $linkMessage, $link);
+
+            $message = '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }
 
-        $linkMessage = str_replace(array('"', '\''), '', $message);
-
-        $link = str_replace('{error}', rawurlencode($linkMessage), $link);
-
-        return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
+        return $message;
     }
 
     /**
@@ -252,7 +279,7 @@ class Debug
     {
         self::boot();
 
-        $link = false;
+        $link = null;
         $message = $file . ' in line ' . $line;
 
         $file = realpath($file);
@@ -268,20 +295,15 @@ class Debug
          * Note: The error could also be a bug in a library, report the bug
          */
         if (strpos($file, $vendor) !== 0) {
-            $link = self::$configs->editor;
+            $option = self::$configs->editor;
 
-            switch ($link) {
-                case 'vscode':
-                    $link = 'vscode://file/{path}:{line}:0';
-                    break;
-                case 'sublimetext':
-                    // Requires: https://packagecontrol.io/packages/subl%20protocol
-                    $link = 'subl://{path}:{line}';
-                    break;
+            if ($option) {
+                $link = isset(self::$editors[$option]) ? self::$editors[$option] : $option;
             }
         }
 
         if ($link && strpos($link, '{path}') !== false) {
+            $file = html_entity_decode($file);
             $file = rawurlencode($file);
 
             // Restores the directory separator

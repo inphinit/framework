@@ -22,7 +22,6 @@ class File
      * Enable or disable strictmode for check if file exists with case-sensitive (available only in development mode)
      *
      * @param bool $enable
-     * @return void
      */
     public static function strictMode($enable)
     {
@@ -246,7 +245,6 @@ class File
     /**
      * Clear state files and clear size files in `Inphinit\File::size`
      *
-     * @return void
      */
     public static function clearstat()
     {

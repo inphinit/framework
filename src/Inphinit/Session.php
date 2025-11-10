@@ -9,10 +9,11 @@
 
 namespace Inphinit;
 
-use Inphinit\Utility\Arrays;
-
 class Session
 {
+    const ATTEMPTS_TEMP = 100;
+    const LOCK_TIMEOUT = 10;
+
     private $id;
     private $name;
     private $data = array();
@@ -38,6 +39,10 @@ class Session
             throw new Exception('headers sent');
         }
 
+        if (strpbrk(self::$filename, '/\\') !== false) {
+            throw new Exception('Invalid filename: ' . self::$filename);
+        }
+
         self::directory();
 
         $this->name = $name;
@@ -56,7 +61,9 @@ class Session
 
         if (isset($_COOKIE[$name]) && preg_match('#^\d{1,2}_[a-zA-Z0-9]{8,32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
+
             $filename = sprintf(self::$filename, $id);
+
             $this->handle = fopen(self::$tempDir . '/' . $filename, 'c+');
 
             if ($this->handle === false) {
@@ -65,12 +72,12 @@ class Session
 
             $this->read();
         } else {
-            $id = self::tempFile($this->handle);
+            $id = self::createTemporary($this->handle);
             $request = true;
         }
 
         if ($request) {
-            $this->setCookie($id, null, null);
+            $this->setCookie($id, null);
         }
 
         $this->id = $id;
@@ -125,8 +132,7 @@ class Session
             while ($count < $max && ($entry = readdir($handle)) !== false) {
                 $entry = $path . $entry;
 
-                if (is_file($entry) && filemtime($entry) < $expires) {
-                    unlink($entry);
+                if (is_file($entry) && filemtime($entry) < $expires && unlink($entry)) {
                     ++$count;
                 }
             }
@@ -140,7 +146,7 @@ class Session
     /**
      * Save session data
      *
-     * @return void
+     * @throws \Inphinit\Exception
      */
     public function commit()
     {
@@ -148,9 +154,14 @@ class Session
 
         ftruncate($this->handle, 0);
         rewind($this->handle);
-        fwrite($this->handle, serialize($this->data));
+
+        $written = fwrite($this->handle, serialize($this->data));
 
         $this->setLock(false);
+
+        if ($written === false) {
+            throw new Exception('Failed to commit');
+        }
     }
 
     /**
@@ -167,7 +178,6 @@ class Session
      * Regenerate data
      *
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function regenerate()
     {
@@ -175,7 +185,7 @@ class Session
             throw new Exception('headers sent');
         }
 
-        $id = self::tempFile($dest);
+        $id = self::createTemporary($dest);
 
         rewind($this->handle);
 
@@ -183,8 +193,7 @@ class Session
             throw new Exception('Failed copy data');
         }
 
-        $this->setCookie($id, $this->handle, $dest);
-        $this->handle = $dest;
+        $this->setCookie($id, $this->handle);
         $this->id = $id;
     }
 
@@ -238,7 +247,6 @@ class Session
      * Magic method for unset variable with `unset()` function
      *
      * @param string $name
-     * @return void
      */
     public function __unset($name)
     {
@@ -264,26 +272,26 @@ class Session
 
         $data = stream_get_contents($this->handle);
 
-        $this->setLock(false);
-
-        if ($data) {
-            try {
-                if (PHP_VERSION_ID < 70000) {
-                    $data = unserialize($data);
-                } else {
-                    $data = unserialize($data, array('allowed_classes' => false));
-                }
-
-                if (is_array($data)) {
-                    $this->data = $data;
-                }
-            } catch (\Exception $e) {
-                throw new Exception($e->getMessage(), $e->getCode(), 3);
+        try {
+            if (PHP_VERSION_ID < 70000) {
+                $data = unserialize($data);
+            } else {
+                $data = unserialize($data, array('allowed_classes' => false));
             }
+        } catch (\Exception $e) {
+            $this->setLock(false);
+
+            throw new Exception($e->getMessage(), $e->getCode(), 3);
         }
+
+        if (is_array($data)) {
+            $this->data = $data;
+        }
+
+        $this->setLock(false);
     }
 
-    private function setCookie($id, $from, $dest)
+    private function setCookie($id, $dest)
     {
         if (setcookie(
             $this->name,
@@ -303,15 +311,24 @@ class Session
             throw new Exception('Failed to set HTTP cookie', 0, 3);
         }
 
-        if ($from) {
-            fclose($from);
+        if ($this->handle) {
+            fclose($this->handle);
         }
+
+        $this->handle = $dest;
     }
 
     private function setLock($lock)
     {
         if ($lock) {
-            while (flock($this->handle, LOCK_EX) === false) {
+            $start = microtime(true);
+            $timeout = self::LOCK_TIMEOUT;
+
+            while (flock($this->handle, LOCK_EX | LOCK_NB) === false) {
+                if (microtime(true) - $start > $timeout) {
+                    throw new Exception('Lock timeout', 0, 3);
+                }
+
                 usleep(1000);
             }
         } else {
@@ -319,15 +336,15 @@ class Session
         }
     }
 
-    private static function tempFile(&$handle)
+    private static function createTemporary(&$handle)
     {
         $count = 0;
-        $max = 100;
         $dir = self::$tempDir;
-        $handle = false;
         $fname = self::$filename;
+        $handle = false;
+        $id = '';
 
-        while ($handle === false && $count < $max) {
+        while ($handle === false && $count < self::ATTEMPTS_TEMP) {
             ++$count;
 
             $id = uniqid("{$count}_");
@@ -335,6 +352,10 @@ class Session
             $handle = fopen($dir . '/' . $name, 'x+');
         }
 
-        return $handle ? $id : false;
+        if ($handle === false) {
+            throw new Exception('Failed to create session file', 0, 3);
+        }
+
+        return $id;
     }
 }

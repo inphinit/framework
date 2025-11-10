@@ -38,7 +38,6 @@ class Config
      * Reload configuration from file
      *
      * @throws \Inphinit\Exception
-     * @return void
      */
     public function reload()
     {
@@ -109,7 +108,6 @@ class Config
      * Magic method for unset variable with `unset()` function
      *
      * @param string $name
-     * @return void
      */
     public function __unset($name)
     {

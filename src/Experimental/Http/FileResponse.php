@@ -15,13 +15,13 @@ use Inphinit\Exception;
 
 class FileResponse
 {
-    /** Prefer X-Accel-Redirect header for file delivery (e.g. nginx) */
+    /** @var int Prefer X-Accel-Redirect header for file delivery (e.g., nginx) */
     const ACCEL = 1;
 
-    /** Prefer X-Sendfile header for file delivery (e.g. Apache, Lighttpd) */
+    /** @var int Prefer X-Sendfile header for file delivery (e.g., Apache, Lighttpd) */
     const SENDFILE = 2;
 
-    /** Fallback: deliver file using PHP (less efficient, not recommended) */
+    /** @var int Deliver file using PHP (less efficient, not recommended) */
     const FALLBACK = 4;
 
     private $filename;
@@ -32,7 +32,7 @@ class FileResponse
      * Initialize the response with a file path and optional download name
      *
      * @param string $source   Absolute file path
-     * @param string $filename Optional. Set download name (defaults to basename of $source)
+     * @param string $filename Optional. Set download name (defaults to basename of `$source`)
      * @param int    $modes    Optional. Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK). Default is ACCEL | SENDFILE
      */
     public function __construct($source, $filename = '', $modes = 0)
@@ -95,7 +95,6 @@ class FileResponse
      *
      * @param bool $overwrite      Optional. Overwrite all possible related headers
      * @throws \Inphinit\Exception If headers are already sent or no supported mode is available
-     * @return void
      */
     public function send($overwrite = false)
     {

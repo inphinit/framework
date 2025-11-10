@@ -71,7 +71,6 @@ class Document
      * Define libXML errors as exceptions
      *
      * @param int $levels
-     * @return void
      */
     public static function setSeverityLevels($levels)
     {
@@ -88,7 +87,6 @@ class Document
      * Define libXML options for load a document or string
      *
      * @param int $options
-     * @return void
      */
     public function setLoadOptions($options)
     {
@@ -99,7 +97,6 @@ class Document
      * Define libXML options for dump or save a document as file
      *
      * @param int $options
-     * @return void
      */
     public function setSaveOptions($options)
     {
@@ -183,7 +180,6 @@ class Document
      * @param string $source
      * @param bool   $file
      * @throws \Inphinit\Dom\DomException
-     * @return void
      */
     public function load($source, $file = false)
     {
@@ -210,7 +206,6 @@ class Document
      * Convert document to XML string, HTML string or array
      *
      * @param \DOMNode $node
-     * @return void
      */
     public function dump(\DOMNode $node)
     {
@@ -229,7 +224,6 @@ class Document
      * Save document to file
      *
      * @param string $file
-     * @return void
      */
     public function save($file)
     {
@@ -249,7 +243,6 @@ class Document
      *
      * @param array $data
      * @throws \Inphinit\Dom\DomException
-     * @return void
      */
     public function fromArray(array $data)
     {

@@ -47,7 +47,6 @@ class Arrays
      * @param array $array
      * @param int   $flags See details in https://www.php.net/manual/en/function.ksort.php#refsect1-function.ksort-parameters
      * @param bool  $descending
-     * @return void
      */
     public static function ksort(array &$array, $flags = \SORT_REGULAR, $descending = false)
     {
