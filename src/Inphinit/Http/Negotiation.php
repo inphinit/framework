@@ -226,7 +226,7 @@ class Negotiation
 
                 if ($found > 1) {
                     throw new Exception('The header contains more than one q= in "' . $current[0] . '"');
-                } else if ($found === 1) {
+                } elseif ($found === 1) {
                     $qvalue = self::parseQValue($matches[2][0]);
                 }
             }

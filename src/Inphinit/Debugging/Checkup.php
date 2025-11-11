@@ -9,6 +9,8 @@
 
 namespace Inphinit\Debugging;
 
+use Inphinit\Dom\Document;
+
 class Checkup
 {
     private $iniPath = '';
@@ -19,8 +21,9 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
+
     private $iniConfigs = '`%s`, additional `.ini` files, or via directives';
-    private $devAdvice = 'While the application is in development mode, it is recommended to disable `%s` in %s';
+    private $devAdvice  = 'While in development mode, it is recommended to disable `%s` in %s';
 
     public function __construct()
     {
@@ -28,8 +31,20 @@ class Checkup
 
         $this->sensitive = $this->development;
 
+        if ($buildDate = self::buildDate()) {
+            $current = new \DateTime();
+
+            $diff = $current->diff($buildDate)->y;
+
+            if ($diff > 5) {
+                $this->errors[] = "Your PHP installation is over {$diff} years old — upgrading to a newer version is strongly recommended for security and performance";
+            } elseif ($diff > 1) {
+                $this->errors[] = "Your PHP build hasn't been updated for over {$diff} years — consider applying the latest security patches or upgrading to a newer release";
+            }
+        }
+
         if (function_exists('ini_get') === false) {
-            $this->warnings[] = '`ini_get` function has been disabled on your server, checking your server settings will be incomplete';
+            $this->warnings[] = 'The `ini_get` function is disabled on your server; configuration validation will be incomplete';
             $this->iniGet = false;
         }
 
@@ -40,15 +55,15 @@ class Checkup
                 $this->collectErrors();
                 $this->collectWarnings();
             } else {
-                $this->warnings[] = '`php.ini` is not configured on your server';
+                $this->warnings[] = '`php.ini` is not configured or could not be located on your server';
             }
         } else {
-            $this->warnings[] = '`php_ini_loaded_file` function has been disabled on your server, it is not possible to check the server settings';
+            $this->warnings[] = 'The `php_ini_loaded_file` function is disabled, preventing server configuration checks';
         }
     }
 
     /**
-     * Get errors
+     * Retrieve all detected configuration errors
      *
      * @return array
      */
@@ -58,7 +73,7 @@ class Checkup
     }
 
     /**
-     * Get warnings
+     * Retrieve all detected configuration warnings
      *
      * @return array
      */
@@ -68,13 +83,47 @@ class Checkup
     }
 
     /**
-     * Show or hide sensitive info
+     * Enable or disable the display of sensitive information in paths and file names
      *
      * @param bool $display
      */
     public function setDisplaySensitive($display)
     {
         $this->sensitive = $display;
+    }
+
+    /**
+     * Retrieve the PHP build date as a DateTime object, or false if unavailable
+     *
+     * @return \DateTime|bool
+     */
+    public function buildDate()
+    {
+        if (function_exists('phpinfo')) {
+            ob_start();
+            phpinfo(INFO_GENERAL);
+            $data = ob_get_clean();
+
+            $handle = new Document(Document::HTML);
+            $handle->load($data);
+
+            $elements = $handle->selector()->all('table td:contains(Build Date)+td');
+            $dateNode = $elements->item(0);
+
+            if ($dateNode && $value = trim($dateNode->nodeValue)) {
+                try {
+                    return new \DateTime($value);
+                } catch (\Exception $e) {
+                    $this->warnings[] = "The PHP release date could not be determined (invalid date string: {$value})";
+                }
+            } else {
+                $this->warnings[] = "The PHP release date could not be determined (missing build date in phpinfo)";
+            }
+        } else {
+            $this->warnings[] = 'The PHP release date could not be determined (phpinfo disabled)';
+        }
+
+        return false;
     }
 
     private function collectErrors()
@@ -140,7 +189,7 @@ class Checkup
     private function flag($key)
     {
         $value = ini_get($key);
-        return $value ? in_array(strtolower($value), array('on', '1')) : false;
+        return $value ? in_array(strtolower($value), array('on', '1', 'yes', 'no')) : false;
     }
 
     private function getDirectives()
