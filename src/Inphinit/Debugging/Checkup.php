@@ -28,23 +28,22 @@ class Checkup
     public function __construct()
     {
         $this->development = \Inphinit\App::config('development') === true;
-
         $this->sensitive = $this->development;
 
         if ($buildDate = self::buildDate()) {
             $current = new \DateTime();
-
             $diff = $current->diff($buildDate)->y;
+            $version = PHP_VERSION;
 
             if ($diff > 5) {
-                $this->errors[] = "Your PHP installation is over {$diff} years old — upgrading to a newer version is strongly recommended for security and performance";
+                $this->errors[] = "Your PHP installation ({$version}) is over {$diff} years old — upgrading to a newer version is strongly recommended for security and performance reasons.";
             } elseif ($diff > 1) {
-                $this->errors[] = "Your PHP build hasn't been updated for over {$diff} years — consider applying the latest security patches or upgrading to a newer release";
+                $this->errors[] = "Your PHP build ({$version}) hasn't been updated in over {$diff} years — consider applying the latest security patches or upgrading to a newer release.";
             }
         }
 
         if (function_exists('ini_get') === false) {
-            $this->warnings[] = 'The `ini_get` function is disabled on your server; configuration validation will be incomplete';
+            $this->warnings[] = 'The `ini_get` function is disabled on this server; configuration checks will be incomplete';
             $this->iniGet = false;
         }
 
@@ -55,7 +54,7 @@ class Checkup
                 $this->collectErrors();
                 $this->collectWarnings();
             } else {
-                $this->warnings[] = '`php.ini` is not configured or could not be located on your server';
+                $this->warnings[] = '`php.ini` is not configured or could not be located on this server';
             }
         } else {
             $this->warnings[] = 'The `php_ini_loaded_file` function is disabled, preventing server configuration checks';
