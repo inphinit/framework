@@ -102,7 +102,6 @@ class Debug
 
     /**
      * Unregister debug events and views
-     *
      */
     public function unregister()
     {

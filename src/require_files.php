@@ -18,4 +18,4 @@ function inphinit_sandbox_file($sandbox_path)
     return include $sandbox_path;
 }
 
-inphinit_sandbox_file($load_files);
+inphinit_sandbox_file($inphinit_boot_files);

@@ -17,6 +17,18 @@ class Event
     /** @var int Priority level for events that should be executed after higher-priority ones */
     const LOW_PRIORITY = -1;
 
+    /** @var int Returned when a one-time event is triggered more than once */
+    const TRIGGER_CONSUMED = 2;
+
+    /** @var int Returned when a callback within the event returns false, stopping further execution */
+    const TRIGGER_STOPPED = 4;
+
+    /** @var int Returned when all callbacks complete successfully without returning false */
+    const TRIGGER_SUCCESS = 8;
+
+    /** @var int Returned when no callbacks are registered for the specified event type */
+    const TRIGGER_UNDEFINED = 16;
+
     private static $events = array();
     private static $uniques = array('done' => false);
     private static $unordered = array();
@@ -26,17 +38,17 @@ class Event
      *
      * @param string $name Event name
      * @param array  $args Arguments to pass to the callbacks
-     * @return bool        Returns false if no listeners are registered or if the event was marked as unique and already triggered
+     * @return int
      */
     public static function trigger($name, array $args = array())
     {
         if (empty(self::$events[$name])) {
-            return false;
+            return self::TRIGGER_UNDEFINED;
         }
 
         if (isset(self::$uniques[$name])) {
             if (self::$uniques[$name]) {
-                return false;
+                return self::TRIGGER_CONSUMED;
             }
 
             self::$uniques[$name] = true;
@@ -58,11 +70,11 @@ class Event
 
         foreach ($listen as $callback) {
             if (call_user_func_array($callback[0], $args) === false) {
-                break;
+                return self::TRIGGER_STOPPED;
             }
         }
 
-        return true;
+        return self::TRIGGER_SUCCESS;
     }
 
     /**
@@ -118,7 +130,6 @@ class Event
 
     /**
      * Clears all registered events and uniqueness flags
-     *
      */
     public static function clear()
     {

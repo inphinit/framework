@@ -41,23 +41,18 @@ class App
     private static $afterRE = array(':', '<', '>', '.*?', '[^/]*?');
 
     /**
-     * Get or set application configs
+     * Get application configs from `configs/app.php`
      *
      * @param string $key
-     * @param scalar $value
      * @return scalar
      */
-    public static function config($key, $value = null)
+    public static function config($key)
     {
         if (self::$configs === null) {
             self::$configs = inphinit_sandbox('configs/app.php');
         }
 
-        if ($value === null) {
-            return isset(self::$configs[$key]) ? self::$configs[$key] : null;
-        } elseif (is_scalar($value)) {
-            self::$configs[$key] = $value;
-        }
+        return isset(self::$configs[$key]) ? self::$configs[$key] : null;
     }
 
     /**
@@ -184,7 +179,7 @@ class App
      */
     public function exec()
     {
-        $code = self::$configs['maintenance'] ? 503 : http_response_code();
+        $code = self::config('maintenance') && Maintenance::bypassed() === false ? 503 : http_response_code();
         $params = null;
         $callback = null;
         $output = null;

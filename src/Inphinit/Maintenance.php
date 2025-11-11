@@ -11,17 +11,17 @@ namespace Inphinit;
 
 class Maintenance
 {
+    private static $configs = array();
+
     /**
-     * Adds a callback to disable maintenance mode at runtime.
-     * If the callback returns true, maintenance mode will be turned off for the current request.
+     * If a maintenance event returns `false` (stop propagation)
+     * this method will return `true`; otherwise, it will return `false`.
      *
-     * @param callable $callback A function that determines whether maintenance mode should be bypassed.
+     * @return bool
      */
-    public static function bypass(callable $callback)
+    public static function bypassed()
     {
-        if (App::config('maintenance') && $callback() === true) {
-            App::config('maintenance', false);
-        }
+        return Event::trigger('maintenance') === Event::TRIGGER_STOPPED;
     }
 
     /**
@@ -52,7 +52,7 @@ class Maintenance
      */
     protected static function enable($enable)
     {
-        $config = new Config('app');
+        $config = self::config('app');
 
         if ($config->maintenance === $enable) {
             return true;
@@ -61,5 +61,14 @@ class Maintenance
         $config->maintenance = $enable;
 
         return $config->commit();
+    }
+
+    private static function config($config)
+    {
+        if (isset(self::$configs[$config]) === false) {
+            self::$configs[$config] = new Config($config);
+        }
+
+        return self::$configs[$config];
     }
 }

@@ -244,7 +244,6 @@ class File
 
     /**
      * Clear state files and clear size files in `Inphinit\File::size`
-     *
      */
     public static function clearstat()
     {

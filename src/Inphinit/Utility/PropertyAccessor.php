@@ -14,9 +14,9 @@ class PropertyAccessor
     /**
      * Read array or object by path using dot
      *
-     * @param string          $path
-     * @param array|\stdClass $items
-     * @param mixed           $alternative
+     * @param string       $path
+     * @param array|object $items
+     * @param mixed        $alternative
      * @return mixed
      */
     public static function getValue($path, $items, $alternative = null)

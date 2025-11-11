@@ -24,7 +24,7 @@ class Checkup
 
     public function __construct()
     {
-        $this->development = \Inphinit\App::config('development');
+        $this->development = \Inphinit\App::config('development') === true;
 
         $this->sensitive = $this->development;
 
@@ -81,7 +81,7 @@ class Checkup
     {
         $directives = $this->getDirectives();
 
-        if (PHP_VERSION_ID < 70400 && function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
+        if (PHP_VERSION_ID < 80000 && function_exists('get_magic_quotes_gpc') && @get_magic_quotes_gpc()) {
             $this->errors[] = 'Disable `magic_quotes_gpc` in ' . $directives;
         }
 

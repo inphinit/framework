@@ -47,7 +47,7 @@ function inphinit_sandbox($sandbox_path, array $sandbox_data = array())
 }
 
 /**
- * Function used by `set_error_handler` and `Event::trigger('error')`
+ * Function used by `set_error_handler` and triggered by `Event::trigger('error')`
  *
  * @param int    $type
  * @param string $message
@@ -89,12 +89,12 @@ $inphinit_config_development = App::config('development');
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
+    /*
+     * Optimized autoloader for classes within the system folder (Controllers, Models, Services, ...)
+     * and for classes in the Inphinit\ namespace.
+     * Note: Enabled only in production mode; in development mode, additional checks are performed to prevent errors.
+     */
     if (!$inphinit_config_development) {
-        /*
-         * Improved autoload performance for classes from system folder (Controllers, Models, Services, ...)
-         * and classes within the Inphinit\ namespace
-         * Note: Only available in production mode, in developer mode it will do extra checks to avoid failures
-         */
         set_include_path(__DIR__ . PATH_SEPARATOR . INPHINIT_SYSTEM);
         spl_autoload_extensions('.php');
         spl_autoload_register();
@@ -102,19 +102,9 @@ if (INPHINIT_COMPOSER) {
 
     spl_autoload_register(function ($class) {
         static $prefixes;
-        static $load_files;
 
         if ($prefixes === null) {
             $prefixes = require INPHINIT_SYSTEM . '/boot/namespaces.php';
-        }
-
-        // Load autoload.files (composer.json)
-        if ($load_files === null) {
-            $load_files = INPHINIT_SYSTEM . '/boot/files.php';
-
-            if (is_file($load_files)) {
-                require __DIR__ . '/require_files.php';
-            }
         }
 
         $class = ltrim($class, '\\');
@@ -145,6 +135,13 @@ if (INPHINIT_COMPOSER) {
             }
         }
     });
+
+    // Load autoload.files (https://getcomposer.org/doc/04-schema.md#files)
+    $inphinit_boot_files = INPHINIT_SYSTEM . '/boot/files.php';
+
+    if (is_file($inphinit_boot_files)) {
+        require_once __DIR__ . '/require_files.php';
+    }
 }
 
 if (PHP_SAPI === 'cli') {
