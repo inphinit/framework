@@ -17,17 +17,17 @@ class Event
     /** @var int Priority level for events that should be executed after higher-priority ones */
     const LOW_PRIORITY = -1;
 
+    /** @var int Returned when no callbacks are registered for the specified event type */
+    const TRIGGER_UNDEFINED = 0;
+
     /** @var int Returned when a one-time event is triggered more than once */
-    const TRIGGER_CONSUMED = 2;
+    const TRIGGER_CONSUMED = 1;
 
     /** @var int Returned when a callback within the event returns false, stopping further execution */
-    const TRIGGER_STOPPED = 4;
+    const TRIGGER_STOPPED = 2;
 
     /** @var int Returned when all callbacks complete successfully without returning false */
-    const TRIGGER_SUCCESS = 8;
-
-    /** @var int Returned when no callbacks are registered for the specified event type */
-    const TRIGGER_UNDEFINED = 16;
+    const TRIGGER_SUCCESS = 3;
 
     private static $events = array();
     private static $uniques = array('done' => false);
@@ -108,7 +108,8 @@ class Event
     }
 
     /**
-     * Removes a specific callback or all callbacks from an event.
+     * Removes a specific callback or all callbacks registered for an event.
+     * If $callback is null, all listeners for the given event are removed.
      *
      * @param string        $name     Event name
      * @param callable|null $callback Specific callback to remove, or null to remove all
