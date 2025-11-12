@@ -23,6 +23,8 @@ class Packages
     private $sourceLibs = array();
     private $log = array();
 
+    const META_FILE = "%s/%s-%s.php";
+
     public function __construct()
     {
         $path = realpath(INPHINIT_SYSTEM . '/vendor/composer');
@@ -102,21 +104,21 @@ class Packages
         $results = 0;
 
         if ($this->composerPath === null) {
-            $this->log[] = 'Warn: Unable to load "classmap", maybe your project is not using composer';
+            $this->log[] = 'Warning: Unable to load "classmap", maybe your project is not using composer';
             return $results;
         }
 
         $path = $this->composerPath . $this->classmapName;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warn: "classmap" not found';
+            $this->log[] = 'Warning: "classmap" not found';
             return $results;
         }
 
         $data = include $path;
 
         if (is_array($data) === false) {
-            $this->log[] = 'Warn: "classmap" is invalid';
+            $this->log[] = 'Warning: "classmap" is invalid';
             return $results;
         }
 
@@ -342,54 +344,109 @@ class Packages
     }
 
     /**
-     * Get package version from composer.lock file
+     * Get package version
      *
-     * @param string $name Set package for detect version
+     * @param string $name Set <vendor>/<package>
+     * @param bool   $dev  Set true for get from packages-dev
      * @return string|false
      */
-    public static function version($name)
+    public static function version($name, $dev = false)
     {
-        if (self::$composerLock === null) {
-            $file = INPHINIT_ROOT . '/composer.lock';
-
-            if (is_file($file) === false) {
-                return false;
-            }
-
-            $contents = file_get_contents($file);
-
-            if ($contents === false) {
-                return false;
-            }
-
-            $contents = json_decode($contents);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Error parsing composer.lock');
-            }
-
-            self::$composerLock = $contents;
+        if (!preg_match('#^([^/]+)/(.*?)$#', $name, $match)) {
+            throw new Exception("Invalid package name: {$name}");
         }
 
-        $version = self::findVersion('packages', $name);
+        $folder = 'boot/metadata';
+        $vendor = $match[1];
+        $name = $match[2];
 
-        if ($version === false) {
-            $version = self::findVersion('packages-dev', $name);
-        }
+        $path = sprintf(self::META_FILE, $folder, $dev ? 'packages-dev' : 'packages', $vendor);
 
-        return $version;
-    }
+        $versions = inphinit_sandbox($path);
 
-    private static function findVersion($from, $name)
-    {
-        if (isset(self::$composerLock->{$from})) {
-            foreach (self::$composerLock->{$from} as $package) {
-                if ($package->name === $name) {
-                    return $package->version;
-                }
-            }
+        if (isset($versions[$name]['version'])) {
+            return $versions[$name]['version'];
         }
 
         return false;
+    }
+
+    /**
+     * Update version cache using composer.lock
+     *
+     * @param string $folder
+     */
+    public function refreshMetadata($folder = null)
+    {
+        if ($folder === null) {
+            $folder = INPHINIT_SYSTEM . '/boot/metadata';
+        }
+
+        if (is_dir($folder) === false) {
+            throw new Exception("{$folder} not exists");
+        }
+
+        if (is_writable($folder) === false) {
+            throw new Exception("{$folder} is not writable");
+        }
+
+        $file = INPHINIT_ROOT . '/composer.lock';
+
+        if (is_file($file) === false) {
+            throw new Exception('composer.lock not found');
+        }
+
+        $contents = file_get_contents($file);
+
+        if ($contents === false) {
+            throw new Exception('composer.lock can\'t be read.');
+        }
+
+        $lock = json_decode($contents);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error parsing composer.lock');
+        }
+
+        self::createMetadata($lock, $folder, 'packages');
+        self::createMetadata($lock, $folder, 'packages-dev');
+    }
+
+    private static function createMetadata($lock, $folder, $from)
+    {
+        $vendores = array();
+
+        if (isset($lock->{$from})) {
+            foreach ($lock->{$from} as $package) {
+                if (strpos($package->name, '/') === false) {
+                    continue;
+                }
+
+                list($vendor, $name) = explode('/', $package->name, 2);
+
+                if (isset($vendores[$vendor]) === false) {
+                    $vendores[$vendor] = array();
+                }
+
+                $vendores[$vendor][$name] = array(
+                    'version' => $package->version
+                );
+            }
+        }
+
+        foreach ($vendores as $vendor => $packages) {
+            $contents = array(
+                '<?php',
+                'return ' . var_export($packages, true) . ";\n"
+            );
+
+            $path = sprintf(self::META_FILE, $folder, $from, $vendor);
+
+            if (file_put_contents($path, implode("\n", $contents), LOCK_EX) === false) {
+                throw new Exception("Failed to write metadata file: {$path}", 0, 3);
+            }
+        }
+
+        $vendores = null;
     }
 }
