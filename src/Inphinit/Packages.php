@@ -435,14 +435,11 @@ class Packages
         }
 
         foreach ($vendores as $vendor => $packages) {
-            $contents = array(
-                '<?php',
-                'return ' . var_export($packages, true) . ";\n"
-            );
-
             $path = sprintf(self::META_FILE, $folder, $from, $vendor);
 
-            if (file_put_contents($path, implode("\n", $contents), LOCK_EX) === false) {
+            $contents = "<?php\nreturn " . var_export($packages, true) . ";\n";
+
+            if (file_put_contents($path, $contents, LOCK_EX) === false) {
                 throw new Exception("Failed to write metadata file: {$path}", 0, 3);
             }
         }
