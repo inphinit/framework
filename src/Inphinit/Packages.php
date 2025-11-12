@@ -144,21 +144,21 @@ class Packages
         $results = 0;
 
         if ($this->composerPath === null) {
-            $this->log[] = 'Warn: Unable to load "files", maybe your project is not using composer';
+            $this->log[] = 'Warning: Unable to load "files", maybe your project is not using composer';
             return $results;
         }
 
         $path = $this->composerPath . $this->filesName;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warn: "files" not found';
+            $this->log[] = 'Warning: "files" not found';
             return $results;
         }
 
         $data = include $path;
 
         if (is_array($data) === false) {
-            $this->log[] = 'Warn: "files" is invalid';
+            $this->log[] = 'Warning: "files" is invalid';
             return $results;
         }
 
@@ -199,21 +199,21 @@ class Packages
         $results = 0;
 
         if ($this->composerPath === null) {
-            $this->log[] = 'Warn: Unable to load "' . $type . '", maybe your project is not using composer';
+            $this->log[] = 'Warning: Unable to load "' . $type . '", maybe your project is not using composer';
             return $results;
         }
 
         $path = $this->composerPath . $file;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warn: "' . $type . '" not found';
+            $this->log[] = 'Warning: "' . $type . '" not found';
             return $results;
         }
 
         $data = include $path;
 
         if (is_array($data) === false || Arrays::indexed($data) === false) {
-            $this->log[] = 'Warn: "' . $type . '" is invalid';
+            $this->log[] = 'Warning: "' . $type . '" is invalid';
             return $results;
         }
 
