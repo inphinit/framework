@@ -75,7 +75,7 @@ class App extends \Inphinit\App
         $this->checkPatterns($path);
 
         if (is_string($callback) && strpos($callback, '::') !== false) {
-            $controller = '\\Controllers\\' . $this->namespacePrefix . strtok($callback, '::');
+            $controller = $this->namespacePrefix . strtok($callback, '::');
             $method = strtok('::');
             $classAndMethod = "{$controller}::{$method}()";
 
@@ -111,12 +111,16 @@ class App extends \Inphinit\App
      */
     public function setNamespace($prefix)
     {
-        if (strpos($prefix, '\\\\') !== false) {
-            throw new Exception("The namespace prefix '{$prefix}' must not contain consecutive backslashes");
+        if ($prefix === '' || is_string($prefix) === false) {
+            throw new Exception('Empty namespace prefix');
         }
 
-        if ($prefix !== '' && preg_match('#^[A-Z][\w\\\\]*$#', $prefix) !== 1) {
-            throw new Exception("Invalid namespace prefix: '{$prefix}'");
+        if (strpos($prefix, '\\\\') !== false) {
+            throw new Exception("The namespace prefix must not contain consecutive backslashes: {$prefix}");
+        }
+
+        if ($prefix[0] === '\\' || substr($prefix, -1) === '\\') {
+            throw new Exception("The namespace prefix must not contain beginning or end backslashes: '{$prefix}'");
         }
 
         parent::setNamespace($prefix);

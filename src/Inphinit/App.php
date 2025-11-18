@@ -22,7 +22,7 @@ class App
 
     private $hasParams = false;
 
-    protected $namespacePrefix = '';
+    protected $namespacePrefix = '\\Controllers\\';
     protected $pathPrefix = '/';
     protected $filters = array();
     protected $paramPatterns = array(
@@ -98,7 +98,7 @@ class App
      */
     public function setNamespace($prefix)
     {
-        $this->namespacePrefix = $prefix ? (trim($prefix, '\\') . '\\') : '';
+        $this->namespacePrefix = '\\' . $prefix . '\\';
     }
 
     /**
@@ -213,7 +213,7 @@ class App
             inphinit_sandbox('errors.php', array('code' => $code));
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
-                $controller = '\\Controllers\\' . strtok($callback, '::');
+                $controller = strtok($callback, '::');
                 $callback = array(new $controller(), strtok('::'));
             }
 

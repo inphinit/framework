@@ -37,10 +37,6 @@ class File
      */
     public static function exists($path)
     {
-        if (realpath($path) === false) {
-            return false;
-        }
-
         $path = str_replace('\\', '/', $path);
 
         // Canonicalize the path for support in the inphinit_check_path() function
@@ -63,12 +59,6 @@ class File
     public static function permissions($path, $symbolic = false)
     {
         self::checkInDevMode($path);
-
-        $path = realpath($path);
-
-        if ($path === false) {
-            return false;
-        }
 
         $perms = fileperms($path);
 

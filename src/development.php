@@ -15,5 +15,5 @@ $debug = new Inphinit\Debugging\Debug();
 require INPHINIT_SYSTEM . '/dev.php';
 require __DIR__ . '/sendfile.php';
 
-// Reset namespace prefix to avoid side effects in main.php
-$app->setNamespace('');
+// Restore namespace prefix to avoid side effects in main.php
+$app->setNamespace('Controllers');

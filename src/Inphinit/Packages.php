@@ -13,7 +13,26 @@ use Inphinit\Utility\Arrays;
 
 class Packages
 {
-    private static $composerLock;
+    /** @var int Package description */
+    const INFO_DESCRIPTION = 1;
+
+    /** @var int Source type of the package (e.g., git, dist) */
+    const INFO_SOURCE = 2;
+
+    /** @var int Package release time */
+    const INFO_TIME = 3;
+
+    /** @var int Package type (e.g., library, project, metapackage) */
+    const INFO_TYPE = 4;
+
+    /** @var int Source URL or repository path of the package */
+    const INFO_URL = 5;
+
+    /** @var int Package version string */
+    const INFO_VERSION = 6;
+
+    const META_FILE = "%s/%s-%s.php";
+
     private $composerPath;
     private $classmapName = 'autoload_classmap.php';
     private $filesName = 'autoload_files.php';
@@ -22,8 +41,7 @@ class Packages
     private $sourceFiles = array();
     private $sourceLibs = array();
     private $log = array();
-
-    const META_FILE = "%s/%s-%s.php";
+    private static $cacheInfo = array();
 
     public function __construct()
     {
@@ -74,8 +92,8 @@ class Packages
     /**
      * Load `./system/boot/namespaces.php` classes
      *
-     * @return int|false Returns the total number of loaded packages, if `namespaces.php`
-     *                   is not accessible returns `false`
+     * @return int|false Returns the total number of loaded packages,
+     *                   if `namespaces.php` is not accessible returns `false`
      */
     public function inAutoload()
     {
@@ -344,31 +362,38 @@ class Packages
     }
 
     /**
-     * Get package version
+     * Get package info
      *
      * @param string $name Set <vendor>/<package>
      * @param bool   $dev  Set true for get from packages-dev
-     * @return string|false
+     * @return string|null
      */
-    public static function version($name, $dev = false)
+    public static function info($name, $info, $dev = false)
     {
         if (!preg_match('#^([^/]+)/(.*?)$#', $name, $match)) {
             throw new Exception("Invalid package name: {$name}");
         }
 
-        $folder = 'boot/metadata';
-        $vendor = $match[1];
-        $name = $match[2];
+        $group = $dev ? 'packages-dev' : 'packages';
+        $name = $group . ':' . $name;
 
-        $path = sprintf(self::META_FILE, $folder, $dev ? 'packages-dev' : 'packages', $vendor);
+        if (isset(self::$cacheInfo[$name]) === false) {
+            $folder = 'boot/metadata';
+            $vendor = $match[1];
+            $package = $match[2];
 
-        $versions = inphinit_sandbox($path);
+            $path = sprintf(self::META_FILE, $folder, $group, $vendor);
 
-        if (isset($versions[$name]['version'])) {
-            return $versions[$name]['version'];
+            $data = inphinit_sandbox($path);
+
+            self::$cacheInfo[$name] = isset($data[$package]) ? $data[$package] : false;
         }
 
-        return false;
+        if (isset(self::$cacheInfo[$name][$info])) {
+            return self::$cacheInfo[$name][$info];
+        }
+
+        return null;
     }
 
     /**
@@ -414,7 +439,7 @@ class Packages
 
     private static function createMetadata($lock, $folder, $from)
     {
-        $vendores = array();
+        $vendors = array();
 
         if (isset($lock->{$from})) {
             foreach ($lock->{$from} as $package) {
@@ -424,17 +449,22 @@ class Packages
 
                 list($vendor, $name) = explode('/', $package->name, 2);
 
-                if (isset($vendores[$vendor]) === false) {
-                    $vendores[$vendor] = array();
+                if (isset($vendors[$vendor]) === false) {
+                    $vendors[$vendor] = array();
                 }
 
-                $vendores[$vendor][$name] = array(
-                    'version' => $package->version
+                $vendors[$vendor][$name] = array(
+                    self::INFO_DESCRIPTION => isset($package->description) ? $package->description : null,
+                    self::INFO_SOURCE => isset($package->source->type) ? $package->source->type : null,
+                    self::INFO_TIME => isset($package->time) ? $package->time : null,
+                    self::INFO_TYPE => isset($package->type) ? $package->type : null,
+                    self::INFO_URL => isset($package->source->url) ? $package->source->url : null,
+                    self::INFO_VERSION => isset($package->version) ? $package->version : null,
                 );
             }
         }
 
-        foreach ($vendores as $vendor => $packages) {
+        foreach ($vendors as $vendor => $packages) {
             $path = sprintf(self::META_FILE, $folder, $from, $vendor);
 
             $contents = "<?php\nreturn " . var_export($packages, true) . ";\n";
@@ -444,6 +474,6 @@ class Packages
             }
         }
 
-        $vendores = null;
+        $vendors = null;
     }
 }

@@ -15,13 +15,13 @@ class Negotiation
 {
     private $headers;
 
-    /** Sort values in the header low to high by q-factors */
+    /** @var int Sort values in the header low to high by q-factors */
     const LOW = 1;
 
-    /** Sort values in the header high to low by q-factors */
+    /** @var int Sort values in the header high to low by q-factors */
     const HIGH = 2;
 
-    /** Get all values from a accept header (without q-factor) */
+    /** @var int Get all values from a accept header (without q-factor) */
     const ALL = 3;
 
     /**

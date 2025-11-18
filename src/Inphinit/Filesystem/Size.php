@@ -62,7 +62,7 @@ class Size
 
         if ($modes === 0) {
             $this->modes = $validModes;
-        } elseif (is_int($modes) && $modes !== 0 && ($modes & ~$validModes) === 0) {
+        } elseif (is_int($modes) && ($modes & ~$validModes) === 0) {
             $this->modes = $modes;
         } else {
             throw new Exception('Invalid filesize mode(s)');
