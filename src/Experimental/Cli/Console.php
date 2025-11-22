@@ -14,6 +14,8 @@ use Inphinit\Exception;
 
 class Console
 {
+    const PREFIX_ERROR = 'Invalid option: \'%s\'. Note: Options require prefix: -- (long) or - (short)';
+
     private $commands = array();
 
     protected $namespacePrefix = '\\Commands\\';
@@ -98,7 +100,7 @@ class Console
 
                 $lastOpt = $matches[1];
             } elseif ($lastOpt === '') {
-                throw new Exception('Invalid option format: ' . $entry, 0, 3);
+                throw new Exception(sprintf(self::PREFIX_ERROR, $entry), 0, 3);
             } else {
                 $output[$lastOpt] = $entry;
                 $lastOpt = '';

@@ -45,7 +45,7 @@ class Command
             throw new Exception('Invalid command name: ' . $name);
         }
 
-        if (is_string($callback) && strpos($callback, '::') === false) {
+        if (is_string($callback) && strpos($callback, '::') !== false) {
             $parsed = explode('::', $callback, 2);
 
             if (isset($parsed[0][0], $parsed[1][0]) === false) {
@@ -61,7 +61,7 @@ class Command
                 'method' => $parsed[1]
             );
         } elseif (is_callable($callback) === false) {
-            throw new Exception('Callback is not callable');
+            throw new Exception('Callback is not callable: ' . $callback);
         }
 
         $this->name = $name;
@@ -193,8 +193,8 @@ class Command
             if ($index !== false) {
                 $this->checkNoValue($index, $option, $value);
                 $this->checkFormat($index, $option, $value);
-                $params[$key] = $value;
                 $this->reclaimeds[$index] = true;
+                $params[$this->longs[$index]] = $value;
             } elseif ($this->residual) {
                 $rest[$key] = $value;
                 unset($options[$option]);

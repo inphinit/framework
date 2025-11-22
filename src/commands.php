@@ -23,6 +23,14 @@ $console->action('env:optimize', function ($command, $params, $residual) use ($e
     return 'Failed in optimizing the `.env`';
 });
 
+$console->action('env:source', function ($command, $params, $residual) use ($env) {
+    if (unlink(INPHINIT_SYSTEM . '/boot/env.php')) {
+        return 'Successfully disabling `.env` optimization';
+    }
+
+    return 'Failed to disable `.env` optimization';
+});
+
 $serve = $console->action('serve', function ($command, $params, $residual) {
     $host = isset($params['host']) ? $params['host'] : App::config('built_in_host');
     $port = isset($params['port']) ? $params['port'] : App::config('built_in_port');
@@ -50,5 +58,9 @@ $serve = $console->action('serve', function ($command, $params, $residual) {
 $serve->setOption('host', null, Command::OPT_OPTIONAL, null, 'Define server address');
 $serve->setOption('port', null, Command::OPT_OPTIONAL, null, 'Define server port');
 $serve->setOption('vars', null, Command::OPT_OPTIONAL, null, 'Define variables order');
+
+$console->action('packages:optimize', function ($command, $params, $residual) {
+    require_once INPHINIT_SYSTEM . '/boot/importpackages.php';
+});
 
 require INPHINIT_SYSTEM . '/console.php';
