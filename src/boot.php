@@ -12,6 +12,8 @@ use Inphinit\Event;
 
 header_remove('X-Powered-By');
 
+define('INPHINIT_MAINTENANCE', INPHINIT_SYSTEM . '/storage/.maintenance');
+
 require 'Inphinit/App.php';
 
 /**
@@ -84,7 +86,17 @@ register_shutdown_function(function () {
     }
 });
 
-$inphinit_config_development = App::config('development');
+$inphinit_optimized_env = INPHINIT_SYSTEM . '/boot/env.php';
+
+if (App::config('skip_env_file') !== '1') {
+    if (PHP_SAPI !== 'cli' && is_file($inphinit_optimized_env)) {
+        require $inphinit_optimized_env;
+    } else {
+        require 'env_vars.php';
+    }
+}
+
+$inphinit_config_development = App::config('environment') === 'development';
 
 if (INPHINIT_COMPOSER) {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';

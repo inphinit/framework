@@ -14,14 +14,6 @@ use Inphinit\Viewing\View;
 
 class App
 {
-    private static $configs;
-
-    private $data = array();
-    private $routes = array();
-    private $paramRoutes = array();
-
-    private $hasParams = false;
-
     protected $namespacePrefix = '\\Controllers\\';
     protected $pathPrefix = '/';
     protected $filters = array();
@@ -36,31 +28,32 @@ class App
     );
 
     private $patternNames;
+    private $data = array();
+    private $routes = array();
+    private $paramRoutes = array();
+    private $hasParams = false;
 
     private static $beforeRE = array('\\:', '\\<', '\\>', '\\*\\*', '\\*');
     private static $afterRE = array(':', '<', '>', '.*?', '[^/]*?');
 
     /**
-     * Get application configs from `configs/app.php`
+     * Get application configs from `$_ENV` with APP_ prefix key
      *
-     * @param string $key
+     * @param string $name
      * @return scalar
      */
-    public static function config($key)
+    public static function config($name)
     {
-        if (self::$configs === null) {
-            self::$configs = inphinit_sandbox('configs/app.php');
-        }
-
-        return isset(self::$configs[$key]) ? self::$configs[$key] : null;
+        $name = strtoupper($name);
+        return isset($_ENV['APP_' . $name]) ? $_ENV['APP_' . $name] : null;
     }
 
     /**
      * Register callable or controller for a route
      *
-     * @param string|array $methods
-     * @param string       $path
-     * @param callable     $callback
+     * @param string|array    $methods
+     * @param string          $path
+     * @param string|callable $callback
      */
     public function action($methods, $path, $callback)
     {
@@ -179,7 +172,7 @@ class App
      */
     public function exec()
     {
-        $code = self::config('maintenance') && Maintenance::bypassed() === false ? 503 : http_response_code();
+        $code = is_file(INPHINIT_MAINTENANCE) && Maintenance::bypassed() === false ? 503 : http_response_code();
         $params = null;
         $callback = null;
         $output = null;

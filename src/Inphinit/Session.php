@@ -122,7 +122,7 @@ class Session
 
         if ($handle) {
             if ($expires < 0) {
-                $expires = App::config('data_lifetime');
+                $expires = App::config('session_expires');
             }
 
             $expires = time() - $expires;

@@ -76,7 +76,14 @@ class Request
      */
     public static function header($name, $alternative = null)
     {
-        $name = 'HTTP_' . strtoupper(str_replace(self::$headerTokens, '_', $name));
+        $name = strtoupper(str_replace(self::$headerTokens, '_', $name));
+
+        if ($name === 'CONTENT_TYPE' || $name === 'CONTENT_LENGTH') {
+            return isset($_SERVER[$name]) ? $_SERVER[$name] : $alternative;
+        }
+
+        $name = 'HTTP_' . $name;
+
         return isset($_SERVER[$name]) ? $_SERVER[$name] : $alternative;
     }
 

@@ -11,8 +11,6 @@ namespace Inphinit;
 
 class Maintenance
 {
-    private static $configs = array();
-
     /**
      * If a maintenance event returns `false` (stop propagation)
      * this method will return `true`; otherwise, it will return `false`.
@@ -31,7 +29,7 @@ class Maintenance
      */
     public static function down()
     {
-        return static::enable(true);
+        return touch(INPHINIT_MAINTENANCE);
     }
 
     /**
@@ -41,34 +39,10 @@ class Maintenance
      */
     public static function up()
     {
-        return static::enable(false);
-    }
-
-    /**
-     * Enable/disable maintenance mode
-     *
-     * @param bool $enable
-     * @return bool
-     */
-    protected static function enable($enable)
-    {
-        $config = self::config('app');
-
-        if ($config->maintenance === $enable) {
-            return true;
+        if (is_file(INPHINIT_MAINTENANCE)) {
+            return unlink(INPHINIT_MAINTENANCE);
         }
 
-        $config->maintenance = $enable;
-
-        return $config->commit();
-    }
-
-    private static function config($config)
-    {
-        if (isset(self::$configs[$config]) === false) {
-            self::$configs[$config] = new Config($config);
-        }
-
-        return self::$configs[$config];
+        return true;
     }
 }

@@ -24,24 +24,19 @@ class App extends \Inphinit\App
     }
 
     /**
-     * Get or set application configs
+     * Get application configs from `$_ENV` with APP_ prefix key
      *
-     * @param string $key
-     * @param scalar $value
+     * @param string $name
      * @throws \Inphinit\Exception
      * @return scalar
      */
-    public static function config($key, $value = null)
+    public static function config($name)
     {
-        if (is_string($key) === false || empty($key)) {
-            throw new Exception('key expects a non-empty string');
+        if (is_string($name) === false || preg_match('/[a-z0-9]\w*/i', $name) !== 1) {
+            throw new Exception('Invalid name: ' . $name);
         }
 
-        if ($value !== null && is_scalar($value) === false) {
-            throw new Exception('value expects a scalar value');
-        }
-
-        return parent::config($key, $value);
+        return parent::config($name, $value);
     }
 
     /**
