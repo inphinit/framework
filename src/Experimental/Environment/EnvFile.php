@@ -138,9 +138,7 @@ class EnvFile
 
         if ($this->override) {
             foreach ($this->entries as $name => $entry) {
-                //$contents .= "\$_ENV['{$name}'] = '" . addcslashes($entry, '\'') . "';\n";
                 $contents .= "\$_ENV['{$name}'] = '" . $entry . "';\n";
-                var_dump($entry);
             }
         } else {
             $contents .= '$_ENV += ' . var_export($this->entries, true) . ";\n";
@@ -195,7 +193,11 @@ class EnvFile
 
         $parser = new Parser();
 
+        $line = 0;
+
         while (feof($handle) === false) {
+            ++$line;
+
             $data = rtrim(fgets($handle), "\r\n");
 
             if (empty($data)) {
@@ -203,7 +205,7 @@ class EnvFile
             }
 
             if (preg_match(self::REGEX_ENTRY, $data, $matches) === 1) {
-                $parser->setValue($matches[2]);
+                $this->addressIssues($parser, $matches[2], $line);
 
                 $name = $matches[1];
                 $value = $parser->output();
@@ -212,7 +214,7 @@ class EnvFile
 
                 $parser->putFallback($name, $value);
             } elseif (strpos($data, '#') !== 0) {
-                throw new Exception("Invalid '{$data}' entry in file: {$path}", 0, 3);
+                throw new EnvException("Invalid '{$data}' entry", 0, $this->path, $line);
             }
         }
 
@@ -223,6 +225,20 @@ class EnvFile
     {
         if (function_exists($getter) === false || function_exists($setter) === false) {
             throw new Exception("{$getter} or {$setter} is not avaliable", 0, 3);
+        }
+    }
+
+    private function addressIssues($parser, $value, $line)
+    {
+        try {
+            $parser->setValue($value);
+        } catch (\Exception $ee) {
+            throw new EnvException(
+                $ee->getMessage(),
+                $ee->getCode(),
+                $this->path,
+                $line
+            );
         }
     }
 }

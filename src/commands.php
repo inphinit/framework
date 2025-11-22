@@ -17,18 +17,18 @@ $console = new Inphinit\Experimental\Cli\Console();
 
 $console->action('env:optimize', function ($command, $params, $residual) use ($env) {
     if ($env->storeAsVars(INPHINIT_SYSTEM . '/boot/env.php')) {
-        return 'Success in optimizing the `.env`';
+        echo 'Success in optimizing the `.env`';
+    } else {
+        echo 'Failed in optimizing the `.env`';
     }
-
-    return 'Failed in optimizing the `.env`';
 });
 
 $console->action('env:source', function ($command, $params, $residual) use ($env) {
     if (unlink(INPHINIT_SYSTEM . '/boot/env.php')) {
-        return 'Successfully disabling `.env` optimization';
+        echo 'Successfully disabling `.env` optimization';
+    } else {
+        echo 'Failed to disable `.env` optimization';
     }
-
-    return 'Failed to disable `.env` optimization';
 });
 
 $serve = $console->action('serve', function ($command, $params, $residual) {

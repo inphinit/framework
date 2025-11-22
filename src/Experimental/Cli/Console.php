@@ -16,9 +16,9 @@ class Console
 {
     const PREFIX_ERROR = 'Invalid option: \'%s\'. Note: Options require prefix: -- (long) or - (short)';
 
-    private $commands = array();
-
     protected $namespacePrefix = '\\Commands\\';
+
+    private $commands = array();
 
     public function __construct()
     {
@@ -85,6 +85,29 @@ class Console
         $command = $this->commands[$name];
 
         $command->response(self::getOptions($arguments));
+    }
+
+    public static function run($command, array $options = array(), $return = false)
+    {
+        $argValues = array('php', escapeshellarg(INPHINIT_ROOT . '/run'), $command);
+
+        foreach ($options as $key => $value) {
+            $argValues[] = $key;
+
+            if ($value !== null) {
+                $argValues[] = escapeshellarg($value);
+            }
+        }
+
+        $output = implode(' ', $argValues);
+
+        if ($return) {
+            return $output;
+        }
+
+        passthru($output, $code);
+
+        exit($code);
     }
 
     private static function getOptions(array $entries)

@@ -9,10 +9,13 @@
 
 namespace Inphinit\Experimental\Environment;
 
+use Inphinit\Exception;
+
 class Parser
 {
     const REGEX_QUOTES = '/^([\'"])(.+)\\1/';
     const REGEX_VAR = '/\$\{(.+?)\}/';
+    const REGEX_INTERPOLATE = '/^([A-Za-z_][A-Za-z0-9_]*)((:)?([\+\-\?])(.*))$/';
 
     private $data;
     private $fallback = array();
@@ -79,16 +82,56 @@ class Parser
 
     private function interpolate($matches)
     {
-        $name = $matches[1];
+        $contents = $matches[1];
 
-        if (isset($_ENV[$name])) {
-            return $_ENV[$name];
+        if (preg_match(self::REGEX_INTERPOLATE, $contents, $inMatches) !== 1) {
+            throw new Exception("Invalid interpolation \$\{{$contents}\}");
         }
 
-        if (isset($this->fallback[$name])) {
-            return $this->fallback[$name];
+        $var = $inMatches[1];
+        $nonEmpty = $inMatches[3] === ':';
+        $interMode = $inMatches[4]; // [+] Alternative, [-] Default, [?] Required
+        $interParam = $inMatches[5];
+        $value = null;
+
+        if (isset($_ENV[$var])) {
+            $value = $_ENV[$var];
+        } elseif (isset($this->fallback[$var])) {
+            $value = $this->fallback[$var];
         }
 
-        return '';
+        switch ($interMode) {
+            case '+':
+                // ${VAR-alternative} Replace
+                if ($nonEmpty) {
+                    return $value === '' ? '' : $interParam;
+                } else {
+                    return $value === null ? '' : $interParam;
+                }
+
+                break;
+            case '-':
+                // ${VAR-default} Default
+                if ($nonEmpty) {
+                    return $value === '' ? $interParam : $value;
+                } else {
+                    return $value === null ? $interParam : $value;
+                }
+
+                break;
+            case '?':
+                // ${VAR?default} Required
+                if ($nonEmpty) {
+                    if ($value === '' || $value === null) {
+                        throw new Exception($interParam, 0, 3);
+                    }
+                } elseif ($value === null) {
+                    throw new Exception($interParam, 0, 3);
+                }
+
+                break;
+        }
+
+        return $value;
     }
 }
