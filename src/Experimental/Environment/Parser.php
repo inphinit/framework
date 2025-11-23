@@ -37,8 +37,7 @@ class Parser
 
         if (preg_match(self::REGEX_QUOTES, $value, $matches) === 1) {
             $quote = $matches[1];
-
-            $value = substr($value, 1, -1);
+            $value = $matches[2];
 
             $value = strtr($value, array(
                 '\\\\' => '\\',
@@ -71,7 +70,7 @@ class Parser
     }
 
     /**
-     * Obtêm o valor processado
+     * Get the processed value
      *
      * @return string
      */

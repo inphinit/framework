@@ -24,14 +24,15 @@ class DomException extends \Inphinit\Exception
         $file = $error->file;
 
         if ($file && $error->line > 0) {
-            // Removing the file URI scheme for compatibility with realpath() function
+            // Removing the file URI scheme for compatibility with `realpath(...)` function
             $file = preg_replace('#^file:/*#i', '/', $file);
 
-            // Remove leading slash in absolute paths in Windows (e.g., "/D:/path/sample.txt" -> "D:/path/sample.txt")
+            // Remove leading slash in absolute paths in Windows (e.g., `/D:/path/sample.txt` -> `D:/path/sample.txt`)
             $file = preg_replace('#^/([a-z]\:)#i', '$1', $file);
 
             $this->file = $file;
             $this->line = $error->line;
+
             $trace = 0;
         }
 

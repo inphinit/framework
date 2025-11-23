@@ -15,7 +15,7 @@ require_once 'env_vars.php';
 
 $console = new Inphinit\Experimental\Cli\Console();
 
-$console->action('env:optimize', function ($command, $params, $residual) use ($env) {
+$console->action('env:optimize', function (Command $command, array $params, array $residual) use ($env) {
     if ($env->storeAsVars(INPHINIT_SYSTEM . '/boot/env.php')) {
         echo 'Success in optimizing the `.env`';
     } else {
@@ -23,7 +23,7 @@ $console->action('env:optimize', function ($command, $params, $residual) use ($e
     }
 });
 
-$console->action('env:source', function ($command, $params, $residual) use ($env) {
+$console->action('env:source', function (Command $command, array $params, array $residual) use ($env) {
     if (unlink(INPHINIT_SYSTEM . '/boot/env.php')) {
         echo 'Successfully disabling `.env` optimization';
     } else {
@@ -31,7 +31,7 @@ $console->action('env:source', function ($command, $params, $residual) use ($env
     }
 });
 
-$serve = $console->action('serve', function ($command, $params, $residual) {
+$serve = $console->action('serve', function (Command $command, array $params, array $residual) {
     $host = isset($params['host']) ? $params['host'] : App::config('built_in_host');
     $port = isset($params['port']) ? $params['port'] : App::config('built_in_port');
     $vars = isset($params['vars']) ? $params['vars'] : 'EGPCS';
@@ -55,11 +55,11 @@ $serve = $console->action('serve', function ($command, $params, $residual) {
     exit($code);
 });
 
-$serve->setOption('host', null, Command::OPT_OPTIONAL, null, 'Define server address');
-$serve->setOption('port', null, Command::OPT_OPTIONAL, null, 'Define server port');
-$serve->setOption('vars', null, Command::OPT_OPTIONAL, null, 'Define variables order');
+$serve->setOption('host', null, Command::ARG_OPTIONAL, null, 'Define server address');
+$serve->setOption('port', null, Command::ARG_OPTIONAL, null, 'Define server port');
+$serve->setOption('vars', null, Command::ARG_OPTIONAL, null, 'Define variables order');
 
-$console->action('packages:optimize', function ($command, $params, $residual) {
+$console->action('packages:optimize', function (Command $command, array $params, array $residual) {
     require_once INPHINIT_SYSTEM . '/boot/importpackages.php';
 });
 

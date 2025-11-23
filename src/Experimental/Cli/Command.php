@@ -13,9 +13,9 @@ use Inphinit\Exception;
 
 class Command
 {
-    const OPT_NO_VALUE = 1;
-    const OPT_OPTIONAL = 2;
-    const OPT_REQUIRED = 3;
+    const ARG_NO_VALUE = 1;
+    const ARG_OPTIONAL = 2;
+    const ARG_REQUIRED = 3;
 
     const REGEX_NAME = '/^[A-Za-z][\w:]*$/';
     const REGEX_LONG = '/^([a-z][\w:\-?]+)$/i';
@@ -80,7 +80,7 @@ class Command
      * @param string $description Optional. Define a description for option
      * @return \Inphinit\Experimental\Cli\Command
      */
-    public function setOption($long, $short = null, $mode = self::OPT_OPTIONAL, $format = null, $description = null)
+    public function setOption($long, $short = null, $mode = self::ARG_OPTIONAL, $format = null, $description = null)
     {
         if (is_string($long) === false || preg_match(self::REGEX_LONG, $long) !== 1) {
             throw new Exception("Invalid long option: '{$long}'");
@@ -154,7 +154,7 @@ class Command
      *
      * @return array
      */
-    public function getOpts()
+    public function getOptions()
     {
         return $this->longs;
     }
@@ -164,7 +164,7 @@ class Command
      *
      * @return array
      */
-    public function getShortOpts()
+    public function getShortOptions()
     {
         return $this->shorts;
     }
@@ -203,7 +203,7 @@ class Command
             }
         }
 
-        $this->checkRequireds();
+        $this->checkRequired();
 
         if (is_array($callback)) {
             $controller = $callback['controller'];
@@ -216,7 +216,7 @@ class Command
 
     private function checkNoValue($index, $option, $value)
     {
-        if ($this->modes[$index] === self::OPT_NO_VALUE && $value !== '') {
+        if ($this->modes[$index] === self::ARG_NO_VALUE && $value !== '') {
             throw new Exception("The '{$option}' option does not accept values, yet '{$value}' was provided", 0, 3);
         }
     }
@@ -230,10 +230,10 @@ class Command
         }
     }
 
-    private function checkRequireds()
+    private function checkRequired()
     {
         foreach ($this->modes as $index => $mode) {
-            if ($mode === self::OPT_REQUIRED && $this->reclaimeds[$index] === false) {
+            if ($mode === self::ARG_REQUIRED && $this->reclaimeds[$index] === false) {
                 $option = $this->longs[$index];
                 throw new Exception("Missing option: --{$option}", 0, 3);
             }

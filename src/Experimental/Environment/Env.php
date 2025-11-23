@@ -13,9 +13,6 @@ use Inphinit\Exception;
 
 class Env
 {
-    const REGEX_FLOAT = '/^-?(0|[1-9]\d*)\.\d+$/';
-    const REGEX_INT = '/^-?(0|[1-9]\d*)$/';
-
     /**
      * Get value from `$_ENV[...]`. If not exists or empty string return aternate value
      *
@@ -25,7 +22,7 @@ class Env
      */
     public static function entry($name, $alternative = null)
     {
-        return isset($_ENV[$name]) || $_ENV[$name] !== '' ? $_ENV[$name] : $alternative;
+        return isset($_ENV[$name]) && $_ENV[$name] !== '' ? $_ENV[$name] : $alternative;
     }
 
     /**
@@ -43,11 +40,13 @@ class Env
             return $value;
         }
 
-        if ($value === '0' || $value === 'false' || $value === 'no') {
+        $lValue = strtolower($value);
+
+        if ($lValue === '0' || $lValue === 'false' || $lValue === 'no') {
             return false;
         }
 
-        if ($value === '1' || $value === 'true' || $value === 'yes') {
+        if ($lValue === '1' || $lValue === 'true' || $lValue === 'yes') {
             return true;
         }
 
@@ -58,7 +57,7 @@ class Env
      * Get value from `$_ENV[...]` as float
      *
      * @param string $name
-     * @return bool
+     * @return float
      */
     public static function float($name, $alternative = 0.0)
     {
@@ -68,7 +67,7 @@ class Env
             return $value;
         }
 
-        if (preg_match(self::REGEX_FLOAT, $value) === 1) {
+        if (is_numeric($value)) {
             return floatval($value);
         }
 
@@ -79,7 +78,7 @@ class Env
      * Get value from `$_ENV[...]` as integer
      *
      * @param string $name
-     * @return bool
+     * @return int
      */
     public static function int($name, $alternative = 0)
     {
@@ -89,8 +88,8 @@ class Env
             return $value;
         }
 
-        if (preg_match(self::REGEX_INT, $value) === 1) {
-            return intval($value);
+        if (is_numeric($value)) {
+            return intval($value, 10);
         }
 
         throw new Exception("Can not convert {$name}={$value} to int");

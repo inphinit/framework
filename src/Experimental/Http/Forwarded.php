@@ -32,11 +32,11 @@ class Forwarded
     /**
      * Constructor.
      *
-     * @param string|null $header   Optional raw "Forwarded" header value
-     * @param int         $limit    Optional limit
-     * @param bool        $fallback Whether to use "X-Forwarded-*" headers as fallback
+     * @param string|null $header   Optional. raw "Forwarded" header value
+     * @param int         $limit    Optional. Limit forwarded blocks
+     * @param bool        $fallback Optional. Whether to use "X-Forwarded-*" headers as fallback
      */
-    public function __construct($header = null, $fallback = true, $limit = 100)
+    public function __construct($header = null, $limit = 100, $fallback = true)
     {
         $this->alloweds = array(
             self::PARAM_BY,
@@ -45,9 +45,9 @@ class Forwarded
             self::PARAM_PROTO
         );
 
-        $this->fallback = $fallback;
-        $this->limit = $limit;
         $this->source = $header === null ? Request::header('forwarded') : $header;
+        $this->limit = $limit;
+        $this->fallback = $fallback;
     }
 
     /**
