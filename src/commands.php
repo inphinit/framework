@@ -40,11 +40,6 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     $host = isset($params['host']) ? $params['host'] : App::config('built_in_host');
     $port = isset($params['port']) ? $params['port'] : App::config('built_in_port');
     $vars = isset($params['vars']) ? $params['vars'] : 'EGPCS';
-    $root = INPHINIT_ROOT;
-    $router = escapeshellarg($root . '/index.php');
-    $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
-
-    $root = escapeshellarg($root);
 
     if (empty($host)) {
         echo 'Empty host';
@@ -56,7 +51,17 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
         exit(-1);
     }
 
-    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$root} {$router}", $code);
+    if (empty($vars)) {
+        echo 'Empty vars';
+        exit(-1);
+    }
+
+    $root = INPHINIT_ROOT;
+    $router = escapeshellarg($root . '/index.php');
+    $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
+    $public = escapeshellarg($root . '/public');
+
+    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$public} {$router}", $code);
 
     exit($code);
 });

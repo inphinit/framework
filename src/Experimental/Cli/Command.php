@@ -76,7 +76,7 @@ class Command
      * @param string $mode        Optional. Define whether the option is optional, required,
      *                            or should be used without a value
      * @param string $format      Optional. Define format excepted of value
-     *                            (not work with `OPT_NO_VALUE`)
+     *                            (not work with `ARG_NO_VALUE`)
      * @param string $description Optional. Define a description for option
      * @return \Inphinit\Experimental\Cli\Command
      */
@@ -172,34 +172,33 @@ class Command
     /**
      * This method will be used automatically by the `Inphinit\Cli\Console` instance
      *
-     * @param array $options
+     * @param array $entries
      * @throws \Inphinit\Exception
      */
-    public function response(array $options)
+    public function response(array $entries)
     {
         $callback = $this->callback;
         $params = array();
         $rest = array();
 
-        foreach ($options as $option => $value) {
-            if (strpos($option, '--') === 0) {
-                $key = substr($option, 2);
-                $index = array_search($key, $this->longs);
-            } else {
-                $key = substr($option, 1);
-                $index = array_search($key, $this->shorts);
+        foreach ($entries as $entry => $value) {
+            $index = false;
+
+            if (strlen($entry) > 2) {
+                $index = array_search($entry, $this->longs);
+            } elseif (strlen($entry) === 1) {
+                $index = array_search($entry, $this->shorts);
             }
 
             if ($index !== false) {
-                $this->checkNoValue($index, $option, $value);
-                $this->checkFormat($index, $option, $value);
+                $this->checkNoValue($index, $entry, $value);
+                $this->checkValueFormat($index, $entry, $value);
                 $this->reclaimeds[$index] = true;
                 $params[$this->longs[$index]] = $value;
             } elseif ($this->residual) {
                 $rest[$key] = $value;
-                unset($options[$option]);
             } else {
-                throw new Exception("Invalid option: {$option}");
+                throw new Exception("Invalid entry: {$entry}");
             }
         }
 
@@ -221,11 +220,11 @@ class Command
         }
     }
 
-    private function checkFormat($index, $option, $value)
+    private function checkValueFormat($index, $option, $value)
     {
         $format = $this->formats[$index];
 
-        if ($format && preg_match($this->formats[$index], $value) !== 1) {
+        if ($format && preg_match($format, $value) !== 1) {
             throw new Exception("Invalid value format in: {$option}={$value} ($format)", 0, 3);
         }
     }
@@ -234,8 +233,17 @@ class Command
     {
         foreach ($this->modes as $index => $mode) {
             if ($mode === self::ARG_REQUIRED && $this->reclaimeds[$index] === false) {
-                $option = $this->longs[$index];
-                throw new Exception("Missing option: --{$option}", 0, 3);
+                $long = $this->longs[$index];
+
+                $message = "Missing option: --{$long}";
+
+                $short = $this->shorts[$index];
+
+                if ($short !== null) {
+                    $message .= " or -{$short}";
+                }
+
+                throw new Exception($message, 0, 3);
             }
         }
     }

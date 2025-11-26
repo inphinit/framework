@@ -84,22 +84,22 @@ class Console
 
         $command = $this->commands[$name];
 
-        $command->response(self::getOptions($arguments));
+        $command->response(self::getEntries($arguments));
     }
 
     public static function run($command, array $options = array(), $return = false)
     {
-        $argValues = array('php', escapeshellarg(INPHINIT_ROOT . '/run'), $command);
+        $entries = array('php', escapeshellarg(INPHINIT_ROOT . '/run'), escapeshellarg($command));
 
         foreach ($options as $key => $value) {
-            $argValues[] = $key;
+            $entries[] = escapeshellarg($key);
 
             if ($value !== null) {
-                $argValues[] = escapeshellarg($value);
+                $entries[] = escapeshellarg($value);
             }
         }
 
-        $output = implode(' ', $argValues);
+        $output = implode(' ', $entries);
 
         if ($return) {
             return $output;
@@ -110,23 +110,29 @@ class Console
         exit($code);
     }
 
-    private static function getOptions(array $entries)
+    private static function getEntries(array $entries)
     {
         $output = array();
         $lastOpt = '';
 
         foreach ($entries as $entry) {
-            if (preg_match('/^(-([a-z?])|--(\w[\w:]+))$/', $entry, $matches) === 1) {
+            if (preg_match('/^((-)([a-z0-9]+)|(--)([a-z][\w:\-?]+))$/i', $entry, $matches) === 1) {
                 if ($lastOpt !== '') {
                     $output[$lastOpt] = '';
                 }
 
-                $lastOpt = $matches[1];
-            } elseif ($lastOpt === '') {
-                throw new Exception(sprintf(self::PREFIX_ERROR, $entry), 0, 3);
-            } else {
+                if (isset($matches[5])) {
+                    $lastOpt = $matches[5];
+                } else {
+                    $shorts = str_split($matches[3]);
+                    $lastOpt = array_pop($shorts);
+                    $output += array_fill_keys($shorts, '');
+                }
+            } elseif ($lastOpt !== '') {
                 $output[$lastOpt] = $entry;
                 $lastOpt = '';
+            } else {
+                $output[$entry] = '';
             }
         }
 

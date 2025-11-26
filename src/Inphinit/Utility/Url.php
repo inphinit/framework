@@ -284,7 +284,7 @@ class Url
         $host = $data['host'] ? $data['host'] : '';
         $port = $data['port'];
 
-        if (isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] == $port) {
+        if ($scheme && isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] == $port) {
             $port = '';
         } else {
             $port = $data['port'] ? (':' . $data['port']) : '';
