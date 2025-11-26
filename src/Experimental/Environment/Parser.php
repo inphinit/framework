@@ -13,7 +13,7 @@ use Inphinit\Exception;
 
 class Parser
 {
-    const REGEX_QUOTES = '/^([\'"])(.+)\\1/';
+    const REGEX_QUOTES = '/^([\'"])(.+)\\1(.*)/';
     const REGEX_VAR = '/\$\{(.+?)\}/';
     const REGEX_INTERPOLATE = '/^([A-Za-z_][A-Za-z0-9_]*)((:)?([\+\-\?])(.*))$/';
 
@@ -36,13 +36,14 @@ class Parser
         $quote = null;
 
         if (preg_match(self::REGEX_QUOTES, $value, $matches) === 1) {
-            $quote = $matches[1];
-            $value = $matches[2];
+            $residual = $matches[3];
 
-            $value = strtr($value, array(
-                '\\\\' => '\\',
-                '\\' . $quote => $quote,
-            ));
+            if ($residual !== '') {
+                throw new Exception('Invalid sintax');
+            }
+
+            $quote = $matches[1];
+            $value = preg_replace('/\\\\(["\'\\\])/', '$1', $matches[2]);
 
             if ($quote === '"') {
                 $value = strtr($value, self::$escapes);
@@ -84,12 +85,12 @@ class Parser
         $contents = $matches[1];
 
         if (preg_match(self::REGEX_INTERPOLATE, $contents, $inMatches) !== 1) {
-            throw new Exception("Invalid interpolation \$\{{$contents}\}");
+            throw new Exception("Invalid interpolation \$\{{$contents}\}", 0, 3);
         }
 
         $var = $inMatches[1];
         $nonEmpty = $inMatches[3] === ':';
-        $interMode = $inMatches[4]; // [+] Alternative, [-] Default, [?] Required
+        $interMode = $inMatches[4];
         $interParam = $inMatches[5];
         $value = null;
 

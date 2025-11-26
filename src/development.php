@@ -9,8 +9,8 @@
 
 error_reporting(E_ALL);
 
-$app = new Inphinit\Debugging\App();
-$debug = new Inphinit\Debugging\Debug();
+$app = new Inphinit\Diagnostics\App();
+$debug = new Inphinit\Diagnostics\Debug();
 
 require INPHINIT_SYSTEM . '/dev.php';
 require __DIR__ . '/sendfile.php';

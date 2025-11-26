@@ -9,7 +9,7 @@
 
 use Inphinit\Experimental\Environment\EnvFile;
 
-require_once __DIR__ . '/Inphinit/Debugging/Inspector.php';
+require_once __DIR__ . '/Inphinit/Diagnostics/Inspector.php';
 require_once __DIR__ . '/Inphinit/Exception.php';
 require_once __DIR__ . '/Experimental/Environment/EnvException.php';
 require_once __DIR__ . '/Experimental/Environment/EnvFile.php';

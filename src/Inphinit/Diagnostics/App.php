@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Debugging;
+namespace Inphinit\Diagnostics;
 
 use Inphinit\Exception;
 

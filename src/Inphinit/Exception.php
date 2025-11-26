@@ -9,7 +9,7 @@
 
 namespace Inphinit;
 
-use Inphinit\Debugging\Inspector;
+use Inphinit\Diagnostics\Inspector;
 
 class Exception extends \Exception
 {

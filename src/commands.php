@@ -9,19 +9,24 @@
 
 use Inphinit\App;
 use Inphinit\Experimental\Cli\Command;
+use Inphinit\Experimental\Cli\Console;
 
-require_once 'boot.php';
-require_once 'env_vars.php';
+require_once __DIR__ . '/boot.php';
+require_once __DIR__ . '/env_vars.php';
 
-$console = new Inphinit\Experimental\Cli\Console();
+$console = new Console();
 
-$console->action('env:optimize', function (Command $command, array $params, array $residual) use ($env) {
+$console->action('env:boot', function (Command $command, array $params, array $residual) use ($env) {
+    if (isset($params['override'])) {
+        $env->setOverride(true);
+    }
+
     if ($env->storeAsVars(INPHINIT_SYSTEM . '/boot/env.php')) {
         echo 'Success in optimizing the `.env`';
     } else {
         echo 'Failed in optimizing the `.env`';
     }
-});
+})->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
 
 $console->action('env:source', function (Command $command, array $params, array $residual) use ($env) {
     if (unlink(INPHINIT_SYSTEM . '/boot/env.php')) {
@@ -37,6 +42,7 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     $vars = isset($params['vars']) ? $params['vars'] : 'EGPCS';
     $root = INPHINIT_ROOT;
     $router = escapeshellarg($root . '/index.php');
+    $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
 
     $root = escapeshellarg($root);
 
@@ -50,14 +56,14 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
         exit(-1);
     }
 
-    passthru("php -d variables_order={$vars} -S {$host}:{$port} -t {$root} {$router}", $code);
+    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$root} {$router}", $code);
 
     exit($code);
 });
 
-$serve->setOption('host', null, Command::ARG_OPTIONAL, null, 'Define server address');
-$serve->setOption('port', null, Command::ARG_OPTIONAL, null, 'Define server port');
-$serve->setOption('vars', null, Command::ARG_OPTIONAL, null, 'Define variables order');
+$serve->setOption('host', 'h', Command::ARG_OPTIONAL, null, 'Define server address');
+$serve->setOption('port', 'p', Command::ARG_OPTIONAL, null, 'Define server port');
+$serve->setOption('vars', 'v', Command::ARG_OPTIONAL, null, 'Define variables order');
 
 $console->action('packages:optimize', function (Command $command, array $params, array $residual) {
     require_once INPHINIT_SYSTEM . '/boot/importpackages.php';

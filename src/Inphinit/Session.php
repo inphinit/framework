@@ -193,7 +193,7 @@ class Session
             throw new Exception('Failed copy data');
         }
 
-        $this->setCookie($id, $this->handle);
+        $this->setCookie($id, $dest);
         $this->id = $id;
     }
 

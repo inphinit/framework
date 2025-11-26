@@ -45,7 +45,7 @@ class EnvFile
     }
 
     /**
-     * This method affect fill() and saveAsVar() methods
+     * This method affect fill() and storeAsVars() methods
      *
      * @throws \Inphinit\Exception
      */
@@ -138,7 +138,8 @@ class EnvFile
 
         if ($this->override) {
             foreach ($this->entries as $name => $entry) {
-                $contents .= "\$_ENV['{$name}'] = '" . $entry . "';\n";
+                $name = var_export($name, true);
+                $contents .= "\$_ENV[{$name}] = " . var_export($entry, true) . ";\n";
             }
         } else {
             $contents .= '$_ENV += ' . var_export($this->entries, true) . ";\n";
@@ -195,10 +196,10 @@ class EnvFile
 
         $line = 0;
 
-        while (feof($handle) === false) {
+        while (($data = fgets($handle)) !== false) {
             ++$line;
 
-            $data = rtrim(fgets($handle), "\r\n");
+            $data = rtrim($data, "\r\n");
 
             if (empty($data)) {
                 continue;

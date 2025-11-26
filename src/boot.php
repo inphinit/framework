@@ -14,7 +14,7 @@ header_remove('X-Powered-By');
 
 define('INPHINIT_MAINTENANCE', INPHINIT_SYSTEM . '/storage/.maintenance');
 
-require 'Inphinit/App.php';
+require __DIR__ . '/Inphinit/App.php';
 
 /**
  * Checks whether the file exists using a case-sensitive comparison, regardless of the operating system.
@@ -92,19 +92,18 @@ if (App::config('skip_env_file') !== '1') {
     if (PHP_SAPI !== 'cli' && is_file($inphinit_optimized_env)) {
         require $inphinit_optimized_env;
     } else {
-        require 'env_vars.php';
+        require __DIR__ . '/env_vars.php';
     }
 }
 
 $inphinit_config_development = App::config('environment') === 'development';
 
-if (INPHINIT_COMPOSER) {
+if (App::config('composer_autoload') === '1') {
     require_once INPHINIT_SYSTEM . '/vendor/autoload.php';
 } else {
     /*
-     * Optimized autoloader for classes within the system folder (Controllers, Models, Services, ...)
-     * and for classes in the Inphinit\ namespace.
-     * Note: Enabled only in production mode; in development mode, additional checks are performed to prevent errors.
+     * Using `set_include_path()` optimizes how Controllers, Models, and other framework classes are loaded.
+     * Note: For production mode only; in development mode, additional checks are performed to detect errors.
      */
     if (!$inphinit_config_development) {
         set_include_path(__DIR__ . PATH_SEPARATOR . INPHINIT_SYSTEM);
@@ -199,7 +198,7 @@ define('INPHINIT_PATH', $inphinit_path);
 define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
 
 if ($inphinit_config_development) {
-    require 'development.php';
+    require __DIR__ . '/development.php';
 } else {
     $app = new App();
 }

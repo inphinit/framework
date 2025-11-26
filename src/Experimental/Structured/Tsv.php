@@ -17,10 +17,6 @@ class Tsv extends Delimited
 
     protected function getLine($separator)
     {
-        if (feof($this->stream)) {
-            return false;
-        }
-
         $line = fgets($this->stream, $this->chunk);
 
         if ($line === false || strpos($line, $separator) === false) {

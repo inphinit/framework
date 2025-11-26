@@ -213,9 +213,7 @@ class File
         $output = '';
         $max = $max + $offset - 1;
 
-        while (feof($handle) === false) {
-            $data = fgets($handle);
-
+        while (($data = fgets($handle)) !== false) {
             if ($i >= $offset) {
                 $output .= $data;
 
