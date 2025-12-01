@@ -29,7 +29,7 @@ class Csv extends Delimited
     }
 
     /**
-     * Set escape for read CSV
+     * Set proprietary escape mechanism for read CSV
      *
      * @param string $escape
      * @param bool $refresh

@@ -13,6 +13,9 @@ use Inphinit\Dom\Document;
 
 class Checkup
 {
+    const AGE_CHECK = 1;
+    const AGE_LEGACY = 5;
+
     private $iniPath = '';
     private $iniGet = true;
     private $development = false;
@@ -20,6 +23,8 @@ class Checkup
 
     private $errors = array();
     private $warnings = array();
+
+    private static $buildAge;
 
     const MSG_INI_CONFIGS = '`%s`, additional `.ini` files, or via directives';
     const MSG_DEV_ADVICE = 'While in development mode, it is recommended to disable `%s` in %s';
@@ -29,15 +34,15 @@ class Checkup
         $this->development = \Inphinit\App::config('development') === true;
         $this->sensitive = $this->development;
 
-        if ($buildDate = self::buildDate()) {
-            $current = new \DateTime();
-            $diff = $current->diff($buildDate)->y;
+        if ($buildAge = self::getBuildAge()) {
             $version = PHP_VERSION;
 
-            if ($diff > 5) {
-                $this->errors[] = "Your PHP installation ({$version}) is over {$diff} years old — upgrading to a newer version is strongly recommended for security and performance reasons.";
-            } elseif ($diff > 1) {
-                $this->errors[] = "Your PHP build ({$version}) hasn't been updated in over {$diff} years — consider applying the latest security patches or upgrading to a newer release.";
+            if ($buildAge > self::AGE_LEGACY) {
+                $this->errors[] = "Your PHP installation ({$version}) is over {$buildAge} years old — " .
+                                  "upgrading to a newer version is strongly recommended for security and performance reasons";
+            } elseif ($buildAge > self::AGE_CHECK) {
+                $this->errors[] = "Your PHP build ({$version}) hasn't been updated in over {$buildAge} years — " .
+                                  "consider applying the latest security patches or upgrading to a newer release";
             }
         }
 
@@ -90,38 +95,51 @@ class Checkup
         $this->sensitive = $display;
     }
 
-    /**
-     * Retrieve the PHP build date as a DateTime object, or false if unavailable
-     *
-     * @return \DateTime|bool
-     */
-    public function buildDate()
+    private static function getBuildAge()
     {
-        if (function_exists('phpinfo')) {
+        if (self::$buildAge !== null) {
+            return self::$buildAge;
+        }
+
+        $date = null;
+
+        if (defined('PHP_BUILD_DATE')) {
+            $date = PHP_BUILD_DATE;
+        } elseif (function_exists('phpinfo')) {
             ob_start();
             phpinfo(INFO_GENERAL);
-            $data = ob_get_clean();
 
             $handle = new Document(Document::HTML);
-            $handle->load($data);
+            $handle->load(ob_get_clean());
 
-            $elements = $handle->selector()->all('table td:contains(Build Date)+td');
-            $dateNode = $elements->item(0);
+            $node = $handle->selector()->first('td:contains(Build Date)+td');
 
-            if ($dateNode && $value = trim($dateNode->nodeValue)) {
-                try {
-                    return new \DateTime($value);
-                } catch (\Exception $e) {
-                    $this->warnings[] = "The PHP release date could not be determined (invalid date string: {$value})";
-                }
+            if ($node && $value = trim($node->nodeValue)) {
+                $date = $value;
             } else {
                 $this->warnings[] = "The PHP release date could not be determined (missing build date in phpinfo)";
             }
-        } else {
-            $this->warnings[] = 'The PHP release date could not be determined (phpinfo disabled)';
+
+            $handle = null;
         }
 
-        return false;
+        $age = false;
+
+        if ($date) {
+            try {
+                $current = new \DateTime();
+                $build = new \DateTime($date);
+                $age = $current->diff($build)->y;
+            } catch (\Exception $e) {
+                $this->warnings[] = "The PHP release date could not be determined (invalid date: {$date})";
+            }
+        } else {
+            $this->warnings[] = 'The PHP release date could not be determined';
+        }
+
+        self::$buildAge = $age;
+
+        return $age;
     }
 
     private function collectErrors()
@@ -132,59 +150,64 @@ class Checkup
             $this->errors[] = 'Disable `magic_quotes_gpc` in ' . $directives;
         }
 
-        if ($this->iniGet && PHP_VERSION_ID < 70000 && ini_get('always_populate_raw_post_data') != -1) {
+        if ($this->iniGet && PHP_VERSION_ID < 70000 && self::isEnabled('always_populate_raw_post_data')) {
             $this->errors[] = 'Set -1 to `always_populate_raw_post_data` in ' . $directives;
         }
 
-        if ($this->iniGet && $this->development === false && $this->flag('display_errors')) {
+        if ($this->iniGet && $this->development === false && self::isEnabled('display_errors')) {
             $this->errors[] = 'In production environment you must disable `display_errors` in ' . $directives;
         }
 
         $folder = INPHINIT_SYSTEM . '/storage';
 
         if (is_dir($folder) && is_writable($folder) === false) {
-            $this->errors[] = '`' . ($this->sensitive ? $folder : './storage') . '` directory requires write permissions';
+            $this->errors[] = '`' . ($this->sensitive ? $folder : './storage') .
+                              '` directory requires write permissions';
         }
     }
 
     private function collectWarnings()
     {
+        $directives = $this->getDirectives();
+
+        if (class_exists('\\Transliterator', false) === false) {
+            $this->warnings[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String`' .
+                                ' and `Inphinit\Utility\Url`.  Enable it in ' . $directives;
+        }
+        if ($this->iniGet && PHP_VERSION_ID < 70000 && self::isEnabled('auto_detect_line_endings')) {
+            $this->warnings[] = '`auto_detect_line_endings` is deprecated, set 0 or remove in ' . $directives;
+        }
+
         if ($this->development && $this->iniGet) {
-            $directives = $this->getDirectives();
-
-            if (class_exists('\\Transliterator', false) === false) {
-                $this->warnings[] = '(Optional) *Intl* extension is required by `Inphinit\Utility\String` and `Inphinit\Utility\Url`. Enable it in ' . $directives;
-            }
-
-            if (function_exists('apc_cache_info') && $this->flag('apc.enabled')) {
-                $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'apc.enabled', $directives);
-            }
-
-            if (function_exists('eaccelerator_get') && $this->flag('eaccelerator.enable')) {
-                $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'eaccelerator.enable', $directives);
-            }
-
-            if (function_exists('opcache_get_configuration') && $this->flag('opcache.enable')) {
+            if (function_exists('opcache_get_configuration') && self::isEnabled('opcache.enable')) {
                 $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'opcache.enable', $directives);
             }
 
+            if (function_exists('apc_cache_info') && self::isEnabled('apc.enabled')) {
+                $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'apc.enabled', $directives);
+            }
+
+            if (function_exists('eaccelerator_get') && self::isEnabled('eaccelerator.enable')) {
+                $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'eaccelerator.enable', $directives);
+            }
+
             if (function_exists('wincache_fcache_meminfo')) {
-                if ($this->flag('wincache.fcenabled')) {
+                if (self::isEnabled('wincache.fcenabled')) {
                     $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'wincache.fcenabled', $directives);
                 }
 
-                if ($this->flag('wincache.ocenabled')) {
+                if (self::isEnabled('wincache.ocenabled')) {
                     $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'wincache.ocenabled', $directives);
                 }
             }
 
-            if (function_exists('xcache_get') && $this->flag('xcache.cacher')) {
+            if (function_exists('xcache_get') && self::isEnabled('xcache.cacher')) {
                 $this->warnings[] = sprintf(self::MSG_DEV_ADVICE, 'xcache.cacher', $directives);
             }
         }
     }
 
-    private function flag($key)
+    private static function isEnabled($key)
     {
         $value = ini_get($key);
         return $value ? in_array(strtolower($value), array('on', '1', 'yes', 'no')) : false;

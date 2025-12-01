@@ -27,7 +27,7 @@ class Debug
         'duckduckgo' => 'https://duckduckgo.com/?q={error}',
         'google' => 'https://www.google.com/search?q={error}',
         'google.ai' => 'https://www.google.com/search?q={error}&amp;udm=50',
-        'perplexity' => 'https://www.perplexity.ai/search?q={error}',
+        'perplexity' => 'https://www.perplexity.ai/search?q={error}'
     );
 
     /** @var array<string, string> List of shortcuts for linking problematic files via link to external editors */

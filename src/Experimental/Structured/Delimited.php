@@ -23,7 +23,7 @@ abstract class Delimited
     protected $chunk;
     protected $separator;
     protected $enclosure = '"';
-    protected $escape = '';
+    protected $escape;
     protected $separators = array();
     protected $eol = "\r\n";
 
@@ -55,6 +55,11 @@ abstract class Delimited
         }
 
         $this->useHeaders = $headers;
+
+        if ($this->escape === null) {
+            // Note: Prior to PHP 7.4, there was no way to disable the proprietary escape mechanism
+            $this->escape = PHP_VERSION_ID < 70400 ? '\\' : '';
+        }
 
         $this->boot();
     }
@@ -148,6 +153,8 @@ abstract class Delimited
         if ($this->useHeaders === false || $this->getLine($this->separator) !== false) {
             $this->streamEof = false;
         }
+
+        $this->firstLine = true;
     }
 
     /**
@@ -296,7 +303,6 @@ abstract class Delimited
         }
 
         $this->closeSaveStream();
-        $this->rewind();
     }
 
     /**
@@ -322,7 +328,9 @@ abstract class Delimited
         $mode = self::MODE_INDEX;
 
         while ($items = $this->fetch($mode)) {
-            if (PHP_VERSION_ID < 80100) {
+            if (PHP_VERSION_ID < 50504) {
+                fputcsv($handle, $items, $separator, $enclosure);
+            } elseif (PHP_VERSION_ID < 80100) {
                 fputcsv($handle, $items, $separator, $enclosure, $escape);
             } else {
                 fputcsv($handle, $items, $separator, $enclosure, $escape, $eol);
@@ -330,7 +338,6 @@ abstract class Delimited
         }
 
         $this->closeSaveStream();
-        $this->rewind();
     }
 
     public function __destruct()
@@ -362,9 +369,7 @@ abstract class Delimited
 
     protected function getLine($separator)
     {
-        while (feof($this->stream) === false) {
-            $line = fgetcsv($this->stream, $this->chunk, $separator, $this->enclosure, $this->escape);
-
+        while (($line = fgetcsv($this->stream, $this->chunk, $separator, $this->enclosure, $this->escape)) !== false) {
             if (isset($line[1]) || empty($line[0]) === false) {
                 return $line;
             }
@@ -439,8 +444,11 @@ abstract class Delimited
             }
 
             fclose($this->saveStream);
+
             $this->saveStream = null;
         }
+
+        $this->rewind();
     }
 
     private static function withoutBom(&$item)

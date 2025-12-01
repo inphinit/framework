@@ -54,7 +54,7 @@ class Selector
      * Create a `Inphinit\Dom\Selector` instance.
      *
      * @param \DOMDocument $document
-     * @param bool $registerNodeNS
+     * @param bool         $registerNodeNS
      */
     public function __construct(\DOMDocument $document, $registerNodeNS = true)
     {
