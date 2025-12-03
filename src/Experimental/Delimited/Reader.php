@@ -57,7 +57,7 @@ abstract class Reader
 
         if ($this->stream === false) {
             $err = error_get_last();
-            throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 4);
+            throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 3);
         }
 
         $this->boot();
@@ -288,40 +288,44 @@ abstract class Reader
         $indexSize = 0;
         $inferredSeparator = null;
 
-        foreach ($this->separators as $separator) {
-            $this->rewindStream();
+        if ($this->separator === null) {
+            foreach ($this->separators as $separator) {
+                $this->rewindStream();
 
-            $fields = $this->getLine($separator);
+                $fields = $this->getLine($separator);
 
-            if (is_array($fields) === false) {
-                $inferredSeparator = '';
-                break;
-            }
+                if (is_array($fields) === false) {
+                    $inferredSeparator = '';
+                    break;
+                }
 
-            $indexSize = count($fields);
+                $indexSize = count($fields);
 
-            if ($indexSize > 1) {
-                $inferredSeparator = $separator;
-                break;
+                if ($indexSize > 1) {
+                    $inferredSeparator = $separator;
+                    break;
+                }
             }
         }
 
         if ($fields !== null) {
-            if ($indexSize === 1) {
-                $inferredSeparator = '';
-            }
+            throw new Exception('Invalid document', 0, 3);
+        }
 
-            $this->sanitizeFields($fields);
+        if ($indexSize === 1) {
+            $inferredSeparator = '';
+        }
 
-            $this->headers = $fields;
-            $this->indexSize = $indexSize;
-            $this->separator = $inferredSeparator;
+        $this->sanitizeFields($fields);
 
-            if ($this->mode & self::MODE_SKIP_HEADER) {
-                $this->firstLine = false;
-            } else {
-                $this->rewindStream();
-            }
+        $this->headers = $fields;
+        $this->indexSize = $indexSize;
+        $this->separator = $inferredSeparator;
+
+        if ($this->mode & self::MODE_SKIP_HEADER) {
+            $this->firstLine = false;
+        } else {
+            $this->rewindStream();
         }
     }
 

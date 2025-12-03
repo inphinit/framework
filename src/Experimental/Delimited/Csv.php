@@ -57,15 +57,19 @@ class Csv extends Reader
     }
 
     /**
-     * Set separator for read CSV
+     * Set separators
      *
-     * @param string $separator
+     * @param array<int, string> $separators
      * @throws \Inphinit\Exception
      */
-    public function setSeparator($separator)
+    public function setSeparators(array $separators)
     {
-        $this->isSingleChar($separator, false, 'Separator must be a single byte character');
-        $this->separator = $separator;
+        if (count($separators) === 0) {
+            throw new Exception('Invalid separators');
+        }
+
+        $this->separator = null;
+        $this->separators = $separators;
     }
 
     /**
