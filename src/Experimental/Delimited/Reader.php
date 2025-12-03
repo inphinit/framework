@@ -33,11 +33,11 @@ abstract class Reader
     private $fillFields;
     private $firstLine = true;
     private $headers = array();
-    private $index = -1;
-    private $indexSize;
+    private $lineIndex = -1;
     private $mode;
     private $noNextLine = false;
     private $sanitize;
+    private $totalFields;
     private static $bom = "\xEF\xBB\xBF";
 
     /**
@@ -209,14 +209,14 @@ abstract class Reader
 
         $size = count($fields);
 
-        if ($size < $this->indexSize) {
+        if ($size < $this->totalFields) {
             if ($this->fillFields === null) {
-                $this->fillFields = array_fill(0, $this->indexSize, '');
+                $this->fillFields = array_fill(0, $this->totalFields, '');
             }
 
             $fields += $this->fillFields;
-        } elseif ($size !== $this->indexSize) {
-            array_splice($fields, $this->indexSize);
+        } elseif ($size !== $this->totalFields) {
+            array_splice($fields, $this->totalFields);
         }
 
         if ($this->dto !== null) {
@@ -268,7 +268,7 @@ abstract class Reader
         return $fields;
     }
 
-    private function rewindStream($refresh = false)
+    private function rewindStream()
     {
         rewind($this->stream);
 
@@ -276,62 +276,57 @@ abstract class Reader
         if (fread($this->stream, 3) !== self::$bom) {
             rewind($this->stream);
         }
-
-        $this->firstLine = true;
-        $this->index = -1;
-        $this->noNextLine = false;
     }
 
     private function boot()
     {
         $fields = null;
-        $indexSize = 0;
         $inferredSeparator = null;
+        $totalFields = 0;
 
-        if ($this->separator === null) {
-            foreach ($this->separators as $separator) {
-                $this->rewindStream();
+        $this->firstLine = true;
+        $this->lineIndex = -1;
+        $this->noNextLine = false;
 
-                $fields = $this->getLine($separator);
+        foreach ($this->separators as $separator) {
+            $this->rewindStream();
 
-                if (is_array($fields) === false) {
-                    $inferredSeparator = '';
-                    break;
-                }
+            $fields = $this->getLine($separator);
 
-                $indexSize = count($fields);
+            if (is_array($fields) === false) {
+                $inferredSeparator = '';
+                break;
+            }
 
-                if ($indexSize > 1) {
-                    $inferredSeparator = $separator;
-                    break;
-                }
+            $totalFields = count($fields);
+
+            if ($totalFields > 1) {
+                $inferredSeparator = $separator;
+                break;
             }
         }
 
-        if ($fields !== null) {
-            throw new Exception('Invalid document', 0, 3);
-        }
-
-        if ($indexSize === 1) {
+        if ($totalFields === 1) {
             $inferredSeparator = '';
         }
 
         $this->sanitizeFields($fields);
 
         $this->headers = $fields;
-        $this->indexSize = $indexSize;
+        $this->totalFields = $totalFields;
         $this->separator = $inferredSeparator;
 
         if ($this->mode & self::MODE_SKIP_HEADER) {
             $this->firstLine = false;
         } else {
+            $this->lineIndex = -1;
             $this->rewindStream();
         }
     }
 
     private function sanitizeFields(array &$fields)
     {
-        $index = ++$this->index;
+        $index = ++$this->lineIndex;
 
         if ($this->sanitize !== null) {
             $sanitize = $this->sanitize;
