@@ -29,7 +29,11 @@ $console->action('env:boot', function (Command $command, array $params, array $r
 })->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
 
 $console->action('env:source', function (Command $command, array $params, array $residual) use ($env) {
-    if (unlink(INPHINIT_SYSTEM . '/boot/env.php')) {
+    $envFile = INPHINIT_SYSTEM . '/boot/env.php';
+
+    if (is_file($envFile) === false) {
+        echo 'Optimization of the `.env` file is already disabled';
+    } elseif (unlink($envFile)) {
         echo 'Successfully disabling `.env` optimization';
     } else {
         echo 'Failed to disable `.env` optimization';

@@ -40,7 +40,7 @@ class Csv extends Reader
      */
     public function setEnclosure($enclosure)
     {
-        $this->isSingleChar($enclosure, true, 'Enclosure must be a single byte character or empty');
+        self::isSingleChar($enclosure, 'Enclosure must be a single byte character or empty');
         $this->enclosure = $enclosure;
     }
 
@@ -52,7 +52,7 @@ class Csv extends Reader
      */
     public function setProprietaryEscape($escape)
     {
-        $this->isSingleChar($escape, true, 'Proprietary escape must be a single byte character or empty');
+        self::isSingleChar($escape, 'Proprietary escape must be a single byte character or empty');
         $this->proprietaryEscape = $escape;
     }
 
@@ -87,9 +87,9 @@ class Csv extends Reader
         return is_array($parsed) === false || $parsed[0] === null ? array() : $parsed;
     }
 
-    private static function isSingleChar($str, $allowEmpty, $message)
+    private static function isSingleChar($str, $message)
     {
-        if (is_string($str) === false || strlen($str) > 1 || ($allowEmpty === false && strlen($str) !== 1)) {
+        if (is_string($str) === false || strlen($str) > 1) {
             throw new Exception($message, 0, 3);
         }
     }

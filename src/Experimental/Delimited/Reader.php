@@ -26,17 +26,19 @@ abstract class Reader
     protected $separators = array();
     protected $stream;
 
-    private $chunk;
+    private $chunk = 0;
     private $converter;
     private $dto;
     private $eol = "\n";
     private $fillFields;
     private $firstLine = true;
     private $headers = array();
+    private $limitCount = 0;
+    private $limitOffset = 0;
     private $lineIndex = -1;
     private $mode;
     private $noNextLine = false;
-    private $sanitize;
+    private $filter;
     private $totalFields;
     private static $bom = "\xEF\xBB\xBF";
 
@@ -177,14 +179,33 @@ abstract class Reader
     }
 
     /**
-     * Set custom sanitize for fields
+     * Set custom filter for fields
+     * Note: If the callback returns false, the line will be ignored.
+     * Note: Values can be changed by reference.
      *
-     * @param callable $sanitize
+     * @param callable $filter
      * @throws \Inphinit\Exception
      */
-    public function setSanitize(callable $sanitize)
+    public function setFilter(callable $filter)
     {
-        $this->sanitize = $sanitize;
+        $this->filter = $filter;
+    }
+
+    /**
+     * Set the maximum number of rows returned and skips a certain
+     * number of rows before starting to return rows
+     *
+     * Note: This method will perform the refresh automatically.
+     *
+     * @param int $count  Set limit
+     * @param int $offset Set offset
+     */
+    public function limit($count, $offset = 0)
+    {
+        $this->limitCount = $count > 0 ? $count : 0;
+        $this->limitOffset = $offset > 0 ? $offset : 0;
+
+        $this->refresh();
     }
 
     /**
@@ -201,11 +222,18 @@ abstract class Reader
             return false;
         }
 
+        if ($this->limitCount !== 0 && $this->lineIndex > ($this->limitCount + $this->limitOffset)) {
+            $this->noNextLine = true;
+            return false;
+        }
+
         if ($this->firstLine) {
             $this->firstLine = false;
         }
 
-        $this->sanitizeFields($fields);
+        if ($this->filterFields($fields) === false) {
+            return $this->fetch();
+        }
 
         $size = count($fields);
 
@@ -256,6 +284,8 @@ abstract class Reader
             return null;
         }
 
+        ++$this->lineIndex;
+
         $entry = stream_get_line($this->stream, $this->chunk, $this->eol);
 
         $fields = false;
@@ -280,13 +310,13 @@ abstract class Reader
 
     private function boot()
     {
-        $fields = null;
-        $inferredSeparator = null;
-        $totalFields = 0;
-
         $this->firstLine = true;
         $this->lineIndex = -1;
         $this->noNextLine = false;
+
+        $fields = null;
+        $inferredSeparator = null;
+        $totalFields = 0;
 
         foreach ($this->separators as $separator) {
             $this->rewindStream();
@@ -310,7 +340,7 @@ abstract class Reader
             $inferredSeparator = '';
         }
 
-        $this->sanitizeFields($fields);
+        $this->filterFields($fields);
 
         $this->headers = $fields;
         $this->totalFields = $totalFields;
@@ -322,17 +352,25 @@ abstract class Reader
             $this->lineIndex = -1;
             $this->rewindStream();
         }
+
+        $offset = $this->limitOffset;
+
+        if ($offset > 0) {
+            while ($this->lineIndex < $offset) {
+                if ($this->getLine($inferredSeparator) === null) {
+                    break;
+                }
+            }
+        }
     }
 
-    private function sanitizeFields(array &$fields)
+    private function filterFields(array &$fields)
     {
-        $index = ++$this->lineIndex;
+        if ($this->filter !== null) {
+            $callback = $this->filter;
 
-        if ($this->sanitize !== null) {
-            $sanitize = $this->sanitize;
-
-            foreach ($fields as &$field) {
-                $field = $sanitize($field, $index);
+            if ($callback($fields, $this->lineIndex) === false) {
+                return false;
             }
         }
     }

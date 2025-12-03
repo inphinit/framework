@@ -25,7 +25,7 @@ class EnvFile
     /** @var int Define `apache_getenv()` and `apache_setenv()` as source for all layers of Apache */
     const SOURCE_APACHE_ALL = 8;
 
-    const REGEX_ENTRY = '/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/';
+    const REGEX_ENTRY = '/^\s*([A-Za-z_][A-Za-z0-9_]*?)\s*=\s*(.*)$/';
     const REGEX_KEY = '/^([A-Za-z_][A-Za-z0-9_]*)$/';
 
     private $path;
