@@ -52,7 +52,7 @@ class Converter
         }
 
         if (is_string($enclosure) === false || strlen($enclosure) !== 1) {
-            throw new Exception('Separator must be a single byte character');
+            throw new Exception('Enclosure must be a single byte character');
         }
 
         self::checkEndOfLine($eol);

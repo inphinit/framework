@@ -26,8 +26,7 @@ class Csv extends Reader
      */
     public function __construct($path)
     {
-        // Note: Prior to PHP 7.4, there was no way to disable the proprietary escape mechanism
-        $this->proprietaryEscape = PHP_VERSION_ID < 70400 ? '\\' : '';
+        $this->setProprietaryEscape('');
 
         parent::__construct($path);
     }
@@ -53,6 +52,12 @@ class Csv extends Reader
     public function setProprietaryEscape($escape)
     {
         self::isSingleChar($escape, 'Proprietary escape must be a single byte character or empty');
+
+        // Note: Prior to PHP 7.4, there was no way to disable the proprietary escape mechanism
+        if ($escape === '' && PHP_VERSION_ID < 70400) {
+            $escape = '\\';
+        }
+
         $this->proprietaryEscape = $escape;
     }
 

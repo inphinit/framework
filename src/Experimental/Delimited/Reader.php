@@ -300,6 +300,8 @@ abstract class Reader
 
     private function rewindStream()
     {
+        $this->lineIndex = -1;
+
         rewind($this->stream);
 
         // Skip BOM
@@ -343,13 +345,12 @@ abstract class Reader
         $this->filterFields($fields);
 
         $this->headers = $fields;
-        $this->totalFields = $totalFields;
         $this->separator = $inferredSeparator;
+        $this->totalFields = $totalFields;
 
         if ($this->mode & self::MODE_SKIP_HEADER) {
             $this->firstLine = false;
         } else {
-            $this->lineIndex = -1;
             $this->rewindStream();
         }
 

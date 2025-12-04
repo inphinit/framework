@@ -33,6 +33,6 @@ class Tsv extends Reader
      */
     protected function parse($separator, $entry)
     {
-        return explode($separator, $entry);
+        return $entry === '' ? array() : explode($separator, $entry);
     }
 }
