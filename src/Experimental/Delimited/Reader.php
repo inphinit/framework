@@ -40,6 +40,7 @@ abstract class Reader
     private $noNextLine = false;
     private $filter;
     private $totalFields;
+    private $uninitialized = true;
     private static $bom = "\xEF\xBB\xBF";
 
     /**
@@ -55,14 +56,12 @@ abstract class Reader
         }
 
         $this->mode = self::MODE_INDEX | self::MODE_SKIP_HEADER;
-        $this->stream = fopen($path, 'r');
+        $this->stream = fopen($path, 'rb');
 
         if ($this->stream === false) {
             $err = error_get_last();
             throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 3);
         }
-
-        $this->boot();
     }
 
     public function __destruct()
@@ -79,6 +78,7 @@ abstract class Reader
      */
     public function getHeaders()
     {
+        $this->boot();
         return $this->headers;
     }
 
@@ -97,6 +97,7 @@ abstract class Reader
      */
     public function refresh()
     {
+        $this->uninitialized = true;
         $this->boot();
     }
 
@@ -169,6 +170,22 @@ abstract class Reader
     }
 
     /**
+     * Enable/disable strict mode.
+     * Note: When strict mode is enabled, the header must include at least two columns,
+     * using one of the expected separators to delimit them.
+     *
+     * @param bool $enable
+     */
+    public function setStrictMode($enable)
+    {
+        if (is_bool($enable) === false) {
+            throw new Exception('$enable argument must be of type bool, ' . get_type($enable) . ' given');
+        }
+
+        $this->strictMode = $enable;
+    }
+
+    /**
      * Get the behavior of the fetch() method
      *
      * @return int
@@ -179,7 +196,7 @@ abstract class Reader
     }
 
     /**
-     * Set custom filter for fields
+     * Set custom filter for fields.
      * Note: If the callback returns false, the line will be ignored.
      * Note: Values can be changed by reference.
      *
@@ -195,17 +212,14 @@ abstract class Reader
      * Set the maximum number of rows returned and skips a certain
      * number of rows before starting to return rows
      *
-     * Note: This method will perform the refresh automatically.
-     *
      * @param int $count  Set limit
      * @param int $offset Set offset
      */
-    public function limit($count, $offset = 0)
+    public function setLimit($count, $offset = 0)
     {
         $this->limitCount = $count > 0 ? $count : 0;
         $this->limitOffset = $offset > 0 ? $offset : 0;
-
-        $this->refresh();
+        $this->uninitialized = true;
     }
 
     /**
@@ -216,6 +230,8 @@ abstract class Reader
      */
     public function fetch()
     {
+        $this->boot();
+
         $fields = $this->getLine($this->separator);
 
         if ($fields === null) {
@@ -312,54 +328,62 @@ abstract class Reader
 
     private function boot()
     {
-        $this->firstLine = true;
-        $this->lineIndex = -1;
-        $this->noNextLine = false;
+        if ($this->uninitialized) {
+            $this->uninitialized = false;
+            $this->firstLine = true;
+            $this->lineIndex = -1;
+            $this->noNextLine = false;
 
-        $fields = null;
-        $inferredSeparator = null;
-        $totalFields = 0;
+            $fields = null;
+            $inferredSeparator = null;
+            $totalFields = 0;
 
-        foreach ($this->separators as $separator) {
-            $this->rewindStream();
+            // automatically detects the appropriate separator for the document
+            foreach ($this->separators as $separator) {
+                $this->rewindStream();
 
-            $fields = $this->getLine($separator);
+                $fields = $this->getLine($separator);
 
-            if (is_array($fields) === false) {
-                $inferredSeparator = '';
-                break;
-            }
-
-            $totalFields = count($fields);
-
-            if ($totalFields > 1) {
-                $inferredSeparator = $separator;
-                break;
-            }
-        }
-
-        if ($totalFields === 1) {
-            $inferredSeparator = '';
-        }
-
-        $this->filterFields($fields);
-
-        $this->headers = $fields;
-        $this->separator = $inferredSeparator;
-        $this->totalFields = $totalFields;
-
-        if ($this->mode & self::MODE_SKIP_HEADER) {
-            $this->firstLine = false;
-        } else {
-            $this->rewindStream();
-        }
-
-        $offset = $this->limitOffset;
-
-        if ($offset > 0) {
-            while ($this->lineIndex < $offset) {
-                if ($this->getLine($inferredSeparator) === null) {
+                if (is_array($fields) === false) {
+                    $inferredSeparator = '';
                     break;
+                }
+
+                $totalFields = count($fields);
+
+                if ($totalFields > 1) {
+                    $inferredSeparator = $separator;
+                    break;
+                }
+            }
+
+            if ($totalFields === 1) {
+                if ($this->strictMode) {
+                    throw new Exception('No separator was detected in the document header', 0, 3);
+                } else {
+                    $inferredSeparator = '';
+                }
+            }
+
+            $this->filterFields($fields);
+
+            $this->headers = $fields;
+            $this->separator = $inferredSeparator;
+            $this->totalFields = $totalFields;
+
+            if ($this->mode & self::MODE_SKIP_HEADER) {
+                $this->firstLine = false;
+            } else {
+                $this->rewindStream();
+            }
+
+            $offset = $this->limitOffset;
+
+            if ($offset > 0) {
+                while ($this->lineIndex < $offset) {
+                    if ($this->getLine($inferredSeparator) === null) {
+                        break;
+                    }
                 }
             }
         }

@@ -97,19 +97,17 @@ class Packages
      */
     public function inAutoload()
     {
-        $path = INPHINIT_SYSTEM . '/boot/namespaces.php';
-
-        if (is_file($path)) {
-            $data = include $path;
-
-            if (is_array($data)) {
-                $this->sourceLibs = $data + $this->sourceLibs;
-            }
-
-            return count($this->sourceLibs);
+        if (is_file(INPHINIT_SYSTEM . '/boot/namespaces.php') === false) {
+            return false;
         }
 
-        return false;
+        $data = inphinit_sandbox('boot/namespaces.php');
+
+        if (is_array($data)) {
+            $this->sourceLibs = $data + $this->sourceLibs;
+        }
+
+        return count($this->sourceLibs);
     }
 
     /**

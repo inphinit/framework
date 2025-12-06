@@ -13,16 +13,14 @@ use Inphinit\Exception;
 
 class Converter
 {
-    /** @var string End-of-line as \r */
-    const EOL_CR = "\r";
+    /** @var int `\n` and `\r` (and `\t` in the tsv() method) will be replaced by single spaces */
+    const WHITESPACE_REPLACE = 1;
 
-    /** @var string End-of-line as \r\n */
-    const EOL_CRLF = "\r\n";
-
-    /** @var string End-of-line as \n */
-    const EOL_LF = "\n";
+    /** @var int `\n` and `\r` (and `\t` in the tsv() method) will be quoted with slashs */
+    const WHITESPACE_SLASH = 2;
 
     private $source;
+    private $whiteSpaceMode;
 
     /**
      * Set reader
@@ -33,6 +31,25 @@ class Converter
     public function __construct(Reader $reader)
     {
         $this->source = $reader;
+        $this->whiteSpaceMode = self::WHITESPACE_REPLACE;
+    }
+
+    /**
+     * Set the write mode for `\n`, `\r` and `\t` on field entries
+     *
+     * - WHITESPACE_REPLACE: Remove whitespaces
+     * - WHITESPACE_SLASH: Quote whitespace with slashes
+     *
+     * @param int $mode
+     * @throws \Inphinit\Exception
+     */
+    public function setWhitespaceMode($mode)
+    {
+        if ($mode !== self::WHITESPACE_REPLACE && $mode !== self::WHITESPACE_SLASH) {
+            throw new Exception('Invalid whitespace mode');
+        }
+
+        $this->whiteSpaceMode = $mode;
     }
 
     /**
@@ -45,7 +62,7 @@ class Converter
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Delimited\Converter
      */
-    public function csv($path, $separator = ',', $enclosure = '"', $eol = self::EOL_LF)
+    public function csv($path, $separator = ',', $enclosure = '"', $eol = "\r\n")
     {
         if (is_string($separator) === false || strlen($separator) !== 1) {
             throw new Exception('Separator must be a single byte character');
@@ -58,16 +75,24 @@ class Converter
         self::checkEndOfLine($eol);
 
         $handle = $this->openSaveStream($path);
-        $escape = $enclosure === '' ? null : $enclosure . $enclosure;
-        $source = $this->source;
         $mode = $source->getMode();
+        $source = $this->source;
+
+        $escape = $enclosure === '' ? null : $enclosure . $enclosure;
+        $escapes = "\r\n";
 
         $source->setMode(Reader::MODE_INDEX);
         $source->refresh();
 
+        $whiteSpaceMode = $this->whiteSpaceMode;
+
         while (($fields = $source->fetch()) !== false) {
             foreach ($fields as &$field) {
-                $field = addcslashes($field, self::EOL_CRLF);
+                if ($whiteSpaceMode === self::WHITESPACE_REPLACE) {
+                    $field = str_replace($escapes, ' ', $field);
+                } else {
+                    $field = addcslashes($field, $escapes);
+                }
 
                 if ($escape !== null) {
                     $field = str_replace($enclosure, $escape, $field);
@@ -98,22 +123,27 @@ class Converter
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Delimited\Converter
      */
-    public function tsv($path, $eol = self::EOL_LF)
+    public function tsv($path, $eol = "\r\n")
     {
         self::checkEndOfLine($eol);
 
         $handle = $this->openSaveStream($path);
-        $source = $this->source;
         $mode = $source->getMode();
+        $source = $this->source;
+
         $tab = "\t";
-        $encode = self::EOL_CRLF . $tab;
+        $escapes = "\t\r\n";
 
         $source->setMode(Reader::MODE_INDEX);
         $source->refresh();
 
         while (($fields = $source->fetch()) !== false) {
             foreach ($fields as &$field) {
-                $field = addcslashes($field, $encode);
+                if ($whiteSpaceMode === self::WHITESPACE_REPLACE) {
+                    $field = str_replace($escapes, ' ', $field);
+                } else {
+                    $field = addcslashes($field, $escapes);
+                }
             }
 
             fwrite($handle, implode($tab, $fields) . $eol);
@@ -140,7 +170,7 @@ class Converter
     {
         $handle = $this->openSaveStream($path);
 
-        $eol = $flags & JSON_PRETTY_PRINT ? self::EOL_LF : '';
+        $eol = $flags & JSON_PRETTY_PRINT ? "\r\n" : '';
         $source = $this->source;
         $mode = $source->getMode();
         $skipComma = true;
@@ -181,12 +211,12 @@ class Converter
      * @param \DOMElement $element
      * @return \Inphinit\Experimental\Delimited\Converter
      */
-    public function dom(\DOMElement $element)
+    public function dom(\DOMElement $parent, $headerTag = null, $valueTag = null, $valueTag = null)
     {
         $source = $this->source;
         $headers = $source->getHeaders();
         $mode = $source->getMode();
-        $owner = $element->ownerDocument;
+        $owner = $parent->ownerDocument;
 
         $source->setMode(Reader::MODE_INDEX | Reader::MODE_SKIP_HEADER);
         $source->refresh();
@@ -195,7 +225,7 @@ class Converter
             foreach ($fields as $index => $text) {
                 $node = $owner->createElement($headers[$index]);
                 $node->appendChild($owner->createTextNode($text));
-                $element->appendChild($node);
+                $parent->appendChild($node);
             }
         }
 
@@ -220,8 +250,8 @@ class Converter
 
     private static function checkEndOfLine($eol)
     {
-        if (in_array($eol, array(self::EOL_CR, self::EOL_CRLF, self::EOL_LF)) === false) {
-            throw new Exception('Invalid end-of-line', 0, 3);
+        if (is_string($eol) === false || empty($eol)) {
+            throw new Exception('End-of-line must contain one or more characters');
         }
     }
 }

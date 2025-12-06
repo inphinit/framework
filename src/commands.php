@@ -8,6 +8,7 @@
  */
 
 use Inphinit\App;
+use Inphinit\Maintenance;
 use Inphinit\Experimental\Cli\Command;
 use Inphinit\Experimental\Cli\Console;
 
@@ -40,6 +41,14 @@ $console->action('env:source', function (Command $command, array $params, array 
     }
 });
 
+$console->action('app:down', function (Command $command, array $params, array $residual) {
+    Maintenance::down();
+});
+
+$console->action('app:up', function (Command $command, array $params, array $residual) {
+    Maintenance::up();
+});
+
 $serve = $console->action('serve', function (Command $command, array $params, array $residual) {
     $host = isset($params['host']) ? $params['host'] : App::config('built_in_host');
     $port = isset($params['port']) ? $params['port'] : App::config('built_in_port');
@@ -60,10 +69,10 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
         exit(-1);
     }
 
-    $root = INPHINIT_ROOT;
-    $router = escapeshellarg($root . '/index.php');
     $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
+    $root = INPHINIT_ROOT;
     $public = escapeshellarg($root . '/public');
+    $router = escapeshellarg($root . '/index.php');
 
     passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$public} {$router}", $code);
 
