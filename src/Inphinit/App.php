@@ -172,7 +172,7 @@ class App
      */
     public function exec()
     {
-        $code = is_file(INPHINIT_MAINTENANCE) && Maintenance::bypassed() === false ? 503 : http_response_code();
+        $code = self::maintenance() ? 503 : http_response_code();
         $params = null;
         $callback = null;
         $output = null;
@@ -237,6 +237,37 @@ class App
     public function routes()
     {
         return $this->routes + $this->paramRoutes;
+    }
+
+    /**
+     * Checks if the application is in maintenance mode.
+     * Note: the result is affected by the main event when maintenance mode is active.
+     *
+     * @return bool
+     */
+    public static function maintenance()
+    {
+        return is_file(INPHINIT_MAINTENANCE) && Event::trigger('maintenance') !== Event::TRIGGER_STOPPED;
+    }
+
+    /**
+     * Put the application into maintenance mode
+     *
+     * @return bool
+     */
+    public static function down()
+    {
+        return touch(INPHINIT_MAINTENANCE);
+    }
+
+    /**
+     * Bring the application out of maintenance mode
+     *
+     * @return bool
+     */
+    public static function up()
+    {
+        return is_file(INPHINIT_MAINTENANCE) === false || unlink(INPHINIT_MAINTENANCE);
     }
 
     public static function forward($output = null)
