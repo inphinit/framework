@@ -11,6 +11,7 @@ namespace Inphinit\Viewing;
 
 class View
 {
+    /** @var int Bypass security trust HTML in the render() method  */
     const UNSAFE = -1;
 
     private static $encoding = 'UTF-8';
@@ -52,7 +53,8 @@ class View
     }
 
     /**
-     * Share or remove shared data to Views, shared variables will be added as variables to the views that will be executed later
+     * Share or remove shared data to Views, shared variables will be
+     * added as variables to the views that will be executed later
      *
      * @param string $key
      * @param mixed  $value

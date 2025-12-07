@@ -20,11 +20,7 @@ use Inphinit\Exception;
  */
 class Version
 {
-    /**
-     * Define version pattern
-     *
-     * @var string
-     */
+    /** @var string Define version pattern */
     protected static $pattern = '#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#';
 
     private $data = array(

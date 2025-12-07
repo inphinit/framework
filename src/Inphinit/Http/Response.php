@@ -85,8 +85,8 @@ class Response
     /**
      * Set HTTP cache or no-cache
      *
-     * @param int $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled.
-     * @param int $modified Optional. Last modified timestamp. Defaults to the current time.
+     * @param int $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled
+     * @param int $modified Optional. Last modified timestamp. Defaults to the current time
      */
     public static function cache($seconds, $modified = 0)
     {

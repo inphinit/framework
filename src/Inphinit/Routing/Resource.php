@@ -13,11 +13,7 @@ use Inphinit\App;
 
 abstract class Resource
 {
-    /**
-     * Define content-type header
-     *
-     * @var string
-     */
+    /** @var string Define content-type header */
     protected $contentType = 'text/html; charset=UTF-8';
 
     /**

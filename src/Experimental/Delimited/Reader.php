@@ -31,6 +31,7 @@ abstract class Reader
     private $dto;
     private $eol = "\n";
     private $fillFields;
+    private $filter;
     private $firstLine = true;
     private $headers = array();
     private $limitCount = 0;
@@ -38,7 +39,6 @@ abstract class Reader
     private $lineIndex = -1;
     private $mode;
     private $noNextLine = false;
-    private $filter;
     private $totalFields;
     private $uninitialized = true;
     private static $bom = "\xEF\xBB\xBF";

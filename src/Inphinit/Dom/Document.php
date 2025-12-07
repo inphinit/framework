@@ -14,13 +14,25 @@ use Inphinit\Utility\Arrays;
 
 class Document
 {
-    /** Use with `Document::dump` or `Document::save` method to convert document in a simple array */
+    /**
+     * Use with `Document::dump` or `Document::save` method to convert document in a simple array
+     *
+     * @var int
+     */
     const ARRAY_SIMPLE = 1;
 
-    /** Use with `Document::dump` or `Document::save` method to convert document in a minimal array */
+    /**
+     * Use with `Document::dump` or `Document::save` method to convert document in a minimal array
+     *
+     * @var int
+     */
     const ARRAY_MINIMAL = 2;
 
-    /** Use with `Document::dump` or `Document::save` method to convert document in a array with all properties */
+    /**
+     * Use with `Document::dump` or `Document::save` method to convert document in a array with all properties
+     *
+     * @var int
+     */
     const ARRAY_COMPLETE = 3;
 
     /** Use for define format */

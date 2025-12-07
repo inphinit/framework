@@ -19,7 +19,7 @@ class Size
      * Note: It can be combined with the other modes, which will serve as alternatives
      *
      * @var int
-     * */
+     */
     const COM = 1;
 
     /**
@@ -27,7 +27,7 @@ class Size
      * Note: It can be combined with the other modes, which will serve as alternatives
      *
      * @var int
-     * */
+     */
     const CURL = 2;
 
     /**
@@ -35,7 +35,7 @@ class Size
      * Note: It can be combined with the other modes, which will serve as alternatives
      *
      * @var int
-     * */
+     */
     const SYSTEM = 4;
 
     private $modes;

@@ -155,7 +155,7 @@ final class Status
     /**
      * Get message by HTTP code
      *
-     * @param int    $code
+     * @param int   $code
      * @param mixed $alternative
      * @return mixed
      */
