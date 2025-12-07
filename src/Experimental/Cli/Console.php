@@ -20,13 +20,6 @@ class Console
 
     private $commands = array();
 
-    public function __construct()
-    {
-        if (PHP_SAPI !== 'cli') {
-            throw new Exception('This class can only be instantiated in CLI mode');
-        }
-    }
-
     /**
      * Register callable, console controller, and Command instance for a CLI command
      *
@@ -64,6 +57,8 @@ class Console
      * If the command is not found, an exception will be thrown
      *
      * @param array $arguments Define `$argv` without changes
+     * @throws \Inphinit\Exception
+     * @return int
      */
     public function exec(array $arguments)
     {
@@ -79,35 +74,65 @@ class Console
         $name = array_shift($arguments);
 
         if (empty($this->commands[$name])) {
-            throw new Exception('Undefined command: ' . $name);
+            throw new Exception('Unknown command: ' . $name);
         }
 
         $command = $this->commands[$name];
 
-        $command->response(self::getEntries($arguments));
+        try {
+            $response = $command->response(self::getEntries($arguments));
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
+
+        if ($response !== null && is_int($response) === false) {
+            throw new Exception('Return must be of type int or null, ' . gettype($response) . ' given');
+        }
+
+        return $response === null ? 0 : $code;
     }
 
-    public static function run($command, array $options = array(), $return = false)
+    /**
+     * Shortcut to execute predefined commands or commands from `system/console.php`
+     *
+     * @param string                $command The command that will be executed
+     * @param array<string, string> $args    Argument list
+     * @param string                $code    If the $code argument is present, then the return status of
+     *                                       the executed command will be written to this variable
+     */
+    public static function run($command, array $args = array(), &$code = null)
     {
-        $entries = array('php', escapeshellarg(INPHINIT_ROOT . '/run'), escapeshellarg($command));
+        global $console;
+        global $env;
 
-        foreach ($options as $key => $value) {
-            $entries[] = escapeshellarg($key);
+        $values = array('', $command);
+
+        foreach ($args as $key => $value) {
+            $values[] = $key;
 
             if ($value !== null) {
-                $entries[] = escapeshellarg($value);
+                $values[] = $value;
             }
         }
 
-        $output = implode(' ', $entries);
+        try {
+            return self::runFromInstance($console, $env, $values, $code);
+        } catch (\Exception $e) {
+            throw new Exception($e->getMessage(), $e->getCode());
+        }
+    }
 
-        if ($return) {
-            return $output;
+    private static function runFromInstance($console, $env, $args, &$code)
+    {
+        if (empty($console)) {
+            require_once __DIR__ . '/../../commands.php';
         }
 
-        passthru($output, $code);
+        ob_start();
 
-        exit($code);
+        $code = $console->exec($args);
+
+        return ob_get_clean();
     }
 
     private static function getEntries(array $entries)

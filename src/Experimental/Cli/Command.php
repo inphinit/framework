@@ -174,6 +174,7 @@ class Command
      *
      * @param array $entries
      * @throws \Inphinit\Exception
+     * @return mixed
      */
     public function response(array $entries)
     {
@@ -210,7 +211,7 @@ class Command
             $callback = array(new $controller(), $method);
         }
 
-        $callback($this, $params, $rest);
+        return $callback($this, $params, $rest);
     }
 
     private function checkNoValue($index, $option, $value)

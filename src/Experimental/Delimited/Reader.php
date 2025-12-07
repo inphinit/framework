@@ -179,7 +179,7 @@ abstract class Reader
     public function setStrictMode($enable)
     {
         if (is_bool($enable) === false) {
-            throw new Exception('$enable argument must be of type bool, ' . get_type($enable) . ' given');
+            throw new Exception('$enable argument must be of type bool, ' . gettype($enable) . ' given');
         }
 
         $this->strictMode = $enable;

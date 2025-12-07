@@ -8,7 +8,6 @@
  */
 
 use Inphinit\App;
-use Inphinit\Maintenance;
 use Inphinit\Experimental\Cli\Command;
 use Inphinit\Experimental\Cli\Console;
 
@@ -23,9 +22,10 @@ $console->action('env:boot', function (Command $command, array $params, array $r
     }
 
     if ($env->storeAsVars(INPHINIT_SYSTEM . '/boot/env.php')) {
-        echo 'Success in optimizing the `.env`';
+        echo 'Optimized `.env` with caching on boot.';
     } else {
-        echo 'Failed in optimizing the `.env`';
+        echo 'Unable to optimize `.env`.';
+        return 1;
     }
 })->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
 
@@ -33,20 +33,31 @@ $console->action('env:source', function (Command $command, array $params, array 
     $envFile = INPHINIT_SYSTEM . '/boot/env.php';
 
     if (is_file($envFile) === false) {
-        echo 'Optimization of the `.env` file is already disabled';
+        echo 'Optimization of the `.env` is already disabled';
     } elseif (unlink($envFile)) {
-        echo 'Successfully disabling `.env` optimization';
+        echo 'Disabled `.env` optimization at boot.';
     } else {
-        echo 'Failed to disable `.env` optimization';
+        echo 'Unable to disable `.env` optimization.';
+        return 1;
     }
 });
 
 $console->action('app:down', function (Command $command, array $params, array $residual) {
-    Maintenance::down();
+    if (App::down()) {
+        echo 'Maintenance mode is now active.';
+    } else {
+        echo 'Unable to activate maintenance mode.';
+        return 1;
+    }
 });
 
 $console->action('app:up', function (Command $command, array $params, array $residual) {
-    Maintenance::up();
+    if (App::up()) {
+        echo 'The application is active, and maintenance mode has been disabled.';
+    } else {
+        echo 'Unable to deactivate maintenance mode.';
+        return 1;
+    }
 });
 
 $serve = $console->action('serve', function (Command $command, array $params, array $residual) {
@@ -56,17 +67,17 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
 
     if (empty($host)) {
         echo 'Empty host';
-        exit(-1);
+        return 1;
     }
 
     if (empty($port)) {
         echo 'Empty port';
-        exit(-1);
+        return 1;
     }
 
     if (empty($vars)) {
         echo 'Empty vars';
-        exit(-1);
+        return 1;
     }
 
     $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
@@ -76,7 +87,7 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
 
     passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$public} {$router}", $code);
 
-    exit($code);
+    return $code;
 });
 
 $serve->setOption('host', 'h', Command::ARG_OPTIONAL, null, 'Define server address');
