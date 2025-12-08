@@ -108,6 +108,14 @@ class Console
         $values = array('', $command);
 
         foreach ($args as $key => $value) {
+            $key = ltrim(trim($key), '-');
+
+            if (strlen($key) === 1) {
+                $key .= '-' . $key;
+            } else {
+                $key .= '--' . $key;
+            }
+
             $values[] = $key;
 
             if ($value !== null) {
