@@ -254,7 +254,7 @@ class Negotiation
         if (is_numeric($value) === false) {
             throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
         } elseif ($value > 1) {
-            throw new Exception('Header contains a q-factor greater than 1 (value of q parameter can be from 0.0 to 1.0): "' . $value . '"', 0, 3);
+            throw new Exception('Header contains a q-factor outside the range of 0.0–1.0: "' . $value . '"', 0, 3);
         }
 
         return (float) $value;

@@ -75,13 +75,12 @@ class Converter
         self::checkEndOfLine($eol);
 
         $handle = $this->openSaveStream($path);
-        $mode = $source->getMode();
         $source = $this->source;
 
         $escape = $enclosure === '' ? null : $enclosure . $enclosure;
         $escapes = "\r\n";
 
-        $source->setMode(Reader::MODE_INDEX);
+        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
 
         $whiteSpaceMode = $this->whiteSpaceMode;
@@ -109,7 +108,7 @@ class Converter
         fclose($handle);
 
         // Restore original mode
-        $source->setMode($mode);
+        $source->setFlags($originalFlags);
         $source->refresh();
 
         return $this;
@@ -128,14 +127,15 @@ class Converter
         self::checkEndOfLine($eol);
 
         $handle = $this->openSaveStream($path);
-        $mode = $source->getMode();
         $source = $this->source;
 
         $tab = "\t";
         $escapes = "\t\r\n";
 
-        $source->setMode(Reader::MODE_INDEX);
+        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
+
+        $whiteSpaceMode = $this->whiteSpaceMode;
 
         while (($fields = $source->fetch()) !== false) {
             foreach ($fields as &$field) {
@@ -152,7 +152,7 @@ class Converter
         fclose($handle);
 
         // Restore original mode
-        $source->setMode($mode);
+        $source->setFlags($originalFlags);
         $source->refresh();
 
         return $this;
@@ -172,14 +172,15 @@ class Converter
 
         $eol = $flags & JSON_PRETTY_PRINT ? "\r\n" : '';
         $source = $this->source;
-        $mode = $source->getMode();
         $skipComma = true;
 
         if ($pairs) {
-            $source->setMode(Reader::MODE_COLUMN | Reader::MODE_SKIP_HEADER);
+            $flags = Reader::MODE_COLUMN | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
         } else {
-            $source->setMode(Reader::MODE_INDEX);
+            $flags = Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
         }
+
+        $originalFlags = $source->setFlags($flags);
 
         $source->refresh();
 
@@ -199,7 +200,7 @@ class Converter
         fclose($handle);
 
         // Restore original mode
-        $source->setMode($mode);
+        $source->setFlags($originalFlags);
         $source->refresh();
 
         return $this;
@@ -211,26 +212,30 @@ class Converter
      * @param \DOMElement $element
      * @return \Inphinit\Experimental\Delimited\Converter
      */
-    public function dom(\DOMElement $parent, $headerTag = null, $valueTag = null, $valueTag = null)
+    public function dom(\DOMElement $target, $parentTag = 'row')
     {
         $source = $this->source;
-        $headers = $source->getHeaders();
-        $mode = $source->getMode();
-        $owner = $parent->ownerDocument;
 
-        $source->setMode(Reader::MODE_INDEX | Reader::MODE_SKIP_HEADER);
+        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
 
+        $owner = $target->ownerDocument;
+        $headers = $source->getHeaders();
+
         while (($fields = $source->fetch()) !== false) {
+            $parent = $owner->createElement($parentTag);
+
             foreach ($fields as $index => $text) {
                 $node = $owner->createElement($headers[$index]);
                 $node->appendChild($owner->createTextNode($text));
                 $parent->appendChild($node);
             }
+
+            $target->appendChild($parent);
         }
 
         // Restore original mode
-        $source->setMode($mode);
+        $source->setFlags($originalFlags);
         $source->refresh();
 
         return $this;

@@ -38,8 +38,8 @@ class Checkup
             $version = PHP_VERSION;
 
             if ($buildAge > self::AGE_LEGACY) {
-                $this->errors[] = "Your PHP installation ({$version}) is over {$buildAge} years old — " .
-                                  "upgrading to a newer version is strongly recommended for security and performance reasons";
+                $this->errors[] = "Your PHP installation ({$version}) is over {$buildAge} years old — upgrading to" .
+                                  "a newer version is strongly recommended for security and performance reasons";
             } elseif ($buildAge > self::AGE_CHECK) {
                 $this->errors[] = "Your PHP build ({$version}) hasn't been updated in over {$buildAge} years — " .
                                   "consider applying the latest security patches or upgrading to a newer release";
@@ -47,7 +47,7 @@ class Checkup
         }
 
         if (function_exists('ini_get') === false) {
-            $this->warnings[] = 'The `ini_get` function is disabled on this server; configuration checks will be incomplete';
+            $this->warnings[] = 'The `ini_get` function is disabled, so no further checks can be performed';
             $this->iniGet = false;
         }
 
@@ -61,7 +61,7 @@ class Checkup
                 $this->warnings[] = '`php.ini` is not configured or could not be located on this server';
             }
         } else {
-            $this->warnings[] = 'The `php_ini_loaded_file` function is disabled, preventing server configuration checks';
+            $this->warnings[] = 'The `php_ini_loaded_file()` is disabled, so no further checks can be performed';
         }
     }
 

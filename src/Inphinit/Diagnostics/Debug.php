@@ -260,7 +260,7 @@ class Debug
 
             $link = str_replace('{error}', $linkMessage, $link);
 
-            $message = '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
+            return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }
 
         return $message;
@@ -289,7 +289,7 @@ class Debug
         $vendor = str_replace('\\', '/', $vendor);
 
         /*
-         * Note: The link to the editor will only be available for scripts outside the vendor, never edit a file on the vendor
+         * Note: The link to the editor will only be available for scripts outside the vendor
          * Note: Probably the problem could be an error when using some lib and not in the lib
          * Note: The error could also be a bug in a library, report the bug
          */
@@ -310,7 +310,8 @@ class Debug
 
             $link = str_replace('{path}', $file, $link);
             $link = str_replace('{line}', $line, $link);
-            $message = '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
+
+            return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }
 
         return $message;

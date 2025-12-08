@@ -163,7 +163,7 @@ class App extends \Inphinit\App
     public function scope($pattern, \Closure $callback)
     {
         if (!preg_match('#^(([a-z*]+)://([^\#?/]+)(\:[\d*]+)?)?(/([^\#?]+)/)?$#', $pattern)) {
-            throw new Exception('Invalid match url pattern format, expected: {scheme}://{host}:{port}/{path}/ or /{path}/ (including wildcard)');
+            throw new Exception('Expected pattern: {scheme}://{host}:{port}/{path}/ or /{path}/ (including wildcard)');
         }
 
         $this->checkPatterns($pattern);

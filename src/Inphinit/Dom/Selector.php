@@ -34,7 +34,10 @@ class Selector
         array('/([>+~])?\*([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/i', '\\1*[(position() mod \\3=\\4)]\\2'),
         array('/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)\)/i', '\\1*[name()="\\2" and position()=\\4]\\3'),
         array('/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\)/i', '\\1*[name()="\\2" and (position() mod \\4=0)]\\3'),
-        array('/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/i', '\\1*[name()="\\2" and (position() mod \\4=\\5)]\\3'),
+        array(
+            '/([>+~])?(\w+)([^>+~]+)?\:nth-child\((\d+)n\+(\d+)\)/i',
+            '\\1*[name()="\\2" and (position() mod \\4=\\5)]\\3'
+        ),
         array('/([>+~])?\*([^>+~]+)?\:only-child/i', '\\1*[last()=1]\\2'),
         array('/([>+~])?\*([^>+~]+)?\:last-child/i', '\\1*[position()=last()]\\2'),
         array('/([>+~])?(\w+)([^>+~]+)?\:only-child/i', '\\1*[name()="\\2" and last()=1]\\3'),
@@ -211,7 +214,11 @@ class Selector
 
         $query = preg_replace('#( and |\[)(preceding-sibling::(\*|\w+))\[1 and #', '\\1\\2[1][', $query);
 
-        $query = preg_replace('#lower-case\((.*?)\)#', 'translate(\\1,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")', $query);
+        $query = preg_replace(
+            '#lower-case\((.*?)\)#',
+            'translate(\\1,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")',
+            $query
+        );
 
         $queries = null;
 
@@ -266,7 +273,11 @@ class Selector
 
             $sibling = preg_replace('/^\*(.*)$/', '[(preceding-sibling::*' . $i . '\\1' . $preceding . ')]', $sibling);
 
-            $sibling = preg_replace('/^(\w+)(.*)$/', '[(preceding-sibling::*' . $i . '[name()="\\1"])\\2' . $preceding . ']', $sibling);
+            $sibling = preg_replace(
+                '/^(\w+)(.*)$/',
+                '[(preceding-sibling::*' . $i . '[name()="\\1"])\\2' . $preceding . ']',
+                $sibling
+            );
 
             $preceding = $sibling;
         }

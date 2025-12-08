@@ -409,7 +409,10 @@ class Document
 
         if ($nodes) {
             foreach ($nodes as $node) {
-                if ($node->nodeType === \XML_ELEMENT_NODE && ($this->complete || $this->simple || ctype_alnum($node->nodeName))) {
+                if (
+                    $node->nodeType === \XML_ELEMENT_NODE &&
+                    ($this->complete || $this->simple || ctype_alnum($node->nodeName))
+                ) {
                     $items[$node->nodeName][] = $this->nodeContents($node);
                 }
             }

@@ -19,8 +19,11 @@ abstract class Reader
     /** @var int Fields are returned as array with enumerated indices */
     const MODE_INDEX = 2;
 
+    /** @var int Skip empty lines */
+    const SKIP_EMPTY = 4;
+
     /** @var int Skip the headers in the fetch() method */
-    const MODE_SKIP_HEADER = 4;
+    const SKIP_HEADER = 8;
 
     protected $separator;
     protected $separators = array();
@@ -37,7 +40,7 @@ abstract class Reader
     private $limitCount = 0;
     private $limitOffset = 0;
     private $lineIndex = -1;
-    private $mode;
+    private $flags;
     private $noNextLine = false;
     private $totalFields;
     private $uninitialized = true;
@@ -55,7 +58,7 @@ abstract class Reader
             throw new Exception('The ' . get_class($this) . ' class does not have the parse() method', 0, 3);
         }
 
-        $this->mode = self::MODE_INDEX | self::MODE_SKIP_HEADER;
+        $this->flags = self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
         $this->stream = fopen($path, 'rb');
 
         if ($this->stream === false) {
@@ -149,24 +152,29 @@ abstract class Reader
     }
 
     /**
-     * Set the behavior of the fetch() method
+     * Set the behavior of the fetch() method, and returns the previously defined flags.
      *
-     * @param int  $mode
+     * @param int $flags
      * @throws \Inphinit\Exception
+     * @return int
      */
-    public function setMode($mode)
+    public function setFlags($flags)
     {
-        $validModes = self::MODE_COLUMN | self::MODE_INDEX | self::MODE_SKIP_HEADER;
+        $validFlags = self::MODE_COLUMN | self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
 
-        if (is_int($mode) === false || ($mode & ~$validModes) !== 0) {
-            throw new Exception('Invalid mode');
+        if (is_int($flags) === false || ($flags & ~$validFlags) !== 0) {
+            throw new Exception('Invalid flags');
         }
 
-        if (($mode & self::MODE_COLUMN) && ($mode & self::MODE_INDEX)) {
+        if (($flags & self::MODE_COLUMN) && ($flags & self::MODE_INDEX)) {
             throw new Exception('MODE_COLUMN and MODE_INDEX cannot be used at the same time');
         }
 
-        $this->mode = $mode;
+        $last = $this->flags;
+
+        $this->flags = $flags;
+
+        return $last;
     }
 
     /**
@@ -186,26 +194,21 @@ abstract class Reader
     }
 
     /**
-     * Get the behavior of the fetch() method
-     *
-     * @return int
-     */
-    public function getMode()
-    {
-        return $this->mode;
-    }
-
-    /**
-     * Set custom filter for fields.
+     * Set custom filter for fields, and returns the previously defined filter (if any).
      * Note: If the callback returns false, the line will be ignored.
      * Note: Values can be changed by reference.
      *
      * @param callable $filter
      * @throws \Inphinit\Exception
+     * @return callable
      */
     public function setFilter(callable $filter)
     {
+        $last = $this->filter;
+
         $this->filter = $filter;
+
+        return $last;
     }
 
     /**
@@ -273,7 +276,7 @@ abstract class Reader
             }
 
             return $instance;
-        } elseif ($this->mode & self::MODE_COLUMN) {
+        } elseif ($this->flags & self::MODE_COLUMN) {
             $fields = array_combine($this->headers, $fields);
         }
 
@@ -304,14 +307,24 @@ abstract class Reader
 
         $entry = stream_get_line($this->stream, $this->chunk, $this->eol);
 
-        $fields = false;
-
-        if ($entry === false || ($fields = $this->parse($separator, $entry)) === false) {
+        if ($entry === false) {
             $this->noNextLine = true;
             return null;
         }
 
-        return $fields;
+        // Skip empty lines
+        if (($this->flags & self::SKIP_EMPTY) && trim($entry) === '') {
+            return $this->getLine($separator);
+        }
+
+        $fields = $this->parse($separator, $entry);
+
+        if ($fields !== false) {
+            return $fields;
+        }
+
+        $this->noNextLine = true;
+        return null;
     }
 
     private function rewindStream()
@@ -371,7 +384,7 @@ abstract class Reader
             $this->separator = $inferredSeparator;
             $this->totalFields = $totalFields;
 
-            if ($this->mode & self::MODE_SKIP_HEADER) {
+            if ($this->flags & self::SKIP_HEADER) {
                 $this->firstLine = false;
             } else {
                 $this->rewindStream();

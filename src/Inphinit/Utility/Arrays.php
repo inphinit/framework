@@ -45,7 +45,8 @@ class Arrays
      * Ksort recursive
      *
      * @param array $array
-     * @param int   $flags See details in https://www.php.net/manual/en/function.ksort.php#refsect1-function.ksort-parameters
+     * @param int   $flags Modify the sorting behavior. See details in
+     *                     https://www.php.net/manual/en/function.ksort.php#refsect1-function.ksort-parameters
      * @param bool  $descending
      */
     public static function ksort(array &$array, $flags = \SORT_REGULAR, $descending = false)

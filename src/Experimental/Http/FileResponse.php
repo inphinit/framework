@@ -33,7 +33,8 @@ class FileResponse
      *
      * @param string $source   Absolute file path
      * @param string $filename Optional. Set download name (defaults to basename of `$source`)
-     * @param int    $modes    Optional. Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK). Default is ACCEL | SENDFILE
+     * @param int    $modes    Optional. Set file delivery modes using bitwise flags
+     *                         (ACCEL, SENDFILE, FALLBACK). Default is ACCEL | SENDFILE
      */
     public function __construct($source, $filename = '', $modes = 0)
     {
@@ -61,7 +62,8 @@ class FileResponse
 
     /**
      * Check if a specific delivery mode is supported by the server environment
-     * Note: In the built-in web server, all modes will return true, allowing you to use the simulator to deliver the file
+     * Note: In the built-in web server, all modes will return true, allowing
+     * you to use the simulator to deliver the file
      *
      * @param int $mode One of the mode constants (ACCEL or SENDFILE)
      * @return bool
