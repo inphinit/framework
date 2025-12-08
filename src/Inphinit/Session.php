@@ -73,11 +73,7 @@ class Session
             $this->read();
         } else {
             $id = self::createTemporary($this->handle);
-            $request = true;
-        }
-
-        if ($request) {
-            $this->setCookie($id, null);
+            $this->setCookie($id);
         }
 
         $this->id = $id;
@@ -185,15 +181,24 @@ class Session
             throw new Exception('headers sent');
         }
 
-        $id = self::createTemporary($dest);
+        $id = self::createTemporary($dest, $path);
 
         rewind($this->handle);
 
         if (stream_copy_to_stream($this->handle, $dest) === false) {
+            fclose($dest);
+            unlink($path);
+
             throw new Exception('Failed copy data');
         }
 
-        $this->setCookie($id, $dest);
+        if ($this->handle) {
+            fclose($this->handle);
+            $this->handle = null;
+        }
+
+        $this->setCookie($id);
+        $this->handle = $dest;
         $this->id = $id;
     }
 
@@ -232,8 +237,8 @@ class Session
     }
 
     /**
-     * Magic method for check if variable is setted (this method also returns variables that have not yet
-     * been committed)
+     * Magic method for check if variable is setted (this method
+     * also returns variables that have not yet been committed)
      *
      * @param string $name
      * @return bool
@@ -291,7 +296,7 @@ class Session
         $this->setLock(false);
     }
 
-    private function setCookie($id, $dest)
+    private function setCookie($id)
     {
         if (setcookie(
             $this->name,
@@ -302,20 +307,12 @@ class Session
             $this->options['secure'],
             $this->options['httponly']
         ) === false) {
-            if ($dest) {
-                fclose($dest);
+            if ($this->handle) {
+                fclose($this->handle);
             }
-
-            $dest = null;
 
             throw new Exception('Failed to set HTTP cookie', 0, 3);
         }
-
-        if ($this->handle) {
-            fclose($this->handle);
-        }
-
-        $this->handle = $dest;
     }
 
     private function setLock($lock)
@@ -336,9 +333,10 @@ class Session
         }
     }
 
-    private static function createTemporary(&$handle)
+    private static function createTemporary(&$handle, &$path = null)
     {
         $count = 0;
+        $cpath = null;
         $dir = self::$tempDir;
         $fname = self::$filename;
         $handle = false;
@@ -349,12 +347,15 @@ class Session
 
             $id = uniqid("{$count}_");
             $name = sprintf($fname, $id);
-            $handle = fopen($dir . '/' . $name, 'x+');
+            $cpath = $dir . '/' . $name;
+            $handle = fopen($cpath, 'x+');
         }
 
         if ($handle === false) {
             throw new Exception('Failed to create session file', 0, 3);
         }
+
+        $path = $cpath;
 
         return $id;
     }
