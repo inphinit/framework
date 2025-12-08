@@ -197,7 +197,7 @@ class Command
                 $this->reclaimeds[$index] = true;
                 $params[$this->longs[$index]] = $value;
             } elseif ($this->residual) {
-                $rest[$key] = $value;
+                $rest[$entry] = $value;
             } else {
                 throw new Exception("Invalid entry: {$entry}");
             }

@@ -111,9 +111,9 @@ class Console
             $key = ltrim(trim($key), '-');
 
             if (strlen($key) === 1) {
-                $key .= '-' . $key;
+                $key = '-' . $key;
             } else {
-                $key .= '--' . $key;
+                $key = '--' . $key;
             }
 
             $values[] = $key;
