@@ -29,7 +29,7 @@ class Request
      * Checks if the request matches a specific type:
      * HTTPS, XHR, Pjax, prefetch, save-data, GPC, or a standard HTTP method (e.g., GET, POST).
      *
-     * @param string $type The type to check (e.g., `gpc`, `pjax`, `prefetch`, `save`, `secure`, `xhr`, `POST`, `HEAD`)
+     * @param string $type The type to check (e.g., `gpc`, `pjax`, `prefetch`, `save`, `secure`, `xhr`, `post`, `head`)
      * @return bool
      */
     public static function is($type)

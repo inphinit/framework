@@ -25,6 +25,9 @@ abstract class Reader
     /** @var int Skip the headers in the fetch() method */
     const SKIP_HEADER = 8;
 
+    /** @var int The header must include at least two columns */
+    const STRICT = 16;
+
     protected $separator;
     protected $separators = array();
     protected $stream;
@@ -178,22 +181,6 @@ abstract class Reader
     }
 
     /**
-     * Enable/disable strict mode.
-     * Note: When strict mode is enabled, the header must include at least two columns,
-     * using one of the expected separators to delimit them.
-     *
-     * @param bool $enable
-     */
-    public function setStrictMode($enable)
-    {
-        if (is_bool($enable) === false) {
-            throw new Exception('$enable argument must be of type bool, ' . gettype($enable) . ' given');
-        }
-
-        $this->strictMode = $enable;
-    }
-
-    /**
      * Set custom filter for fields, and returns the previously defined filter (if any).
      * Note: If the callback returns false, the line will be ignored.
      * Note: Values can be changed by reference.
@@ -276,7 +263,9 @@ abstract class Reader
             }
 
             return $instance;
-        } elseif ($this->flags & self::MODE_COLUMN) {
+        }
+
+        if ($this->flags & self::MODE_COLUMN) {
             $fields = array_combine($this->headers, $fields);
         }
 
@@ -371,7 +360,7 @@ abstract class Reader
             }
 
             if ($totalFields === 1) {
-                if ($this->strictMode) {
+                if ($this->flags & self::STRICT) {
                     throw new Exception('No separator was detected in the document header', 0, 3);
                 } else {
                     $inferredSeparator = '';

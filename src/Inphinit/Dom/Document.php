@@ -223,13 +223,11 @@ class Document
     {
         if ($this->type === self::XML) {
             $callback = array($this->base, 'saveXML');
-            $options = $this->saveOptions;
-        } else {
-            $callback = array($this->base, 'saveHTML');
-            $options = 0;
+            return $callback($node, $this->saveOptions);
         }
 
-        return $options === 0 ? $callback($node) : $callback($node, $options);
+        $callback = array($this->base, 'saveHTML');
+        return $callback($node);
     }
 
     /**
@@ -241,13 +239,11 @@ class Document
     {
         if ($this->type === self::XML) {
             $callback = array($this->base, 'save');
-            $options = $this->saveOptions;
-        } else {
-            $callback = array($this->base, 'saveHTMLFile');
-            $options = 0;
+            return $callback($file, $this->saveOptions);
         }
 
-        return $options === 0 ? $callback($file) : $callback($file, $options);
+        $callback = array($this->base, 'saveHTMLFile');
+        return $callback($file);
     }
 
     /**

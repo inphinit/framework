@@ -28,7 +28,7 @@ class Response
         $previous = http_response_code($code);
 
         if ($code !== 0 && $previous !== $code && class_exists('\\Inphinit\\Event', false)) {
-            Event::trigger('changestatus', array($code));
+            Event::trigger('changestatus', array($code, $previous));
         }
 
         return $previous;
@@ -84,13 +84,32 @@ class Response
 
     /**
      * Set HTTP cache or no-cache
+     * Note: $seconds and $modified accept English textual datetime descriptions (e.g., 'now', '+1 day', 'last Monday').
      *
-     * @param int $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled
-     * @param int $modified Optional. Last modified timestamp. Defaults to the current time
+     * @param int|string $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled
+     * @param int|string $modified Optional. Last modified timestamp. Defaults to the current time
      */
     public static function cache($seconds, $modified = 0)
     {
         $time = time();
+
+        if (is_string($seconds)) {
+            $seconds = strtotime($seconds);
+
+            if ($seconds === false) {
+                throw new Exception('Invalid English textual datetime description in first argument');
+            }
+
+            $seconds -= $time;
+        }
+
+        if (is_string($modified)) {
+            $modified = strtotime($modified);
+
+            if ($modified === false) {
+                throw new Exception('Invalid English textual datetime description in second argument');
+            }
+        }
 
         if ($seconds > 0) {
             header('Cache-Control: public, max-age=' . $seconds);
