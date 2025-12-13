@@ -16,6 +16,24 @@ require_once __DIR__ . '/env_vars.php';
 
 $console = new Console();
 
+$console->action('app:down', function (Command $command, array $params, array $residual) {
+    if (App::down()) {
+        echo 'Maintenance mode is now active.';
+    } else {
+        echo 'Unable to activate maintenance mode.';
+        return 1;
+    }
+});
+
+$console->action('app:up', function (Command $command, array $params, array $residual) {
+    if (App::up()) {
+        echo 'The application is active, and maintenance mode has been disabled.';
+    } else {
+        echo 'Unable to deactivate maintenance mode.';
+        return 1;
+    }
+});
+
 $console->action('env:boot', function (Command $command, array $params, array $residual) use ($env) {
     if (isset($params['override'])) {
         $env->setOverride(true);
@@ -42,22 +60,8 @@ $console->action('env:source', function (Command $command, array $params, array 
     }
 });
 
-$console->action('app:down', function (Command $command, array $params, array $residual) {
-    if (App::down()) {
-        echo 'Maintenance mode is now active.';
-    } else {
-        echo 'Unable to activate maintenance mode.';
-        return 1;
-    }
-});
-
-$console->action('app:up', function (Command $command, array $params, array $residual) {
-    if (App::up()) {
-        echo 'The application is active, and maintenance mode has been disabled.';
-    } else {
-        echo 'Unable to deactivate maintenance mode.';
-        return 1;
-    }
+$console->action('pkg:up', function (Command $command, array $params, array $residual) {
+    require_once INPHINIT_SYSTEM . '/boot/importpackages.php';
 });
 
 $serve = $console->action('serve', function (Command $command, array $params, array $residual) {
@@ -93,9 +97,5 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
 $serve->setOption('host', 'h', Command::ARG_OPTIONAL, null, 'Define server address');
 $serve->setOption('port', 'p', Command::ARG_OPTIONAL, null, 'Define server port');
 $serve->setOption('vars', 'v', Command::ARG_OPTIONAL, null, 'Define variables order');
-
-$console->action('packages:optimize', function (Command $command, array $params, array $residual) {
-    require_once INPHINIT_SYSTEM . '/boot/importpackages.php';
-});
 
 require INPHINIT_SYSTEM . '/console.php';
