@@ -82,14 +82,14 @@ class Selector
     }
 
     /**
-     * Count all nodes matching the given CSS selector
+     * Count all nodes matching the given CSS selector. If the selector is not valid, it will return false.
      *
      * @param string $selector
-     * @return \DOMNodeList
+     * @return int|false
      */
     public function count($selector)
     {
-        return $this->exec('evaluate', $selector);
+        return $this->base->evaluate('count(' . $this->toXPath($selector) . ')', null, $this->registerNodeNS);
     }
 
     /**

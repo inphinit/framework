@@ -98,4 +98,5 @@ $serve->setOption('host', 'h', Command::ARG_OPTIONAL, null, 'Define server addre
 $serve->setOption('port', 'p', Command::ARG_OPTIONAL, null, 'Define server port');
 $serve->setOption('vars', 'v', Command::ARG_OPTIONAL, null, 'Define variables order');
 
+// system/console.php
 require INPHINIT_SYSTEM . '/console.php';

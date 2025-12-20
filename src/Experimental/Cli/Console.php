@@ -133,7 +133,7 @@ class Console
     private static function runFromInstance($console, $env, $args, &$code)
     {
         if (empty($console)) {
-            require_once __DIR__ . '/../../commands.php';
+            require_once __DIR__ . '/../../boot_console.php';
         }
 
         ob_start();

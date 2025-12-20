@@ -31,12 +31,10 @@ class FileResponse
     /**
      * Initialize the response with a file path and optional download name
      *
-     * @param string $source   Absolute file path
-     * @param string $filename Optional. Set download name (defaults to basename of `$source`)
-     * @param int    $modes    Optional. Set file delivery modes using bitwise flags
-     *                         (ACCEL, SENDFILE, FALLBACK). Default is ACCEL | SENDFILE
+     * @param string $source   Absolute file path.
+     * @param string $filename Optional. Set download name (defaults to basename of `$source`).
      */
-    public function __construct($source, $filename = '', $modes = 0)
+    public function __construct($source, $filename = '')
     {
         if (preg_match('#[\r\n]#', $source)) {
             throw new Exception('$source may not contain more than a single header, new line detected', 0, 3);
@@ -48,16 +46,6 @@ class FileResponse
 
         $this->filename = $filename ? $filename : basename($source);
         $this->source = $source;
-
-        $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
-
-        if ($modes === 0) {
-            $this->modes = self::ACCEL | self::SENDFILE;
-        } elseif (is_int($modes) && ($modes & ~$validModes) === 0) {
-            $this->modes = $modes;
-        } else {
-            throw new Exception('Invalid delivery mode(s)');
-        }
     }
 
     /**
@@ -95,20 +83,26 @@ class FileResponse
     /**
      * Dispatch the file using the preferred available delivery method
      *
-     * @param bool $overwrite      Optional. Overwrite all possible related headers
-     * @throws \Inphinit\Exception If headers are already sent or no supported mode is available
+     * @param int  $modes          Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK).
+     * @param bool $overwrite      Optional. Overwrite all possible related headers.
+     * @throws \Inphinit\Exception If headers are already sent or no supported mode is available.
      */
-    public function send($overwrite = false)
+    public function send($modes, $overwrite = false)
     {
         if (headers_sent()) {
             throw new Exception('Cannot dispatch file, headers already sent');
         }
 
-        $this->checkDispatched($overwrite);
+        $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
 
-        $fallback = ($this->modes & self::FALLBACK) !== 0;
-        $modes = $this->modes;
+        if (is_int($modes) === false || ($modes & ~$validModes) !== 0) {
+            throw new Exception('Invalid delivery mode(s)');
+        }
+
+        self::checkDispatched($overwrite);
+
         $header = null;
+        $fallback = ($modes & self::FALLBACK) !== 0;
 
         if (($modes & self::ACCEL) && self::available(self::ACCEL)) {
             $header = 'X-Accel-Redirect';
@@ -116,7 +110,7 @@ class FileResponse
             $header = 'X-Sendfile';
         }
 
-        if ($header === null && !$fallback) {
+        if ($header === null && $fallback === false) {
             throw new Exception('No supported modes. Check server configuration or enable FALLBACK mode');
         }
 
