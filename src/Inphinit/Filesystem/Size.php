@@ -84,7 +84,7 @@ class Size
 
         if ($path === false || is_file($path) === false) {
             return false;
-        } elseif (App::config('development') && File::exists($path) === false) {
+        } elseif (App::config('environment') === 'development' && File::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)');
         }
 

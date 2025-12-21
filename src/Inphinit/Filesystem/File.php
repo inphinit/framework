@@ -241,7 +241,7 @@ class File
 
     private static function checkInDevMode($path, $level = 3)
     {
-        if (self::$devStrictMode && App::config('development') && self::exists($path) === false) {
+        if (self::$devStrictMode && App::config('environment') === 'development' && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 0, $level);
         }
     }
