@@ -15,7 +15,7 @@ use Inphinit\Exception;
 class Checkup
 {
     const AGE_CHECK = 1;
-    const AGE_LEGACY = 5;
+    const AGE_LEGACY = 2;
 
     private $iniPath = '';
     private $iniGet = true;
@@ -25,11 +25,13 @@ class Checkup
     private $errors = array();
     private $warnings = array();
 
-    private static $buildAge;
+    private $buildAge;
     private static $buildDate;
 
     const MSG_INI_CONFIGS = '`%s`, additional `.ini` files, or via directives';
     const MSG_DEV_ADVICE = 'While in development mode, it is recommended to disable `%s` in %s';
+
+    const CACHE_PHP_BUILD_DATE = '.PHP_BUILD_DATE';
 
     public function __construct()
     {
@@ -38,15 +40,15 @@ class Checkup
             $this->sensitive = true;
         }
 
-        if ($this->sensitive && ($buildAge = self::getBuildAge())) {
+        if ($this->sensitive && ($buildAge = $this->getBuildAge())) {
             $version = PHP_VERSION;
 
             if ($buildAge > self::AGE_LEGACY) {
                 $this->errors[] = "PHP{$version} is more than {$buildAge} years old — upgrading to a " .
                                   "newer version is strongly recommended for security and performance reasons";
             } elseif ($buildAge > self::AGE_CHECK) {
-                $this->errors[] = "PHP{$version} has not received updates for over {$buildAge} years — " .
-                                  "consider applying the latest security patches or upgrading to a newer release";
+                $this->warnings[] = "PHP{$version} has not received updates for over {$buildAge} years — " .
+                                    "consider applying the latest security patches or upgrading to a newer release";
             }
         }
 
@@ -110,7 +112,11 @@ class Checkup
         if (defined('PHP_BUILD_DATE')) {
             return PHP_BUILD_DATE;
         } elseif (self::$buildDate === null) {
-            if (function_exists('phpinfo')) {
+            $cache = INPHINIT_SYSTEM . '/storage/' . self::CACHE_PHP_BUILD_DATE;
+
+            if (is_file($cache)) {
+                self::$buildDate = file_get_contents($cache);
+            } elseif (function_exists('phpinfo')) {
                 ob_start();
 
                 phpinfo(INFO_GENERAL);
@@ -120,8 +126,9 @@ class Checkup
 
                 $node = $handle->selector()->first('td:contains(Build Date)+td');
 
-                if ($node && $value = trim($node->nodeValue)) {
+                if ($node && $value = trim($node->textContent)) {
                     self::$buildDate = $value;
+                    file_put_contents($cache, $value);
                 } else {
                     throw new Exception('The PHP release date could not be determined (missing build date in phpinfo())');
                 }
@@ -133,10 +140,10 @@ class Checkup
         return self::$buildDate;
     }
 
-    private static function getBuildAge()
+    private function getBuildAge()
     {
-        if (self::$buildAge !== null) {
-            return self::$buildAge;
+        if ($this->buildAge !== null) {
+            return $this->buildAge;
         }
 
         $date = self::getBuildDate();
@@ -155,7 +162,7 @@ class Checkup
             $this->warnings[] = 'The PHP release date could not be determined';
         }
 
-        self::$buildAge = $age;
+        $this->buildAge = $age;
 
         return $age;
     }
@@ -173,7 +180,7 @@ class Checkup
         }
 
         if ($this->iniGet && $this->development === false && self::isEnabled('display_errors')) {
-            $this->errors[] = 'In production environment, the `display_errors` must be disabled in the ' . $directives;
+            $this->errors[] = 'In production environment, the `display_errors` must be disabled in ' . $directives;
         }
 
         $folder = INPHINIT_SYSTEM . '/storage';
@@ -218,7 +225,7 @@ class Checkup
     private static function isEnabled($key)
     {
         $value = ini_get($key);
-        return $value ? in_array(strtolower($value), array('on', '1', 'yes', 'no')) : false;
+        return $value ? in_array(strtolower($value), array('on', '1', 'yes')) : false;
     }
 
     private function getDirectives()

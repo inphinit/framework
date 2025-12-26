@@ -61,121 +61,6 @@ class Negotiation
     }
 
     /**
-     * Get all languages by `Accept-Language` header sorted by q-factor (defined by `$sort`)
-     *
-     * @param int $sort Sorts languages using `LOW` or `HIGH` constants,
-     *                  or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Exception
-     * @return array|null
-     */
-    public function acceptLanguage($sort = self::HIGH)
-    {
-        return $this->header('accept-language', $sort);
-    }
-
-    /**
-     * Get all charsets by `Accept-Charset` header and sort by q-factor (defined by `$sort`)
-     *
-     * @param int $sort Sorts charsets using `LOW` or `HIGH` constants,
-     *                  or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Exception
-     * @return array|null
-     */
-    public function acceptCharset($sort = self::HIGH)
-    {
-        return $this->header('accept-charset', $sort);
-    }
-
-    /**
-     * Get all encodings by  `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
-     *
-     * @param int $sort Sorts encodings using `LOW` or `HIGH` constants,
-     *                  or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Exception
-     * @return array|null
-     */
-    public function acceptEncoding($sort = self::HIGH)
-    {
-        return $this->header('accept-encoding', $sort);
-    }
-
-    /**
-     * Get all document types by `Accept` header and sorted by q-factor (defined by `$sort`)
-     *
-     * @param int $sort Sorts types using `LOW` or `HIGH` constants,
-     *                  or return all in an simple array use `ALL` constant
-     * @throws \Inphinit\Exception
-     * @return array|null
-     */
-    public function accept($sort = self::HIGH)
-    {
-        return $this->header('accept', $sort);
-    }
-
-    /**
-     * Get the first language with the greatest q-factor,
-     * if it does not exist then return the value of `$alternative`
-     *
-     * @param mixed $alternative Define alternative value, this value will be
-     *                           used does not have the "header"
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    public function getLanguage($alternative = null)
-    {
-        return $this->getFirst('acceptLanguage', $alternative);
-    }
-
-    /**
-     * Get the first charset with the greatest q-factor,
-     * if it does not exist then return the value of `$alternative`
-     *
-     * @param mixed $alternative Define alternative value, this value will be
-     *                           used does not have the "header"
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    public function getCharset($alternative = null)
-    {
-        return $this->getFirst('acceptCharset', $alternative);
-    }
-
-    /**
-     * Get the first encoding with the greatest q-factor,
-     * if it does not exist then return the value of `$alternative`
-     *
-     * @param mixed $alternative Define alternative value, this value will be
-     *                           used does not have the "header"
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    public function getEncoding($alternative = null)
-    {
-        return $this->getFirst('acceptEncoding', $alternative);
-    }
-
-    /**
-     * Get the first "document type" with the greatest q-factor,
-     * if it does not exist then return the value of `$alternative`
-     *
-     * @param mixed $alternative Define alternative value, this value will be
-     *                           used does not have the "header"
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    public function getAccept($alternative = null)
-    {
-        return $this->getFirst('accept', $alternative);
-    }
-
-    private function getFirst($method, $alternative)
-    {
-        $getter = array($this, $method);
-        $headers = $getter();
-        return $headers ? key($headers) : $alternative;
-    }
-
-    /**
      * Parse any header with q-factor value
      *
      * @param string $header
@@ -183,7 +68,7 @@ class Negotiation
      * @throws \Inphinit\Exception
      * @return array|null
      */
-    public function header($header, $sort = self::HIGH)
+    public function entries($header, $sort = self::HIGH)
     {
         $header = strtolower($header);
 
@@ -198,6 +83,105 @@ class Negotiation
         }
 
         return $value ? self::qFactor($value, $sort) : null;
+    }
+
+    /**
+     * Get all document types from `Accept` header and sorted by q-factor (defined by `$sort`)
+     *
+     * @param int $sort Sorts types using `LOW` or `HIGH` constants,
+     *                  or return all in an simple array use `ALL` constant
+     * @throws \Inphinit\Exception
+     * @return array|null
+     */
+    public function contentTypes($sort = self::HIGH)
+    {
+        return $this->entries('accept', $sort);
+    }
+
+    /**
+     * Get all encodings from `Accept-Encoding` header and sort by q-factor (defined by `$sort`)
+     *
+     * @param int $sort Sorts encodings using `LOW` or `HIGH` constants,
+     *                  or return all in an simple array use `ALL` constant
+     * @throws \Inphinit\Exception
+     * @return array|null
+     */
+    public function encodings($sort = self::HIGH)
+    {
+        return $this->entries('accept-encoding', $sort);
+    }
+
+    /**
+     * Get all languages from `Accept-Language` header sorted by q-factor (defined by `$sort`)
+     *
+     * @param int $sort Sorts languages using `LOW` or `HIGH` constants,
+     *                  or return all in an simple array use `ALL` constant
+     * @throws \Inphinit\Exception
+     * @return array|null
+     */
+    public function languages($sort = self::HIGH)
+    {
+        return $this->entries('accept-language', $sort);
+    }
+
+    /**
+     * Get the highest priority option from the header
+     *
+     * @param mixed $header
+     * @param mixed $alternative Define alternative value, this value will be
+     *                           used does not have the "header"
+     * @throws \Inphinit\Exception
+     * @return mixed
+     */
+    public function top($header, $alternative)
+    {
+        $values = $this->entries($header, self::HIGH);
+        return $values ? key($values) : $alternative;
+    }
+
+    /**
+     * Get the document type (from `Accept` header) with the highest
+     * priority based on the q value. If it does not exist then return
+     * the value of `$alternative`.
+     *
+     * @param mixed $alternative Define alternative value, this value will be
+     *                           used does not have the "header"
+     * @throws \Inphinit\Exception
+     * @return mixed
+     */
+    public function topContentType($alternative = null)
+    {
+        return $this->top('accept', $alternative);
+    }
+
+    /**
+     * Get the encoding (from `Accept-Encoding` header) with the highest
+     * priority based on the q value. If it does not exist then return
+     * the value of `$alternative`.
+     *
+     * @param mixed $alternative Define alternative value, this value will be
+     *                           used does not have the "header"
+     * @throws \Inphinit\Exception
+     * @return mixed
+     */
+    public function topEncoding($alternative = null)
+    {
+        return $this->top('accept-encoding', $alternative);
+    }
+
+    /**
+     * Get the encoding (from `Accept-Language` header) with the highest
+     * priority based on the q value. If it does not exist then return
+     * the value of `$alternative`.
+     *
+     * @param mixed $alternative Define alternative value, this value will be
+     *                           used does not have the "header"
+     * @throws \Inphinit\Exception
+     * @return mixed
+     */
+    public function topLanguage($alternative = null)
+    {
+        return $this->top('accept-language', $alternative);
     }
 
     /**

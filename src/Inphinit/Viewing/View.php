@@ -11,7 +11,7 @@ namespace Inphinit\Viewing;
 
 class View
 {
-    /** @var int Bypass security trust HTML in the render() method  */
+    /** @var int Bypass security trust HTML in the render() method */
     const UNSAFE = -1;
 
     private static $encoding = 'UTF-8';

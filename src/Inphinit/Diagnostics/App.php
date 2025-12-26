@@ -36,7 +36,7 @@ class App extends \Inphinit\App
             throw new Exception('Invalid name: ' . $name);
         }
 
-        return parent::config($name, $value);
+        return parent::config($name);
     }
 
     /**

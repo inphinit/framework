@@ -40,7 +40,7 @@ abstract class Reader
     private $filter;
     private $firstLine = true;
     private $headers = array();
-    private $limitCount = 0;
+    private $limitCount = 1000;
     private $limitOffset = 0;
     private $lineIndex = -1;
     private $flags;
@@ -200,10 +200,11 @@ abstract class Reader
 
     /**
      * Set the maximum number of rows returned and skips a certain
-     * number of rows before starting to return rows
+     * number of rows before starting to return rows.
+     * Note: If this method is not used, it will be limited to 1000 rows.
      *
-     * @param int $count  Set limit
-     * @param int $offset Set offset
+     * @param int $count  Set limit rows (Note: Set 0 for unlimited).
+     * @param int $offset Set offset row.
      */
     public function setLimit($count, $offset = 0)
     {
@@ -292,19 +293,25 @@ abstract class Reader
             return null;
         }
 
-        ++$this->lineIndex;
+        $stream = $this->stream;
+        $chunk = $this->chunk;
+        $eol = $this->eol;
+        $entry = '';
 
-        $entry = stream_get_line($this->stream, $this->chunk, $this->eol);
+        if ($this->flags & self::SKIP_EMPTY) {
+            while ($entry !== false && trim($entry) === '') {
+                $entry = stream_get_line($stream, $chunk, $eol);
+            }
+        } else {
+            $entry = stream_get_line($stream, $chunk, $eol);
+        }
 
         if ($entry === false) {
             $this->noNextLine = true;
             return null;
         }
 
-        // Skip empty lines
-        if (($this->flags & self::SKIP_EMPTY) && trim($entry) === '') {
-            return $this->getLine($separator);
-        }
+        ++$this->lineIndex;
 
         $fields = $this->parse($separator, $entry);
 

@@ -16,6 +16,14 @@ use Inphinit\Strings;
 
 class Response
 {
+    private static $contentTypeAliases = array(
+        'bson' => 'application/bson',
+        'json' => 'application/json',
+        'xml' => 'application/xml',
+        'atom' => 'application/atom+xml',
+        'rss' => 'application/rss+xml'
+    );
+
     /**
      * Get or set status code and return previous status code.
      * Note: If the status has changed, the `Event::on('changestatus')` event will be triggered
@@ -70,7 +78,11 @@ class Response
         if ($value === null) {
             header_remove('Content-Type');
         } else {
-            self::checkHeaderContent($value);
+            if (isset(self::$contentTypeAliases[$value])) {
+                $value = self::$contentTypeAliases[$value];
+            } else {
+                self::checkHeaderContent($value);
+            }
 
             if ($charset && ($charset = trim($charset))) {
                 self::checkHeaderContent($charset);
@@ -88,6 +100,7 @@ class Response
      *
      * @param int|string $seconds  Set cache in seconds. If $seconds is less than 1, caching is disabled
      * @param int|string $modified Optional. Last modified timestamp. Defaults to the current time
+     * @throws \Inphinit\Exception
      */
     public static function cache($seconds, $modified = 0)
     {

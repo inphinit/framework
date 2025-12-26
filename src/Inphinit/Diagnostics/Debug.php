@@ -158,7 +158,7 @@ class Debug
      */
     public static function functions()
     {
-        $data = get_defined_functions()['user'];
+        $data = get_defined_functions();
 
         if (empty($data['user'])) {
             return array();

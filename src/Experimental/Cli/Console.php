@@ -89,7 +89,7 @@ class Console
             throw new Exception('Return must be of type int or null, ' . gettype($response) . ' given');
         }
 
-        return $response === null ? 0 : $code;
+        return $response === null ? 0 : $response;
     }
 
     /**

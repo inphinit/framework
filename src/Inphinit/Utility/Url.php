@@ -24,16 +24,16 @@ use Inphinit\Http\Request;
  */
 class Url
 {
-    /** @var int Used by the `::normalize()` method to convert the path to ASCII  */
+    /** @var int Used by the `::normalize()` method to convert the path to ASCII */
     const PATH_ASCII = 1;
 
-    /** @var int Used by the `::normalize()` method to convert the path to lower unicode  */
+    /** @var int Used by the `::normalize()` method to convert the path to lower unicode */
     const PATH_UNICODE = 2;
 
-    /** @var int Used by the `::normalize()` method to convert spaces, underscore to scapes and remove unused characteres  */
+    /** @var int Used by the `::normalize()` method to convert spaces, underscore to scapes and remove unused characteres */
     const PATH_SLUG = 4;
 
-    /** @var int Used by the `::normalize()` method to sort querystring  */
+    /** @var int Used by the `::normalize()` method to sort querystring */
     const SORT_QUERY = 8;
 
     private static $transliterator;
@@ -102,7 +102,7 @@ class Url
     /**
      * Sets slug dictionary
      *
-     * @param array $dict
+     * @param array<string, string> $dict
      */
     public static function setSlugDict(array $dict)
     {
