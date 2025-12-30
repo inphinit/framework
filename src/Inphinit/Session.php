@@ -11,132 +11,67 @@ namespace Inphinit;
 
 class Session
 {
-    const ATTEMPTS_TEMP = 100;
     const LOCK_TIMEOUT = 10;
+    const STORAGE_ATTEMPTS = 100;
+    const RANDOM_BYTES_SIZE = 16;
 
     private $id;
-    private $name;
     private $data = array();
     private $handle;
-    private $options;
-    private $autocommit = false;
+    private $locked = false;
+    private $native = false;
 
-    private static $tempDir;
-
-    protected static $filename = '~sess[%s]';
+    private $directory;
+    private $domain;
+    private $expires;
+    private $httpOnly = false;
+    private $name;
+    private $partitioned = false;
+    private $path = '/';
+    private $sameSite;
+    private $secure = false;
+    private $storePrefix = '~sess[%s]';
 
     /**
-     * Create cookie session and configure session
+     * Reads and stores session data and creates a cookie
      *
-     * @param string  $name
-     * @param boolean $autocommit
-     * @param array   $options
+     * @var string $config Configuration file that defines the headers and storage
      * @throws \Inphinit\Exception
+     * @throws \ErrorException
      */
-    public function __construct($name, $autocommit = false, array $options = array())
+    public function __construct($config)
     {
-        if (headers_sent()) {
-            throw new Exception('headers sent');
+        $this->native = function_exists('random_bytes');
+
+        if ($this->native === false && function_exists('openssl_random_pseudo_bytes') === false) {
+            if (PHP_VERSION_ID < 70000) {
+                throw new Exception('Use a version of PHP that supports OpenSSL, or install the extension, depending on your environment');
+            } else {
+                throw new Exception('Missing support, enable random_bytes - see disable_functions');
+            }
         }
 
-        if (strpbrk(self::$filename, '/\\') !== false) {
-            throw new Exception('Invalid filename: ' . self::$filename);
-        }
+        $this->loadConfigs($config);
 
-        self::directory();
+        $name = $this->name;
 
-        $this->name = $name;
-
-        $this->options = $options + array(
-            'path' => '/',
-            'expire' => 0,
-            'domain' => '',
-            'secure' => false,
-            'httponly' => false
-        );
-
-        $this->autocommit = $autocommit === true;
-
-        $request = false;
-
-        if (isset($_COOKIE[$name]) && preg_match('#^\d{1,2}_[a-zA-Z0-9]{8,32}$#', $_COOKIE[$name])) {
+        if (isset($_COOKIE[$name][0]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
+            $store_name = $this->storePrefix;
+            $filename = sprintf($store_name, $id);
 
-            $filename = sprintf(self::$filename, $id);
-
-            $this->handle = fopen(self::$tempDir . '/' . $filename, 'c+');
+            $this->handle = fopen($this->directory . '/' . $filename, 'c+');
 
             if ($this->handle === false) {
                 throw new Exception('Invalid session file');
             }
 
             $this->read();
+            $this->id = $id;
         } else {
-            $id = self::createTemporary($this->handle);
-            $this->setCookie($id);
+            $this->id = $this->create($this->handle, $path);
+            $this->setCookie();
         }
-
-        $this->id = $id;
-    }
-
-    /**
-     * Set or get temp directory
-     *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     * @return string|void
-     */
-    public static function directory($path = null)
-    {
-        if ($path === null) {
-            if (self::$tempDir === null) {
-                self::$tempDir = INPHINIT_SYSTEM . '/storage/session';
-            }
-
-            return self::$tempDir;
-        }
-
-        if (is_dir($path) && is_writable($path)) {
-            self::$tempDir = $path;
-        } else {
-            throw new Exception($path . ' is not writable or invalid');
-        }
-    }
-
-    /**
-     * Remove old files
-     *
-     * @param int $expires
-     * @param int $max
-     * @return int
-     */
-    public static function clean($expires = 0, $max = 100)
-    {
-        $count = 0;
-        $path = self::directory();
-        $handle = opendir($path);
-
-        if ($handle) {
-            if ($expires < 0) {
-                $expires = App::config('session_expires');
-            }
-
-            $expires = time() - $expires;
-
-            $path .= '/';
-
-            while ($count < $max && ($entry = readdir($handle)) !== false) {
-                $entry = $path . $entry;
-
-                if (is_file($entry) && filemtime($entry) < $expires && unlink($entry)) {
-                    ++$count;
-                }
-            }
-
-            closedir($handle);
-        }
-
-        return $count;
     }
 
     /**
@@ -146,17 +81,17 @@ class Session
      */
     public function commit()
     {
-        $this->setLock(true);
+        $this->lock(true);
 
         ftruncate($this->handle, 0);
         rewind($this->handle);
 
-        $written = fwrite($this->handle, serialize($this->data));
+        $stored = fwrite($this->handle, serialize($this->data));
 
-        $this->setLock(false);
+        $this->lock(false);
 
-        if ($written === false) {
-            throw new Exception('Failed to commit');
+        if ($stored === false) {
+            throw new Exception('Failed to store data', 0, 3);
         }
     }
 
@@ -174,29 +109,23 @@ class Session
      * Regenerate data
      *
      * @throws \Inphinit\Exception
+     * @throws \ErrorException
      */
     public function regenerate()
     {
-        if (headers_sent()) {
-            throw new Exception('headers sent');
-        }
+        $id = $this->create($dest, $path);
+        $source = $this->handle;
 
-        $id = self::createTemporary($dest, $path);
+        rewind($source);
 
-        rewind($this->handle);
-
-        if (stream_copy_to_stream($this->handle, $dest) === false) {
+        if (stream_copy_to_stream($source, $dest) === false) {
             fclose($dest);
             unlink($path);
 
             throw new Exception('Failed copy data');
         }
 
-        if ($this->handle) {
-            fclose($this->handle);
-            $this->handle = null;
-        }
-
+        $this->close();
         $this->setCookie($id);
         $this->handle = $dest;
         $this->id = $id;
@@ -225,15 +154,11 @@ class Session
     {
         try {
             serialize($value);
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage(), $ee->getCode(), 2, $ee);
         }
 
         $this->data[$name] = $value;
-
-        if ($this->autocommit) {
-            $this->commit();
-        }
     }
 
     /**
@@ -256,22 +181,44 @@ class Session
     public function __unset($name)
     {
         unset($this->data[$name]);
-
-        if ($this->autocommit) {
-            $this->commit();
-        }
     }
 
     public function __destruct()
     {
-        if ($this->handle) {
-            fclose($this->handle);
+        $this->close();
+    }
+
+    private function create(&$handle, &$path)
+    {
+        $attempts = self::STORAGE_ATTEMPTS;
+        $count = 0;
+        $dir = $this->directory;
+        $name = null;
+        $store_name = $this->storePrefix;
+        $stream = false;
+        $id = null;
+
+        while ($stream === false && $count < $attempts) {
+            ++$count;
+
+            $id = $this->createId();
+            $name = sprintf($store_name, $id);
+            $stream = fopen($dir . '/' . $name, 'x+');
         }
+
+        if ($stream === false) {
+            throw new Exception('Failed to create session file', 0, 3);
+        }
+
+        $handle = $stream;
+        $path = $dir . '/' . $name;
+
+        return $id;
     }
 
     private function read()
     {
-        $this->setLock(true);
+        $this->lock(true);
 
         rewind($this->handle);
 
@@ -283,80 +230,219 @@ class Session
             } else {
                 $data = unserialize($data, array('allowed_classes' => false));
             }
-        } catch (\Exception $e) {
-            $this->setLock(false);
-
-            throw new Exception($e->getMessage(), $e->getCode(), 3);
+        } catch (\Exception $ee) {
+            $this->close();
+            throw new Exception($ee->getMessage(), $ee->getCode(), 3, $ee);
         }
 
         if (is_array($data)) {
             $this->data = $data;
         }
 
-        $this->setLock(false);
+        $this->lock(false);
     }
 
-    private function setCookie($id)
+    private function close()
     {
-        if (setcookie(
-            $this->name,
-            $id,
-            $this->options['expire'],
-            $this->options['path'],
-            $this->options['domain'],
-            $this->options['secure'],
-            $this->options['httponly']
-        ) === false) {
-            if ($this->handle) {
-                fclose($this->handle);
-            }
-
-            throw new Exception('Failed to set HTTP cookie', 0, 3);
+        if ($this->handle) {
+            $this->lock(false);
+            fclose($this->handle);
+            $this->handle = null;
         }
     }
 
-    private function setLock($lock)
+    private function setCookie()
     {
-        if ($lock) {
+        if (headers_sent($file, $line)) {
+            $this->close();
+            throw new \ErrorException('Cannot set cookie, headers already sent', 0, E_ERROR, $file, $line);
+        }
+
+        $cookie = 'Set-Cookie: ' . $this->name . '=' . $this->id;
+        $secure = $this->secure;
+
+        if ($this->domain) {
+            $cookie .= '; Domain=' . $this->domain;
+        }
+
+        if ($this->path) {
+            $cookie .= '; Path=' . $this->path;
+        }
+
+        if ($this->expires) {
+            $cookie .= '; Expires=' . $this->expires;
+        }
+
+        if ($this->httpOnly) {
+            $cookie .= '; HttpOnly';
+        }
+
+        if ($this->partitioned) {
+            $cookie .= '; Partitioned';
+            $secure = true;
+        }
+
+        if ($this->sameSite) {
+            $cookie .= '; SameSite=' . $this->sameSite;
+
+            if ($this->sameSite === 'None') {
+                $secure = true;
+            }
+        }
+
+        if ($secure) {
+            $cookie .= '; Secure';
+        }
+
+        header($cookie, false);
+    }
+
+    private function lock($enable)
+    {
+        if ($this->locked === $enable) {
+            return null;
+        }
+
+        if ($enable) {
             $start = microtime(true);
             $timeout = self::LOCK_TIMEOUT;
+            $handle = $this->handle;
 
-            while (flock($this->handle, LOCK_EX | LOCK_NB) === false) {
+            while (flock($handle, LOCK_EX | LOCK_NB) === false) {
                 if (microtime(true) - $start > $timeout) {
                     throw new Exception('Lock timeout', 0, 3);
                 }
 
                 usleep(1000);
             }
+
+            $this->locked = true;
         } else {
             flock($this->handle, LOCK_UN);
+            $this->locked = false;
         }
     }
 
-    private static function createTemporary(&$handle, &$path = null)
+    private function loadConfigs($config)
     {
-        $count = 0;
-        $cpath = null;
-        $dir = self::$tempDir;
-        $fname = self::$filename;
-        $handle = false;
-        $id = '';
-
-        while ($handle === false && $count < self::ATTEMPTS_TEMP) {
-            ++$count;
-
-            $id = uniqid("{$count}_");
-            $name = sprintf($fname, $id);
-            $cpath = $dir . '/' . $name;
-            $handle = fopen($cpath, 'x+');
+        try {
+            $opts = new Config($config);
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage(), 0, 3, $ee);
         }
 
-        if ($handle === false) {
-            throw new Exception('Failed to create session file', 0, 3);
+        if (is_string($opts->name) === false || ctype_alpha($opts->name) === false) {
+            throw new Exception('Invalid name', 0, 3);
         }
 
-        $path = $cpath;
+        $this->name = $opts->name;
 
-        return $id;
+        $path = $opts->path;
+
+        if (
+            is_string($path) === false ||
+            $path[0] !== '/' ||
+            preg_match('/[\x00-\x1F\x7F]/', $path) ||
+            strpos($path, ';') !== false
+        ) {
+            throw new Exception('Invalid path', 0, 3);
+        }
+
+        if ($opts->domain !== null) {
+            if (strpbrk($opts->domain, "=,; \t\r\n\013\014") !== false) {
+                throw new Exception('Invalid domain', 0, 3);
+            }
+
+            $this->domain = $opts->domain;
+        }
+
+        if ($opts->expires !== null) {
+            if (is_string($opts->expires) === false) {
+                throw new Exception('Invalid expires', 0, 3);
+            }
+
+            try {
+                $date = new \DateTime($opts->expires, new \DateTimeZone('UTC'));
+                $this->expires = $date->format('D, d M Y H:i:s \G\M\T');
+            } catch (\Exception $ee) {
+                throw new Exception($ee->getMessage(), 0, 3, $ee);
+            }
+        }
+
+        if ($opts->http_only !== null) {
+            if (is_bool($opts->http_only) === false) {
+                throw new Exception('Invalid http_only', 0, 3);
+            }
+
+            $this->httpOnly = $opts->http_only;
+        }
+
+        if ($opts->partitioned !== null) {
+            if (is_bool($opts->partitioned) === false) {
+                throw new Exception('Invalid partitioned', 0, 3);
+            }
+
+            $this->partitioned = $opts->partitioned;
+        }
+
+        $same_site = $opts->same_site;
+
+        if ($same_site !== null) {
+            if (
+                is_string($same_site) === false ||
+                in_array(strtolower($same_site), array('lax', 'none', 'strict')) === false
+            ) {
+                throw new Exception('Invalid same_site', 0, 3);
+            }
+
+            $this->sameSite = ucfirst($same_site);
+        }
+
+        if ($opts->secure !== null) {
+            if (is_bool($opts->secure) === false) {
+                throw new Exception('Invalid secure', 0, 3);
+            }
+
+            $this->secure = $opts->secure;
+        }
+
+        if ($opts->store_prefix !== null) {
+            if (preg_match('#^[\w~\-]+$#', $opts->store_prefix) !== 1) {
+                throw new Exception('Invalid store_prefix', 0, 3);
+            }
+
+            $this->storePrefix = $opts->store_prefix . '[%s]';
+        }
+
+        if ($opts->directory !== null) {
+            if (is_dir($opts->directory) === false) {
+                throw new Exception('Invalid directory', 0, 3);
+            }
+
+            $this->directory = $opts->directory;
+        } else {
+            $this->directory = INPHINIT_SYSTEM . '/storage/session';
+        }
+    }
+
+    private function createId()
+    {
+        try {
+            if ($this->native) {
+                $bin = \random_bytes(self::RANDOM_BYTES_SIZE);
+            } else {
+                // Returns false on failure in PHP<7.3
+                // Throws an exception in case of failure in PHP>=7.4
+                $bin = \openssl_random_pseudo_bytes(self::RANDOM_BYTES_SIZE);
+
+                if ($bin === false) {
+                    throw new Exception('OpenSSL: Unable to generate a pseudo-random byte sequence', 0, 3);
+                }
+            }
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage(), 0, 3, $ee);
+        }
+
+        return \bin2hex($bin);
     }
 }

@@ -74,7 +74,7 @@ class Url
             $url = 'file:///' . $url;
         }
 
-        $encoded = self::urleEncode($url);
+        $encoded = self::urlEncode($url);
 
         $parsed = parse_url($encoded);
 
@@ -308,19 +308,19 @@ class Url
         } elseif ($scheme === 'file') {
             $scheme .= '://';
 
-            if (preg_match('#^[A-Z]:#', $path)) {
+            if (preg_match('#^[A-Z]:#i', $path)) {
                 $scheme .= '/';
             }
         } elseif ($scheme) {
             $scheme .= ':';
         }
 
-        $this->cache = self::urleEncode($scheme . $user . $pass . $host . $port . $path . $query . $fragment);
+        $this->cache = self::urlEncode($scheme . $user . $pass . $host . $port . $path . $query . $fragment);
 
         return $this->cache;
     }
 
-    private static function urleEncode($url)
+    private static function urlEncode($url)
     {
         return preg_replace_callback('~[^:/@?&=#]+~usD', function ($matches) {
             return urlencode($matches[0]);

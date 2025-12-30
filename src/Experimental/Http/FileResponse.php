@@ -36,11 +36,11 @@ class FileResponse
      */
     public function __construct($source, $filename = '')
     {
-        if (preg_match('#[\r\n]#', $source)) {
+        if (strpbrk($source, "\r\n") !== false) {
             throw new Exception('$source may not contain more than a single header, new line detected', 0, 3);
         }
 
-        if ($filename && preg_match('#[\r\n]#', $filename)) {
+        if ($filename && strpbrk($filename, "\r\n") !== false) {
             throw new Exception('$filename may not contain more than a single header, new line detected', 0, 3);
         }
 
@@ -89,8 +89,8 @@ class FileResponse
      */
     public function send($modes, $overwrite = false)
     {
-        if (headers_sent()) {
-            throw new Exception('Cannot dispatch file, headers already sent');
+        if (headers_sent($file, $line)) {
+            throw new \ErrorException('Cannot set sendfile header, headers already sent', 0, E_ERROR, $file, $line);
         }
 
         $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;

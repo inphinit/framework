@@ -172,7 +172,7 @@ class Response
 
     private static function checkHeaderContent($data)
     {
-        if (preg_match('#[\r\n]#', $data)) {
+        if (strpbrk($data, "\r\n") !== false) {
             throw new Exception("Header may not contain more than a single header, new line detected", 0, 3);
         }
     }

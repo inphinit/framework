@@ -19,7 +19,7 @@ class File
     private static $devStrictMode = true;
 
     /**
-     * Enable or disable strictmode for check if file exists with case-sensitive (available only in development mode)
+     * Enable or disable strict mode for check if file exists with case-sensitive (available only in development mode)
      *
      * @param bool $enable
      */
