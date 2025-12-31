@@ -61,6 +61,7 @@ class Checkup
             $this->iniPath = php_ini_loaded_file();
 
             if ($this->iniPath) {
+                $this->checkRandomBytes();
                 $this->collectErrors();
                 $this->collectWarnings();
             } else {
@@ -165,6 +166,22 @@ class Checkup
         $this->buildAge = $age;
 
         return $age;
+    }
+
+    private function checkRandomBytes()
+    {
+        $directives = $this->getDirectives();
+
+        if (function_exists('random_bytes') === false) {
+            if (function_exists('openssl_random_pseudo_bytes')) {
+                $this->warnings[] = '`random_bytes()` is not available; OpenSSL is enabled and may be used as a fallback';
+            } elseif (PHP_VERSION_ID < 70000) {
+                $this->errors[] = '`random_bytes()` polyfill is required or enable OpenSSL extension in ' . $directives;
+            } else {
+                $this->errors[] = '`random_bytes()` function or OpenSSL extension is required; ' .
+                                  'check disable_functions in ' . $directives;
+            }
+        }
     }
 
     private function collectErrors()

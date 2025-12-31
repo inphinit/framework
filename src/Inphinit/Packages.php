@@ -363,6 +363,13 @@ class Packages
      * Get package info
      *
      * @param string $name Set <vendor>/<package>
+     * @param int    $info Set info by constant:
+     *                     - INFO_DESCRIPTION
+     *                     - INFO_SOURCE
+     *                     - INFO_TIME
+     *                     - INFO_TYPE
+     *                     - INFO_URL
+     *                     - INFO_VERSION
      * @param bool   $dev  Set true for get from packages-dev
      * @return string|null
      */

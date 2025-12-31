@@ -11,15 +11,15 @@ namespace Inphinit;
 
 class Session
 {
+    const CREATE_TIMEOUT = 10;
+    const ID_BYTES_LENGTH = 16;
     const LOCK_TIMEOUT = 10;
-    const STORAGE_ATTEMPTS = 100;
-    const RANDOM_BYTES_SIZE = 16;
 
     private $id;
     private $data = array();
     private $handle;
     private $locked = false;
-    private $native = false;
+    private $useRandomBytes = true;
 
     private $directory;
     private $domain;
@@ -30,7 +30,7 @@ class Session
     private $path = '/';
     private $sameSite;
     private $secure = false;
-    private $storePrefix = '~sess[%s]';
+    private $storePrefix = '~sess';
 
     /**
      * Reads and stores session data and creates a cookie
@@ -41,13 +41,13 @@ class Session
      */
     public function __construct($config)
     {
-        $this->native = function_exists('random_bytes');
-
-        if ($this->native === false && function_exists('openssl_random_pseudo_bytes') === false) {
-            if (PHP_VERSION_ID < 70000) {
-                throw new Exception('Use a version of PHP that supports OpenSSL, or install the extension, depending on your environment');
+        if (function_exists('random_bytes') === false) {
+            if (function_exists('openssl_random_pseudo_bytes')) {
+                $this->useRandomBytes = false;
+            } elseif (PHP_VERSION_ID < 70000) {
+                throw new Exception('OpenSSL extension or `random_bytes()` polyfill is required');
             } else {
-                throw new Exception('Missing support, enable random_bytes - see disable_functions');
+                throw new Exception('`random_bytes()` function or OpenSSL extension is required; check disable_functions');
             }
         }
 
@@ -55,12 +55,12 @@ class Session
 
         $name = $this->name;
 
-        if (isset($_COOKIE[$name][0]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
+        if (isset($_COOKIE[$name]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
-            $store_name = $this->storePrefix;
-            $filename = sprintf($store_name, $id);
+            $prefix = $this->storePrefix;
+            $filename = $this->directory . '/' . $prefix . '[' . $id . ']';
 
-            $this->handle = fopen($this->directory . '/' . $filename, 'c+');
+            $this->handle = fopen($filename, 'c+');
 
             if ($this->handle === false) {
                 throw new Exception('Invalid session file');
@@ -69,7 +69,7 @@ class Session
             $this->read();
             $this->id = $id;
         } else {
-            $this->id = $this->create($this->handle, $path);
+            $this->id = $this->create($this->handle, $filename);
             $this->setCookie();
         }
     }
@@ -188,30 +188,32 @@ class Session
         $this->close();
     }
 
-    private function create(&$handle, &$path)
+    private function create(&$handle, &$filename)
     {
-        $attempts = self::STORAGE_ATTEMPTS;
-        $count = 0;
-        $dir = $this->directory;
-        $name = null;
-        $store_name = $this->storePrefix;
-        $stream = false;
+        $start = microtime(true);
+        $timeout = self::CREATE_TIMEOUT;
+        $directory = $this->directory;
+        $file = null;
         $id = null;
+        $prefix = $this->storePrefix;
+        $stream = false;
 
-        while ($stream === false && $count < $attempts) {
-            ++$count;
+        while ($stream === false) {
+            if (microtime(true) - $start > $timeout) {
+                throw new Exception('Create session file timeout', 0, 3);
+            }
 
             $id = $this->createId();
-            $name = sprintf($store_name, $id);
-            $stream = fopen($dir . '/' . $name, 'x+');
-        }
+            $file = $directory . '/' . $prefix . '[' . $id . ']';
+            $stream = fopen($file, 'x+');
 
-        if ($stream === false) {
-            throw new Exception('Failed to create session file', 0, 3);
+            if ($stream === false) {
+                usleep(1000);
+            }
         }
 
         $handle = $stream;
-        $path = $dir . '/' . $name;
+        $filename = $file;
 
         return $id;
     }
@@ -395,7 +397,7 @@ class Session
                 throw new Exception('Invalid same_site', 0, 3);
             }
 
-            $this->sameSite = ucfirst($same_site);
+            $this->sameSite = ucfirst(strtolower($same_site));
         }
 
         if ($opts->secure !== null) {
@@ -411,7 +413,7 @@ class Session
                 throw new Exception('Invalid store_prefix', 0, 3);
             }
 
-            $this->storePrefix = $opts->store_prefix . '[%s]';
+            $this->storePrefix = $opts->store_prefix;
         }
 
         if ($opts->directory !== null) {
@@ -428,12 +430,12 @@ class Session
     private function createId()
     {
         try {
-            if ($this->native) {
-                $bin = \random_bytes(self::RANDOM_BYTES_SIZE);
+            if ($this->useRandomBytes) {
+                $bin = \random_bytes(self::ID_BYTES_LENGTH);
             } else {
                 // Returns false on failure in PHP<7.3
                 // Throws an exception in case of failure in PHP>=7.4
-                $bin = \openssl_random_pseudo_bytes(self::RANDOM_BYTES_SIZE);
+                $bin = \openssl_random_pseudo_bytes(self::ID_BYTES_LENGTH);
 
                 if ($bin === false) {
                     throw new Exception('OpenSSL: Unable to generate a pseudo-random byte sequence', 0, 3);
