@@ -175,7 +175,7 @@ class CookieJar
     }
 
     /**
-     * Magic method for get variable value from jar
+     * Magic method for get property value from jar
      *
      * @param string $name
      * @return mixed
@@ -186,7 +186,7 @@ class CookieJar
     }
 
     /**
-     * Magic method for set or remove cookie jar variables (this method don't commit data)
+     * Magic method for set or remove cookie jar properties
      *
      * @param string      $name
      * @param string|null $value
@@ -198,7 +198,11 @@ class CookieJar
             throw new Exception('Invalid name');
         }
 
-        if ($value === null || is_numeric($value) || (is_string($value) && self::validChars($value))) {
+        if ($value === null) {
+            if (isset($this->cookies[$name])) {
+                $this->cookies[$name] = null;
+            }
+        } elseif (is_numeric($value) || (is_string($value) && self::validChars($value))) {
             $this->cookies[$name] = (string) $value;
         } else {
             $type = gettype($value);

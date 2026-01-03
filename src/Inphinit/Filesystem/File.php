@@ -44,6 +44,10 @@ class File
             $path = Url::canonpath($path);
         }
 
+        if (strpos($path, '/') !== 0 && preg_match('#^[a-zA-Z]+?\:#', $path) !== 1) {
+            $path = str_replace('\\', '/', getcwd()) . '/' . $path;
+        }
+
         return inphinit_check_path($path);
     }
 
@@ -139,7 +143,7 @@ class File
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function output($path, $length = 262144, $delay = 0)
+    public static function output($path, $length = 0, $delay = 0)
     {
         self::checkInDevMode($path);
 
@@ -151,7 +155,7 @@ class File
 
         $buffer = ob_get_level() !== 0;
 
-        if (!is_int($length) || $length < 1) {
+        if ($length === null || $length < 1) {
             $length = 262144;
         }
 
@@ -231,7 +235,7 @@ class File
     }
 
     /**
-     * Clear state files and clear size files in `Inphinit\File::size`
+     * Clear state files and clear info files from `Inphinit\File::permissions`
      */
     public static function clearstat()
     {

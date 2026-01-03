@@ -38,8 +38,8 @@ class Size
      */
     const SYSTEM = 4;
 
+    private $error;
     private $modes;
-    private $lastError;
     private static $isWin;
 
     private static $bootCOM;
@@ -73,24 +73,24 @@ class Size
      * Get file size using defined modes
      * Note: If it is not a file or does not exist, this method will return false.
      *
-     * @param string $path            Path to the file
-     * @throws \Inphinit\Exception    If all defined modes fail, an exception will be thrown
-     *                                Note: Dev mode throws an exception on case-sensitive check failure
-     * @return float|int|string|false Each mode may return a different type of value
+     * @param string $path         Path to the file
+     * @throws \Inphinit\Exception If all defined modes fail, an exception will be thrown
+     *                             Note: Dev mode throws an exception on case-sensitive check failure
+     * @return float|int|string    Each mode may return a different type of value
      */
     public function get($path)
     {
-        $path = realpath($path);
-
-        if ($path === false || is_file($path) === false) {
-            return false;
-        } elseif (App::config('environment') === 'development' && File::exists($path) === false) {
+        if (App::config('environment') === 'development' && File::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)');
+        } elseif (is_file($path) === false) {
+            throw new Exception($path . ' not found');
         }
+
+        $path = realpath($path);
 
         $size = null;
 
-        if ($this->modes & self::COM) {
+        if (self::$isWin && ($this->modes & self::COM)) {
             $size = $this->fromCOM($path);
         }
 
@@ -106,15 +106,17 @@ class Size
             return $size;
         }
 
-        if (is_string($this->lastError)) {
-            throw new Exception($this->lastError);
+        if ($this->error instanceof Exception) {
+            throw $this->error;
         }
 
-        $message = $this->lastError->getMessage();
-        $message = preg_replace('#<br(\s+)?\/?>#', ' ', $message);
+        $err = $this->error;
+
+        $message = $err->getMessage();
+        $message = preg_replace('#<br(\s*?)\/?\>#', ' ', $message);
         $message = strip_tags($message);
 
-        throw new Exception($message, $this->lastError->getCode());
+        throw new Exception($message, $err->getCode(), 2, $err);
     }
 
     private function fromCOM($path)
@@ -129,13 +131,12 @@ class Size
         }
 
         if (!$boot) {
-            $this->lastError = 'COM: disabled or not supported by the server';
+            $this->error = new Exception('COM: disabled', 0, 3);
         } else {
             try {
-                $file = $boot->GetFile($path);
-                return $file->size;
-            } catch (\Throwable $e) {
-                $this->lastError = $e;
+                return $boot->GetFile($path)->Size;
+            } catch (\Exception $ee) {
+                $this->error = $ee;
             }
         }
     }
@@ -156,7 +157,7 @@ class Size
         }
 
         if (!$boot) {
-            $this->lastError = 'CURL: disabled or not supported by the server';
+            $this->error = new Exception('CURL: disabled or not supported by the server', 0, 3);
         } else {
             $path = rawurlencode($path);
 
@@ -164,9 +165,9 @@ class Size
 
             if (curl_exec($boot)) {
                 return curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-            } else {
-                $this->lastError = 'CURL: ' . rawurldecode(curl_error($boot));
             }
+
+            $this->error = new Exception('CURL: ' . rawurldecode(curl_error($boot)), 0, 3);
         }
     }
 
@@ -176,7 +177,7 @@ class Size
             $boot = self::$bootSystem;
         } elseif (function_exists('shell_exec')) {
             if (self::$isWin) {
-                $boot = 'for %%F in (%s) do @echo %%~zF';
+                $boot = 'for %%F in (%s) do @echo "%%~zF"';
             } else {
                 $boot = 'stat -c %%s %s';
             }
@@ -187,20 +188,22 @@ class Size
         }
 
         if (!$boot) {
-            $this->lastError = 'SYSTEM: shell_exec function disabled by the server';
+            $this->error = new Exception('SYSTEM: shell_exec function disabled by the server', 0, 3);
         } else {
             $command = sprintf($boot, escapeshellarg($path));
+            $output = shell_exec($command);
 
-            if ($output = shell_exec($command)) {
+            if (is_string($output)) {
                 $output = trim($output);
+                $output = trim($output, '"');
 
                 if (is_numeric($output)) {
                     return $output;
                 }
 
-                $this->lastError = 'SYSTEM: ' . ($output ? $output : 'Unknown error');
+                $this->error = new Exception('SYSTEM: ' . ($output ? $output : 'Unknown error'), 0, 3);
             } else {
-                $this->lastError = 'SYSTEM: Unable to retrieve the size of ' . $path;
+                $this->error = new Exception('SYSTEM: Unable to retrieve the size of ' . $path, 0, 3);
             }
         }
     }

@@ -81,15 +81,23 @@ class Console
 
         try {
             $response = $command->response(self::getEntries($arguments));
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage(), $ee->getCode(), 2, $ee);
         }
 
-        if ($response !== null && is_int($response) === false) {
-            throw new Exception('Return must be of type int or null, ' . gettype($response) . ' given');
+        if ($response !== null) {
+            if (is_int($response) === false) {
+                throw new Exception('Return must be of type int or null, ' . gettype($response) . ' given');
+            }
+
+            if ($response < 0 || $response > 254) {
+                throw new Exception('Exit codes should be in the range 0 to 254');
+            }
+
+            return $response;
         }
 
-        return $response === null ? 0 : $response;
+        return 0;
     }
 
     /**
@@ -97,10 +105,12 @@ class Console
      *
      * @param string                $command The command that will be executed
      * @param array<string, string> $args    Argument list
-     * @param string                $code    If the $code argument is present, then the return status of
+     * @param int                   $code    If the $code argument is present, then the return status of
      *                                       the executed command will be written to this variable
+     * @throws \Inphinit\Exception
+     * @return string
      */
-    public static function run($command, array $args = array(), &$code = null)
+    public static function run($command, array $args = array(), &$code = 0)
     {
         global $console;
         global $env;
@@ -124,19 +134,30 @@ class Console
         }
 
         try {
-            return self::runFromInstance($console, $env, $values, $code);
-        } catch (\Exception $e) {
-            throw new Exception($e->getMessage(), $e->getCode());
+            return self::getOutput($console, $env, $values, $code);
+        } catch (\Exception $ee) {
+            throw new Exception($ee->getMessage(), $ee->getCode());
         }
     }
 
-    private static function runFromInstance($console, $env, $args, &$code)
+    private static function isNotConsole($console)
     {
-        if (empty($console)) {
+        return ($console instanceof Console) === false;
+    }
+
+    private static function getOutput($console, $env, $args, &$code)
+    {
+        if (self::isNotConsole($console)) {
             require_once __DIR__ . '/../../boot_console.php';
         }
 
-        ob_start();
+        if (self::isNotConsole($console)) {
+            throw new Exception('Console instance could not be found; there is probably an error in the framework installation');
+        }
+
+        if (ob_start() === false) {
+            throw new Exception('Failed to buffer command output');
+        }
 
         $code = $console->exec($args);
 
