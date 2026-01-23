@@ -105,7 +105,7 @@ if (App::config('composer_autoload') === '1') {
      * Using `set_include_path()` optimizes how Controllers, Models, and other framework classes are loaded.
      * Note: For production mode only; in development mode, additional checks are performed to detect errors.
      */
-    if (!$inphinit_config_development) {
+    if ($inphinit_config_development === false) {
         set_include_path(__DIR__ . PATH_SEPARATOR . INPHINIT_SYSTEM);
         spl_autoload_extensions('.php');
         spl_autoload_register();
@@ -173,11 +173,11 @@ if ($inphinit_host === null && isset($_SERVER['HTTP_HOST'])) {
     $inphinit_host = $_SERVER['HTTP_HOST'];
 }
 
-$inphinit_port_header = false;
-
 if ($inphinit_host) {
     $inphinit_host = strtok($inphinit_host, ':');
     $inphinit_port_header = strtok(':');
+} else {
+    $inphinit_port_header = false;
 }
 
 if ($inphinit_port === null) {
