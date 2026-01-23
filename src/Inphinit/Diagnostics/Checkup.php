@@ -15,6 +15,7 @@ class Checkup
 {
     private $iniGetEnabled = false;
     private $development = false;
+    private $isHttp = false;
 
     private $errors = array();
     private $warnings = array();
@@ -33,6 +34,10 @@ class Checkup
 
         if (function_exists('ini_get')) {
             $this->iniGetEnabled = true;
+        }
+
+        if (isset($_SERVER['REQUEST_METHOD'])) {
+            $this->isHttp = true;
         }
 
         $this->exec();
@@ -96,7 +101,7 @@ class Checkup
             if ($memory_limit === false) {
                 $this->errors[] = "Invalid value in entry `memory_limit={$memory_limit_entry}`";
             } elseif ($memory_limit === -1) {
-                if (PHP_SAPI !== 'cli') {
+                if ($this->isHttp) {
                     $this->errors[] = "Unlimited memory (`memory_limit=-1`) is problematic";
                 }
             } elseif ($memory_limit < 16 * 1024 * 1024) {
@@ -107,7 +112,7 @@ class Checkup
 
     private function checkPost()
     {
-        if ($this->iniGetEnabled && PHP_SAPI !== 'cli') {
+        if ($this->iniGetEnabled && $this->isHttp) {
             $post_max_size_entry = ini_get('post_max_size');
             $upload_max_filesize_entry = ini_get('upload_max_filesize');
 
@@ -117,7 +122,7 @@ class Checkup
             if ($post_max_size === false) {
                 $this->errors[] = "Invalid value in entry `post_max_size={$post_max_size_entry}`";
             } elseif ($post_max_size < $min_size) {
-                $this->errors[] = "`post_max_size={$post_max_size_entry}` may not be enough";
+                $this->warnings[] = "`post_max_size={$post_max_size_entry}` may not be enough";
             }
 
             if (self::enabled('file_uploads')) {
@@ -126,7 +131,7 @@ class Checkup
                 if ($upload_max_filesize === false) {
                     $this->errors[] = "Invalid value in entry `upload_max_filesize={$upload_max_filesize_entry}`";
                 } elseif ($upload_max_filesize < $min_size) {
-                    $this->warnings[] = "`upload_max_filesize={$upload_max_filesize_entry}` is very small";
+                    $this->warnings[] = "`upload_max_filesize={$upload_max_filesize_entry}` may not be enough";
                 } elseif ($post_max_size !== false && $post_max_size < $upload_max_filesize) {
                     $this->errors[] = "`post_max_size={$post_max_size_entry}` is smaller than " .
                                       "`upload_max_filesize={$upload_max_filesize_entry}`";
@@ -137,7 +142,7 @@ class Checkup
                 if ($max_file_uploads < 1) {
                     $this->warnings[] = "`max_file_uploads={$max_file_uploads}` may not be enough";
                 }
-            } elseif (PHP_SAPI !== 'cli') {
+            } elseif ($this->isHttp) {
                 $this->warnings[] = '`file_uploads=Off` is disabled. If this is not intentional enable it';
             }
         }
@@ -171,7 +176,7 @@ class Checkup
                 $this->errors[] = 'In production environment, the `display_errors` must be disabled';
             }
 
-            if (PHP_SAPI !== 'cli') {
+            if ($this->isHttp) {
                 $max_execution_time = ini_get('max_execution_time');
 
                 if ($max_execution_time < 1) {
