@@ -213,14 +213,14 @@ class App extends \Inphinit\App
         if (strpos($pattern, '<') !== false && preg_match_all('#[<](.*?)(\:(.*?))?[>]#', $pattern, $matches)) {
             $bases = $matches[0];
             $names = $matches[1];
-            $patterns = $matches[2];
+            $items = $matches[2];
 
             $j = count($matches[0]);
 
             for ($i = 0; $i < $j; ++$i) {
                 $base = $bases[$i];
                 $name = $names[$i];
-                $pattern = $patterns[$i];
+                $item = $items[$i];
 
                 // Check invalid parameter names
                 if (preg_match('#^[a-z]\w*$#', $name) !== 1) {
@@ -228,7 +228,7 @@ class App extends \Inphinit\App
                 }
 
                 // Check invalid patterns
-                if ($pattern !== '' && preg_match('#^\:[a-z]\w*$#', $pattern) !== 1) {
+                if ($item !== '' && preg_match('#^\:[a-z]\w*$#', $item) !== 1) {
                     throw new Exception('Invalid pattern: ' . $base, 0, 3);
                 }
             }
@@ -238,12 +238,12 @@ class App extends \Inphinit\App
             }
 
             // removes items that do not have defined patterns
-            $patterns = array_filter($matches[3]);
+            $items = array_filter($matches[3]);
 
             $paramPatterns = array_keys($this->paramPatterns);
 
             // Compare patterns in scope or routes with paramPatterns
-            $invalids = array_diff($patterns, $paramPatterns);
+            $invalids = array_diff($items, $paramPatterns);
 
             if (count($invalids)) {
                 throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $paramPatterns), 0, 3);
