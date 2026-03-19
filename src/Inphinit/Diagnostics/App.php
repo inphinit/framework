@@ -285,7 +285,7 @@ class App extends \Inphinit\App
         return 'Unknown error';
     }
 
-    private function getParamSuggestions(array $words, array $suggestions)
+    private static function getParamSuggestions(array $words, array $suggestions)
     {
         foreach ($words as &$word) {
             $currentDistance = -1;
