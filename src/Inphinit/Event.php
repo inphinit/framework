@@ -98,7 +98,8 @@ class Event
     }
 
     /**
-     * Marks an event as unique, ensuring it can only be triggered once
+     * It makes a type of event unique, ensuring that
+     * all registered events of that type are triggered only once.
      *
      * @param string $name Event name
      */

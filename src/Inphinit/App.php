@@ -206,8 +206,8 @@ class App
             inphinit_sandbox('errors.php', array('code' => $code));
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
-                $controller = strtok($callback, '::');
-                $callback = array(new $controller(), strtok('::'));
+                list($controller, $methodCtrl) = explode('::', $callback, 2);
+                $callback = array(new $controller(), $methodCtrl);
             }
 
             if (empty($this->filters) === false) {
@@ -224,7 +224,15 @@ class App
             }
         }
 
-        self::forward($output);
+        if (class_exists('\\Inphinit\\Viewing\\View', false)) {
+            View::dispatch();
+        }
+
+        echo $output;
+
+        if (class_exists('\\Inphinit\\Event', false)) {
+            Event::trigger('done');
+        }
 
         return true;
     }
@@ -268,19 +276,6 @@ class App
     public static function up()
     {
         return is_file(INPHINIT_MAINTENANCE) === false || unlink(INPHINIT_MAINTENANCE);
-    }
-
-    public static function forward($output = null)
-    {
-        if (class_exists('\\Inphinit\\Viewing\\View', false)) {
-            View::dispatch();
-        }
-
-        echo $output;
-
-        if (class_exists('\\Inphinit\\Event', false)) {
-            Event::trigger('done');
-        }
     }
 
     public function __get($name)

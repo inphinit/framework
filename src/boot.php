@@ -9,6 +9,7 @@
 
 use Inphinit\App;
 use Inphinit\Event;
+use Inphinit\Viewing\View;
 
 header_remove('X-Powered-By');
 
@@ -81,14 +82,15 @@ register_shutdown_function(function () {
     $error = error_get_last();
 
     if ($error !== null) {
-        App::forward();
+        View::dispatch();
+
         inphinit_error($error['type'], $error['message'], $error['file'], $error['line']);
     }
 });
 
-$inphinit_optimized_env = INPHINIT_SYSTEM . '/boot/env.php';
-
 if (App::config('skip_env_file') !== '1') {
+    $inphinit_optimized_env = INPHINIT_SYSTEM . '/boot/env.php';
+
     if (PHP_SAPI !== 'cli' && is_file($inphinit_optimized_env)) {
         require $inphinit_optimized_env;
     } else {
@@ -173,9 +175,8 @@ if ($inphinit_host === null && isset($_SERVER['HTTP_HOST'])) {
     $inphinit_host = $_SERVER['HTTP_HOST'];
 }
 
-if ($inphinit_host) {
-    $inphinit_host = strtok($inphinit_host, ':');
-    $inphinit_port_header = strtok(':');
+if ($inphinit_host && strpos($inphinit_host, ':') !== false) {
+    list($inphinit_host, $inphinit_port_header) = explode(':', $inphinit_host, 2);
 } else {
     $inphinit_port_header = false;
 }
@@ -184,7 +185,7 @@ if ($inphinit_port === null) {
     $inphinit_port = $inphinit_port_header ? $inphinit_port_header : ($inphinit_https ? 443 : 80);
 }
 
-$inphinit_path = rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+$inphinit_path = rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
 
 if (PHP_SAPI !== 'cli-server') {
     $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/index.php');

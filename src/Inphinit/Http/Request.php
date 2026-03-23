@@ -22,7 +22,7 @@ class Request
      */
     public static function path()
     {
-        return rawurldecode(strtok($_SERVER['REQUEST_URI'], '?'));
+        return rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
     }
 
     /**

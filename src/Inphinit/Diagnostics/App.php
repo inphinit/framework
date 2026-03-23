@@ -70,15 +70,16 @@ class App extends \Inphinit\App
         $this->checkPatterns($path);
 
         if (is_string($callback) && strpos($callback, '::') !== false) {
-            $controller = $this->namespacePrefix . strtok($callback, '::');
-            $method = strtok('::');
-            $classAndMethod = "{$controller}::{$method}()";
+            list($controller, $methodCtrl) = explode('::', $callback, 2);
 
-            if (method_exists($controller, $method) === false) {
+            $controller = $this->namespacePrefix . $controller;
+            $classAndMethod = "{$controller}::{$methodCtrl}()";
+
+            if (method_exists($controller, $methodCtrl) === false) {
                 throw new Exception($classAndMethod . ' is invalid');
             }
 
-            $reflection = new \ReflectionMethod($controller, $method);
+            $reflection = new \ReflectionMethod($controller, $methodCtrl);
 
             if ($reflection->isPublic() === false) {
                 throw new Exception($classAndMethod . ' is not public');
@@ -268,14 +269,14 @@ class App extends \Inphinit\App
                 return 'No error';
             case PREG_INTERNAL_ERROR:
                 return 'Internal error';
-            case PREG_BAD_UTF8_ERROR:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            case PREG_BAD_UTF8_OFFSET_ERROR:
-                return 'The offset did not correspond to the beginning of a valid UTF-8 code point';
             case PREG_BACKTRACK_LIMIT_ERROR:
                 return 'Backtrack limit exhausted';
             case PREG_RECURSION_LIMIT_ERROR:
                 return 'Recursion limit exhausted';
+            case PREG_BAD_UTF8_ERROR:
+                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
+            case PREG_BAD_UTF8_OFFSET_ERROR:
+                return 'The offset did not correspond to the beginning of a valid UTF-8 code point';
             default:
                 if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $error) {
                     return 'JIT stack limit exhausted';
