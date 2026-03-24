@@ -7,32 +7,12 @@
  * Released under the MIT license
  */
 
-namespace Inphinit;
+namespace Inphinit\Packages;
 
 use Inphinit\Utility\Arrays;
 
-class Packages
+class Import
 {
-    /** @var int Package description */
-    const INFO_DESCRIPTION = 1;
-
-    /** @var int Source type of the package (e.g., git, dist) */
-    const INFO_SOURCE = 2;
-
-    /** @var int Package release time */
-    const INFO_TIME = 3;
-
-    /** @var int Package type (e.g., library, project, metapackage) */
-    const INFO_TYPE = 4;
-
-    /** @var int Source URL or repository path of the package */
-    const INFO_URL = 5;
-
-    /** @var int Package version string */
-    const INFO_VERSION = 6;
-
-    const META_FILE = "%s/%s-%s.php";
-
     private $composerPath;
     private $classmapName = 'autoload_classmap.php';
     private $filesName = 'autoload_files.php';
@@ -45,28 +25,31 @@ class Packages
 
     public function __construct()
     {
-        $path = realpath(INPHINIT_SYSTEM . '/vendor/composer');
+        $jsonPath = INPHINIT_ROOT . '/composer.json';
 
-        if ($path !== false) {
-            $this->composerPath = str_replace('\\', '/', $path) . '/';
-        }
-    }
+        $contents = file_get_contents($jsonPath);
 
-    /**
-     * Change composer path
-     *
-     * @param string $path Set composer path, like `vendor/composer`
-     * @throws \Inphinit\Exception
-     */
-    public function setComposer($path)
-    {
-        $path = realpath($path);
-
-        if ($path === false || is_dir($path) === false) {
-            throw new Exception('Composer path is not accessible: ' . $path);
+        if ($contents === false) {
+            throw new Exception('composer.json can\'t be read.');
         }
 
-        $this->composerPath = str_replace('\\', '/', $path) . '/';
+        $data = json_decode($contents);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error parsing composer.json');
+        }
+
+        if (empty($data->config->{'vendor-dir'}) === false) {
+            $vendor = $data->config->{'vendor-dir'};
+        } else {
+            $vendor = INPHINIT_ROOT . '/vendor';
+        }
+
+        $composerPath = realpath($vendor . '/composer') . DIRECTORY_SEPARATOR;
+
+        if ($composerPath) {
+            $this->composerPath = $composerPath;
+        }
     }
 
     /**
@@ -127,7 +110,7 @@ class Packages
         $path = $this->composerPath . $this->classmapName;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warning: "classmap" not found';
+            $this->log[] = "Warning: \"classmap\" not found ({$path})";
             return $results;
         }
 
@@ -167,7 +150,7 @@ class Packages
         $path = $this->composerPath . $this->filesName;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warning: "files" not found';
+            $this->log[] = "Warning: \"files\" not found ({$path})";
             return $results;
         }
 
@@ -197,7 +180,7 @@ class Packages
      */
     public function psr4()
     {
-        return $this->load('psr4', $this->psrFourName);
+        return $this->load('psr4', $this->psrFourName, null);
     }
 
     /**
@@ -207,10 +190,10 @@ class Packages
      */
     public function psr0()
     {
-        return $this->load('psr0', $this->psrZeroName);
+        return $this->load('psr0', $this->psrZeroName, '_');
     }
 
-    private function load($type, $file)
+    private function load($type, $file, $separator)
     {
         $results = 0;
 
@@ -222,19 +205,24 @@ class Packages
         $path = $this->composerPath . $file;
 
         if (is_file($path) === false) {
-            $this->log[] = 'Warning: "' . $type . '" not found';
+            $this->log[] = "Warning: \"{$type}\" not found ({$path})";
             return $results;
         }
 
         $data = include $path;
 
-        if (is_array($data) === false || Arrays::indexed($data) === false) {
+        if (is_array($data) === false || Arrays::indexed($data)) {
             $this->log[] = 'Warning: "' . $type . '" is invalid';
             return $results;
         }
 
         foreach ($data as $key => $value) {
             if (isset($value[0]) && is_string($value[0])) {
+                if ($separator) {
+                    $key = str_replace(array('_', '\\'), $separator, $key);
+                    $key = rtrim($key, $separator) . $separator;
+                }
+
                 $this->sourceLibs[$key] = $value[0];
                 ++$results;
             }
@@ -315,6 +303,8 @@ class Packages
             'return ' . var_export($libs, true) . ";\n"
         );
 
+        var_dump($contents);
+
         return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }
 
@@ -357,128 +347,5 @@ class Packages
         }
 
         return $path;
-    }
-
-    /**
-     * Get package info
-     *
-     * @param string $name Set <vendor>/<package>
-     * @param int    $info Set info by constant:
-     *                     - INFO_DESCRIPTION
-     *                     - INFO_SOURCE
-     *                     - INFO_TIME
-     *                     - INFO_TYPE
-     *                     - INFO_URL
-     *                     - INFO_VERSION
-     * @param bool   $dev  Set true for get from packages-dev
-     * @return string|null
-     */
-    public static function info($name, $info, $dev = false)
-    {
-        if (!preg_match('#^([^/]+)/(.*?)$#', $name, $match)) {
-            throw new Exception("Invalid package name: {$name}");
-        }
-
-        $group = $dev ? 'packages-dev' : 'packages';
-        $name = $group . ':' . $name;
-
-        if (isset(self::$cacheInfo[$name]) === false) {
-            $folder = 'boot/metadata';
-            $vendor = $match[1];
-            $package = $match[2];
-
-            $path = sprintf(self::META_FILE, $folder, $group, $vendor);
-
-            $data = inphinit_sandbox($path);
-
-            self::$cacheInfo[$name] = isset($data[$package]) ? $data[$package] : false;
-        }
-
-        if (isset(self::$cacheInfo[$name][$info])) {
-            return self::$cacheInfo[$name][$info];
-        }
-
-        return null;
-    }
-
-    /**
-     * Update version cache using composer.lock
-     *
-     * @param string $folder
-     */
-    public function refreshMetadata($folder = null)
-    {
-        if ($folder === null) {
-            $folder = INPHINIT_SYSTEM . '/boot/metadata';
-        }
-
-        if (is_dir($folder) === false) {
-            throw new Exception("{$folder} not exists");
-        }
-
-        if (is_writable($folder) === false) {
-            throw new Exception("{$folder} is not writable");
-        }
-
-        $file = INPHINIT_ROOT . '/composer.lock';
-
-        if (is_file($file) === false) {
-            throw new Exception('composer.lock not found');
-        }
-
-        $contents = file_get_contents($file);
-
-        if ($contents === false) {
-            throw new Exception('composer.lock can\'t be read.');
-        }
-
-        $lock = json_decode($contents);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Error parsing composer.lock');
-        }
-
-        self::createMetadata($lock, $folder, 'packages');
-        self::createMetadata($lock, $folder, 'packages-dev');
-    }
-
-    private static function createMetadata($lock, $folder, $from)
-    {
-        $vendors = array();
-
-        if (isset($lock->{$from})) {
-            foreach ($lock->{$from} as $package) {
-                if (strpos($package->name, '/') === false) {
-                    continue;
-                }
-
-                list($vendor, $name) = explode('/', $package->name, 2);
-
-                if (isset($vendors[$vendor]) === false) {
-                    $vendors[$vendor] = array();
-                }
-
-                $vendors[$vendor][$name] = array(
-                    self::INFO_DESCRIPTION => isset($package->description) ? $package->description : null,
-                    self::INFO_SOURCE => isset($package->source->type) ? $package->source->type : null,
-                    self::INFO_TIME => isset($package->time) ? $package->time : null,
-                    self::INFO_TYPE => isset($package->type) ? $package->type : null,
-                    self::INFO_URL => isset($package->source->url) ? $package->source->url : null,
-                    self::INFO_VERSION => isset($package->version) ? $package->version : null,
-                );
-            }
-        }
-
-        foreach ($vendors as $vendor => $packages) {
-            $path = sprintf(self::META_FILE, $folder, $from, $vendor);
-
-            $contents = "<?php\nreturn " . var_export($packages, true) . ";\n";
-
-            if (file_put_contents($path, $contents, LOCK_EX) === false) {
-                throw new Exception("Failed to write metadata file: {$path}", 0, 3);
-            }
-        }
-
-        $vendors = null;
     }
 }
