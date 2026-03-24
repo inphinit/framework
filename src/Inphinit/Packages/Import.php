@@ -303,8 +303,6 @@ class Import
             'return ' . var_export($libs, true) . ";\n"
         );
 
-        var_dump($contents);
-
         return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }
 
