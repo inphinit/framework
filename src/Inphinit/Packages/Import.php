@@ -45,10 +45,10 @@ class Import
             $vendor = INPHINIT_ROOT . '/vendor';
         }
 
-        $composerPath = realpath($vendor . '/composer') . DIRECTORY_SEPARATOR;
+        $composerPath = realpath($vendor . '/composer');
 
         if ($composerPath) {
-            $this->composerPath = $composerPath;
+            $this->composerPath = $composerPath . DIRECTORY_SEPARATOR;
         }
     }
 
