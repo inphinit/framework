@@ -36,21 +36,23 @@ class Package
 
     private static $cacheInfo = array();
 
-    private $cache;
+    private $metadataDir;
 
     public function __construct()
     {
         $lockPath = INPHINIT_ROOT . '/composer.lock';
 
-        $cache = INPHINIT_SYSTEM . '/boot/metadata';
+        $metadataDir = INPHINIT_SYSTEM . '/boot/metadata';
 
-        if (is_dir($cache) === false) {
-            throw new Exception("{$cache} not exists");
+        if (is_dir($metadataDir) === false) {
+            throw new Exception("{$metadataDir} not exists");
         }
 
-        if (is_writable($cache) === false) {
-            throw new Exception("{$cache} is not writable");
+        if (is_writable($metadataDir) === false) {
+            throw new Exception("{$metadataDir} is not writable");
         }
+
+        $this->metadataDir = $metadataDir;
 
         $this->readJson($lockPath);
     }
@@ -110,7 +112,7 @@ class Package
 
     private function createCache($from)
     {
-        $path = $this->cache;
+        $path = $this->metadataDir;
         $vendors = array();
 
         if (isset($this->packages->{$from})) {
@@ -167,7 +169,7 @@ class Package
             throw new Exception('Missing packages key in composer.lock', 0, 3);
         }
 
-        if (is_array($data->packages) === false || Arrays::indexed($data->packages)) {
+        if (is_array($data->packages) === false || Arrays::indexed($data->packages) === false) {
             throw new Exception('Invalid packages key in composer.lock', 0, 3);
         }
 

@@ -17,7 +17,7 @@ class Env
      * Get value from `$_ENV[...]`. If not exists or empty string return aternate value
      *
      * @param string $name
-     * @param mixed  $alternative
+     * @param string|null $alternative
      * @return mixed
      */
     public static function entry($name, $alternative = null)
@@ -29,25 +29,27 @@ class Env
      * Get value from `$_ENV[...]` as boolean
      *
      * @param string $name
-     * @param mixed  $alternative
      * @return bool
      */
-    public static function bool($name, $alternative = false)
+    public static function bool($name)
     {
-        $value = self::entry($name, $alternative);
+        $value = self::entry($name);
 
-        if ($value === $alternative) {
-            return $value;
-        }
-
-        $lValue = strtolower($value);
-
-        if ($lValue === '0' || $lValue === 'false' || $lValue === 'no') {
+        if ($value === null) {
             return false;
         }
 
-        if ($lValue === '1' || $lValue === 'true' || $lValue === 'yes') {
-            return true;
+        switch (strtolower($value)) {
+            case 'false':
+            case 'no':
+            case '0':
+            case '':
+                return false;
+
+            case 'true':
+            case 'yes':
+            case '1':
+                return true;
         }
 
         throw new Exception("Can not convert {$name}={$value} to boolean");
@@ -61,10 +63,10 @@ class Env
      */
     public static function float($name, $alternative = 0.0)
     {
-        $value = self::entry($name, $alternative);
+        $value = self::entry($name);
 
-        if ($value === $alternative) {
-            return $value;
+        if ($value === null) {
+            return $alternative;
         }
 
         if (is_numeric($value)) {
@@ -82,10 +84,10 @@ class Env
      */
     public static function int($name, $alternative = 0)
     {
-        $value = self::entry($name, $alternative);
+        $value = self::entry($name);
 
-        if ($value === $alternative) {
-            return $value;
+        if ($value === null) {
+            return $alternative;
         }
 
         if (is_numeric($value)) {

@@ -39,7 +39,7 @@ class Parser
             $residual = $matches[3];
 
             if ($residual !== '') {
-                throw new Exception('Invalid sintax');
+                throw new Exception('Invalid syntax');
             }
 
             $quote = $matches[1];
