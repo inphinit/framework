@@ -17,7 +17,10 @@ class CookieJar
     const SAME_NONE = 2;
     const SAME_STRICT = 3;
 
+    const DISALLOW_NAME_CHARS = "=,; \t\r\n\013\014";
+    const DISALLOW_VALUE_CHARS = ",; \t\r\n\013\014";
     const DELETE = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
+    const DELIMITER = ':';
 
     private $secure = false;
     private $domain;
@@ -28,7 +31,7 @@ class CookieJar
     private $sameSite;
     private $cookies = array();
     private $jar;
-    private $timezone;
+    private static $timezone;
 
     /**
      * @param string $jar Define jar name (cookie name prefix)
@@ -41,7 +44,7 @@ class CookieJar
 
         $this->jar = $jar;
 
-        $jar .= ':';
+        $jar .= self::DELIMITER;
 
         $offset = strlen($jar);
 
@@ -49,17 +52,19 @@ class CookieJar
             if (
                 strpos($key, $jar) === 0 &&
                 is_string($value) &&
-                self::validChars($value)
+                self::validChars($value, self::DISALLOW_VALUE_CHARS)
             ) {
                 $key = substr($key, $offset);
 
-                if ($key !== '' && self::validChars($key)) {
+                if ($key !== '' && self::validChars($key, self::DISALLOW_NAME_CHARS)) {
                     $this->cookies[$key] = $value;
                 }
             }
         }
 
-        $this->timezone = new \DateTimeZone('UTC');
+        if (self::$timezone === null) {
+            self::$timezone = new \DateTimeZone('UTC');
+        }
     }
 
     /**
@@ -71,7 +76,11 @@ class CookieJar
      */
     public function setDomain($domain)
     {
-        if (empty($domain) || is_string($domain) === false || self::validChars($domain) === false) {
+        if (
+            is_string($domain) === false ||
+            $domain === '' ||
+            self::validChars($domain, self::DISALLOW_VALUE_CHARS) === false
+        ) {
             throw new Exception('Invalid domain');
         }
 
@@ -87,7 +96,7 @@ class CookieJar
     public function setExpires($datetime)
     {
         try {
-            $dt = new \DateTime($datetime, $this->timezone);
+            $dt = new \DateTime($datetime, self::$timezone);
             $this->expires = $dt->format('D, d M Y H:i:s \G\M\T');
             $dt = null;
         } catch (\Exception $ee) {
@@ -129,6 +138,7 @@ class CookieJar
     {
         if (
             is_string($path) === false ||
+            $path === '' ||
             $path[0] !== '/' ||
             preg_match('/[\x00-\x1F\x7F]/', $path) ||
             strpos($path, ';') !== false
@@ -194,20 +204,30 @@ class CookieJar
      */
     public function __set($name, $value)
     {
-        if (empty($name) || is_string($name) === false || self::validChars($name) === false) {
-            throw new Exception('Invalid name');
+        // Checks cookie name
+        if (
+            is_string($name) === false ||
+            $name === '' ||
+            self::validChars($name, self::DISALLOW_NAME_CHARS) === false
+        ) {
+            throw new Exception('The name is invalid or contains invalid characters');
         }
 
-        if ($value === null) {
-            if (isset($this->cookies[$name])) {
-                $this->cookies[$name] = null;
-            }
-        } elseif (is_numeric($value) || (is_string($value) && self::validChars($value))) {
-            $this->cookies[$name] = (string) $value;
+        // Checks cookie value
+        if ($value === null || is_string($value)) {
+            $value = $value;
+        } elseif (is_numeric($value) || (is_object($value) && method_exists($value, '__toString'))) {
+            $value = (string) $value;
         } else {
-            $type = gettype($value);
-            throw new Exception("Expects to be string, number or null, {$type} given");
+            $type = function_exists('get_debug_type') ? get_debug_type($value) : gettype($value);
+            throw new Exception("Expected value to be null, string, number, or Stringable object; {$type} given");
         }
+
+        if ($value !== null && self::validChars($value, self::DISALLOW_VALUE_CHARS) === false) {
+            throw new Exception("Value contains invalid characters: {$value}");
+        }
+
+        $this->cookies[$name] = $value;
     }
 
     /**
@@ -235,7 +255,7 @@ class CookieJar
         $secure = $this->secure;
         $params = '';
         $expires = '';
-        $expiresDelete = self::DELETE;
+        $expires_delete = self::DELETE;
 
         if ($this->domain) {
             $params .= '; Domain=' . $this->domain;
@@ -270,20 +290,22 @@ class CookieJar
             $params .= '; Secure';
         }
 
-        $prefix = $this->jar . ':';
+        $prefix = $this->jar . self::DELIMITER;
 
         foreach ($this->cookies as $name => $value) {
             if ($value === null) {
-                header('Set-Cookie: ' . $prefix . $name . '=_' . $params . $expiresDelete, false);
+                $entry = '_' . $params . $expires_delete;
             } else {
-                header('Set-Cookie: ' . $prefix . $name . '=' . $value . $params . $expires, false);
+                $entry = rawurlencode($value) . $params . $expires;
             }
+
+            header('Set-Cookie: ' . $prefix . $name . '=' . $entry, false);
         }
     }
 
-    private static function validChars($value)
+    private static function validChars($value, $chars)
     {
-        return strpbrk($value, "=,; \t\r\n\013\014") === false;
+        return strpbrk($value, $chars) === false;
     }
 
     private static function checkBool($enable)

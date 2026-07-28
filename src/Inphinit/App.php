@@ -37,7 +37,7 @@ class App
     private static $afterRE = array(':', '<', '>', '.*?', '[^/]*?');
 
     /**
-     * Get application configs from `$_ENV` with APP_ prefix key
+     * Get the application configs from `$_ENV` with `APP_` prefix key.
      *
      * @param string $name
      * @return scalar

@@ -13,10 +13,10 @@ use Inphinit\Exception;
 
 class Converter
 {
-    /** @var int `\n` and `\r` (and `\t` in the tsv() method) will be replaced by single spaces */
+    /** @var int `\n` and `\r` (and `\t` in the `tsv()` method) will be replaced by single spaces */
     const WHITESPACE_REPLACE = 1;
 
-    /** @var int `\n` and `\r` (and `\t` in the tsv() method) will be quoted with slashs */
+    /** @var int `\n` and `\r` (and `\t` in the `tsv()` method) will be quoted with slashs */
     const WHITESPACE_SLASH = 2;
 
     private $source;

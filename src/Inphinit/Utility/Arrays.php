@@ -23,7 +23,7 @@ class Arrays
     }
 
     /**
-     * Check if array is indexed, like ['foo', 'bar']. Similar to `array_is_list`
+     * Check if array is indexed, like `['foo', 'bar']`. Similar to `array_is_list`
      *
      * @param array $array
      * @return bool

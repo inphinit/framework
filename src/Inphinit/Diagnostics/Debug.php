@@ -21,7 +21,7 @@ class Debug
 {
     /** @var array<string, string> List of shortcuts to link errors to external assistants */
     protected static $assistants = array(
-        'chatgpt' => 'https://chat.openai.com/?q={error}',
+        'chatgpt' => 'https://chatgpt.com/?hints=search&amp;q={error}',
         'claude' => 'https://claude.ai/new?q={error}',
         'duck.ai' => 'https://duckduckgo.com/?q={error}&amp;ia=chat',
         'duckduckgo' => 'https://duckduckgo.com/?q={error}',

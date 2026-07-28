@@ -24,7 +24,7 @@ class App extends \Inphinit\App
     }
 
     /**
-     * Get application configs from `$_ENV` with APP_ prefix key
+     * Validate name and get the application configs from `$_ENV` with `APP_` prefix key.
      *
      * @param string $name
      * @throws \Inphinit\Exception
@@ -144,7 +144,7 @@ class App extends \Inphinit\App
 
             $errorDetails = self::regexError();
 
-            if ($errorDetails) {
+            if ($errorDetails !== null) {
                 $message .= ': ' . $errorDetails;
             }
 
@@ -265,8 +265,6 @@ class App extends \Inphinit\App
         $error = preg_last_error();
 
         switch ($error) {
-            case PREG_NO_ERROR:
-                return 'No error';
             case PREG_INTERNAL_ERROR:
                 return 'Internal error';
             case PREG_BACKTRACK_LIMIT_ERROR:

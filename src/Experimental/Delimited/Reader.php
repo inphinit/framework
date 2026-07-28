@@ -22,7 +22,7 @@ abstract class Reader
     /** @var int Skip empty lines */
     const SKIP_EMPTY = 4;
 
-    /** @var int Skip the headers in the fetch() method */
+    /** @var int Skip the headers in the `fetch()` method */
     const SKIP_HEADER = 8;
 
     /** @var int The header must include at least two columns */
@@ -155,7 +155,7 @@ abstract class Reader
     }
 
     /**
-     * Set the behavior of the fetch() method, and returns the previously defined flags.
+     * Set the behavior of the `fetch()` method, and returns the previously defined flags.
      *
      * @param int $flags
      * @throws \Inphinit\Exception

@@ -69,7 +69,7 @@ class View
     }
 
     /**
-     * Check if view exists in ./application/View/ folder
+     * Check if view exists in `./application/View/` folder
      *
      * @param string $view
      * @return bool
