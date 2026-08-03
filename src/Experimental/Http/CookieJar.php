@@ -88,6 +88,27 @@ class CookieJar
     }
 
     /**
+     * Indicates the path that must exist in the requested URL for the browser
+     * to send the Cookie header.
+     *
+     * @param string $path
+     */
+    public function setPath($path)
+    {
+        if (
+            is_string($path) === false ||
+            $path === '' ||
+            $path[0] !== '/' ||
+            preg_match('/[\x00-\x1F\x7F]/', $path) ||
+            strpos($path, ';') !== false
+        ) {
+            throw new Exception('Invalid path');
+        }
+
+        $this->path = $path;
+    }
+
+    /**
      * Indicates the maximum lifetime of the cookies.
      * Note: Accept English textual datetime descriptions (e.g., '+1 day', 'last Monday').
      *
@@ -126,27 +147,6 @@ class CookieJar
     {
         self::checkBool($enable);
         $this->partitioned = $enable;
-    }
-
-    /**
-     * Indicates the path that must exist in the requested URL for the browser
-     * to send the Cookie header.
-     *
-     * @param string $path
-     */
-    public function setPath($path)
-    {
-        if (
-            is_string($path) === false ||
-            $path === '' ||
-            $path[0] !== '/' ||
-            preg_match('/[\x00-\x1F\x7F]/', $path) ||
-            strpos($path, ';') !== false
-        ) {
-            throw new Exception('Invalid path');
-        }
-
-        $this->path = $path;
     }
 
     /**
@@ -261,9 +261,7 @@ class CookieJar
             $params .= '; Domain=' . $this->domain;
         }
 
-        if ($this->path) {
-            $params .= '; Path=' . $this->path;
-        }
+        $params .= '; Path=' . $this->path;
 
         if ($this->expires) {
             $expires = '; Expires=' . $this->expires;
@@ -311,7 +309,7 @@ class CookieJar
     private static function checkBool($enable)
     {
         if (is_bool($enable) === false) {
-            $type = gettype($enable);
+            $type = function_exists('get_debug_type') ? get_debug_type($enable) : gettype($enable);
             throw new Exception("Expects to be bool, {$type} given", 0, 3);
         }
     }
