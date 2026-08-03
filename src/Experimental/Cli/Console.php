@@ -87,7 +87,8 @@ class Console
 
         if ($response !== null) {
             if (is_int($response) === false) {
-                throw new Exception('Return must be of type int or null, ' . gettype($response) . ' given');
+                $type = function_exists('get_debug_type') ? get_debug_type($response) : gettype($response);
+                throw new Exception("Return must be of type int or null, {$type} given");
             }
 
             if ($response < 0 || $response > 254) {
