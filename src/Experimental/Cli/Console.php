@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental\Cli;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Event;
 use Inphinit\Exception;
 
@@ -87,7 +88,7 @@ class Console
 
         if ($response !== null) {
             if (is_int($response) === false) {
-                $type = function_exists('get_debug_type') ? get_debug_type($response) : gettype($response);
+                $type = Inspector::type($response);
                 throw new Exception("Return must be of type int or null, {$type} given");
             }
 

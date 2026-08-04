@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental\Http;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
 class CookieJar
@@ -219,7 +220,7 @@ class CookieJar
         } elseif (is_numeric($value) || (is_object($value) && method_exists($value, '__toString'))) {
             $value = (string) $value;
         } else {
-            $type = function_exists('get_debug_type') ? get_debug_type($value) : gettype($value);
+            $type = Inspector::type($value);
             throw new Exception("Expected value to be null, string, number, or Stringable object; {$type} given");
         }
 
@@ -309,7 +310,7 @@ class CookieJar
     private static function checkBool($enable)
     {
         if (is_bool($enable) === false) {
-            $type = function_exists('get_debug_type') ? get_debug_type($enable) : gettype($enable);
+            $type = Inspector::type($enable);
             throw new Exception("Expects to be bool, {$type} given", 0, 3);
         }
     }

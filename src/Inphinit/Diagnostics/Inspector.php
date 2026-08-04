@@ -55,4 +55,15 @@ class Inspector
 
         return false;
     }
+
+    /**
+     * Gets the type name of a variable with `get_debug_type()` when available; otherwise, falls back to `gettype()`
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public static function type($value)
+    {
+        return function_exists('get_debug_type') ? get_debug_type($value) : gettype($value);
+    }
 }
