@@ -248,17 +248,19 @@ class Debug
         }
 
         if ($link && strpos($link, '{error}') !== false) {
+            $target = htmlentities($target);
+
             $pos = strrpos($message, ' in ');
 
             if ($pos !== false) {
                 $message = substr($message, 0, $pos);
             }
 
-            $linkMessage = html_entity_decode($message);
-            $linkMessage = str_replace(array('"', '\''), '', $linkMessage);
-            $linkMessage = rawurlencode($linkMessage);
+            $link_message = html_entity_decode($message);
+            $link_message = str_replace(array('"', '\''), '', $link_message);
+            $link_message = rawurlencode($link_message);
 
-            $link = str_replace('{error}', $linkMessage, $link);
+            $link = str_replace('{error}', $link_message, $link);
 
             return '<a rel="nofollow noreferrer" target="' . $target . '" href="' . $link . '">' . $message . '</a>';
         }

@@ -14,6 +14,8 @@ use Inphinit\Exception;
 
 class Console
 {
+    const LAST_OPTION_REGEX = '/^((-)([a-z0-9]+)|(--)([a-z][\w:\-?]+))$/i';
+
     const PREFIX_ERROR = 'Invalid option: \'%s\'. Note: Options require prefix: -- (long) or - (short)';
 
     protected $namespacePrefix = '\\Commands\\';
@@ -168,31 +170,31 @@ class Console
     private static function getEntries(array $entries)
     {
         $output = array();
-        $lastOpt = '';
+        $last_option = '';
 
         foreach ($entries as $entry) {
-            if (preg_match('/^((-)([a-z0-9]+)|(--)([a-z][\w:\-?]+))$/i', $entry, $matches) === 1) {
-                if ($lastOpt !== '') {
-                    $output[$lastOpt] = '';
+            if (preg_match(self::LAST_OPTION_REGEX, $entry, $matches) === 1) {
+                if ($last_option !== '') {
+                    $output[$last_option] = '';
                 }
 
                 if (isset($matches[5])) {
-                    $lastOpt = $matches[5];
+                    $last_option = $matches[5];
                 } else {
                     $shorts = str_split($matches[3]);
-                    $lastOpt = array_pop($shorts);
+                    $last_option = array_pop($shorts);
                     $output += array_fill_keys($shorts, '');
                 }
-            } elseif ($lastOpt !== '') {
-                $output[$lastOpt] = $entry;
-                $lastOpt = '';
+            } elseif ($last_option !== '') {
+                $output[$last_option] = $entry;
+                $last_option = '';
             } else {
                 $output[$entry] = '';
             }
         }
 
-        if ($lastOpt !== '') {
-            $output[$lastOpt] = '';
+        if ($last_option !== '') {
+            $output[$last_option] = '';
         }
 
         return $output;

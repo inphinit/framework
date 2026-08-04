@@ -86,9 +86,9 @@ class Document
      */
     public static function setSeverityLevels($levels)
     {
-        $validLevels = self::ERROR | self::FATAL | self::WARNING;
+        $valid_levels = self::ERROR | self::FATAL | self::WARNING;
 
-        if (is_int($levels) === false || ($levels & ~$validLevels) !== 0) {
+        if (is_int($levels) === false || ($levels & ~$valid_levels) !== 0) {
             throw new Exception('Invalid severity level(s)');
         }
 
@@ -367,8 +367,8 @@ class Document
             } elseif ($key === '@contents') {
                 $this->generate($node, $value, $errorLevel);
             } elseif ($key === '@attributes') {
-                foreach ($value as $subKey => $subValue) {
-                    $node->setAttribute($subKey, $subValue);
+                foreach ($value as $sub_key => $sub_value) {
+                    $node->setAttribute($sub_key, $sub_value);
                 }
             } elseif (self::validTag($key)) {
                 if (is_array($value) === false) {

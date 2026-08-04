@@ -49,48 +49,48 @@ class App extends \Inphinit\App
      */
     public function action($methods, $path, $callback)
     {
-        $checkMethods = is_array($methods) ? $methods : array($methods);
+        $method_entries = is_array($methods) ? $methods : array($methods);
 
-        foreach ($checkMethods as $method) {
+        foreach ($method_entries as $method) {
             if (is_string($method) === false) {
                 throw new Exception('One of the methods is not a string');
             }
         }
 
-        $diffMethods = array_diff($checkMethods, self::$allowedMethods);
+        $diff_methods = array_diff($method_entries, self::$allowedMethods);
 
-        if ($diffMethods) {
-            throw new Exception('Invalid method(s): ' . implode(', ', $diffMethods));
+        if ($diff_methods) {
+            throw new Exception('Invalid method(s): ' . implode(', ', $diff_methods));
         }
 
-        if (count($checkMethods) !== count(array_unique($checkMethods))) {
+        if (count($method_entries) !== count(array_unique($method_entries))) {
             throw new Exception('Duplicate methods: ' . implode(', ', $methods));
         }
 
         $this->checkPatterns($path);
 
         if (is_string($callback) && strpos($callback, '::') !== false) {
-            list($controller, $methodCtrl) = explode('::', $callback, 2);
+            list($controller, $method_ctrl) = explode('::', $callback, 2);
 
             $controller = $this->namespacePrefix . $controller;
-            $classAndMethod = "{$controller}::{$methodCtrl}()";
+            $class_and_method = "{$controller}::{$method_ctrl}()";
 
-            if (method_exists($controller, $methodCtrl) === false) {
-                throw new Exception($classAndMethod . ' is invalid');
+            if (method_exists($controller, $method_ctrl) === false) {
+                throw new Exception($class_and_method . ' is invalid');
             }
 
-            $reflection = new \ReflectionMethod($controller, $methodCtrl);
+            $reflection = new \ReflectionMethod($controller, $method_ctrl);
 
             if ($reflection->isPublic() === false) {
-                throw new Exception($classAndMethod . ' is not public');
+                throw new Exception($class_and_method . ' is not public');
             }
 
             if ($reflection->isStatic()) {
-                throw new Exception($classAndMethod . ' is static');
+                throw new Exception($class_and_method . ' is static');
             }
 
             if ($reflection->isConstructor() || $reflection->isDestructor()) {
-                throw new Exception($classAndMethod . ' is invalid');
+                throw new Exception($class_and_method . ' is invalid');
             }
         } elseif (is_callable($callback) === false) {
             throw new Exception('Callback is not callable');
@@ -142,10 +142,10 @@ class App extends \Inphinit\App
         if ($regex && preg_match('#' . $regex . '#', 'sample sample sample') === false) {
             $message = 'The expression "' . $regex . '" has errors';
 
-            $errorDetails = self::regexError();
+            $error_details = self::regexError();
 
-            if ($errorDetails !== null) {
-                $message .= ': ' . $errorDetails;
+            if ($error_details !== null) {
+                $message .= ': ' . $error_details;
             }
 
             throw new Exception($message);
@@ -191,7 +191,7 @@ class App extends \Inphinit\App
         try {
             $property = $this->reflection->getProperty($name);
 
-            $sourceClass = $property->{'class'};
+            $source_class = $property->{'class'};
 
             if ($property->isPrivate()) {
                 $type = 'private';
@@ -205,7 +205,7 @@ class App extends \Inphinit\App
         }
 
         if ($type) {
-            throw new Exception("Cannot access {$type} property {$sourceClass}::\${$name}", 0, 3);
+            throw new Exception("Cannot access {$type} property {$source_class}::\${$name}", 0, 3);
         }
     }
 
@@ -241,13 +241,13 @@ class App extends \Inphinit\App
             // removes items that do not have defined patterns
             $items = array_filter($matches[3]);
 
-            $paramPatterns = array_keys($this->paramPatterns);
+            $param_patterns = array_keys($this->paramPatterns);
 
             // Compare patterns in scope or routes with paramPatterns
-            $invalids = array_diff($items, $paramPatterns);
+            $invalids = array_diff($items, $param_patterns);
 
             if (count($invalids)) {
-                throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $paramPatterns), 0, 3);
+                throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $param_patterns), 0, 3);
             }
         }
     }
@@ -287,22 +287,22 @@ class App extends \Inphinit\App
     private static function getParamSuggestions(array $words, array $suggestions)
     {
         foreach ($words as &$word) {
-            $currentDistance = -1;
-            $currentSuggestion = null;
+            $current_distance = -1;
+            $current_suggestion = null;
 
             foreach ($suggestions as $suggestion) {
                 $distance = levenshtein($word, $suggestion);
 
-                if ($distance < 3 && ($currentDistance === -1 || $distance < $currentDistance)) {
-                    $currentDistance = $distance;
-                    $currentSuggestion = $suggestion;
+                if ($distance < 3 && ($current_distance === -1 || $distance < $current_distance)) {
+                    $current_distance = $distance;
+                    $current_suggestion = $suggestion;
                 }
             }
 
             $word = ":{$word}";
 
-            if ($currentSuggestion !== null) {
-                $word .= " (suggestion: {$currentSuggestion})";
+            if ($current_suggestion !== null) {
+                $word .= " (suggestion: {$current_suggestion})";
             }
         }
 

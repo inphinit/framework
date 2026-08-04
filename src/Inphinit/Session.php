@@ -343,6 +343,7 @@ class Session
 
         if (
             is_string($path) === false ||
+            $path === '' ||
             $path[0] !== '/' ||
             preg_match('/[\x00-\x1F\x7F]/', $path) ||
             strpos($path, ';') !== false

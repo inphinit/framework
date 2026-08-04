@@ -79,9 +79,9 @@ class EnvFile
      */
     public function fill($sources = self::SOURCE_VAR)
     {
-        $validModes = self::SOURCE_VAR | self::SOURCE_ENV | self::SOURCE_APACHE | self::SOURCE_APACHE_ALL;
+        $valid_sources = self::SOURCE_VAR | self::SOURCE_ENV | self::SOURCE_APACHE | self::SOURCE_APACHE_ALL;
 
-        if (is_int($sources) === false || ($sources & ~$validModes) !== 0) {
+        if (is_int($sources) === false || ($sources & ~$valid_sources) !== 0) {
             throw new Exception('Invalid sources');
         }
 

@@ -128,20 +128,20 @@ class App
 
         $patterns = &$this->paramPatterns;
 
-        $getParams = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
+        $path_params = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
 
-        $scopeRegex = str_replace(self::$beforeRE, self::$afterRE, preg_quote($pattern));
+        $scope_regex = str_replace(self::$beforeRE, self::$afterRE, preg_quote($pattern));
 
-        $scopeRegex = preg_replace_callback($getParams, function ($matches) use (&$patterns) {
+        $scope_regex = preg_replace_callback($path_params, function ($matches) use (&$patterns) {
             return '(?P<' . $matches[1] . '>' . (
                 isset($matches[3]) ? $patterns[$matches[3]] : '[^/]+'
             ) . ')';
-        }, $scopeRegex);
+        }, $scope_regex);
 
         $full = $pattern[0] !== '/';
         $subject = $full ? (INPHINIT_URL . INPHINIT_PATH) : INPHINIT_PATH;
 
-        if (preg_match('#^' . $scopeRegex . '#', $subject, $params)) {
+        if (preg_match('#^' . $scope_regex . '#', $subject, $params)) {
             $path = $full ? substr($params[0], strlen(INPHINIT_URL)) : $params[0];
 
             if ($path) {
@@ -154,13 +154,13 @@ class App
                 }
             }
 
-            $previousFilters = $this->filters;
-            $previousNamespacePrefix = $this->namespacePrefix;
+            $previous_filters = $this->filters;
+            $previous_namespace_prefix = $this->namespacePrefix;
 
             $callback($this, $params);
 
-            $this->filters = $previousFilters;
-            $this->namespacePrefix = $previousNamespacePrefix;
+            $this->filters = $previous_filters;
+            $this->namespacePrefix = $previous_namespace_prefix;
             $this->pathPrefix = '/';
         }
     }
@@ -206,8 +206,8 @@ class App
             inphinit_sandbox('errors.php', array('code' => $code));
         } else {
             if (is_string($callback) && strpos($callback, '::') !== false) {
-                list($controller, $methodCtrl) = explode('::', $callback, 2);
-                $callback = array(new $controller(), $methodCtrl);
+                list($controller, $method_ctrl) = explode('::', $callback, 2);
+                $callback = array(new $controller(), $method_ctrl);
             }
 
             if (empty($this->filters) === false) {
@@ -293,33 +293,33 @@ class App
         $this->refreshPatterns();
 
         $patterns = &$this->paramPatterns;
-        $getParams = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
+        $path_params = '#\\\\[<]([A-Za-z]\\w+)(\\\\:(' . $this->patternNames . ')|)\\\\[>]#';
 
         $limit = 20;
         $total = count($this->paramRoutes);
 
-        for ($indexRoutes = 0; $indexRoutes < $total; $indexRoutes += $limit) {
-            $slice = array_slice($this->paramRoutes, $indexRoutes, $limit);
+        for ($offset = 0; $offset < $total; $offset += $limit) {
+            $slice = array_slice($this->paramRoutes, $offset, $limit);
 
             $j = 0;
             $callbacks = array();
 
-            foreach ($slice as $regexPath => &$param) {
+            foreach ($slice as $route_path => &$param) {
                 $callbacks[] = $param;
-                $param = '#route_' . (++$j) . '>' . preg_quote($regexPath);
+                $param = '#route_' . (++$j) . '>' . preg_quote($route_path);
             }
 
-            $groupRegex = implode(')|(', $slice);
-            $groupRegex = preg_replace($getParams, '(?P<$1><$3>)', $groupRegex);
-            $groupRegex = str_replace('<>)', '[^/]+)', $groupRegex);
+            $group_regex = implode(')|(', $slice);
+            $group_regex = preg_replace($path_params, '(?P<$1><$3>)', $group_regex);
+            $group_regex = str_replace('<>)', '[^/]+)', $group_regex);
 
             foreach ($patterns as $pattern => $regex) {
-                $groupRegex = str_replace('<' . $pattern . '>)', $regex . ')', $groupRegex);
+                $group_regex = str_replace('<' . $pattern . '>)', $regex . ')', $group_regex);
             }
 
-            $groupRegex = str_replace('#route_', '?<route_', $groupRegex);
+            $group_regex = str_replace('#route_', '?<route_', $group_regex);
 
-            if (preg_match('#^((?J)(' . $groupRegex . '))$#', INPHINIT_PATH, $params)) {
+            if (preg_match('#^((?J)(' . $group_regex . '))$#', INPHINIT_PATH, $params)) {
                 foreach ($params as $index => $value) {
                     if ($value === '' || is_int($index)) {
                         unset($params[$index]);

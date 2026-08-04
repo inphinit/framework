@@ -91,11 +91,11 @@ class Command
                 throw new Exception("Invalid short option: '{$short}'");
             }
 
-            $shortIndex = array_search($short, $this->shorts);
+            $short_index = array_search($short, $this->shorts);
 
-            if ($shortIndex !== false) {
-                $rLong = $this->longs[$shortIndex];
-                throw new Exception("'{$short}' option (short) is already associated with '{$rLong}' option");
+            if ($short_index !== false) {
+                $long_option = $this->longs[$short_index];
+                throw new Exception("'{$short}' option (short) is already associated with '{$long_option}' option");
             }
         }
 

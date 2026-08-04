@@ -25,9 +25,9 @@ class Import
 
     public function __construct()
     {
-        $jsonPath = INPHINIT_ROOT . '/composer.json';
+        $json_path = INPHINIT_ROOT . '/composer.json';
 
-        $contents = file_get_contents($jsonPath);
+        $contents = file_get_contents($json_path);
 
         if ($contents === false) {
             throw new Exception('composer.json can\'t be read.');
@@ -45,10 +45,10 @@ class Import
             $vendor = INPHINIT_ROOT . '/vendor';
         }
 
-        $composerPath = realpath($vendor . '/composer');
+        $composer_path = realpath($vendor . '/composer');
 
-        if ($composerPath) {
-            $this->composerPath = $composerPath . DIRECTORY_SEPARATOR;
+        if ($composer_path) {
+            $this->composerPath = $composer_path . DIRECTORY_SEPARATOR;
         }
     }
 

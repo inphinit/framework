@@ -61,12 +61,12 @@ function inphinit_sandbox($sandbox_path, array $sandbox_data = array())
  */
 function inphinit_error($type, $message, $file, $line, $context = null)
 {
-    static $collectedErrors = array();
+    static $collected_errors = array();
 
     $collect = $file . ':' . $line;
 
-    if (in_array($collect, $collectedErrors) === false) {
-        $collectedErrors[] = $collect;
+    if (in_array($collect, $collected_errors) === false) {
+        $collected_errors[] = $collect;
 
         if (class_exists('\\Inphinit\\Event', false) && (error_reporting() & $type)) {
             Event::trigger('error', array($type, $message, $file, $line));

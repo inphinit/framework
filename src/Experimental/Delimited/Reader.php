@@ -163,9 +163,9 @@ abstract class Reader
      */
     public function setFlags($flags)
     {
-        $validFlags = self::MODE_COLUMN | self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
+        $valid_flags = self::MODE_COLUMN | self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
 
-        if (is_int($flags) === false || ($flags & ~$validFlags) !== 0) {
+        if (is_int($flags) === false || ($flags & ~$valid_flags) !== 0) {
             throw new Exception('Invalid flags');
         }
 
@@ -344,8 +344,8 @@ abstract class Reader
             $this->noNextLine = false;
 
             $fields = null;
-            $inferredSeparator = null;
-            $totalFields = 0;
+            $inferred_separator = null;
+            $total_fields = 0;
 
             // automatically detects the appropriate separator for the document
             foreach ($this->separators as $separator) {
@@ -354,31 +354,31 @@ abstract class Reader
                 $fields = $this->getLine($separator);
 
                 if (is_array($fields) === false) {
-                    $inferredSeparator = '';
+                    $inferred_separator = '';
                     break;
                 }
 
-                $totalFields = count($fields);
+                $total_fields = count($fields);
 
-                if ($totalFields > 1) {
-                    $inferredSeparator = $separator;
+                if ($total_fields > 1) {
+                    $inferred_separator = $separator;
                     break;
                 }
             }
 
-            if ($totalFields === 1) {
+            if ($total_fields === 1) {
                 if ($this->flags & self::STRICT) {
                     throw new Exception('No separator was detected in the document header', 0, 3);
                 } else {
-                    $inferredSeparator = '';
+                    $inferred_separator = '';
                 }
             }
 
             $this->filterFields($fields);
 
             $this->headers = $fields;
-            $this->separator = $inferredSeparator;
-            $this->totalFields = $totalFields;
+            $this->separator = $inferred_separator;
+            $this->totalFields = $total_fields;
 
             if ($this->flags & self::SKIP_HEADER) {
                 $this->firstLine = false;
@@ -390,7 +390,7 @@ abstract class Reader
 
             if ($offset > 0) {
                 while ($this->lineIndex < $offset) {
-                    if ($this->getLine($inferredSeparator) === null) {
+                    if ($this->getLine($inferred_separator) === null) {
                         break;
                     }
                 }

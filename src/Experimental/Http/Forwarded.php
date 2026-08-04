@@ -104,9 +104,9 @@ class Forwarded
         $forwarded = array();
         $length = strlen($source);
 
-        $inQuotes = false;
-        $isEscaping = false;
-        $mustUnescape = false;
+        $in_quotes = false;
+        $escaping = false;
+        $must_unescape = false;
         $parameter = null;
 
         $start = -1;
@@ -114,7 +114,7 @@ class Forwarded
 
         $found = 0;
         $limit = $this->limit;
-        $tabChar = "\t";
+        $tab_char = "\t";
 
         for ($i = 0; $i < $length; ++$i) {
             if ($found > $limit) {
@@ -124,7 +124,7 @@ class Forwarded
             $char = $source[$i];
 
             if ($parameter === null) {
-                if ($start === -1 && ($char === ' ' || $char === $tabChar)) continue;
+                if ($start === -1 && ($char === ' ' || $char === $tab_char)) continue;
 
                 if (self::isTokenChar($char)) {
                     if ($start === -1) $start = $i;
@@ -136,20 +136,20 @@ class Forwarded
                 } else {
                     self::unexpectedCharacter($source, $i);
                 }
-            } elseif ($isEscaping) {
-                if ($char === $tabChar || ctype_print($char) || self::isExtended($char)) {
-                    $isEscaping = false;
+            } elseif ($escaping) {
+                if ($char === $tab_char || ctype_print($char) || self::isExtended($char)) {
+                    $escaping = false;
                 } else {
                     self::unexpectedCharacter($source, $i);
                 }
-            } elseif ($inQuotes) {
+            } elseif ($in_quotes) {
                 if ($char === '\\') {
-                    $isEscaping = true;
-                    $mustUnescape = true;
+                    $escaping = true;
+                    $must_unescape = true;
 
                     if ($start === -1) $start = $i;
                 } elseif ($char === '"') {
-                    $inQuotes = false;
+                    $in_quotes = false;
                     $end = $i;
                 } elseif ($start === -1) {
                     $start = $i;
@@ -159,10 +159,10 @@ class Forwarded
 
                 if ($start === -1) $start = $i;
             } elseif ($char === '"' && $i > 0 && $source[$i - 1] === '=') {
-                $inQuotes = true;
+                $in_quotes = true;
             } elseif (self::isDelimiter($char) || self::isExtended($char)) {
                 if (($char === ',' || $char === ';') && ($start !== -1 || $end !== -1)) {
-                    self::completeParameter($source, $mustUnescape, $i, $start, $end, $forwarded[$parameter]);
+                    self::completeParameter($source, $must_unescape, $i, $start, $end, $forwarded[$parameter]);
 
                     if ($char === ',') {
                         ++$found;
@@ -170,15 +170,15 @@ class Forwarded
                         $forwarded = array();
                     }
 
-                    $mustUnescape = false;
+                    $must_unescape = false;
                     $parameter = null;
                     $start = $end = -1;
-                } elseif ($inQuotes) {
+                } elseif ($in_quotes) {
                     if ($start === -1) $start = $i;
                 } else {
                     self::unexpectedCharacter($source, $i);
                 }
-            } elseif ($char === ' ' || $char === $tabChar) {
+            } elseif ($char === ' ' || $char === $tab_char) {
                 if ($end !== -1) continue;
 
                 if ($start === -1) self::unexpectedCharacter($source, $i);
@@ -190,11 +190,11 @@ class Forwarded
         }
 
         // check if the end failed
-        if ($parameter === null || $inQuotes) {
+        if ($parameter === null || $in_quotes) {
             throw new Exception('Unexpected end of input: ' . $source, 0, 3);
         }
 
-        self::completeParameter($source, $mustUnescape, $length, $start, $end, $forwarded[$parameter]);
+        self::completeParameter($source, $must_unescape, $length, $start, $end, $forwarded[$parameter]);
 
         $data[] = $forwarded;
 
@@ -206,26 +206,26 @@ class Forwarded
     {
         $entries = array();
 
-        if ($forHeader = Request::header('x-forwarded-for')) {
-            $forEntries = explode(',', $forHeader);
+        if ($for_header = Request::header('x-forwarded-for')) {
+            $for_entries = explode(',', $for_header);
 
-            if (count($forEntries) > $this->limit) {
+            if (count($for_entries) > $this->limit) {
                 throw new Exception('Excessive number of Forwarded blocks', 0, 3);
             }
 
-            foreach ($forEntries as &$entry) {
+            foreach ($for_entries as &$entry) {
                 $entries[] = array(self::PARAM_FOR => $entry);
             }
         }
 
         if (empty($entries)) $entries[] = array();
 
-        if ($hostHeader = Request::header('x-forwarded-host')) {
-            $entries[0][self::PARAM_HOST] = trim($hostHeader);
+        if ($host_header = Request::header('x-forwarded-host')) {
+            $entries[0][self::PARAM_HOST] = trim($host_header);
         }
 
-        if ($protoHeader = Request::header('x-forwarded-proto')) {
-            $entries[0][self::PARAM_PROTO] = trim($protoHeader);
+        if ($proto_header = Request::header('x-forwarded-proto')) {
+            $entries[0][self::PARAM_PROTO] = trim($proto_header);
         }
 
         if (empty($entry) === false) {

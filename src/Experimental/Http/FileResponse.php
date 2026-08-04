@@ -62,18 +62,18 @@ class FileResponse
             return true;
         }
 
-        $envVarName = null;
+        $env_var = null;
 
         if ($mode === self::ACCEL) {
-            $envVarName = 'MOD_X_ACCEL_REDIRECT_ENABLED';
+            $env_var = 'MOD_X_ACCEL_REDIRECT_ENABLED';
         } elseif ($mode === self::SENDFILE) {
-            $envVarName = 'MOD_X_SENDFILE_ENABLED';
+            $env_var = 'MOD_X_SENDFILE_ENABLED';
         } else {
             return false;
         }
 
-        if (isset($_SERVER[$envVarName])) {
-            $value = strtolower($_SERVER[$envVarName]);
+        if (isset($_SERVER[$env_var])) {
+            $value = strtolower($_SERVER[$env_var]);
             return in_array($value, array('1', 'on', 'true', 'yes'));
         }
 
@@ -93,9 +93,9 @@ class FileResponse
             throw new \ErrorException('Cannot set sendfile header, headers already sent', 0, E_ERROR, $file, $line);
         }
 
-        $validModes = self::ACCEL | self::SENDFILE | self::FALLBACK;
+        $valid_modes = self::ACCEL | self::SENDFILE | self::FALLBACK;
 
-        if (is_int($modes) === false || ($modes & ~$validModes) !== 0) {
+        if (is_int($modes) === false || ($modes & ~$valid_modes) !== 0) {
             throw new Exception('Invalid delivery mode(s)');
         }
 
@@ -126,15 +126,15 @@ class FileResponse
 
     private function checkDispatched($overwrite)
     {
-        $accelHeader = 'X-Accel-Redirect';
-        $sendHeader = 'X-Sendfile';
+        $accel_header = 'X-Accel-Redirect';
+        $send_header = 'X-Sendfile';
 
         if ($overwrite) {
-            Response::header($accelHeader, null);
-            Response::header($sendHeader, null);
+            Response::header($accel_header, null);
+            Response::header($send_header, null);
         } else {
             foreach (headers_list() as $header) {
-                if (stripos($header, $accelHeader) === 0 || stripos($header, $sendHeader) === 0) {
+                if (stripos($header, $accel_header) === 0 || stripos($header, $send_header) === 0) {
                     throw new Exception('Conflicting file delivery headers detected', 0, 3);
                 }
             }

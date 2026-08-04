@@ -100,13 +100,13 @@ class Version
                 }
 
                 if ($name === 'prerelease') {
-                    $idRegex = '#^(?:0|[1-9]\d*|[a-zA-Z-][\da-zA-Z-]*)$#';
+                    $id_regex = '#^(?:0|[1-9]\d*|[a-zA-Z-][\da-zA-Z-]*)$#';
                 } else {
-                    $idRegex = '#^[\da-zA-Z-]+$#';
+                    $id_regex = '#^[\da-zA-Z-]+$#';
                 }
 
                 foreach ($value as $id) {
-                    if (is_string($id) === false || preg_match($idRegex, $id) !== 1) {
+                    if (is_string($id) === false || preg_match($id_regex, $id) !== 1) {
                         throw new Exception("Invalid identifier '{$id}' for {$name} component");
                     }
                 }

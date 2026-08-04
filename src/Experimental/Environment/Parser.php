@@ -84,14 +84,14 @@ class Parser
     {
         $contents = $matches[1];
 
-        if (preg_match(self::REGEX_INTERPOLATE, $contents, $inMatches) !== 1) {
+        if (preg_match(self::REGEX_INTERPOLATE, $contents, $inter_matches) !== 1) {
             throw new Exception("Invalid interpolation \$\{{$contents}\}", 0, 3);
         }
 
-        $var = $inMatches[1];
-        $nonEmpty = $inMatches[3] === ':';
-        $interMode = $inMatches[4];
-        $interParam = $inMatches[5];
+        $var = $inter_matches[1];
+        $non_empty = $inter_matches[3] === ':';
+        $inter_mode = $inter_matches[4];
+        $inter_param = $inter_matches[5];
         $value = null;
 
         if (isset($_ENV[$var])) {
@@ -100,33 +100,33 @@ class Parser
             $value = $this->fallback[$var];
         }
 
-        switch ($interMode) {
+        switch ($inter_mode) {
             case '+':
                 // ${VAR-alternative} Replace
-                if ($nonEmpty) {
-                    return $value === '' ? '' : $interParam;
+                if ($non_empty) {
+                    return $value === '' ? '' : $inter_param;
                 } else {
-                    return $value === null ? '' : $interParam;
+                    return $value === null ? '' : $inter_param;
                 }
 
                 break;
             case '-':
                 // ${VAR-default} Default
-                if ($nonEmpty) {
-                    return $value === '' ? $interParam : $value;
+                if ($non_empty) {
+                    return $value === '' ? $inter_param : $value;
                 } else {
-                    return $value === null ? $interParam : $value;
+                    return $value === null ? $inter_param : $value;
                 }
 
                 break;
             case '?':
                 // ${VAR?default} Required
-                if ($nonEmpty) {
+                if ($non_empty) {
                     if ($value === '' || $value === null) {
-                        throw new Exception($interParam, 0, 3);
+                        throw new Exception($inter_param, 0, 3);
                     }
                 } elseif ($value === null) {
-                    throw new Exception($interParam, 0, 3);
+                    throw new Exception($inter_param, 0, 3);
                 }
 
                 break;

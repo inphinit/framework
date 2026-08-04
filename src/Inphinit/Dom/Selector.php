@@ -169,11 +169,11 @@ class Selector
 
         $query = preg_replace_callback('#\[(\w+)(.)?[=]([^"\'])(.*?)\]#', array($this, 'putQuotes'), $query);
 
-        $preventToken = $this->prevent[' '];
+        $prevention_token = $this->prevent[' '];
 
-        $caseinsensitive = '[\\1\\2=\\3' . $preventToken . 'i]';
+        $case_insensitive = '[\\1\\2=\\3' . $prevention_token . 'i]';
 
-        $query = preg_replace('#\[(\w+)(.)?[=](.*?) i\]#', $caseinsensitive, $query);
+        $query = preg_replace('#\[(\w+)(.)?[=](.*?) i\]#', $case_insensitive, $query);
 
         $query = preg_replace_callback('#\:contains\(([^"\'])(.*?)\)#', array($this, 'putQuotes'), $query);
 
@@ -190,7 +190,7 @@ class Selector
                 foreach (self::$qxs as &$qx) {
                     $r = strtr($qx[1], $this->rules);
 
-                    $descendant = str_replace($preventToken . 'i]', ' i]', $descendant);
+                    $descendant = str_replace($prevention_token . 'i]', ' i]', $descendant);
                     $descendant = trim(preg_replace($qx[0], $r, $descendant));
                 }
 
@@ -239,9 +239,9 @@ class Selector
     private function preventInQuotes($arg)
     {
         $quote = $arg[1];
-        $inValue = substr($arg[0], 1, -1);
+        $internal_value = substr($arg[0], 1, -1);
 
-        if (strpos($inValue, $quote) === false) {
+        if (strpos($internal_value, $quote) === false) {
             return strtr($arg[0], $this->prevent);
         }
 
@@ -249,11 +249,11 @@ class Selector
         $unes = '\\' . $quote;
         $glue = $quote . ',' . $quotec . $quote . $quotec . ',' . $quote;
 
-        $inValue = str_replace($unes, $quote, $inValue);
+        $internal_value = str_replace($unes, $quote, $internal_value);
 
-        $inValue = 'concat(' . $quote . implode($glue, explode($quote, $inValue)) . $quote . ')';
+        $internal_value = 'concat(' . $quote . implode($glue, explode($quote, $internal_value)) . $quote . ')';
 
-        return strtr($inValue, $this->prevent);
+        return strtr($internal_value, $this->prevent);
     }
 
     private function siblingConvert($query)

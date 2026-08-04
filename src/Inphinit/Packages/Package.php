@@ -40,21 +40,21 @@ class Package
 
     public function __construct()
     {
-        $lockPath = INPHINIT_ROOT . '/composer.lock';
+        $lock_path = INPHINIT_ROOT . '/composer.lock';
 
-        $metadataDir = INPHINIT_SYSTEM . '/boot/metadata';
+        $metadata_dir = INPHINIT_SYSTEM . '/boot/metadata';
 
-        if (is_dir($metadataDir) === false) {
-            throw new Exception("{$metadataDir} not exists");
+        if (is_dir($metadata_dir) === false) {
+            throw new Exception("{$metadata_dir} not exists");
         }
 
-        if (is_writable($metadataDir) === false) {
-            throw new Exception("{$metadataDir} is not writable");
+        if (is_writable($metadata_dir) === false) {
+            throw new Exception("{$metadata_dir} is not writable");
         }
 
-        $this->metadataDir = $metadataDir;
+        $this->metadataDir = $metadata_dir;
 
-        $this->readJson($lockPath);
+        $this->readJson($lock_path);
     }
 
     /**

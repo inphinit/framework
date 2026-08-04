@@ -31,7 +31,7 @@ class CookieJar
     private $sameSite;
     private $cookies = array();
     private $jar;
-    private static $timezone;
+    private static $timeZone;
 
     /**
      * @param string $jar Define jar name (cookie name prefix)
@@ -62,8 +62,8 @@ class CookieJar
             }
         }
 
-        if (self::$timezone === null) {
-            self::$timezone = new \DateTimeZone('UTC');
+        if (self::$timeZone === null) {
+            self::$timeZone = new \DateTimeZone('UTC');
         }
     }
 
@@ -117,7 +117,7 @@ class CookieJar
     public function setExpires($datetime)
     {
         try {
-            $dt = new \DateTime($datetime, self::$timezone);
+            $dt = new \DateTime($datetime, self::$timeZone);
             $this->expires = $dt->format('D, d M Y H:i:s \G\M\T');
             $dt = null;
         } catch (\Exception $ee) {

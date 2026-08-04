@@ -20,7 +20,7 @@ class Converter
     const WHITESPACE_SLASH = 2;
 
     private $source;
-    private $whiteSpaceMode;
+    private $whitespaceMode;
 
     /**
      * Set reader
@@ -31,7 +31,7 @@ class Converter
     public function __construct(Reader $reader)
     {
         $this->source = $reader;
-        $this->whiteSpaceMode = self::WHITESPACE_REPLACE;
+        $this->whitespaceMode = self::WHITESPACE_REPLACE;
     }
 
     /**
@@ -49,7 +49,7 @@ class Converter
             throw new Exception('Invalid whitespace mode');
         }
 
-        $this->whiteSpaceMode = $mode;
+        $this->whitespaceMode = $mode;
     }
 
     /**
@@ -80,14 +80,14 @@ class Converter
         $escape = $enclosure === '' ? null : $enclosure . $enclosure;
         $escapes = "\r\n";
 
-        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
 
-        $whiteSpaceMode = $this->whiteSpaceMode;
+        $whitespace_mode = $this->whitespaceMode;
 
         while (($fields = $source->fetch()) !== false) {
             foreach ($fields as &$field) {
-                if ($whiteSpaceMode === self::WHITESPACE_REPLACE) {
+                if ($whitespace_mode === self::WHITESPACE_REPLACE) {
                     $field = str_replace($escapes, ' ', $field);
                 } else {
                     $field = addcslashes($field, $escapes);
@@ -108,7 +108,7 @@ class Converter
         fclose($handle);
 
         // Restore original mode
-        $source->setFlags($originalFlags);
+        $source->setFlags($original_flags);
         $source->refresh();
 
         return $this;
@@ -132,14 +132,14 @@ class Converter
         $tab = "\t";
         $escapes = "\t\r\n";
 
-        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
 
-        $whiteSpaceMode = $this->whiteSpaceMode;
+        $whitespace_mode = $this->whitespaceMode;
 
         while (($fields = $source->fetch()) !== false) {
             foreach ($fields as &$field) {
-                if ($whiteSpaceMode === self::WHITESPACE_REPLACE) {
+                if ($whitespace_mode === self::WHITESPACE_REPLACE) {
                     $field = str_replace($escapes, ' ', $field);
                 } else {
                     $field = addcslashes($field, $escapes);
@@ -152,7 +152,7 @@ class Converter
         fclose($handle);
 
         // Restore original mode
-        $source->setFlags($originalFlags);
+        $source->setFlags($original_flags);
         $source->refresh();
 
         return $this;
@@ -172,7 +172,7 @@ class Converter
 
         $eol = $flags & JSON_PRETTY_PRINT ? "\r\n" : '';
         $source = $this->source;
-        $skipComma = true;
+        $skip_comma = true;
 
         if ($pairs) {
             $flags = Reader::MODE_COLUMN | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
@@ -180,15 +180,15 @@ class Converter
             $flags = Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
         }
 
-        $originalFlags = $source->setFlags($flags);
+        $original_flags = $source->setFlags($flags);
 
         $source->refresh();
 
         fwrite($handle, '[' . $eol);
 
         while (($fields = $source->fetch()) !== false) {
-            if ($skipComma) {
-                $skipComma = false;
+            if ($skip_comma) {
+                $skip_comma = false;
             } else {
                 fwrite($handle, ',' . $eol);
             }
@@ -196,11 +196,11 @@ class Converter
             fwrite($handle, json_encode($fields, $flags));
         }
 
-        fwrite($handle, ($skipComma ? '' : $eol) . ']');
+        fwrite($handle, ($skip_comma ? '' : $eol) . ']');
         fclose($handle);
 
         // Restore original mode
-        $source->setFlags($originalFlags);
+        $source->setFlags($original_flags);
         $source->refresh();
 
         return $this;
@@ -216,7 +216,7 @@ class Converter
     {
         $source = $this->source;
 
-        $originalFlags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
         $source->refresh();
 
         $owner = $target->ownerDocument;
@@ -235,7 +235,7 @@ class Converter
         }
 
         // Restore original mode
-        $source->setFlags($originalFlags);
+        $source->setFlags($original_flags);
         $source->refresh();
 
         return $this;

@@ -203,8 +203,8 @@ class Url
             return $path;
         }
 
-        $prependSeparator = substr($path, 0, 1) === $separator;
-        $appendSeparator = substr($path, -1) === $separator;
+        $prepend_separator = substr($path, 0, 1) === $separator;
+        $append_separator = substr($path, -1) === $separator;
 
         $path = str_replace('/./', '/', $path);
         $parts = explode($separator, trim($path, $separator));
@@ -222,13 +222,13 @@ class Url
 
         $path = '';
 
-        if ($prependSeparator) {
+        if ($prepend_separator) {
             $path .= $separator;
         }
 
         $path .= implode($separator, $rebuild);
 
-        if ($appendSeparator) {
+        if ($append_separator) {
             $path .= $separator;
         }
 
