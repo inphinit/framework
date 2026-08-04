@@ -16,8 +16,6 @@ class Console
 {
     const LAST_OPTION_REGEX = '/^((-)([a-z0-9]+)|(--)([a-z][\w:\-?]+))$/i';
 
-    const PREFIX_ERROR = 'Invalid option: \'%s\'. Note: Options require prefix: -- (long) or - (short)';
-
     protected $namespacePrefix = '\\Commands\\';
 
     private $commands = array();
