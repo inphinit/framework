@@ -187,12 +187,13 @@ if ($inphinit_port === null) {
 
 $inphinit_path = rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
 
-if (PHP_SAPI !== 'cli-server') {
+if (PHP_SAPI === 'cli-server') {
+    $inphinit_prefix = '';
+    include __DIR__ . '/public.php';
+} else {
     $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/index.php');
     $inphinit_prefix = substr($inphinit_path, 0, $inphinit_pos);
     $inphinit_path = substr($inphinit_path, $inphinit_pos);
-} else {
-    $inphinit_prefix = '';
 }
 
 define('INPHINIT_PATH', $inphinit_path);

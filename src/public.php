@@ -9,88 +9,32 @@
 
 use Inphinit\Filesystem\File;
 
-if (
-    INPHINIT_PATH === '/' ||
-    strpos(INPHINIT_PATH, '/.') !== false ||
-    is_file($_SERVER['DOCUMENT_ROOT'] . INPHINIT_PATH) === false
-) {
-    return false;
-}
+$inphinit_public_source = INPHINIT_ROOT . '/public' . $inphinit_path;
 
-$inphinit_type_from_extension = [
-    'application/arj' => ['arj'],
-    'application/atom+xml' => ['atom'],
-    'application/json' => ['json'],
-    'application/msword' => ['doc'],
-    'application/pdf' => ['pdf'],
-    'application/rss+xml' => ['rss'],
-    'application/rtf' => ['rtf'],
-    'application/vnd.ms-excel' => ['xls'],
-    'application/vnd.ms-powerpoint' => ['ppt'],
-    'application/vnd.oasis.opendocument.database' => ['odb'],
-    'application/vnd.oasis.opendocument.presentation' => ['odp'],
-    'application/vnd.oasis.opendocument.spreadsheet' => ['ods'],
-    'application/vnd.oasis.opendocument.text' => ['odt'],
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation' => ['pptx'],
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => ['xlsx'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => ['docx'],
-    'application/x-font-otf' => ['otf'],
-    'application/x-font-ttf' => ['ttf'],
-    'application/x-freearc' => ['arc'],
-    'application/x-msaccess' => ['accdb', 'mdb'],
-    'application/x-shockwave-flash' => ['swf'],
-    'application/xml' => ['xml'],
-    'audio/amr' => ['amr'],
-    'audio/midi' => ['mid', 'midi'],
-    'audio/mpeg' => ['mp3'],
-    'audio/ogg' => ['ogg', 'oga'],
-    'audio/x-aac' => ['aac'],
-    'audio/x-flac' => ['flac'],
-    'audio/x-mpegurl' => ['m3u'],
-    'audio/x-ms-wma' => ['wma'],
-    'audio/x-wav' => ['wav'],
-    'image/apng' => ['apng'],
-    'image/avif' => ['avif'],
-    'image/bmp' => ['bmp'],
-    'image/gif' => ['gif'],
-    'image/jpeg' => ['jpg', 'jpeg', 'jfif', 'pjpeg', 'pjp'],
-    'image/png' => ['png', 'apng'],
-    'image/svg+xml' => ['svg'],
-    'image/tiff' => ['tiff'],
-    'image/vnd.adobe.photoshop' => ['psd'],
-    'image/webp' => ['webp'],
-    'image/x-icon' => ['ico'],
-    'text/csv' => ['csv'],
-    'text/html' => ['html', 'htm'],
-    'text/markdown' => ['md'],
-    'text/plain' => ['txt', 'reg'],
-    'text/tab-separated-values' => ['tab', 'tsv'],
-    'text/yaml' => ['yaml'],
-    'video/3gpp' => ['3gp'],
-    'video/mp4' => ['mp4'],
-    'video/mpeg' => ['mpeg'],
-    'video/quicktime' => ['mov'],
-    'video/webm' => ['webm'],
-    'video/x-flv' => ['flv'],
-    'video/x-m4v' => ['m4v'],
-    'video/x-matroska' => ['mkv'],
-    'video/x-ms-vob' => ['vob'],
-    'video/x-ms-wmv' => ['wmv'],
-    'video/x-msvideo' => ['avi'],
-];
+if ($inphinit_path !== '/' && strpos($inphinit_path, '/.') === false && is_file($inphinit_public_source)) {
+    $inphinit_public_type = null;
 
-$inphinit_path_extension = pathinfo(INPHINIT_PATH, PATHINFO_EXTENSION);
+    $inphinit_public_media_types = require INPHINIT_SYSTEM . '/boot/media_types.php';
 
-if ($inphinit_path_extension) {
-    $inphinit_path_extension = strtolower($inphinit_path_extension);
+    $inphinit_public_suffix = pathinfo($inphinit_path, PATHINFO_EXTENSION);
 
-    foreach ($inphinit_type_from_extension as $mime => $extensions) {
-        if (in_array($inphinit_path_extension, $extensions)) {
-            header('Content-Type: ' . $mime, true);
-            File::output($_SERVER['DOCUMENT_ROOT'] . INPHINIT_PATH);
-            exit;
-        }
+    if ($inphinit_public_suffix) {
+        $inphinit_public_suffix = strtolower($inphinit_public_suffix);
+
+        $inphinit_public_type = array_find_key($inphinit_public_media_types, function ($suffixes, $mime) use ($inphinit_public_suffix) {
+            return in_array($inphinit_public_suffix, $suffixes);
+        });
     }
-}
 
-return true;
+    if ($inphinit_public_type === null) {
+        $inphinit_public_type = 'application/octet-stream';
+    }
+
+    if (is_readable($inphinit_public_source)) {
+        header('Content-Type: ' . $inphinit_public_type, true);
+        File::output($inphinit_public_source);
+        exit;
+    }
+
+    http_response_code(403);
+}

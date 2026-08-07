@@ -166,9 +166,8 @@ class App
     }
 
     /**
-     * Execute application
-     *
-     * @return bool Returns false if request matches a file in built-in web server, otherwise returns true
+     * Executes the route callback corresponding to the path,
+     * otherwise executes `system/errors.php`.
      */
     public function exec()
     {
@@ -178,10 +177,6 @@ class App
         $output = null;
 
         if ($code === 200) {
-            if (PHP_SAPI === 'cli-server' && (include __DIR__ . '/../public.php')) {
-                return false;
-            }
-
             $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
             $routes = null;
@@ -233,8 +228,6 @@ class App
         if (class_exists('\\Inphinit\\Event', false)) {
             Event::trigger('done');
         }
-
-        return true;
     }
 
     /**
