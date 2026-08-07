@@ -85,11 +85,11 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     }
 
     $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
-    $root = INPHINIT_ROOT;
-    $public = escapeshellarg($root . '/public');
-    $router = escapeshellarg($root . '/index.php');
+    $server = escapeshellarg($host . ':' . $port);
+    $public = escapeshellarg(INPHINIT_ROOT . '/public');
+    $router = escapeshellarg(INPHINIT_ROOT . '/index.php');
 
-    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$host}:{$port} -t {$public} {$router}", $code);
+    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}", $code);
 
     return $code;
 });
