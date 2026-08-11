@@ -135,8 +135,8 @@ class Size
         } else {
             try {
                 return $boot->GetFile($path)->Size;
-            } catch (\Exception $ee) {
-                $this->error = $ee;
+            } catch (\Exception $ex) {
+                $this->error = $ex;
             }
         }
     }

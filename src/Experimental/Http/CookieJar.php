@@ -121,8 +121,8 @@ class CookieJar
             $dt = new \DateTime($datetime, self::$timeZone);
             $this->expires = $dt->format('D, d M Y H:i:s \G\M\T');
             $dt = null;
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), 0, 2, $ee);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), 0, 2, $ex);
         }
     }
 

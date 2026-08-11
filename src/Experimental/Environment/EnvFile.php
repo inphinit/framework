@@ -233,10 +233,10 @@ class EnvFile
     {
         try {
             $parser->setValue($value);
-        } catch (\Exception $ee) {
+        } catch (\Exception $ex) {
             throw new EnvException(
-                $ee->getMessage(),
-                $ee->getCode(),
+                $ex->getMessage(),
+                $ex->getCode(),
                 $this->path,
                 $line
             );

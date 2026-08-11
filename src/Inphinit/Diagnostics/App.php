@@ -136,7 +136,7 @@ class App extends \Inphinit\App
         }
 
         if (!preg_match('#^\w+$#', $name)) {
-            throw new Exception('Invalid pattern name: ' . $name);
+            throw new Exception("Invalid pattern name: {$name}");
         }
 
         if ($regex && preg_match('#' . $regex . '#', 'sample sample sample') === false) {
@@ -200,7 +200,7 @@ class App extends \Inphinit\App
             } else {
                 $type = null;
             }
-        } catch (\ReflectionException $e) {
+        } catch (\ReflectionException $ex) {
             $type = null;
         }
 
@@ -211,7 +211,7 @@ class App extends \Inphinit\App
 
     private function checkPatterns($pattern)
     {
-        if (strpos($pattern, '<') !== false && preg_match_all('#[<](.*?)(\:(.*?))?[>]#', $pattern, $matches)) {
+        if (strpos($pattern, '<') !== false && preg_match_all('#[<]([^>:]+?)(\:([^>]+?))?[>]#', $pattern, $matches)) {
             $bases = $matches[0];
             $names = $matches[1];
             $items = $matches[2];
@@ -225,12 +225,12 @@ class App extends \Inphinit\App
 
                 // Check invalid parameter names
                 if (preg_match('#^[a-z]\w*$#', $name) !== 1) {
-                    throw new Exception('Invalid parameter: ' . $base, 0, 3);
+                    throw new Exception("Invalid parameter: {$base}", 0, 3);
                 }
 
                 // Check invalid patterns
                 if ($item !== '' && preg_match('#^\:[a-z]\w*$#', $item) !== 1) {
-                    throw new Exception('Invalid pattern: ' . $base, 0, 3);
+                    throw new Exception("Invalid pattern: {$base}", 0, 3);
                 }
             }
 

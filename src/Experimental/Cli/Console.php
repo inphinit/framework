@@ -75,15 +75,15 @@ class Console
         $name = array_shift($arguments);
 
         if (empty($this->commands[$name])) {
-            throw new Exception('Unknown command: ' . $name);
+            throw new Exception("Unknown command: {$name}");
         }
 
         $command = $this->commands[$name];
 
         try {
             $response = $command->response(self::getEntries($arguments));
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), $ee->getCode(), 2, $ee);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
         }
 
         if ($response !== null) {
@@ -137,8 +137,8 @@ class Console
 
         try {
             return self::getOutput($console, $env, $values, $code);
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), $ee->getCode());
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), $ex->getCode());
         }
     }
 
