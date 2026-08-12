@@ -11,17 +11,16 @@ namespace Inphinit;
 
 class Session
 {
+    const BYTES_LENGTH = 16;
     const CREATE_TIMEOUT = 10;
-    const ID_BYTES_LENGTH = 16;
     const LOCK_TIMEOUT = 10;
 
     private $id;
     private $data = array();
     private $handle;
     private $locked = false;
-    private $useRandomBytes = true;
 
-    private $directory;
+    private $storage;
     private $domain;
     private $expires;
     private $httpOnly = false;
@@ -32,6 +31,8 @@ class Session
     private $secure = false;
     private $storePrefix = '~sess';
 
+    private static $useRandomBytes;
+
     /**
      * Reads and stores session data and creates a cookie
      *
@@ -41,14 +42,8 @@ class Session
      */
     public function __construct($config)
     {
-        if (function_exists('random_bytes') === false) {
-            if (function_exists('openssl_random_pseudo_bytes')) {
-                $this->useRandomBytes = false;
-            } elseif (PHP_VERSION_ID < 70000) {
-                throw new Exception('OpenSSL extension or `random_bytes()` polyfill is required');
-            } else {
-                throw new Exception('`random_bytes()` function or OpenSSL extension is required; check disable_functions');
-            }
+        if (self::$useRandomBytes === null) {
+            self::$useRandomBytes = PHP_VERSION_ID >= 70000;
         }
 
         $this->loadConfigs($config);
@@ -58,9 +53,9 @@ class Session
         if (isset($_COOKIE[$name]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
             $prefix = $this->storePrefix;
-            $filename = $this->directory . '/' . $prefix . '[' . $id . ']';
+            $filename = $this->storage . '/' . $prefix . '[' . $id . ']';
 
-            $this->handle = fopen($filename, 'c+');
+            $this->handle = fopen($filename, 'r+');
 
             if ($this->handle === false) {
                 throw new Exception('Invalid session file');
@@ -126,9 +121,11 @@ class Session
         }
 
         $this->close();
-        $this->setCookie($id);
+
         $this->handle = $dest;
         $this->id = $id;
+
+        $this->setCookie();
     }
 
     /**
@@ -154,8 +151,8 @@ class Session
     {
         try {
             serialize($value);
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), $ee->getCode(), 2, $ee);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
         }
 
         $this->data[$name] = $value;
@@ -192,7 +189,7 @@ class Session
     {
         $start = microtime(true);
         $timeout = self::CREATE_TIMEOUT;
-        $directory = $this->directory;
+        $storage = $this->storage;
         $file = null;
         $id = null;
         $prefix = $this->storePrefix;
@@ -203,8 +200,8 @@ class Session
                 throw new Exception('Create session file timeout', 0, 3);
             }
 
-            $id = $this->createId();
-            $file = $directory . '/' . $prefix . '[' . $id . ']';
+            $id = self::createId();
+            $file = $storage . '/' . $prefix . '[' . $id . ']';
             $stream = fopen($file, 'x+');
 
             if ($stream === false) {
@@ -232,9 +229,9 @@ class Session
             } else {
                 $data = unserialize($data, array('allowed_classes' => false));
             }
-        } catch (\Exception $ee) {
+        } catch (\Exception $ex) {
             $this->close();
-            throw new Exception($ee->getMessage(), $ee->getCode(), 3, $ee);
+            throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
         }
 
         if (is_array($data)) {
@@ -329,8 +326,8 @@ class Session
     {
         try {
             $opts = new Config($config);
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), 0, 3, $ee);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), 0, 3, $ex);
         }
 
         if (is_string($opts->name) === false || ctype_alpha($opts->name) === false) {
@@ -367,8 +364,8 @@ class Session
             try {
                 $date = new \DateTime($opts->expires, new \DateTimeZone('UTC'));
                 $this->expires = $date->format('D, d M Y H:i:s \G\M\T');
-            } catch (\Exception $ee) {
-                throw new Exception($ee->getMessage(), 0, 3, $ee);
+            } catch (\Exception $ex) {
+                throw new Exception($ex->getMessage(), 0, 3, $ex);
             }
         }
 
@@ -417,33 +414,33 @@ class Session
             $this->storePrefix = $opts->store_prefix;
         }
 
-        if ($opts->directory !== null) {
-            if (is_dir($opts->directory) === false) {
-                throw new Exception('Invalid directory', 0, 3);
+        if ($opts->storage !== null) {
+            if (is_dir($opts->storage) === false) {
+                throw new Exception('Invalid storage path', 0, 3);
             }
 
-            $this->directory = $opts->directory;
+            $this->storage = $opts->storage;
         } else {
-            $this->directory = INPHINIT_SYSTEM . '/storage/session';
+            $this->storage = INPHINIT_SYSTEM . '/storage/session';
         }
     }
 
-    private function createId()
+    private static function createId()
     {
-        try {
-            if ($this->useRandomBytes) {
-                $bin = \random_bytes(self::ID_BYTES_LENGTH);
-            } else {
-                // Returns false on failure in PHP<7.3
-                // Throws an exception in case of failure in PHP>=7.4
-                $bin = \openssl_random_pseudo_bytes(self::ID_BYTES_LENGTH);
-
-                if ($bin === false) {
-                    throw new Exception('OpenSSL: Unable to generate a pseudo-random byte sequence', 0, 3);
-                }
+        if (self::$useRandomBytes) {
+            try {
+                $bin = \random_bytes(self::BYTES_LENGTH);
+            } catch (\Exception $ex) {
+                throw new Exception($ex->getMessage(), 0, 3, $ex);
             }
-        } catch (\Exception $ee) {
-            throw new Exception($ee->getMessage(), 0, 3, $ee);
+        } elseif (function_exists('mcrypt_create_iv')) {
+            $bin = \mcrypt_create_iv(self::BYTES_LENGTH, \MCRYPT_DEV_URANDOM);
+
+            if ($bin === false || strlen($bin) !== self::BYTES_LENGTH) {
+                throw new Exception('MCRYPT: Unable to generate random bytes', 0, 3);
+            }
+        } else {
+            throw new Exception('No supported CSPRNG source is available', 0, 3);
         }
 
         return \bin2hex($bin);
