@@ -150,7 +150,7 @@ class Checkup
     {
         if (PHP_VERSION_ID < 70000) {
             if (function_exists('mcrypt_create_iv')) {
-                $this->warnings[] = '`random_bytes()` unavailable. Using Mcrypt as a fallback';
+                $this->warnings[] = '`random_bytes()` unavailable. Using Mcrypt Extension as a fallback';
             }
         } elseif (function_exists('random_bytes') === false) {
             $this->errors[] = '`random_bytes()` unavailable; check `disable_functions`';
