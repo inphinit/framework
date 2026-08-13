@@ -9,8 +9,6 @@
 
 namespace Inphinit\Diagnostics;
 
-use Inphinit\App;
-
 class Checkup
 {
     private $iniGetEnabled = false;
@@ -28,7 +26,7 @@ class Checkup
 
     public function __construct()
     {
-        if (App::config('environment') === 'development') {
+        if (\Inphinit\App::config('environment') === 'development') {
             $this->development = true;
         }
 
@@ -150,14 +148,12 @@ class Checkup
 
     private function checkRandomBytes()
     {
-        if (function_exists('random_bytes') === false) {
-            if (function_exists('openssl_random_pseudo_bytes')) {
-                $this->warnings[] = '`random_bytes()` unavailable. Using OpenSSL as a fallback';
-            } elseif (PHP_VERSION_ID < 70000) {
-                $this->errors[] = '`random_bytes()` polyfill is required or enable OpenSSL extension';
-            } else {
-                $this->errors[] = '`random_bytes()` function or OpenSSL extension is required; check `disable_functions`';
+        if (PHP_VERSION_ID < 70000) {
+            if (function_exists('mcrypt_create_iv')) {
+                $this->warnings[] = '`random_bytes()` unavailable. Using Mcrypt as a fallback';
             }
+        } elseif (function_exists('random_bytes') === false) {
+            $this->errors[] = '`random_bytes()` unavailable; check `disable_functions`';
         }
     }
 
