@@ -86,7 +86,7 @@ class Session
         $this->lock(false);
 
         if ($stored === false) {
-            throw new Exception('Failed to store data', 0, 3);
+            throw new Exception('Failed to store data');
         }
     }
 

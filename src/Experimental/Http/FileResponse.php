@@ -37,11 +37,11 @@ class FileResponse
     public function __construct($source, $filename = '')
     {
         if (strpbrk($source, "\r\n") !== false) {
-            throw new Exception('$source may not contain more than a single header, new line detected', 0, 3);
+            throw new Exception('$source may not contain more than a single header, new line detected');
         }
 
         if ($filename && strpbrk($filename, "\r\n") !== false) {
-            throw new Exception('$filename may not contain more than a single header, new line detected', 0, 3);
+            throw new Exception('$filename may not contain more than a single header, new line detected');
         }
 
         $this->filename = $filename ? $filename : basename($source);
