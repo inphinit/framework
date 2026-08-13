@@ -179,7 +179,7 @@ class Command
     public function response(array $entries)
     {
         $callback = $this->callback;
-        $params = array();
+        $params = array_fill_keys($this->longs, null);
         $rest = array();
 
         foreach ($entries as $entry => $value) {

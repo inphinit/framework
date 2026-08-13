@@ -65,9 +65,9 @@ $console->action('pkg:up', function (Command $command, array $params, array $res
 });
 
 $serve = $console->action('serve', function (Command $command, array $params, array $residual) {
-    $host = isset($params['host']) ? $params['host'] : App::config('built_in_host');
-    $port = isset($params['port']) ? $params['port'] : App::config('built_in_port');
-    $vars = isset($params['vars']) ? $params['vars'] : 'EGPCS';
+    $host = $params['host'] ? $params['host'] : App::config('built_in_host');
+    $port = $params['port'] ? $params['port'] : App::config('built_in_port');
+    $vars = $params['vars'] ? $params['vars'] : 'EGPCS';
 
     if (empty($host)) {
         echo 'Empty host';
