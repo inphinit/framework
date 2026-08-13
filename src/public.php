@@ -21,9 +21,11 @@ if ($inphinit_path !== '/' && strpos($inphinit_path, '/.') === false && is_file(
     if ($inphinit_public_suffix) {
         $inphinit_public_suffix = strtolower($inphinit_public_suffix);
 
-        $inphinit_public_type = array_find_key($inphinit_public_media_types, function ($suffixes, $mime) use ($inphinit_public_suffix) {
-            return in_array($inphinit_public_suffix, $suffixes);
-        });
+        foreach ($inphinit_public_media_types as $mime => $suffixes) {
+            if (in_array($inphinit_public_suffix, $suffixes)) {
+                $inphinit_public_type = $mime;
+            }
+        }
     }
 
     if ($inphinit_public_type === null) {

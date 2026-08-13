@@ -89,7 +89,20 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     $public = escapeshellarg(INPHINIT_ROOT . '/public');
     $router = escapeshellarg(INPHINIT_ROOT . '/index.php');
 
-    passthru("php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}", $code);
+    // passthru("php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}", $code);
+
+    $execute = "php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}";
+
+    $descriptor_spec = array(STDIN, STDOUT, STDERR);
+
+    $handle = proc_open($execute, $descriptor_spec, $pipes);
+
+    do {
+        $status = proc_get_status($handle);
+        $code = $status['exitcode'];
+    } while ($status['running']);
+
+    proc_close($handle);
 
     return $code;
 });
