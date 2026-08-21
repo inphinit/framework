@@ -186,7 +186,7 @@ abstract class Reader
      *
      * ``` php
      * $handle->setFilter(function (array &$fields, $index) {
-     *   if ($index === -1) {
+     *   if ($index === 0) {
      *     // Convert header
      *     $fields = str_to_snake_case($fields);
      *   } else {
@@ -235,11 +235,10 @@ abstract class Reader
         $this->boot();
 
         $limit_count = $this->limitCount;
-        $limit_index = $this->lineIndex;
         $limit_offset = $this->limitCount + $this->limitOffset;
 
         while (($fields = $this->getLine($this->separator)) !== null) {
-            if ($limit_count !== 0 && $limit_index > $limit_offset) {
+            if ($limit_count !== 0 && $this->lineIndex > $limit_offset) {
                 $this->noNextLine = true;
                 return false;
             }
