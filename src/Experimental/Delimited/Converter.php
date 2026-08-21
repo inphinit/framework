@@ -80,7 +80,7 @@ class Converter
         $escape = $enclosure === '' ? null : $enclosure . $enclosure;
         $escapes = "\r\n";
 
-        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $previous_flags = $source->setFlags(Reader::SKIP_BLANK | Reader::SKIP_HEADER);
         $source->refresh();
 
         $whitespace_mode = $this->whitespaceMode;
@@ -107,8 +107,8 @@ class Converter
 
         fclose($handle);
 
-        // Restore original mode
-        $source->setFlags($original_flags);
+        // Restores previous flags
+        $source->setFlags($previous_flags);
         $source->refresh();
 
         return $this;
@@ -132,7 +132,7 @@ class Converter
         $tab = "\t";
         $escapes = "\t\r\n";
 
-        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $previous_flags = $source->setFlags(Reader::SKIP_BLANK | Reader::SKIP_HEADER);
         $source->refresh();
 
         $whitespace_mode = $this->whitespaceMode;
@@ -151,8 +151,8 @@ class Converter
 
         fclose($handle);
 
-        // Restore original mode
-        $source->setFlags($original_flags);
+        // Restores previous flags
+        $source->setFlags($previous_flags);
         $source->refresh();
 
         return $this;
@@ -163,24 +163,24 @@ class Converter
      *
      * @param string $path
      * @param bool $pairs
-     * @param int $flags
+     * @param int $jsonFlags
      * @return \Inphinit\Experimental\Delimited\Converter
      */
-    public function json($path, $pairs = true, $flags = 0)
+    public function json($path, $pairs = true, $jsonFlags = 0)
     {
-        $handle = $this->openSaveStream($path);
-
-        $eol = $flags & JSON_PRETTY_PRINT ? "\r\n" : '';
-        $source = $this->source;
+        $eol = $jsonFlags & JSON_PRETTY_PRINT ? "\r\n" : '';
         $skip_comma = true;
+        $source = $this->source;
 
         if ($pairs) {
-            $flags = Reader::MODE_COLUMN | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
+            $flags = Reader::MODE_COLUMN | Reader::SKIP_BLANK | Reader::SKIP_HEADER;
         } else {
-            $flags = Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER;
+            $flags = Reader::SKIP_BLANK | Reader::SKIP_HEADER;
         }
 
-        $original_flags = $source->setFlags($flags);
+        $previous_flags = $source->setFlags($flags);
+
+        $handle = $this->openSaveStream($path);
 
         $source->refresh();
 
@@ -193,14 +193,14 @@ class Converter
                 fwrite($handle, ',' . $eol);
             }
 
-            fwrite($handle, json_encode($fields, $flags));
+            fwrite($handle, json_encode($fields, $jsonFlags));
         }
 
         fwrite($handle, ($skip_comma ? '' : $eol) . ']');
         fclose($handle);
 
-        // Restore original mode
-        $source->setFlags($original_flags);
+        // Restores previous flags
+        $source->setFlags($previous_flags);
         $source->refresh();
 
         return $this;
@@ -216,7 +216,7 @@ class Converter
     {
         $source = $this->source;
 
-        $original_flags = $source->setFlags(Reader::MODE_INDEX | Reader::SKIP_EMPTY | Reader::SKIP_HEADER);
+        $previous_flags = $source->setFlags(Reader::SKIP_BLANK | Reader::SKIP_HEADER);
         $source->refresh();
 
         $owner = $target->ownerDocument;
@@ -234,8 +234,8 @@ class Converter
             $target->appendChild($parent);
         }
 
-        // Restore original mode
-        $source->setFlags($original_flags);
+        // Restores previous flags
+        $source->setFlags($previous_flags);
         $source->refresh();
 
         return $this;
@@ -245,12 +245,16 @@ class Converter
     {
         $handle = fopen($path, 'w');
 
-        if ($handle === false || (strpos($path, 'php://') !== 0 && flock($handle, LOCK_EX) === false)) {
-            $err = error_get_last();
-            throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 4);
-        }
+        if ($handle !== false) {
+            if (strpos($path, 'php://') !== 0 && flock($handle, LOCK_EX) === false) {
+                fclose($handle);
+            } else {
+                return $handle;
+            }
 
-        return $handle;
+            $err = error_get_last();
+            throw new Exception($err ? $err['message'] : 'Could not open file for writing', $err ? $err['type'] : 0, 4);
+        }
     }
 
     private static function checkEndOfLine($eol)

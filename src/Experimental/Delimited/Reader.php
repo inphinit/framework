@@ -13,20 +13,17 @@ use Inphinit\Exception;
 
 abstract class Reader
 {
-    /** @var int Fields are returned as associative arrays */
+    /** @var int Fields are returned as associative arrays (note: Duplicate column names will be overwritten) */
     const MODE_COLUMN = 1;
 
-    /** @var int Fields are returned as array with enumerated indices */
-    const MODE_INDEX = 2;
-
-    /** @var int Skip empty lines */
-    const SKIP_EMPTY = 4;
+    /** @var int Skip blank lines, containing only whitespace or empty */
+    const SKIP_BLANK = 2;
 
     /** @var int Skip the headers in the `fetch()` method */
-    const SKIP_HEADER = 8;
+    const SKIP_HEADER = 4;
 
     /** @var int The header must include at least two columns */
-    const STRICT = 16;
+    const STRICT = 8;
 
     protected $separator;
     protected $separators = array();
@@ -61,7 +58,7 @@ abstract class Reader
             throw new Exception('The ' . get_class($this) . ' class does not have the parse() method', 0, 3);
         }
 
-        $this->flags = self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
+        $this->flags = self::SKIP_BLANK | self::SKIP_HEADER;
         $this->stream = fopen($path, 'rb');
 
         if ($this->stream === false) {
@@ -129,6 +126,8 @@ abstract class Reader
     /**
      * Set Data Transfer Object class
      *
+     * Note: To ensure the key format, use `setFilter()` method.
+     *
      * @param string|null $dto
      */
     public function setDataTransferObject($dto)
@@ -163,14 +162,10 @@ abstract class Reader
      */
     public function setFlags($flags)
     {
-        $valid_flags = self::MODE_COLUMN | self::MODE_INDEX | self::SKIP_EMPTY | self::SKIP_HEADER;
+        $valid_flags = self::MODE_COLUMN | self::SKIP_BLANK | self::SKIP_HEADER | self::STRICT;
 
         if (is_int($flags) === false || ($flags & ~$valid_flags) !== 0) {
             throw new Exception('Invalid flags');
-        }
-
-        if (($flags & self::MODE_COLUMN) && ($flags & self::MODE_INDEX)) {
-            throw new Exception('MODE_COLUMN and MODE_INDEX cannot be used at the same time');
         }
 
         $last = $this->flags;
@@ -181,9 +176,25 @@ abstract class Reader
     }
 
     /**
-     * Set custom filter for fields, and returns the previously defined filter (if any).
-     * Note: If the callback returns false, the line will be ignored.
-     * Note: Values can be changed by reference.
+     * Set a custom filter that can be used to skip specific rows by returning `false`
+     * in the callback, or simply to modify the values received by reference.
+     *
+     * Note: For headers, the filter is only used to modify the values.
+     * Note: When defining a callback, the previous callback will be returned.
+     *
+     * E.g:
+     *
+     * ``` php
+     * $handle->setFilter(function (array &$fields, $index) {
+     *   if ($index === -1) {
+     *     // Convert header
+     *     $fields = str_to_snake_case($fields);
+     *   } else {
+     *     // Convert rows
+     *     $field = array_map('stripcslashes', $field);
+     *   }
+     * });
+     * ```
      *
      * @param callable $filter
      * @throws \Inphinit\Exception
@@ -223,54 +234,58 @@ abstract class Reader
     {
         $this->boot();
 
-        $fields = $this->getLine($this->separator);
+        $limit_count = $this->limitCount;
+        $limit_index = $this->lineIndex;
+        $limit_offset = $this->limitCount + $this->limitOffset;
 
-        if ($fields === null) {
-            return false;
-        }
-
-        if ($this->limitCount !== 0 && $this->lineIndex > ($this->limitCount + $this->limitOffset)) {
-            $this->noNextLine = true;
-            return false;
-        }
-
-        if ($this->firstLine) {
-            $this->firstLine = false;
-        }
-
-        if ($this->filterFields($fields) === false) {
-            return $this->fetch();
-        }
-
-        $size = count($fields);
-
-        if ($size < $this->totalFields) {
-            if ($this->fillFields === null) {
-                $this->fillFields = array_fill(0, $this->totalFields, '');
+        while (($fields = $this->getLine($this->separator)) !== null) {
+            if ($limit_count !== 0 && $limit_index > $limit_offset) {
+                $this->noNextLine = true;
+                return false;
             }
 
-            $fields += $this->fillFields;
-        } elseif ($size !== $this->totalFields) {
-            array_splice($fields, $this->totalFields);
-        }
-
-        if ($this->dto !== null) {
-            $class = $this->dto;
-            $headers = $this->headers;
-            $instance = new $class;
-
-            foreach ($fields as $index => $text) {
-                $instance->{$headers[$index]} = $text;
+            if ($this->firstLine) {
+                $this->firstLine = false;
             }
 
-            return $instance;
+            if ($this->filterFields($fields) === false) {
+                continue;
+            }
+
+            $size = count($fields);
+
+            $total_fields = $this->totalFields;
+
+            if ($size < $total_fields) {
+                if ($this->fillFields === null) {
+                    $this->fillFields = array_fill(0, $total_fields, '');
+                }
+
+                $fields += $this->fillFields;
+            } elseif ($size !== $total_fields) {
+                array_splice($fields, $total_fields);
+            }
+
+            if ($this->dto !== null) {
+                $class = $this->dto;
+                $headers = $this->headers;
+                $instance = new $class;
+
+                foreach ($fields as $index => $text) {
+                    $instance->{$headers[$index]} = $text;
+                }
+
+                return $instance;
+            }
+
+            if ($this->flags & self::MODE_COLUMN) {
+                $fields = array_combine($this->headers, $fields);
+            }
+
+            return $fields;
         }
 
-        if ($this->flags & self::MODE_COLUMN) {
-            $fields = array_combine($this->headers, $fields);
-        }
-
-        return $fields;
+        return false;
     }
 
     /**
@@ -298,7 +313,7 @@ abstract class Reader
         $eol = $this->eol;
         $entry = '';
 
-        if ($this->flags & self::SKIP_EMPTY) {
+        if ($this->flags & self::SKIP_BLANK) {
             while ($entry !== false && trim($entry) === '') {
                 $entry = stream_get_line($stream, $chunk, $eol);
             }
@@ -320,6 +335,7 @@ abstract class Reader
         }
 
         $this->noNextLine = true;
+
         return null;
     }
 
