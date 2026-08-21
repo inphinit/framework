@@ -38,13 +38,16 @@ class Size
      */
     const SYSTEM = 4;
 
-    private $error;
     private $modes;
-    private static $isWin;
 
-    private static $bootCOM;
-    private static $bootCurl;
-    private static $bootSystem;
+    private $bootCOM;
+    private $bootCurl;
+    private $bootSystem;
+
+    private $comErrorCode;
+    private $comErrorMessage;
+
+    private static $osFamily;
 
     /**
      * Define supported modes
@@ -54,29 +57,50 @@ class Size
      */
     public function __construct($modes = 0)
     {
-        if (self::$isWin === null) {
-            self::$isWin = stripos(PHP_OS, 'WIN') === 0;
+        if (self::$osFamily === null) {
+            $os = defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : php_uname('s');
+
+            self::$osFamily = strtolower($os);
         }
 
         $valid_modes = self::COM | self::CURL | self::SYSTEM;
 
         if ($modes === 0) {
-            $this->modes = $valid_modes;
-        } elseif (is_int($modes) && ($modes & ~$valid_modes) === 0) {
-            $this->modes = $modes;
-        } else {
+            $modes = $valid_modes;
+        } elseif (is_int($modes) === false || ($modes & ~$valid_modes) !== 0) {
             throw new Exception('Invalid filesize mode(s)');
         }
+
+        if (($modes & self::COM) && (strpos(self::$osFamily, 'win') !== 0 || class_exists('com', false) === false)) {
+            $modes &= ~self::COM;
+        }
+
+        if (($modes & self::CURL) && function_exists('curl_init') === false) {
+            $modes &= ~self::CURL;
+        }
+
+        if (($modes & self::SYSTEM) && function_exists('exec') === false) {
+            $modes &= ~self::SYSTEM;
+        }
+
+        if ($modes === 0) {
+            throw new Exception('Selected modes are not supported');
+        }
+
+        $this->modes = $modes;
     }
 
     /**
      * Get file size using defined modes
      * Note: If it is not a file or does not exist, this method will return false.
      *
-     * @param string $path         Path to the file
-     * @throws \Inphinit\Exception If all defined modes fail, an exception will be thrown
+     * @param string $path Path to the file
+     *
+     * @throws \Inphinit\Exception Throws an exception with the last error if all modes fail, or if
+     *                             the file does not exist.
      *                             Note: Dev mode throws an exception on case-sensitive check failure
-     * @return float|int|string    Each mode may return a different type of value
+     *
+     * @return float|int|string Each mode may return a different type of value
      */
     public function get($path)
     {
@@ -90,121 +114,156 @@ class Size
 
         $size = null;
 
-        if (self::$isWin && ($this->modes & self::COM)) {
-            $size = $this->fromCOM($path);
+        if ($this->modes & self::COM) {
+            $size = $this->fromCOM($path, $errorMessage, $errorCode);
         }
 
-        if ($size === null && $this->modes & self::CURL) {
-            $size = $this->fromCurl($path);
+        if ($size === null && ($this->modes & self::CURL)) {
+            $size = $this->fromCurl($path, $errorMessage, $errorCode);
         }
 
-        if ($size === null && $this->modes & self::SYSTEM) {
-            $size = $this->fromSystem($path);
+        if ($size === null && ($this->modes & self::SYSTEM)) {
+            $size = $this->fromSystem($path, $errorMessage, $errorCode);
         }
 
         if ($size !== null) {
             return $size;
         }
 
-        if ($this->error instanceof Exception) {
-            throw $this->error;
-        }
-
-        $err = $this->error;
-
-        $message = $err->getMessage();
-        $message = preg_replace('#<br(\s*?)\/?\>#', ' ', $message);
-        $message = strip_tags($message);
-
-        throw new Exception($message, $err->getCode(), 2, $err);
+        throw new Exception($errorMessage, $errorCode);
     }
 
-    private function fromCOM($path)
+    public function __destruct()
     {
-        if (self::$bootCOM) {
-            $boot = self::$bootCOM;
-        } elseif (class_exists('com', false)) {
-            $boot = new \com('Scripting.FileSystemObject');
-            self::$bootCOM = $boot;
-        } else {
-            $boot = false;
+        $this->bootCOM = null;
+
+        if ($this->bootCurl && PHP_VERSION_ID < 80500) {
+            curl_close($this->bootCurl);
         }
 
-        if (!$boot) {
-            $this->error = new Exception('COM: disabled', 0, 3);
-        } else {
+        $this->bootCurl = null;
+    }
+
+    private function fromCOM($path, &$errorMessage, &$errorCode)
+    {
+        $boot = $this->bootCOM;
+
+        if ($boot === false) {
+            $errorCode = $this->comErrorCode;
+            $errorMessage = $this->comErrorMessage;
+
+            return null;
+        }
+
+        if ($boot === null) {
             try {
-                return $boot->GetFile($path)->Size;
+                $boot = new \com('Scripting.FileSystemObject');
+
+                $this->bootCOM = $boot;
             } catch (\Exception $ex) {
-                $this->error = $ex;
+                $this->bootCOM = false;
+
+                $errorCode = $ex->getCode();
+                $errorMessage = 'COM: ' . $ex->getMessage();
+
+                $this->comErrorCode = $errorCode;
+                $this->comErrorMessage = $errorMessage;
+
+                return null;
             }
         }
+
+        try {
+            return $boot->GetFile($path)->Size;
+        } catch (\Exception $ex) {
+            // FileSystemObject failures return messages containing HTML for formatting
+            $message = preg_replace('#<br(\s*?)\/?\>#', ' ', $ex->getMessage());
+            $message = strip_tags($message);
+
+            $errorCode = $ex->getCode();
+            $errorMessage = 'COM: ' . $message;
+        }
     }
 
-    private function fromCurl($path)
+    private function fromCurl($path, &$errorMessage, &$errorCode)
     {
-        if (self::$bootCurl) {
-            $boot = self::$bootCurl;
-        } elseif (function_exists('curl_init')) {
+        if ($this->bootCurl === null) {
             $boot = curl_init();
+
             curl_setopt($boot, CURLOPT_HEADER, true);
             curl_setopt($boot, CURLOPT_NOBODY, true);
             curl_setopt($boot, CURLOPT_RETURNTRANSFER, true);
 
-            self::$bootCurl = $boot;
+            $this->bootCurl = $boot;
         } else {
-            $boot = false;
+            $boot = $this->bootCurl;
         }
 
-        if (!$boot) {
-            $this->error = new Exception('CURL: disabled or not supported by the server', 0, 3);
-        } else {
-            $path = rawurlencode($path);
+        // In several tests, it was necessary to encode the URL
+        $path = rawurlencode($path);
 
-            curl_setopt($boot, CURLOPT_URL, 'file:///' . $path);
+        curl_setopt($boot, CURLOPT_URL, 'file:///' . $path);
 
-            if (curl_exec($boot)) {
-                return curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-            }
+        if (curl_exec($boot) === false) {
+            $errorCode = curl_errno($boot);
 
-            $this->error = new Exception('CURL: ' . rawurldecode(curl_error($boot)), 0, 3);
+            // In several tests, error messages were returned encoded
+            $errorMessage = 'cURL: ' . rawurldecode(curl_error($boot));
+
+            return null;
         }
+
+        if (defined('CURLINFO_CONTENT_LENGTH_DOWNLOAD_T')) {
+            $size = curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T);
+        } else {
+            $size = curl_getinfo($boot, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+        }
+
+        if ($size >= 0) {
+            return $size;
+        }
+
+        $errorCode = 0;
+        $errorMessage = 'cURL: Unknown size';
     }
 
-    private function fromSystem($path)
+    private function fromSystem($path, &$errorMessage, &$errorCode)
     {
-        if (self::$bootSystem) {
-            $boot = self::$bootSystem;
-        } elseif (function_exists('shell_exec')) {
-            if (self::$isWin) {
-                $boot = 'for %%F in (%s) do @echo "%%~zF"';
+        if ($this->bootSystem === null) {
+            $os = self::$osFamily;
+
+            if (strpos($os, 'linux') === 0) {
+                $command = 'stat -c %%s %s 2>&1';
+            } elseif (strpos($os, 'darwin') !== false || strpos($os, 'bsd') !== false) {
+                $command = 'stat -f%%z %s 2>&1';
+            } elseif (strpos($os, 'win') === 0) {
+                $command = '(for %%F in (%s) do @echo "%%~zF") 2>&1';
             } else {
-                $boot = 'stat -c %%s %s';
+                // Fallback
+                $command = 'wc -c < %s 2>&1';
             }
 
-            self::$bootSystem = $boot;
+            $this->bootSystem = $command;
         } else {
-            $boot = false;
+            $command = $this->bootSystem;
         }
 
-        if (!$boot) {
-            $this->error = new Exception('SYSTEM: shell_exec function disabled by the server', 0, 3);
+        $command = sprintf($command, escapeshellarg($path));
+
+        $last_line = exec($command, $output, $result_code);
+
+        if ($last_line === false || $result_code !== 0) {
+            $errorCode = $result_code;
+            $errorMessage = 'System: ' . implode(' ', $output);
         } else {
-            $command = sprintf($boot, escapeshellarg($path));
-            $output = shell_exec($command);
+            $last_line = trim(trim($last_line), '"');
 
-            if (is_string($output)) {
-                $output = trim($output);
-                $output = trim($output, '"');
-
-                if (is_numeric($output)) {
-                    return $output;
-                }
-
-                $this->error = new Exception('SYSTEM: ' . ($output ? $output : 'Unknown error'), 0, 3);
-            } else {
-                $this->error = new Exception('SYSTEM: Unable to retrieve the size of ' . $path, 0, 3);
+            if (is_numeric($last_line)) {
+                return $last_line;
             }
+
+            $errorCode = 0;
+            $errorMessage = $last_line ? "System: {$last_line}" : 'System: Unknown error';
         }
     }
 }
