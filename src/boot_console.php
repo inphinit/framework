@@ -89,13 +89,13 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     $public = escapeshellarg(INPHINIT_ROOT . '/public');
     $router = escapeshellarg(INPHINIT_ROOT . '/index.php');
 
-    // passthru("php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}", $code);
+    $command = "php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router} 2>&1";
 
-    $execute = "php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router}";
+    // passthru($command, $code);
 
     $descriptor_spec = array(STDIN, STDOUT, STDERR);
 
-    $handle = proc_open($execute, $descriptor_spec, $pipes);
+    $handle = proc_open($command, $descriptor_spec, $pipes);
 
     do {
         $status = proc_get_status($handle);

@@ -32,7 +32,7 @@ class Package
     /** @var int Package version string */
     const VERSION = 6;
 
-    const META_FILE = "%s/%s-%s.php";
+    const META_FILE = '%s/%s-%s.php';
 
     private static $cacheInfo = array();
 
