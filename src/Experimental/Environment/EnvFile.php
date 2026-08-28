@@ -29,6 +29,7 @@ class EnvFile
     const REGEX_KEY = '/^([A-Za-z_][A-Za-z0-9_]*)$/';
 
     private $path;
+    private $handle;
     private $entries = array();
     private $override = false;
 
@@ -192,6 +193,8 @@ class EnvFile
             throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 3);
         }
 
+        $this->handle = $handle;
+
         $parser = new Parser();
 
         $line = 0;
@@ -215,6 +218,8 @@ class EnvFile
 
                 $parser->putFallback($name, $value);
             } elseif (strpos($data, '#') !== 0) {
+                fclose($handle);
+
                 throw new EnvException("Invalid '{$data}' entry", 0, $this->path, $line);
             }
         }
@@ -234,6 +239,8 @@ class EnvFile
         try {
             $parser->setValue($value);
         } catch (\Exception $ex) {
+            fclose($this->handle);
+
             throw new EnvException(
                 $ex->getMessage(),
                 $ex->getCode(),

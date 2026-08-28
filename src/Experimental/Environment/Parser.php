@@ -36,10 +36,12 @@ class Parser
         $quote = null;
 
         if (preg_match(self::REGEX_QUOTES, $value, $matches) === 1) {
-            $residual = $matches[3];
+            // If there is anything other than whitespace after the closing quotation mark,
+            // it will be considered an error.
+            $unexpected = $matches[3];
 
-            if ($residual !== '') {
-                throw new Exception('Invalid syntax');
+            if ($unexpected !== '') {
+                throw new Exception("Unexpected '{$unexpected}' in {$value}");
             }
 
             $quote = $matches[1];
