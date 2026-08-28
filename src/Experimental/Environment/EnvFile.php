@@ -34,7 +34,7 @@ class EnvFile
     private $override = false;
 
     /**
-     * Load variable from .env or from cache (if avaliable)
+     * Load variable from .env or from cache (if available)
      *
      * @param string $path  Env file path
      * @throws \Inphinit\Exception
@@ -53,7 +53,8 @@ class EnvFile
     public function setOverride($enable)
     {
         if (is_bool($enable) === false) {
-            throw new Exception('Excepted an bool value');
+            $type = Inspector::type($value);
+            throw new Exception("Expects to be bool, {$type} given");
         }
 
         $this->override = $enable;
@@ -87,11 +88,11 @@ class EnvFile
         }
 
         if ($sources & self::SOURCE_ENV) {
-            self::isAvaliable('getenv', 'putenv');
+            self::isAvailable('getenv', 'putenv');
         }
 
         if ($sources & (self::SOURCE_APACHE | self::SOURCE_APACHE_ALL)) {
-            self::isAvaliable('apache_getenv', 'apache_setenv');
+            self::isAvailable('apache_getenv', 'apache_setenv');
         }
 
         $override = $this->override;
@@ -227,10 +228,10 @@ class EnvFile
         fclose($handle);
     }
 
-    private static function isAvaliable($getter, $setter)
+    private static function isAvailable($getter, $setter)
     {
         if (function_exists($getter) === false || function_exists($setter) === false) {
-            throw new Exception("{$getter} or {$setter} is not avaliable", 0, 3);
+            throw new Exception("{$getter} or {$setter} is not available", 0, 3);
         }
     }
 

@@ -13,9 +13,9 @@ use Inphinit\Exception;
 
 class Parser
 {
-    const REGEX_QUOTES = '/^([\'"])(.+)\\1(.*)/';
+    const REGEX_QUOTES = '/^([\'"])(.*)\\1(.*)/';
     const REGEX_VAR = '/\$\{(.+?)\}/';
-    const REGEX_INTERPOLATE = '/^([A-Za-z_][A-Za-z0-9_]*)((:)?([\+\-\?])(.*))$/';
+    const REGEX_INTERPOLATE = '/^([A-Za-z_][A-Za-z0-9_]*)((:)?([\+\-\?])(.*))?$/';
 
     private $data;
     private $fallback = array();
@@ -91,9 +91,10 @@ class Parser
         }
 
         $var = $inter_matches[1];
-        $non_empty = $inter_matches[3] === ':';
-        $inter_mode = $inter_matches[4];
-        $inter_param = $inter_matches[5];
+        $non_empty = isset($inter_matches[3]) && $inter_matches[3] === ':';
+        $inter_mode = isset($inter_matches[4]) ? $inter_matches[4] : '';
+        $inter_param = isset($inter_matches[5]) ? $inter_matches[5] : '';
+
         $value = null;
 
         if (isset($_ENV[$var])) {
@@ -104,7 +105,7 @@ class Parser
 
         switch ($inter_mode) {
             case '+':
-                // ${VAR-alternative} Replace
+                // ${VAR+replacement} Replace
                 if ($non_empty) {
                     return $value === '' ? '' : $inter_param;
                 } else {
@@ -122,7 +123,7 @@ class Parser
 
                 break;
             case '?':
-                // ${VAR?default} Required
+                // ${VAR?error} Required
                 if ($non_empty) {
                     if ($value === '' || $value === null) {
                         throw new Exception($inter_param, 0, 3);

@@ -80,8 +80,8 @@ class Command
      * @param string|null $short       Optional. Define short option, used with `-` prefix
      * @param int         $modes       Optional. Define whether the option is optional, required,
      *                                 or should be used without a value
-     * @param string|null $format      Optional. Define format excepted of value (not work with `ARG_NO_VALUE`)
-     * @param string|null $description Optional. Define a description for option
+     * @param string|null $format      Optional. Define expected value format (not work with `ARG_NO_VALUE`)
+     * @param string|null $description Optional. Define option description
      * @return \Inphinit\Experimental\Cli\Command
      */
     public function setOption($long, $short = null, $modes = 0, $format = null, $description = null)
