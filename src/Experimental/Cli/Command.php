@@ -30,6 +30,7 @@ class Command
     private $name;
     private $callback;
     private $enabledResidues = false;
+    private $restrictedToCli = false;
 
     private $longs = array();
     private $shorts = array();
@@ -155,6 +156,24 @@ class Command
     }
 
     /**
+     * If True, the command can only be executed in CLI
+     *
+     * @param bool $enable
+     * @throws \Inphinit\Exception
+     * @return \Inphinit\Experimental\Cli\Command
+     */
+    public function restrictToCli($enable)
+    {
+        if (is_bool($enable) === false) {
+            throw new Exception('Expected boolean value');
+        }
+
+        $this->restrictedToCli = $enable;
+
+        return $this;
+    }
+
+    /**
      * They get the name from the command
      *
      * @return string
@@ -193,6 +212,10 @@ class Command
      */
     public function response(array $entries)
     {
+        if ($this->restrictedToCli && \PHP_SAPI !== 'cli') {
+            throw new Exception('The command can only be executed via the CLI');
+        }
+
         $options = array();
 
         foreach ($this->longs as $index => $long) {

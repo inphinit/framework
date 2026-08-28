@@ -110,14 +110,15 @@ class Console
      * @param int                   $code    If the $code argument is present, then the return status of
      *                                       the executed command will be written to this variable
      *
-     * @global \Inphinit\Experimental\Cli\Console $console
+     * @global \Inphinit\Experimental\Cli\Console|null         $console
+     * @global \Inphinit\Experimental\Environment\EnvFile|null $env
      *
      * @throws \Inphinit\Exception
      * @return string
      */
     public static function run($command, array $args = array(), &$code = 0)
     {
-        global $console;
+        global $console, $env;
 
         $values = array('', $command);
 
