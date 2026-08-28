@@ -13,24 +13,29 @@ use Inphinit\Exception;
 
 class Command
 {
+    /**
+     * @var int The option must not have a value (eg.: `run foo --option`).
+     *          Note: The command option remains optional, to change the behavior,
+     *          use `Command::ARG_NO_VALUE|Command::ARG_REQUIRED`.
+     */
     const ARG_NO_VALUE = 1;
-    const ARG_OPTIONAL = 2;
-    const ARG_REQUIRED = 3;
+
+    /** @var int The command requires the option */
+    const ARG_REQUIRED = 2;
 
     const REGEX_NAME = '/^[A-Za-z][\w:]*$/';
-    const REGEX_LONG = '/^([a-z][\w:\-?]+)$/i';
+    const REGEX_LONG = '/^([a-z][\w:\-]+)$/i';
     const REGEX_SHORT = '/^([a-z0-9?])$/i';
 
     private $name;
     private $callback;
-    private $residual = false;
+    private $enabledResidues = false;
 
     private $longs = array();
     private $shorts = array();
     private $modes = array();
     private $formats = array();
     private $descriptions = array();
-    private $reclaimeds = array();
 
     /**
      * Creates a command to be used with an `Inphinit\Cli\Console` instance
@@ -71,24 +76,23 @@ class Command
     /**
      * Define a option for command
      *
-     * @param string $long        Define long option, used with `--` prefix
-     * @param string $short       Optional. Define short option, used with `-` prefix
-     * @param string $mode        Optional. Define whether the option is optional, required,
-     *                            or should be used without a value
-     * @param string $format      Optional. Define format excepted of value
-     *                            (not work with `ARG_NO_VALUE`)
-     * @param string $description Optional. Define a description for option
+     * @param string      $long        Define long option, used with `--` prefix
+     * @param string|null $short       Optional. Define short option, used with `-` prefix
+     * @param int         $modes       Optional. Define whether the option is optional, required,
+     *                                 or should be used without a value
+     * @param string|null $format      Optional. Define format excepted of value (not work with `ARG_NO_VALUE`)
+     * @param string|null $description Optional. Define a description for option
      * @return \Inphinit\Experimental\Cli\Command
      */
-    public function setOption($long, $short = null, $mode = self::ARG_OPTIONAL, $format = null, $description = null)
+    public function setOption($long, $short = null, $modes = 0, $format = null, $description = null)
     {
         if (is_string($long) === false || preg_match(self::REGEX_LONG, $long) !== 1) {
-            throw new Exception("Invalid long option: '{$long}'");
+            throw new Exception("Invalid long option");
         }
 
         if ($short !== null) {
-            if (is_string($short) === false || preg_match(self::REGEX_SHORT, $short, $matches) !== 1) {
-                throw new Exception("Invalid short option: '{$short}'");
+            if (is_string($short) === false || isset($short[1]) || preg_match(self::REGEX_SHORT, $short, $matches) !== 1) {
+                throw new Exception("Invalid short option");
             }
 
             $short_index = array_search($short, $this->shorts);
@@ -99,42 +103,53 @@ class Command
             }
         }
 
+        if ($modes !== 0) {
+            $valid_modes = self::ARG_NO_VALUE | self::ARG_REQUIRED;
+
+            if (is_int($modes) === false || ($modes & ~$valid_modes) !== 0) {
+                throw new Exception('Invalid mode(s)');
+            }
+        }
+
+        if ($format !== null && ($modes & self::ARG_NO_VALUE)) {
+            throw new Exception('Options that do not expect a value cannot include format validation');
+        }
+
         $index = array_search($long, $this->longs);
 
         if ($index !== false) {
             $this->longs[$index] = $long;
             $this->shorts[$index] = $short;
-            $this->modes[$index] = $mode;
+            $this->modes[$index] = $modes;
             $this->formats[$index] = $format;
             $this->descriptions[$index] = $description;
-            $this->reclaimeds[$index] = false;
         } else {
             $this->longs[] = $long;
             $this->shorts[] = $short;
-            $this->modes[] = $mode;
+            $this->modes[] = $modes;
             $this->formats[] = $format;
             $this->descriptions[] = $description;
-            $this->reclaimeds[] = false;
         }
 
         return $this;
     }
 
     /**
-     * If set to true, it will allow the command to receive invalid parameters,
-     * which will be passed to the third parameter of the callback
+     * If set to true, entries that don't match any declared option will be
+     * collected as residues and passed to the third parameter of the callback,
+     * instead of throwing an exception.
      *
      * @param bool $enable
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Cli\Command
      */
-    public function enableResidual($enable)
+    public function enableResidues($enable)
     {
         if (is_bool($enable) === false) {
             throw new Exception('Expected boolean value');
         }
 
-        $this->residual = $enable;
+        $this->enabledResidues = $enable;
 
         return $this;
     }
@@ -178,32 +193,21 @@ class Command
      */
     public function response(array $entries)
     {
-        $callback = $this->callback;
-        $params = array_fill_keys($this->longs, null);
-        $rest = array();
+        $options = array();
 
-        foreach ($entries as $entry => $value) {
-            $index = false;
+        foreach ($this->longs as $index => $long) {
+            $short = isset($this->shorts[$index]) ? $this->shorts[$index] : null;
+            $options[$long] = $this->resolveOption($long, $short, $index, $entries);
 
-            if (strlen($entry) > 2) {
-                $index = array_search($entry, $this->longs);
-            } elseif (strlen($entry) === 1) {
-                $index = array_search($entry, $this->shorts);
-            }
+            // Remove the encountered items to retain the residues, if necessary
+            unset($entries[$long]);
 
-            if ($index !== false) {
-                $this->checkNoValue($index, $entry, $value);
-                $this->checkValueFormat($index, $entry, $value);
-                $this->reclaimeds[$index] = true;
-                $params[$this->longs[$index]] = $value;
-            } elseif ($this->residual) {
-                $rest[$entry] = $value;
-            } else {
-                throw new Exception("Invalid entry: {$entry}");
+            if ($short !== null) {
+                unset($entries[$short]);
             }
         }
 
-        $this->checkRequired();
+        $callback = $this->callback;
 
         if (is_array($callback)) {
             $controller = $callback['controller'];
@@ -211,41 +215,50 @@ class Command
             $callback = array(new $controller(), $method);
         }
 
-        return $callback($this, $params, $rest);
-    }
-
-    private function checkNoValue($index, $option, $value)
-    {
-        if ($this->modes[$index] === self::ARG_NO_VALUE && $value !== '') {
-            throw new Exception("The '{$option}' option does not accept values, yet '{$value}' was provided", 0, 3);
+        if ($this->enabledResidues || empty($entries)) {
+            return $callback($this, $options, $entries);
         }
+
+        $names = array_keys($entries);
+
+        throw new Exception('Unexpected options: ' . implode(', ', $names));
     }
 
-    private function checkValueFormat($index, $option, $value)
+    private function resolveOption($long, $short, $index, $entries)
     {
+        $modes = $this->modes[$index];
+        $option = '--' . $long;
+
+        if (array_key_exists($long, $entries)) {
+            $value = $entries[$long];
+        } elseif ($short !== null && array_key_exists($short, $entries)) {
+            $value = $entries[$short];
+            $option = '-' . $short;
+        } elseif ($modes & self::ARG_REQUIRED) {
+            $message = "`{$option}`" . ($short ? " (or `-{$short}`)" : '');
+            throw new Exception("{$message} is missing", 0, 3);
+        } else {
+            return null;
+        }
+
+        if ($modes & self::ARG_NO_VALUE) {
+            if ($value === null) {
+                return '';
+            }
+
+            throw new Exception("`{$option}` expects a non-value, '{$value}' given", 0, 3);
+        }
+
+        if (is_string($value) === false) {
+            throw new Exception("`{$option}` expects a value", 0, 3);
+        }
+
         $format = $this->formats[$index];
 
         if ($format && preg_match($format, $value) !== 1) {
-            throw new Exception("Invalid value format in: {$option}={$value} ($format)", 0, 3);
+            throw new Exception("Invalid value format in: `{$option} \"{$value}\"` ({$format})", 0, 3);
         }
-    }
 
-    private function checkRequired()
-    {
-        foreach ($this->modes as $index => $mode) {
-            if ($mode === self::ARG_REQUIRED && $this->reclaimeds[$index] === false) {
-                $long = $this->longs[$index];
-
-                $message = "Missing option: --{$long}";
-
-                $short = $this->shorts[$index];
-
-                if ($short !== null) {
-                    $message .= " or -{$short}";
-                }
-
-                throw new Exception($message, 0, 3);
-            }
-        }
+        return $value;
     }
 }

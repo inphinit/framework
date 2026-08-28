@@ -16,7 +16,7 @@ require_once __DIR__ . '/env_vars.php';
 
 $console = new Console();
 
-$console->action('app:down', function (Command $command, array $params, array $residual) {
+$console->action('app:down', function (Command $command, array $options, array $residues) {
     if (App::down()) {
         echo 'Maintenance mode is now active.';
     } else {
@@ -25,7 +25,7 @@ $console->action('app:down', function (Command $command, array $params, array $r
     }
 });
 
-$console->action('app:up', function (Command $command, array $params, array $residual) {
+$console->action('app:up', function (Command $command, array $options, array $residues) {
     if (App::up()) {
         echo 'The application is active, and maintenance mode has been disabled.';
     } else {
@@ -34,8 +34,8 @@ $console->action('app:up', function (Command $command, array $params, array $res
     }
 });
 
-$console->action('env:boot', function (Command $command, array $params, array $residual) use ($env) {
-    if (isset($params['override'])) {
+$console->action('env:boot', function (Command $command, array $options, array $residues) use ($env) {
+    if (isset($options['override'])) {
         $env->setOverride(true);
     }
 
@@ -47,7 +47,7 @@ $console->action('env:boot', function (Command $command, array $params, array $r
     }
 })->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
 
-$console->action('env:source', function (Command $command, array $params, array $residual) use ($env) {
+$console->action('env:source', function (Command $command, array $options, array $residues) use ($env) {
     $env_file = INPHINIT_SYSTEM . '/boot/env.php';
 
     if (is_file($env_file) === false) {
@@ -60,14 +60,14 @@ $console->action('env:source', function (Command $command, array $params, array 
     }
 });
 
-$console->action('pkg:up', function (Command $command, array $params, array $residual) {
+$console->action('pkg:up', function (Command $command, array $options, array $residues) {
     require_once INPHINIT_SYSTEM . '/boot/importpackages.php';
 });
 
-$serve = $console->action('serve', function (Command $command, array $params, array $residual) {
-    $host = $params['host'] ? $params['host'] : App::config('built_in_host');
-    $port = $params['port'] ? $params['port'] : App::config('built_in_port');
-    $vars = $params['vars'] ? $params['vars'] : 'EGPCS';
+$serve = $console->action('serve', function (Command $command, array $options, array $residues) {
+    $host = $options['host'] ? $options['host'] : App::config('built_in_host');
+    $port = $options['port'] ? $options['port'] : App::config('built_in_port');
+    $vars = $options['vars'] ? $options['vars'] : 'EGPCS';
 
     if (empty($host)) {
         echo 'Empty host';
@@ -88,6 +88,7 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     $server = escapeshellarg($host . ':' . $port);
     $public = escapeshellarg(INPHINIT_ROOT . '/public');
     $router = escapeshellarg(INPHINIT_ROOT . '/index.php');
+    $vars = escapeshellarg($vars);
 
     $command = "php -d variables_order={$vars} -d error_log={$log} -S {$server} -t {$public} {$router} 2>&1";
 
@@ -107,9 +108,9 @@ $serve = $console->action('serve', function (Command $command, array $params, ar
     return $code;
 });
 
-$serve->setOption('host', 'h', Command::ARG_OPTIONAL, null, 'Define server address');
-$serve->setOption('port', 'p', Command::ARG_OPTIONAL, null, 'Define server port');
-$serve->setOption('vars', 'v', Command::ARG_OPTIONAL, null, 'Define variables order');
+$serve->setOption('host', 'h', 0, null, 'Define server address');
+$serve->setOption('port', 'p', 0, null, 'Define server port');
+$serve->setOption('vars', 'v', 0, '#^[EGPCS]+$#', 'Define variables order');
 
 // system/console.php
 require INPHINIT_SYSTEM . '/console.php';
