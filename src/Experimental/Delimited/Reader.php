@@ -25,6 +25,8 @@ abstract class Reader
     /** @var int The header must include at least two columns */
     const STRICT = 8;
 
+    const BOM = "\xEF\xBB\xBF";
+
     protected $separator;
     protected $separators = array();
     protected $stream;
@@ -44,7 +46,6 @@ abstract class Reader
     private $noNextLine = false;
     private $totalFields;
     private $uninitialized = true;
-    private static $bom = "\xEF\xBB\xBF";
 
     /**
      * Open file
@@ -168,11 +169,11 @@ abstract class Reader
             throw new Exception('Invalid flags');
         }
 
-        $last = $this->flags;
+        $previous = $this->flags;
 
         $this->flags = $flags;
 
-        return $last;
+        return $previous;
     }
 
     /**
@@ -202,11 +203,11 @@ abstract class Reader
      */
     public function setFilter(callable $filter)
     {
-        $last = $this->filter;
+        $previous = $this->filter;
 
         $this->filter = $filter;
 
-        return $last;
+        return $previous;
     }
 
     /**
@@ -345,7 +346,7 @@ abstract class Reader
         rewind($this->stream);
 
         // Skip BOM
-        if (fread($this->stream, 3) !== self::$bom) {
+        if (fread($this->stream, 3) !== self::BOM) {
             rewind($this->stream);
         }
     }

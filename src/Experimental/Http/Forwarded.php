@@ -27,7 +27,7 @@ class Forwarded
 
     private $alloweds;
 
-    private static $delimiters = "()<>@,;:\\\"/[]?={} \t";
+    const DELIMITERS = "()<>@,;:\\\"/[]?={} \t";
 
     /**
      * Constructor.
@@ -252,7 +252,7 @@ class Forwarded
 
     private static function isDelimiter($char)
     {
-        return strpos(self::$delimiters, $char) !== false;
+        return strpos(self::DELIMITERS, $char) !== false;
     }
 
     private static function isTokenChar($char)
