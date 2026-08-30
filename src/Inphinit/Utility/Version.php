@@ -23,7 +23,7 @@ class Version
     /** @var string Define version pattern */
     protected static $pattern = '#^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*))*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$#';
 
-    private $data = array(
+    private $components = array(
         'major' => '0',
         'minor' => '0',
         'patch' => '0',
@@ -41,16 +41,16 @@ class Version
     public function __construct($version)
     {
         if (preg_match(self::$pattern, $version, $matches)) {
-            $this->data['major'] = $matches[1];
-            $this->data['minor'] = $matches[2];
-            $this->data['patch'] = $matches[3];
+            $this->components['major'] = $matches[1];
+            $this->components['minor'] = $matches[2];
+            $this->components['patch'] = $matches[3];
 
             if (empty($matches[4]) === false) {
-                $this->data['prerelease'] = explode('.', $matches[4]);
+                $this->components['prerelease'] = explode('.', $matches[4]);
             }
 
             if (empty($matches[5]) === false) {
-                $this->data['build'] = explode('.', $matches[5]);
+                $this->components['build'] = explode('.', $matches[5]);
             }
         } else {
             throw new Exception('Invalid version format: ' . $version . ' does not match SemVer');
@@ -77,7 +77,11 @@ class Version
      */
     public function __get($name)
     {
-        return isset($this->data[$name]) ? $this->data[$name] : null;
+        if (array_key_exists($name, $this->components) === false) {
+            throw new Exception('Unexpected Version component: ' . $name);
+        }
+
+        return $this->components[$name];
     }
 
     /**
@@ -89,8 +93,8 @@ class Version
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->data) === false) {
-            throw new Exception('Invalid version component: ' . $name);
+        if (array_key_exists($name, $this->components) === false) {
+            throw new Exception('Unexpected Version component: ' . $name);
         }
 
         if ($value !== null) {
@@ -115,7 +119,7 @@ class Version
             }
         }
 
-        $this->data[$name] = $value;
+        $this->components[$name] = $value;
         $this->cache = null;
     }
 
@@ -130,14 +134,14 @@ class Version
             return $this->cache;
         }
 
-        $output = $this->data['major'] . '.' . $this->data['minor'] . '.' . $this->data['patch'];
+        $output = $this->components['major'] . '.' . $this->components['minor'] . '.' . $this->components['patch'];
 
-        if ($this->data['prerelease']) {
-            $output .= '-' . implode('.', $this->data['prerelease']);
+        if ($this->components['prerelease']) {
+            $output .= '-' . implode('.', $this->components['prerelease']);
         }
 
-        if ($this->data['build']) {
-            $output .= '+' . implode('.', $this->data['build']);
+        if ($this->components['build']) {
+            $output .= '+' . implode('.', $this->components['build']);
         }
 
         return $this->cache = $output;

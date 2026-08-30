@@ -404,10 +404,12 @@ class Document
         $items = array();
 
         if ($nodes) {
+            $complete_or_simple = $this->complete || $this->simple;
+
             foreach ($nodes as $node) {
                 if (
                     $node->nodeType === \XML_ELEMENT_NODE &&
-                    ($this->complete || $this->simple || ctype_alnum($node->nodeName))
+                    ($complete_or_simple || ctype_alnum($node->nodeName))
                 ) {
                     $items[$node->nodeName][] = $this->nodeContents($node);
                 }

@@ -277,17 +277,8 @@ class Import
             $value = self::relativePath($value);
         }
 
-        // Namespaces with more separators stay at the top.
-        uksort($libs, function ($a, $b) {
-            $x = substr_count($a, strpos($a, '\\') !== false ? '\\' : '_');
-            $y = substr_count($b, strpos($b, '\\') !== false ? '\\' : '_');
-
-            if ($x === $y) {
-                return 0;
-            }
-
-            return $x < $y ? 1 : -1;
-        });
+        // Namespaces with more separators stay at the top
+        uksort($libs, array($this, 'sortLibs'));
 
         if (is_file($path)) {
             $original = include $path;
@@ -345,5 +336,17 @@ class Import
         }
 
         return $path;
+    }
+
+    private function sortLibs($a, $b)
+    {
+        $x = substr_count($a, strpos($a, '\\') !== false ? '\\' : '_');
+        $y = substr_count($b, strpos($b, '\\') !== false ? '\\' : '_');
+
+        if ($x === $y) {
+            return 0;
+        }
+
+        return $x < $y ? 1 : -1;
     }
 }

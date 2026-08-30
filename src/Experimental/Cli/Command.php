@@ -15,7 +15,7 @@ class Command
 {
     /**
      * @var int The option must not have a value (eg.: `run foo --option`).
-     *          Note: The command option remains optional, to change the behavior,
+     *          Note: The option remains optional; to make it required,
      *          use `Command::ARG_NO_VALUE|Command::ARG_REQUIRED`.
      */
     const ARG_NO_VALUE = 1;
@@ -88,12 +88,20 @@ class Command
     public function setOption($long, $short = null, $modes = 0, $format = null, $description = null)
     {
         if (is_string($long) === false || preg_match(self::REGEX_LONG, $long) !== 1) {
-            throw new Exception("Invalid long option");
+            throw new Exception('Invalid long option');
+        }
+
+        if (in_array($long, $this->longs)) {
+            throw new Exception($long . ' is already defined');
         }
 
         if ($short !== null) {
-            if (is_string($short) === false || isset($short[1]) || preg_match(self::REGEX_SHORT, $short, $matches) !== 1) {
-                throw new Exception("Invalid short option");
+            if (
+                is_string($short) === false ||
+                isset($short[1]) ||
+                preg_match(self::REGEX_SHORT, $short, $matches) !== 1
+            ) {
+                throw new Exception('Invalid short option');
             }
 
             $short_index = array_search($short, $this->shorts);
@@ -116,21 +124,11 @@ class Command
             throw new Exception('Options that do not expect a value cannot include format validation');
         }
 
-        $index = array_search($long, $this->longs);
-
-        if ($index !== false) {
-            $this->longs[$index] = $long;
-            $this->shorts[$index] = $short;
-            $this->modes[$index] = $modes;
-            $this->formats[$index] = $format;
-            $this->descriptions[$index] = $description;
-        } else {
-            $this->longs[] = $long;
-            $this->shorts[] = $short;
-            $this->modes[] = $modes;
-            $this->formats[] = $format;
-            $this->descriptions[] = $description;
-        }
+        $this->longs[] = $long;
+        $this->shorts[] = $short;
+        $this->modes[] = $modes;
+        $this->formats[] = $format;
+        $this->descriptions[] = $description;
 
         return $this;
     }
@@ -259,7 +257,7 @@ class Command
             $option = '-' . $short;
         } elseif ($modes & self::ARG_REQUIRED) {
             $message = "`{$option}`" . ($short ? " (or `-{$short}`)" : '');
-            throw new Exception("{$message} is missing", 0, 3);
+            throw new Exception($message . ' is missing', 0, 3);
         } else {
             return null;
         }
@@ -269,7 +267,7 @@ class Command
                 return '';
             }
 
-            throw new Exception("`{$option}` expects a non-value, '{$value}' given", 0, 3);
+            throw new Exception("`{$option}` must not have a value, '{$value}' given", 0, 3);
         }
 
         if (is_string($value) === false) {

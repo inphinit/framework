@@ -10,7 +10,6 @@
 namespace Inphinit\Experimental\Cli;
 
 use Inphinit\Diagnostics\Inspector;
-use Inphinit\Event;
 use Inphinit\Exception;
 
 class Console
@@ -143,7 +142,7 @@ class Console
         }
 
         if (self::isNotConsole($console)) {
-            throw new Exception('Console instance could not be found; there is probably an error in the framework installation');
+            throw new Exception('Console instance not found; this could be a framework installation failure');
         }
 
         try {
@@ -157,8 +156,8 @@ class Console
      * Parse the arguments (usually received from the $argv variable) into an
      * associative array, based on the long and short format options.
      *
-     * Note: It is possible to create a command class by overriding this method
-     * to alter the parser's behavior.
+     * Note: It is possible to extend the Console class by creating a subclass that
+     *       overrides the parser, allowing it to use a different options structure.
      *
      * @param array $entries
      * @throws \Inphinit\Exception

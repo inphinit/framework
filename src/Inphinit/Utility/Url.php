@@ -36,9 +36,7 @@ class Url
     /** @var int Used by the `::normalize()` method to sort querystring */
     const SORT_QUERY = 8;
 
-    private static $transliterator;
-
-    private static $defaultPorts = array(
+    private static $schemaPorts = array(
         'ftp' => 21,
         'sftp' => 22,
         'http' => 80,
@@ -49,7 +47,9 @@ class Url
         '@' => '-at-'
     );
 
-    private $data = array(
+    private static $transliterator;
+
+    private $components = array(
         'scheme' => null,
         'host' => null,
         'port' => null,
@@ -74,29 +74,30 @@ class Url
             $url = 'file:///' . $url;
         }
 
-        $encoded = self::urlEncode($url);
+        // Prevent unicode conflicts with parser
+        $encoded = self::encode($url);
 
-        $parsed = parse_url($encoded);
+        $components = parse_url($encoded);
 
-        if ($parsed === false) {
+        if ($components === false) {
             throw new Exception('Unrecognized or corrupted URL format: ' . $url);
         }
 
-        foreach ($parsed as &$value) {
-            $value = urldecode($value);
+        foreach ($components as &$component) {
+            $component = rawurldecode($component);
         }
 
-        $this->data = $parsed + $this->data;
+        $this->components = $components + $this->components;
     }
 
     /**
-     * Sets default ports
+     * Sets default ports associated to specific schemas
      *
-     * @param array $dict
+     * @param array $ports
      */
-    public static function setDefaultPorts(array $ports)
+    public static function setSchemaPorts(array $ports)
     {
-        self::$defaultPorts = $ports;
+        self::$schemaPorts = $ports;
     }
 
     /**
@@ -133,16 +134,16 @@ class Url
      */
     public function normalize($configs = 0)
     {
-        if ($this->data['scheme']) {
-            $this->data['scheme'] = strtolower($this->data['scheme']);
+        if ($this->components['scheme']) {
+            $this->components['scheme'] = strtolower($this->components['scheme']);
         }
 
-        $path = $this->data['path'];
+        $path = $this->components['path'];
 
         if ($path) {
             $path = self::canonpath($path);
 
-            if ($this->data['scheme'] === 'file' && $path[0] === '/' && strpos($path, ':') === 2) {
+            if ($this->components['scheme'] === 'file' && $path[0] === '/' && strpos($path, ':') === 2) {
                 $path = ltrim($path, '/');
             }
 
@@ -172,23 +173,23 @@ class Url
                 $path = preg_replace('#//+#', '/', $path);
             }
 
-            $this->data['path'] = $path;
+            $this->components['path'] = $path;
             $this->cache = null;
         }
 
-        if ($this->data['query'] && ($configs & self::SORT_QUERY)) {
-            parse_str($this->data['query'], $query);
+        if ($this->components['query'] && ($configs & self::SORT_QUERY)) {
+            parse_str($this->components['query'], $query);
 
             if ($query) {
                 Arrays::ksort($query);
-                $this->data['query'] = http_build_query($query);
+                $this->components['query'] = http_build_query($query);
                 $this->cache = null;
             }
         }
     }
 
     /**
-     * Canon path
+     * Resolve paths with `..` and `.`
      *
      * @param string $path
      * @return string
@@ -196,8 +197,10 @@ class Url
     public static function canonpath($path)
     {
         if (strpos($path, '\\') !== false) {
+            $segment = '\\.\\';
             $separator = '\\';
         } elseif (strpos($path, '/') !== false) {
+            $segment = '/./';
             $separator = '/';
         } else {
             return $path;
@@ -206,7 +209,7 @@ class Url
         $prepend_separator = substr($path, 0, 1) === $separator;
         $append_separator = substr($path, -1) === $separator;
 
-        $path = str_replace('/./', '/', $path);
+        $path = str_replace($segment, $separator, $path);
         $parts = explode($separator, trim($path, $separator));
         $rebuild = array();
 
@@ -238,6 +241,20 @@ class Url
     }
 
     /**
+     * Encode URL while preserving the URI delimiters
+     * `:`, `/`, `@`, `?`, `&`, `=`, `#`, `[`, `]`, `(`, `)`, `_` and `-`
+     *
+     * @param string $url
+     * @return string
+     */
+    public static function encode($url)
+    {
+        return preg_replace_callback('~[^:/@?&=#\[\]\(\)_\-]+~sD', function ($matches) {
+            return rawurlencode($matches[0]);
+        }, $url);
+    }
+
+    /**
      * Get value for a URL component
      *
      * @param string $name
@@ -245,7 +262,11 @@ class Url
      */
     public function __get($name)
     {
-        return isset($this->data[$name]) ? $this->data[$name] : null;
+        if (array_key_exists($name, $this->components) === false) {
+            throw new Exception('Unexpected URL component: ' . $name);
+        }
+
+        return $this->components[$name];
     }
 
     /**
@@ -256,8 +277,8 @@ class Url
      */
     public function __set($name, $value)
     {
-        if (array_key_exists($name, $this->data) === false) {
-            throw new Exception('Invalid URL component: ' . $name);
+        if (array_key_exists($name, $this->components) === false) {
+            throw new Exception('Unexpected URL component: ' . $name);
         }
 
         if ($value !== null) {
@@ -271,7 +292,7 @@ class Url
         }
 
         $this->cache = null;
-        $this->data[$name] = $value;
+        $this->components[$name] = $value;
     }
 
     /**
@@ -285,23 +306,37 @@ class Url
             return $this->cache;
         }
 
-        $data = $this->data;
+        $components = $this->components;
 
-        $scheme = $data['scheme'];
-        $host = $data['host'] ? $data['host'] : '';
-        $port = $data['port'];
+        $scheme = $components['scheme'];
+        $user = $components['user'];
+        $pass = $components['pass'];
+        $auth = '';
 
-        if ($scheme && isset(self::$defaultPorts[$scheme]) && self::$defaultPorts[$scheme] == $port) {
-            $port = '';
-        } else {
-            $port = $data['port'] ? (':' . $data['port']) : '';
+        if ($user) {
+            $auth .= $user;
         }
 
-        $path = $data['path'] ? $data['path'] : '';
-        $user = $data['user'] ? $data['user'] : '';
-        $pass = $user && $data['pass'] ? (':' . $data['pass'] . '@') : '';
-        $query = $data['query'] ? ('?' . $data['query']) : '';
-        $fragment = $data['fragment'] ? ('#' . $data['fragment']) : '';
+        if ($pass) {
+            $auth .= ':' . $pass;
+        }
+
+        if ($auth !== '') {
+            $auth .= '@';
+        }
+
+        $host = $components['host'] ? $components['host'] : '';
+        $port = $components['port'];
+
+        if ($scheme && isset(self::$schemaPorts[$scheme]) && self::$schemaPorts[$scheme] == $port) {
+            $port = '';
+        } elseif ($port) {
+            $port = ':' . $port;
+        }
+
+        $path = $components['path'] ? $components['path'] : '';
+        $query = $components['query'] ? ('?' . $components['query']) : '';
+        $fragment = $components['fragment'] ? ('#' . $components['fragment']) : '';
 
         if ($host) {
             $scheme .= '://';
@@ -315,15 +350,8 @@ class Url
             $scheme .= ':';
         }
 
-        $this->cache = self::urlEncode($scheme . $user . $pass . $host . $port . $path . $query . $fragment);
+        $this->cache = $scheme . $auth . $host . $port . $path . $query . $fragment;
 
         return $this->cache;
-    }
-
-    private static function urlEncode($url)
-    {
-        return preg_replace_callback('~[^:/@?&=#]+~usD', function ($matches) {
-            return urlencode($matches[0]);
-        }, $url);
     }
 }

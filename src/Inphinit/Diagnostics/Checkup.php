@@ -11,6 +11,11 @@ namespace Inphinit\Diagnostics;
 
 class Checkup
 {
+    const MIN_MEMORY_RECOMMENDED = 16777216;
+    const MIN_EXEC_RECOMMENDED = 30;
+    const MAX_EXEC_RECOMMENDED = 300;
+    const MIN_REQUEST_SIZE_RECOMMENDED = 1048576;
+
     private $iniGetEnabled = false;
     private $development = false;
     private $isHttp = false;
@@ -68,21 +73,61 @@ class Checkup
      */
     public static function iniFiles()
     {
-        $files = function_exists('php_ini_scanned_files') ? php_ini_scanned_files() : false;
+        $entries = array();
 
-        $entries = empty($files) ? array() : explode(',', $files);
+        if (function_exists('php_ini_scanned_files')) {
+            $files = php_ini_scanned_files();
 
-        $php_ini = function_exists('php_ini_loaded_file') ? php_ini_loaded_file() : false;
+            if ($files !== false) {
+                // Remove extra line break in the last file
+                $files = trim($files, "\r\n");
 
-        if ($php_ini) {
-            $entries[] = $php_ini;
+                // The file delimiter is always `,\n`
+                $entries = array_filter(explode(",\n", $files));
+            }
+        }
+
+        if (function_exists('php_ini_loaded_file')) {
+            $php_ini = php_ini_loaded_file();
+
+            if ($php_ini) {
+                $entries[] = $php_ini;
+            }
         }
 
         foreach ($entries as &$entry) {
-            $entry = str_replace('\\', '/', trim($entry));
+            $entry = str_replace('\\', '/', $entry);
         }
 
         return $entries;
+    }
+
+    private function checkExecutionTime()
+    {
+        if ($this->iniGetEnabled) {
+            $max_execution_time_entry = ini_get('max_execution_time');
+            $max_execution_time = intval($max_execution_time_entry);
+
+            if ($max_execution_time_entry !== strval($max_execution_time)) {
+                if ($max_execution_time > 0) {
+                    $this->warnings[] = "`max_execution_time={$max_execution_time_entry}` is" .
+                                        " interpreted as `max_execution_time={$max_execution_time}`";
+                } else {
+                    $this->errors[] = "Unexpected value in `max_execution_time={$max_execution_time_entry}`";
+                }
+            }
+
+            if ($this->isHttp) {
+                if ($max_execution_time < 1) {
+                    $this->errors[] = 'In a web context, an unlimited `max_execution_time` is unsafe';
+                } elseif (
+                    $max_execution_time < self::MIN_EXEC_RECOMMENDED ||
+                    $max_execution_time > self::MAX_EXEC_RECOMMENDED
+                ) {
+                    $this->warnings[] = 'In a web context, it is recommended to set `max_execution_time` to 30-300 seconds';
+                }
+            }
+        }
     }
 
     private function checkMemory()
@@ -102,7 +147,7 @@ class Checkup
                 if ($this->isHttp) {
                     $this->errors[] = "Unlimited memory (`memory_limit=-1`) is problematic";
                 }
-            } elseif ($memory_limit < 16 * 1024 * 1024) {
+            } elseif ($memory_limit < self::MIN_MEMORY_RECOMMENDED) {
                 $this->warnings[] = "`memory_limit={$memory_limit_entry}` may not be enough";
             }
         }
@@ -114,12 +159,11 @@ class Checkup
             $post_max_size_entry = ini_get('post_max_size');
             $upload_max_filesize_entry = ini_get('upload_max_filesize');
 
-            $min_size = 1024 * 1024;
             $post_max_size = self::convertSize($post_max_size_entry, '2M');
 
             if ($post_max_size === false) {
                 $this->errors[] = "Invalid value in entry `post_max_size={$post_max_size_entry}`";
-            } elseif ($post_max_size < $min_size) {
+            } elseif ($post_max_size < self::MIN_REQUEST_SIZE_RECOMMENDED) {
                 $this->warnings[] = "`post_max_size={$post_max_size_entry}` may not be enough";
             }
 
@@ -128,19 +172,29 @@ class Checkup
 
                 if ($upload_max_filesize === false) {
                     $this->errors[] = "Invalid value in entry `upload_max_filesize={$upload_max_filesize_entry}`";
-                } elseif ($upload_max_filesize < $min_size) {
+                } elseif ($upload_max_filesize < self::MIN_REQUEST_SIZE_RECOMMENDED) {
                     $this->warnings[] = "`upload_max_filesize={$upload_max_filesize_entry}` may not be enough";
                 } elseif ($post_max_size !== false && $post_max_size < $upload_max_filesize) {
                     $this->errors[] = "`post_max_size={$post_max_size_entry}` is smaller than " .
                                       "`upload_max_filesize={$upload_max_filesize_entry}`";
                 }
 
-                $max_file_uploads = ini_get('max_file_uploads');
+                $max_file_uploads_entry = ini_get('max_file_uploads');
+                $max_file_uploads = intval($max_file_uploads_entry);
+
+                if ($max_file_uploads_entry !== strval($max_file_uploads)) {
+                    if ($max_file_uploads > 0) {
+                        $this->warnings[] = "`max_file_uploads={$max_file_uploads_entry}` is" .
+                                            " interpreted as `max_file_uploads={$max_file_uploads}`";
+                    } else {
+                        $this->errors[] = "Unexpected value in `max_file_uploads={$max_file_uploads_entry}`";
+                    }
+                }
 
                 if ($max_file_uploads < 1) {
                     $this->warnings[] = "`max_file_uploads={$max_file_uploads}` may not be enough";
                 }
-            } elseif ($this->isHttp) {
+            } else {
                 $this->warnings[] = '`file_uploads=Off` is disabled. If this is not intentional enable it';
             }
         }
@@ -151,9 +205,23 @@ class Checkup
         if (PHP_VERSION_ID < 70000) {
             if (function_exists('mcrypt_create_iv')) {
                 $this->warnings[] = '`random_bytes()` unavailable. Using Mcrypt Extension as a fallback';
+            } else {
+                $this->errors[] = '`random_bytes()` unavailable. Mcrypt Extension is required as a fallback';
             }
         } elseif (function_exists('random_bytes') === false) {
             $this->errors[] = '`random_bytes()` unavailable; check `disable_functions`';
+        }
+    }
+
+    private function checkStorage()
+    {
+        $folder = INPHINIT_SYSTEM . '/storagex';
+        $folder_visible = $this->development ? $folder : './storage';
+
+        if (is_dir($folder) === false) {
+            $this->errors[] = "No such directory: `{$folder_visible}`";
+        } elseif (is_writable($folder) === false) {
+            $this->errors[] = "`{$folder_visible}` directory requires write permissions";
         }
     }
 
@@ -171,24 +239,6 @@ class Checkup
             if ($this->development === false && self::enabled('display_errors')) {
                 $this->errors[] = 'In production environment, the `display_errors` must be disabled';
             }
-
-            if ($this->isHttp) {
-                $max_execution_time = ini_get('max_execution_time');
-
-                if ($max_execution_time < 1) {
-                    $this->errors[] = 'In a web context, an unlimited `max_execution_time` is unsafe';
-                } elseif ($max_execution_time > 300) {
-                    $this->errors[] = 'In a web context, `max_execution_time` should typically be limited to 30–300 seconds';
-                }
-            }
-        }
-
-        $folder = INPHINIT_SYSTEM . '/storage';
-
-        if (is_dir($folder) && is_writable($folder) === false) {
-            $folder = $this->development ? $folder : './storage';
-
-            $this->errors[] = "`{$folder}` directory requires write permissions";
         }
     }
 
@@ -243,6 +293,8 @@ class Checkup
             $this->warnings[] = '`php.ini` is not configured; Ignore this if you are using flags';
         }
 
+        // PHP configurations
+        $this->checkExecutionTime();
         $this->checkMemory();
         $this->checkPost();
         $this->checkRandomBytes();
@@ -262,12 +314,14 @@ class Checkup
 
             $this->warnings[] = "{$message} or flags from web server";
         }
+
+        // Other issues
+        $this->checkStorage();
     }
 
     private static function enabled($key)
     {
-        $value = ini_get($key);
-        return $value && in_array(strtolower($value), array('on', '1', 'yes', 'true'));
+        return ini_get($key) === '1';
     }
 
     private static function convertSize($entry, $default)
@@ -276,15 +330,17 @@ class Checkup
             $entry = $default;
         }
 
-        if (preg_match('/^(0|[1-9]\d*)([KMG]|)$/i', $entry, $matches) !== 1) {
+        // According to the PHP FAQ, numeric values are converted to int;
+        // therefore, fractional numbers like 0.5M are interpreted as 0.
+        if (preg_match('/^(0|[1-9]\d*)(\.\d+|)([KMG]|)$/i', $entry, $matches) !== 1) {
             return false;
         }
 
         $value = intval($matches[1]);
-        $shorthand = strtolower($matches[2]);
+        $shorthand = strtoupper($matches[3]);
 
-        if ($shorthand) {
-            $value *= pow(1024, self::$shorthands[strtoupper($shorthand)]);
+        if ($shorthand !== '') {
+            $value *= pow(1024, self::$shorthands[$shorthand]);
         }
 
         return $value;

@@ -267,9 +267,9 @@ abstract class Reader
             }
 
             if ($this->dto !== null) {
-                $class = $this->dto;
+                $dto = $this->dto;
+                $instance = new $dto;
                 $headers = $this->headers;
-                $instance = new $class;
 
                 foreach ($fields as $index => $text) {
                     $instance->{$headers[$index]} = $text;

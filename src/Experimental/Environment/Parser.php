@@ -14,7 +14,7 @@ use Inphinit\Exception;
 class Parser
 {
     const REGEX_QUOTES = '/^([\'"])(.*)\\1(.*)/';
-    const REGEX_VAR = '/\$\{(.+?)\}/';
+    const REGEX_VAR = '/\$\{(.*?)\}/';
     const REGEX_INTERPOLATE = '/^([A-Za-z_][A-Za-z0-9_]*)((:)?([\+\-\?])(.*))?$/';
 
     private $data;
@@ -86,8 +86,8 @@ class Parser
     {
         $contents = $matches[1];
 
-        if (preg_match(self::REGEX_INTERPOLATE, $contents, $inter_matches) !== 1) {
-            throw new Exception("Invalid interpolation \$\{{$contents}\}", 0, 3);
+        if ($contents === '' || preg_match(self::REGEX_INTERPOLATE, $contents, $inter_matches) !== 1) {
+            throw new Exception('Invalid interpolation ${' . $contents . '}', 0, 3);
         }
 
         $var = $inter_matches[1];
