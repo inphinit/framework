@@ -32,11 +32,13 @@ class Package
     /** @var int Package version string */
     const VERSION = 6;
 
-    const META_FILE = '%s/%s-%s.php';
-
-    private static $cacheInfo = array();
+    const META_FILE = '%s/(%s)-%s.php';
 
     private $metadataDir;
+    private $packages;
+    private $packagesDev;
+
+    private static $cacheInfo = array();
 
     public function __construct()
     {
@@ -45,11 +47,11 @@ class Package
         $metadata_dir = INPHINIT_SYSTEM . '/boot/metadata';
 
         if (is_dir($metadata_dir) === false) {
-            throw new Exception("{$metadata_dir} not exists");
+            throw new Exception($metadata_dir . ' not exists');
         }
 
         if (is_writable($metadata_dir) === false) {
-            throw new Exception("{$metadata_dir} is not writable");
+            throw new Exception($metadata_dir . ' is not writable');
         }
 
         $this->metadataDir = $metadata_dir;
@@ -74,7 +76,7 @@ class Package
     public static function info($name, $info, $dev = false)
     {
         if (!preg_match('#^([^/]+)/(.*?)$#', $name, $match)) {
-            throw new Exception("Invalid package name: {$name}");
+            throw new Exception('Invalid package name: ' . $name);
         }
 
         $group = $dev ? 'packages-dev' : 'packages';
@@ -100,23 +102,47 @@ class Package
     }
 
     /**
-     * Cache composer.lock data
+     * Caches metadata from composer.lock
      *
      * @throws \Inphinit\Exception
      */
     public function cache()
     {
-        $this->createCache('packages');
-        $this->createCache('packages-dev');
+        // Loads composer.lock -> `"packages": [...]`
+        $this->createCache(false);
+
+        // Loads composer.lock -> `"packages-dev": [...]`
+        $this->createCache(true);
     }
 
-    private function createCache($from)
+    /**
+     * Clear metadata cache
+     *
+     * @throws \Inphinit\Exception
+     */
+    public function clear()
     {
-        $path = $this->metadataDir;
-        $vendors = array();
+        $search = sprintf(self::META_FILE, $this->metadataDir, '(packages*)', '*');
 
-        if (isset($this->packages->{$from})) {
-            foreach ($this->packages->{$from} as $package) {
+        foreach (glob($search, GLOB_ERR|GLOB_NOSORT) as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+
+        self::$cacheInfo = array();
+    }
+
+    private function createCache($dev)
+    {
+        $vendors = array();
+        $meta_dir = $this->metadataDir;
+
+        $from = $dev ? 'packages-dev' : 'packages';
+        $data = $dev ? $this->packagesDev : $this->packages;
+
+        if ($data !==  null) {
+            foreach ($data as $package) {
                 if (strpos($package->name, '/') === false) {
                     continue;
                 }
@@ -139,12 +165,12 @@ class Package
         }
 
         foreach ($vendors as $vendor => $packages) {
-            $path = sprintf(self::META_FILE, $path, $from, $vendor);
+            $path = sprintf(self::META_FILE, $meta_dir, $from, $vendor);
 
             $contents = "<?php\nreturn " . var_export($packages, true) . ";\n";
 
             if (file_put_contents($path, $contents, LOCK_EX) === false) {
-                throw new Exception("Failed to write metadata file: {$path}", 0, 3);
+                throw new Exception('Failed to write metadata file: ' . $path, 0, 3);
             }
         }
 
@@ -169,14 +195,23 @@ class Package
             throw new Exception('Error parsing composer.lock', 0, 3);
         }
 
-        if (isset($data->packages) === false) {
-            throw new Exception('Missing packages key in composer.lock', 0, 3);
+        $this->packages = self::readFrom('packages', true, $data);
+        $this->packagesDev = self::readFrom('packages-dev', false, $data);
+    }
+
+    private static function readFrom($from, $required, $data)
+    {
+        if (isset($data->{$from})) {
+            // An index array is expected
+            if (is_array($data->{$from}) === false || Arrays::indexed($data->{$from}) === false) {
+                throw new Exception('Invalid ' . $from . ' key in composer.lock', 0, 4);
+            }
+
+            return $data->{$from};
+        } elseif ($required) {
+            throw new Exception('Missing ' . $from . ' key in composer.lock', 0, 4);
         }
 
-        if (is_array($data->packages) === false || Arrays::indexed($data->packages) === false) {
-            throw new Exception('Invalid packages key in composer.lock', 0, 3);
-        }
-
-        $this->packages = $data->packages;
+        return null;
     }
 }

@@ -9,19 +9,22 @@
 
 namespace Inphinit\Packages;
 
+use Inphinit\Exception;
 use Inphinit\Utility\Arrays;
 
 class Import
 {
     private $composerPath;
+
     private $classmapName = 'autoload_classmap.php';
-    private $filesName = 'autoload_files.php';
     private $psrFourName = 'autoload_psr4.php';
     private $psrZeroName = 'autoload_namespaces.php';
-    private $sourceFiles = array();
     private $sourceLibs = array();
+
+    private $filesName = 'autoload_files.php';
+    private $sourceFiles = array();
+
     private $log = array();
-    private static $cacheInfo = array();
 
     public function __construct()
     {
@@ -39,10 +42,10 @@ class Import
             throw new Exception('Error parsing composer.json');
         }
 
-        if (empty($data->config->{'vendor-dir'}) === false) {
-            $vendor = $data->config->{'vendor-dir'};
+        if (empty($data->config->{'vendor-dir'})) {
+            $vendor = INPHINIT_SYSTEM . '/vendor';
         } else {
-            $vendor = INPHINIT_ROOT . '/vendor';
+            $vendor = self::resolveVendor($data->config->{'vendor-dir'});
         }
 
         $composer_path = realpath($vendor . '/composer');
@@ -76,6 +79,7 @@ class Import
 
         $data = inphinit_sandbox('boot/namespaces.php');
 
+        // An associative array is expected. If anything else is received, an exception will be thrown
         if (is_array($data) === false || Arrays::indexed($data)) {
             $this->log[] = 'Warning: Unexpected contents in `boot/namespaces.php`';
             return 0;
@@ -127,6 +131,85 @@ class Import
     }
 
     /**
+     * Load `autoload_psr4.php` classes, used by PSR-4 packages
+     *
+     * @return int Return total packages loaded
+     */
+    public function psr4()
+    {
+        return $this->loadPsr('psr4', $this->psrFourName, null);
+    }
+
+    /**
+     * Load `autoload_namespaces.php` classes, used by PSR-0 packages
+     *
+     * @return int Return total packages loaded, if `autoload_namespaces.php`
+     */
+    public function psr0()
+    {
+        return $this->loadPsr('psr0', $this->psrZeroName, '_');
+    }
+
+    /**
+     * Associate namespace prefix to folder class namespace to file
+     *
+     * @param string $prefix
+     * @param string $path
+     * @param string $delimiter
+     * @throws \Inphinit\Exception
+     */
+    public function setItem($prefix, $path, $delimiter = '\\')
+    {
+        if (is_string($prefix) === false || is_string($path) === false) {
+            throw new Exception('Namespace prefix and path must be strings');
+        }
+
+        $prefix = trim($prefix, $delimiter) . $delimiter;
+
+        $this->sourceLibs[$prefix] = $path;
+    }
+
+    /**
+     * Return array of libs
+     *
+     * @return array
+     */
+    public function getLibs()
+    {
+        return $this->sourceLibs;
+    }
+
+    /**
+     * Save imported packages path to file in PHP format ()
+     *
+     * @param string $path File to save packages paths (e.g., `/foo/namespaces.php`)
+     * @return bool
+     */
+    public function save($path)
+    {
+        if (count($this->sourceLibs) === 0) {
+            return false;
+        }
+
+        $libs = $this->sourceLibs;
+
+        foreach ($libs as &$value) {
+            $value = self::relativePath($value);
+        }
+
+        // Namespaces with more separators stay at the top
+        uksort($libs, array('\\' . __CLASS__, 'sortLibs'));
+
+        $contents = array(
+            '<?php',
+            '// Namespaces with more separators stay at the top.',
+            'return ' . var_export($libs, true) . ";\n"
+        );
+
+        return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
+    }
+
+    /**
      * Fill script files from `autoload_files.php` source.
      *
      * @return int Return total script files loaded
@@ -143,7 +226,7 @@ class Import
         $path = $this->composerPath . $this->filesName;
 
         if (is_file($path) === false) {
-            $this->log[] = "Warning: \"files\" not found ({$path})";
+            $this->log[] = 'Warning: "files" not found (' . $path . ')';
             return $results;
         }
 
@@ -164,122 +247,6 @@ class Import
         $this->log[] = 'Imported ' . $results . ' from "files"';
 
         return $results;
-    }
-
-    /**
-     * Load `autoload_psr4.php` classes, used by PSR-4 packages
-     *
-     * @return int Return total packages loaded
-     */
-    public function psr4()
-    {
-        return $this->loadPsr('psr4', $this->psrFourName, null);
-    }
-
-    /**
-     * Load `autoload_namespaces.php` classes, used by PSR-0 packages
-     *
-     * @return int Return total packages loaded, if `autoload_namespaces.php`
-     */
-    public function psr0()
-    {
-        return $this->loadPsr('psr0', $this->psrZeroName, '_');
-    }
-
-    private function loadPsr($type, $file, $separator)
-    {
-        $results = 0;
-
-        if ($this->composerPath === null) {
-            $this->log[] = 'Warning: Unable to load "' . $type . '", maybe your project is not using composer';
-            return $results;
-        }
-
-        $path = $this->composerPath . $file;
-
-        if (is_file($path) === false) {
-            $this->log[] = "Warning: \"{$type}\" not found ({$path})";
-            return $results;
-        }
-
-        $data = include $path;
-
-        if (is_array($data) === false || Arrays::indexed($data)) {
-            $this->log[] = 'Warning: "' . $type . '" is invalid';
-            return $results;
-        }
-
-        foreach ($data as $key => $value) {
-            if (isset($value[0]) && is_string($value[0])) {
-                if ($separator) {
-                    $key = str_replace(array('_', '\\'), $separator, $key);
-                    $key = rtrim($key, $separator) . $separator;
-                }
-
-                $this->sourceLibs[$key] = $value[0];
-                ++$results;
-            }
-        }
-
-        $this->log[] = 'Imported ' . $results . ' classes from "' . $type . '"';
-
-        return $results;
-    }
-
-    /**
-     * Associate namespace prefix to folder
-     *
-     * @param string $prefix
-     * @param string $path
-     * @throws \Inphinit\Exception
-     */
-    public function setItem($prefix, $path)
-    {
-        if (!is_string($prefix) || !is_string($path)) {
-            throw new Exception('Namespace prefix and path must be strings');
-        }
-
-        $this->sourceLibs[$prefix] = $path;
-    }
-
-    /**
-     * Return array of libs
-     *
-     * @return array
-     */
-    public function getLibs()
-    {
-        return $this->sourceLibs;
-    }
-
-    /**
-     * Save imported packages path to file in PHP format
-     *
-     * @param string $path File to save packages paths (e.g., `/foo/namespaces.php`)
-     * @return bool
-     */
-    public function save($path)
-    {
-        if (count($this->sourceLibs) === 0) {
-            return false;
-        }
-
-        $libs = $this->sourceLibs;
-
-        foreach ($libs as &$value) {
-            $value = self::relativePath($value);
-        }
-
-        // Namespaces with more separators stay at the top
-        uksort($libs, array($this, 'sortLibs'));
-
-        $contents = array(
-            '<?php',
-            '// Namespaces with more separators stay at the top.',
-            'return ' . var_export($libs, true) . ";\n"
-        );
-
-        return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
     }
 
     /**
@@ -305,10 +272,51 @@ class Import
         );
 
         foreach ($this->sourceFiles as $file) {
-            $contents[] = "inphinit_sandbox_file('{$file}');";
+            $contents[] = 'inphinit_sandbox_file(' . var_export($file, true) . ');';
         }
 
         return file_put_contents($path, implode("\n", $contents), LOCK_EX) !== false;
+    }
+
+    private function loadPsr($type, $file, $separator)
+    {
+        $results = 0;
+
+        if ($this->composerPath === null) {
+            $this->log[] = 'Warning: Unable to load "' . $type . '", maybe your project is not using composer';
+            return $results;
+        }
+
+        $path = $this->composerPath . $file;
+
+        if (is_file($path) === false) {
+            $this->log[] = "Warning: \"{$type}\" not found ({$path})";
+            return $results;
+        }
+
+        $data = include $path;
+
+        // An associative array is expected
+        if (is_array($data) === false || Arrays::indexed($data)) {
+            $this->log[] = 'Warning: "' . $type . '" is invalid';
+            return $results;
+        }
+
+        foreach ($data as $key => $value) {
+            if (isset($value[0]) && is_string($value[0])) {
+                if ($separator) {
+                    $key = str_replace(array('_', '\\'), $separator, $key);
+                    $key = rtrim($key, $separator) . $separator;
+                }
+
+                $this->sourceLibs[$key] = $value[0];
+                ++$results;
+            }
+        }
+
+        $this->log[] = "Imported {$results} from \"{$type}\"";
+
+        return $results;
     }
 
     private static function relativePath($path)
@@ -323,7 +331,26 @@ class Import
         return $path;
     }
 
-    private function sortLibs($a, $b)
+    private static function resolveVendor($vendor)
+    {
+        if (is_string($vendor) === false) {
+            $type = Inspector::type($enable);
+            throw new Exception("`vendor-dir:` expects a string, {$type} given", 0, 3);
+        }
+
+        // It currently does not support interpolation or resolution of $HOME and USERPROFILE
+        if (preg_match('#(\$|\{|\})#', $vendor) === 1) {
+            throw new Exception('"vendor-dir" contains invalid characters: ' . $vendor, 0, 3);
+        }
+
+        if (preg_match('#^(\/|[A-Za-z]\:|\\\\)#', $vendor) !== 1) {
+            return INPHINIT_ROOT . '/' . $vendor;
+        }
+
+        return $vendor;
+    }
+
+    private static function sortLibs($a, $b)
     {
         $dA = strpos($a, '\\') !== false ? '\\' : '_';
         $dB = strpos($b, '\\') !== false ? '\\' : '_';
