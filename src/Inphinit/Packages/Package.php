@@ -153,6 +153,10 @@ class Package
 
     private function readJson($lockPath)
     {
+        if (is_file($lockPath) === false) {
+            throw new Exception('No such file: composer.lock', 0, 3);
+        }
+
         $contents = file_get_contents($lockPath);
 
         if ($contents === false) {

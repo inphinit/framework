@@ -63,22 +63,12 @@ class Import
     }
 
     /**
-     * Auto import composer packages
-     *
-     * @return int
-     */
-    public function auto()
-    {
-        return $this->classmap() + $this->files() + $this->psr4() + $this->psr0();
-    }
-
-    /**
-     * Load `./system/boot/namespaces.php` classes
+     * Fill libs from `./system/boot/namespaces.php` source.
      *
      * @return int|false Returns the total number of loaded packages,
      *                   if `namespaces.php` is not accessible returns `false`
      */
-    public function inAutoload()
+    public function boot()
     {
         if (is_file(INPHINIT_SYSTEM . '/boot/namespaces.php') === false) {
             return false;
@@ -86,15 +76,18 @@ class Import
 
         $data = inphinit_sandbox('boot/namespaces.php');
 
-        if (is_array($data)) {
-            $this->sourceLibs = $data + $this->sourceLibs;
+        if (is_array($data) === false || Arrays::indexed($data)) {
+            $this->log[] = 'Warning: Unexpected contents in `boot/namespaces.php`';
+            return 0;
         }
+
+        $this->sourceLibs = $data + $this->sourceLibs;
 
         return count($this->sourceLibs);
     }
 
     /**
-     * Load `autoload_classmap.php` classes
+     * Fill libs from `autoload_classmap.php` source.
      *
      * @return int Return total packages loaded
      */
@@ -134,9 +127,9 @@ class Import
     }
 
     /**
-     * Load `autoload_files.php` classes
+     * Fill script files from `autoload_files.php` source.
      *
-     * @return int Return total packages loaded
+     * @return int Return total script files loaded
      */
     public function files()
     {
@@ -180,7 +173,7 @@ class Import
      */
     public function psr4()
     {
-        return $this->load('psr4', $this->psrFourName, null);
+        return $this->loadPsr('psr4', $this->psrFourName, null);
     }
 
     /**
@@ -190,10 +183,10 @@ class Import
      */
     public function psr0()
     {
-        return $this->load('psr0', $this->psrZeroName, '_');
+        return $this->loadPsr('psr0', $this->psrZeroName, '_');
     }
 
-    private function load($type, $file, $separator)
+    private function loadPsr($type, $file, $separator)
     {
         $results = 0;
 
@@ -280,14 +273,6 @@ class Import
         // Namespaces with more separators stay at the top
         uksort($libs, array($this, 'sortLibs'));
 
-        if (is_file($path)) {
-            $original = include $path;
-
-            if (is_array($original) && Arrays::indexed($original) === false) {
-                $libs += $original;
-            }
-        }
-
         $contents = array(
             '<?php',
             '// Namespaces with more separators stay at the top.',
@@ -340,13 +325,34 @@ class Import
 
     private function sortLibs($a, $b)
     {
-        $x = substr_count($a, strpos($a, '\\') !== false ? '\\' : '_');
-        $y = substr_count($b, strpos($b, '\\') !== false ? '\\' : '_');
+        $dA = strpos($a, '\\') !== false ? '\\' : '_';
+        $dB = strpos($b, '\\') !== false ? '\\' : '_';
 
-        if ($x === $y) {
-            return 0;
+        $parts = explode($dA, $a, 2);
+        $topA = $parts[0];
+
+        $parts = explode($dB, $b, 2);
+        $topB = $parts[0];
+
+        // Group by top-level directory, alphabetically
+        $topCmp = strnatcasecmp($topA, $topB);
+
+        if ($topCmp !== 0) {
+            return $topCmp;
         }
 
-        return $x < $y ? 1 : -1;
+        // Within the same top-level dir, deepest paths first
+        $depthA = substr_count($a, $dA);
+        $depthB = substr_count($b, $dB);
+
+        if ($depthA !== $depthB) {
+            return $depthA < $depthB ? 1 : -1;
+        }
+
+        // Same depth -> alphabetical on the remaining path
+        $restA = substr($a, strlen($topA) + 1);
+        $restB = substr($b, strlen($topB) + 1);
+
+        return strnatcasecmp($restA, $restB);
     }
 }
