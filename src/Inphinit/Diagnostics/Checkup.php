@@ -215,7 +215,7 @@ class Checkup
 
     private function checkStorage()
     {
-        $folder = INPHINIT_SYSTEM . '/storagex';
+        $folder = INPHINIT_SYSTEM . '/storage';
         $folder_visible = $this->development ? $folder : './storage';
 
         if (is_dir($folder) === false) {
