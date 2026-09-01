@@ -9,14 +9,15 @@
 
 namespace Inphinit\Experimental\Cli;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
 class Command
 {
     /**
-     * @var int The option must not have a value (eg.: `run foo --option`).
-     *          Note: The option remains optional; to make it required,
-     *          use `Command::ARG_NO_VALUE|Command::ARG_REQUIRED`.
+     * @var int The option does not accept a value. When used (e.g, `run foo --option`),
+     *          its value is `true`; when omitted (e.g, `run foo`), its value is `false`.
+     *          Note: To make it required, use `Command::ARG_NO_VALUE|Command::ARG_REQUIRED`.
      */
     const ARG_NO_VALUE = 1;
 
@@ -122,6 +123,10 @@ class Command
 
         if ($format !== null && ($modes & self::ARG_NO_VALUE)) {
             throw new Exception('Options that do not expect a value cannot include format validation');
+        }
+
+        if ($format !== null) {
+            self::checkRegexIssues($format);
         }
 
         $this->longs[] = $long;
@@ -249,6 +254,7 @@ class Command
     {
         $modes = $this->modes[$index];
         $option = '--' . $long;
+        $no_value = $modes & self::ARG_NO_VALUE;
 
         if (array_key_exists($long, $entries)) {
             $value = $entries[$long];
@@ -259,12 +265,12 @@ class Command
             $message = "`{$option}`" . ($short ? " (or `-{$short}`)" : '');
             throw new Exception($message . ' is missing', 0, 3);
         } else {
-            return null;
+            return $no_value ? false : null;
         }
 
-        if ($modes & self::ARG_NO_VALUE) {
+        if ($no_value) {
             if ($value === null) {
-                return '';
+                return true;
             }
 
             throw new Exception("`{$option}` must not have a value, '{$value}' given", 0, 3);
@@ -281,5 +287,21 @@ class Command
         }
 
         return $value;
+    }
+
+    private static function checkRegexIssues($regex)
+    {
+        if (\Inphinit\App::config('environment') !== 'development') {
+            return null;
+        }
+
+        if (is_string($regex) === false) {
+            $type = Inspector::type($regex);
+            throw new Exception('$format must be of type string or null, ' . $type . ' given', 0, 3);
+        }
+
+        if (preg_match($regex, 'sample sample sample') === false) {
+            throw new Exception('The expression "' . $regex . '" has errors', 0, 3);
+        }
     }
 }

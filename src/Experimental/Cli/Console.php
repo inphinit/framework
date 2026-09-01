@@ -23,8 +23,8 @@ class Console
     /**
      * Register callable, console controller, and Command instance for a CLI command
      *
-     * @param string                                             $name
-     * @param string|callable|\Inphinit\Experimental\Cli\Command $callback
+     * @param string          $name
+     * @param string|callable $callback
      * @return \Inphinit\Experimental\Cli\Command
      */
     public function action($name, $callback)
@@ -145,11 +145,7 @@ class Console
             throw new Exception('Console instance not found; this could be a framework installation failure');
         }
 
-        try {
-            return self::getOutput($console, $values, $code);
-        } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage(), $ex->getCode());
-        }
+        return self::getOutput($console, $values, $code);
     }
 
     /**
@@ -206,12 +202,17 @@ class Console
 
     private static function getOutput($console, $args, &$code)
     {
-        if (ob_start() === false) {
+        if (\ob_start() === false) {
             throw new Exception('Failed to buffer command output', 0, 3);
         }
 
-        $code = $console->exec($args);
+        try {
+            $code = $console->exec($args);
+        } catch (\Exception $ex) {
+            \ob_clean();
+            throw new Exception($ex->getMessage(), $ex->getCode(), 0, 3);
+        }
 
-        return ob_get_clean();
+        return \ob_get_clean();
     }
 }
