@@ -19,7 +19,7 @@ class Strings
      * @param string $text
      * @return string
      */
-    public static function toAscii($text)
+    public static function ascii($text)
     {
         if (self::$tAscii === null) {
             self::$tAscii = \Transliterator::create('Any-Latin; Latin-ASCII; [:^ASCII:] Remove');

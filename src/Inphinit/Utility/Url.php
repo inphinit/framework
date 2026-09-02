@@ -151,7 +151,7 @@ class Url
                 $items = explode('/', $path);
 
                 foreach ($items as &$item) {
-                    $item = Strings::toAscii($item);
+                    $item = Strings::ascii($item);
                     $item = str_replace('/', '-', $item);
                 }
 

@@ -155,7 +155,7 @@ class Response
             $filename = '; filename="' . $name . '"';
         } else {
             // Only UTF-8 + ASCII fallback
-            $filename = '; filename="' . Strings::toAscii($name) . '"';
+            $filename = '; filename="' . Strings::ascii($name) . '"';
 
             if (preg_match('//u', $name)) {
                 $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
