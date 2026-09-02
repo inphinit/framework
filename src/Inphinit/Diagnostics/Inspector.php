@@ -15,7 +15,7 @@ class Inspector
      * Get caller from backtrace php scripts
      *
      * @param int   $level
-     * @param array $info
+     * @param array &$info
      * @param int   $limit
      * @return bool
      */
@@ -38,8 +38,8 @@ class Inspector
      * Identify and get the possible source of an error message caused by `eval()`
      *
      * @param string $message
-     * @param string $file
-     * @param int    $line
+     * @param string &$file
+     * @param int    &$line
      * @return bool
      */
     public static function evalSource($message, &$file, &$line)
@@ -65,5 +65,61 @@ class Inspector
     public static function type($value)
     {
         return function_exists('get_debug_type') ? get_debug_type($value) : gettype($value);
+    }
+
+    /**
+     * Utility to check if a regex expression contains issues
+     *
+     * @param string $expression
+     * @param string &$errorMessage
+     * @param int    &$errorCode
+     * @return bool
+     */
+    public static function regex($expression, &$errorMessage, &$errorCode = 0)
+    {
+        if (is_string($expression) === false) {
+            $type = self::type($expression);
+            $errorMessage = "Expects to be string, {$type} given";
+            return false;
+        } elseif (preg_match($expression, 'sample sample sample') !== false) {
+            $errorMessage = '';
+            $errorCode = 0;
+            return true;
+        }
+
+        $prepend_message = 'The expression "' . $expression . '" has errors';
+        $errorCode = preg_last_error();
+
+        if (function_exists('preg_last_error_msg')) {
+            $errorMessage = $prepend_message . ': ' . preg_last_error_msg();
+            return false;
+        }
+
+        $message = 'Unknown error';
+
+        switch ($errorCode) {
+            case PREG_INTERNAL_ERROR:
+                $message = 'Internal error';
+                break;
+            case PREG_BACKTRACK_LIMIT_ERROR:
+                $message = 'Backtrack limit exhausted';
+                break;
+            case PREG_RECURSION_LIMIT_ERROR:
+                $message = 'Recursion limit exhausted';
+                break;
+            case PREG_BAD_UTF8_ERROR:
+                $message = 'Malformed UTF-8 characters, possibly incorrectly encoded';
+                break;
+            case PREG_BAD_UTF8_OFFSET_ERROR:
+                $message = 'The offset did not correspond to the beginning of a valid UTF-8 code point';
+                break;
+            default:
+                if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $error) {
+                    $message = 'JIT stack limit exhausted';
+                }
+        }
+
+        $errorMessage = $prepend_message . ': ' . $message;
+        return false;
     }
 }

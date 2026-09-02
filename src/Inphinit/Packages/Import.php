@@ -350,35 +350,35 @@ class Import
         return $vendor;
     }
 
-    private static function sortLibs($a, $b)
+    private static function sortLibs($entry1, $entry2)
     {
-        $dA = strpos($a, '\\') !== false ? '\\' : '_';
-        $dB = strpos($b, '\\') !== false ? '\\' : '_';
+        $sep_entry1 = strpos($entry1, '\\') !== false ? '\\' : '_';
+        $sep_entry2 = strpos($entry2, '\\') !== false ? '\\' : '_';
 
-        $parts = explode($dA, $a, 2);
-        $topA = $parts[0];
+        $parts = explode($sep_entry1, $entry1, 2);
+        $top_entry1 = $parts[0];
 
-        $parts = explode($dB, $b, 2);
-        $topB = $parts[0];
+        $parts = explode($sep_entry2, $entry2, 2);
+        $top_entry2 = $parts[0];
 
         // Group by top-level directory, alphabetically
-        $topCmp = strnatcasecmp($topA, $topB);
+        $top_cmp = strnatcasecmp($top_entry1, $top_entry2);
 
-        if ($topCmp !== 0) {
-            return $topCmp;
+        if ($top_cmp !== 0) {
+            return $top_cmp;
         }
 
         // Within the same top-level dir, deepest paths first
-        $depthA = substr_count($a, $dA);
-        $depthB = substr_count($b, $dB);
+        $depth_entry1 = substr_count($entry1, $sep_entry1);
+        $depth_entry2 = substr_count($entry2, $sep_entry2);
 
-        if ($depthA !== $depthB) {
-            return $depthA < $depthB ? 1 : -1;
+        if ($depth_entry1 !== $depth_entry2) {
+            return $depth_entry1 < $depth_entry2 ? 1 : -1;
         }
 
         // Same depth -> alphabetical on the remaining path
-        $restA = substr($a, strlen($topA) + 1);
-        $restB = substr($b, strlen($topB) + 1);
+        $restA = substr($entry1, strlen($top_entry1) + 1);
+        $restB = substr($entry2, strlen($top_entry2) + 1);
 
         return strnatcasecmp($restA, $restB);
     }

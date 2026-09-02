@@ -9,7 +9,6 @@
 
 namespace Inphinit\Filesystem;
 
-use Inphinit\App;
 use Inphinit\Exception;
 
 class Size
@@ -46,6 +45,7 @@ class Size
 
     private $comErrorCode;
     private $comErrorMessage;
+    private $development = false;
 
     private static $osFamily;
 
@@ -57,6 +57,8 @@ class Size
      */
     public function __construct($modes = 0)
     {
+        $this->development = \Inphinit\App::config('environment') === 'development'
+
         if (self::$osFamily === null) {
             $os = defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : php_uname('s');
 
@@ -104,7 +106,7 @@ class Size
      */
     public function get($path)
     {
-        if (App::config('environment') === 'development' && File::exists($path) === false) {
+        if ($this->development && File::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)');
         } elseif (is_file($path) === false) {
             throw new Exception($path . ' not found');
@@ -233,10 +235,13 @@ class Size
             $os = self::$osFamily;
 
             if (strpos($os, 'linux') === 0) {
+                // sprintf: %%s -> %s (Note: Linux)
                 $command = 'stat -c %%s %s 2>&1';
             } elseif (strpos($os, 'darwin') !== false || strpos($os, 'bsd') !== false) {
+                // sprintf: -f%%z -> -f%z (Note: macOS and BSD)
                 $command = 'stat -f%%z %s 2>&1';
             } elseif (strpos($os, 'win') === 0) {
+                // sprintf: %%F -> %F; %%~zF -> %~zF (Note: Windows)
                 $command = '(for %%F in (%s) do @echo "%%~zF") 2>&1';
             } else {
                 // Fallback

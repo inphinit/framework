@@ -31,9 +31,7 @@ class Checkup
 
     public function __construct()
     {
-        if (\Inphinit\App::config('environment') === 'development') {
-            $this->development = true;
-        }
+        $this->development = \Inphinit\App::config('environment') === 'development';
 
         if (function_exists('ini_get')) {
             $this->iniGetEnabled = true;

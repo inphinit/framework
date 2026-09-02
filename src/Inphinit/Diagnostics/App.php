@@ -139,16 +139,8 @@ class App extends \Inphinit\App
             throw new Exception("Invalid pattern name: {$name}");
         }
 
-        if ($regex && preg_match('#' . $regex . '#', 'sample sample sample') === false) {
-            $message = 'The expression "' . $regex . '" has errors';
-
-            $error_details = self::regexError();
-
-            if ($error_details !== null) {
-                $message .= ': ' . $error_details;
-            }
-
-            throw new Exception($message);
+        if (Inspector::regex($regex, $error_message, $error_code) === false) {
+            throw new Exception($error_message, $error_code);
         }
 
         parent::setPattern($name, $regex);
@@ -250,38 +242,6 @@ class App extends \Inphinit\App
                 throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $param_patterns), 0, 3);
             }
         }
-    }
-
-    private static function regexError()
-    {
-        if (preg_last_error() === PREG_NO_ERROR) {
-            return null;
-        }
-
-        if (function_exists('preg_last_error_msg')) {
-            return preg_last_error_msg();
-        }
-
-        $error = preg_last_error();
-
-        switch ($error) {
-            case PREG_INTERNAL_ERROR:
-                return 'Internal error';
-            case PREG_BACKTRACK_LIMIT_ERROR:
-                return 'Backtrack limit exhausted';
-            case PREG_RECURSION_LIMIT_ERROR:
-                return 'Recursion limit exhausted';
-            case PREG_BAD_UTF8_ERROR:
-                return 'Malformed UTF-8 characters, possibly incorrectly encoded';
-            case PREG_BAD_UTF8_OFFSET_ERROR:
-                return 'The offset did not correspond to the beginning of a valid UTF-8 code point';
-            default:
-                if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $error) {
-                    return 'JIT stack limit exhausted';
-                }
-        }
-
-        return 'Unknown error';
     }
 
     private static function getParamSuggestions(array $words, array $suggestions)

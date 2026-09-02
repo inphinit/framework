@@ -36,7 +36,7 @@ class Command
     private $longs = array();
     private $shorts = array();
     private $modes = array();
-    private $formats = array();
+    private $patterns = array();
     private $descriptions = array();
 
     /**
@@ -82,11 +82,11 @@ class Command
      * @param string|null $short       Optional. Define short option, used with `-` prefix
      * @param int         $modes       Optional. Define whether the option is optional, required,
      *                                 or should be used without a value
-     * @param string|null $format      Optional. Define expected value format (not work with `ARG_NO_VALUE`)
+     * @param string|null $pattern     Optional. Define expected value format (not work with `ARG_NO_VALUE`)
      * @param string|null $description Optional. Define option description
      * @return \Inphinit\Experimental\Cli\Command
      */
-    public function setOption($long, $short = null, $modes = 0, $format = null, $description = null)
+    public function setOption($long, $short = null, $modes = 0, $pattern = null, $description = null)
     {
         if (is_string($long) === false || preg_match(self::REGEX_LONG, $long) !== 1) {
             throw new Exception('Invalid long option');
@@ -121,18 +121,20 @@ class Command
             }
         }
 
-        if ($format !== null && ($modes & self::ARG_NO_VALUE)) {
-            throw new Exception('Options that do not expect a value cannot include format validation');
-        }
+        if ($pattern !== null) {
+            if ($modes & self::ARG_NO_VALUE) {
+                throw new Exception('Options with `ARG_NO_VALUE` cannot include pattern');
+            }
 
-        if ($format !== null) {
-            self::checkRegexIssues($format);
+            if (Inspector::regex($pattern, $error_str, $error_code) === false) {
+                throw new Exception($error_str, $error_code);
+            }
         }
 
         $this->longs[] = $long;
         $this->shorts[] = $short;
         $this->modes[] = $modes;
-        $this->formats[] = $format;
+        $this->patterns[] = $pattern;
         $this->descriptions[] = $description;
 
         return $this;
@@ -280,28 +282,12 @@ class Command
             throw new Exception("`{$option}` expects a value", 0, 3);
         }
 
-        $format = $this->formats[$index];
+        $format = $this->patterns[$index];
 
         if ($format && preg_match($format, $value) !== 1) {
             throw new Exception("Invalid value format in: `{$option} \"{$value}\"` ({$format})", 0, 3);
         }
 
         return $value;
-    }
-
-    private static function checkRegexIssues($regex)
-    {
-        if (\Inphinit\App::config('environment') !== 'development') {
-            return null;
-        }
-
-        if (is_string($regex) === false) {
-            $type = Inspector::type($regex);
-            throw new Exception('$format must be of type string or null, ' . $type . ' given', 0, 3);
-        }
-
-        if (preg_match($regex, 'sample sample sample') === false) {
-            throw new Exception('The expression "' . $regex . '" has errors', 0, 3);
-        }
     }
 }
