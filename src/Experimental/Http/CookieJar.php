@@ -18,8 +18,8 @@ class CookieJar
     const SAME_NONE = 2;
     const SAME_STRICT = 3;
 
-    const DISALLOW_NAME_CHARS = "=,; \t\r\n\013\014";
-    const DISALLOW_VALUE_CHARS = ",; \t\r\n\013\014";
+    const DISALLOW_NAME_CHARS  = " =,;\t\r\n\013\014";
+    const DISALLOW_VALUE_CHARS = " ,;\t\r\n\013\014";
     const DELETE = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
     const DELIMITER = ':';
 

@@ -139,7 +139,7 @@ class App extends \Inphinit\App
             throw new Exception("Invalid pattern name: {$name}");
         }
 
-        if (Inspector::regex($regex, $error_message, $error_code) === false) {
+        if (Inspector::regex('#' . $regex . '#', $error_message, $error_code) === false) {
             throw new Exception($error_message, $error_code);
         }
 

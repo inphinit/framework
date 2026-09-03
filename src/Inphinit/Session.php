@@ -349,7 +349,7 @@ class Session
         }
 
         if ($opts->domain !== null) {
-            if (strpbrk($opts->domain, "=,; \t\r\n\013\014") !== false) {
+            if (strpbrk($opts->domain, " =,;\t\r\n\013\014") !== false) {
                 throw new Exception('Invalid domain', 0, 3);
             }
 
