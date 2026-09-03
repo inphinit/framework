@@ -10,6 +10,7 @@
 namespace Inphinit\Routing;
 
 use Inphinit\App;
+use Inphinit\Exception;
 
 abstract class Treaty
 {
@@ -19,87 +20,114 @@ abstract class Treaty
     /** @var int Create a route without slash at the end, like: `/foo` */
     const NOSLASH = 2;
 
-    /** @var int Define path format, possible values: `self::SLASH`, `self::NOSLASH`, `self::SLASH|self::NOSLASH` */
-    protected $format;
+    /** @var string[] HTTP verbs accepted as method name prefixes (lowercase) */
+    protected static $allowedMethods = array(
+        'any', 'delete', 'get', 'head', 'options', 'patch', 'post', 'put'
+    );
 
-    /** @var string Define regex for match public methods from controller */
-    protected static $valids = '#^(any|delete|get|head|options|patch|post|put)([A-Z0-9]\w+)$#';
-
+    private $modes;
     private $context;
 
     /**
-     * Define routes based on class methods
+     * Create routes basead in a Controller or other Class
      *
      * @param \Inphinit\App $context
-     * @throws \Inphinit\Exception
+     * @param int $modes
      */
-    public function route(App $context)
+    public function __construct(App $context, $modes)
     {
+        $valid_modes = self::SLASH | self::NOSLASH;
+
+        if (is_int($modes) === false || ($modes & ~$valid_modes) !== 0) {
+            throw new Exception('Invalid route path modes');
+        }
+
+        $this->modes = $modes;
+
         $this->context = $context;
+    }
 
-        $invalid = true;
-        $analysis = new \ReflectionClass($this);
+    /**
+     * Scans public instance methods and registers matching ones as routes.
+     * Returns true if at least one route was registered, false otherwise.
+     *
+     * @return bool
+     */
+    public function mount()
+    {
+        $valid = false;
+        $reflect = new \ReflectionClass($this);
+        $pattern = sprintf('#^(%s)([A-Z0-9].*?)$#', implode('|', static::$allowedMethods));
 
-        foreach ($analysis->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+        foreach ($reflect->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             $callback = $method->getName();
 
-            if ($method->isStatic() === false && preg_match(self::$valids, $callback, $match)) {
-                $this->putRoute(strtoupper($match[1]), '/' . $match[2], $callback);
-                $invalid = false;
+            if ($method->isStatic() === false && preg_match($pattern, $callback, $match)) {
+                $this->bindRoute($match[1], $match[2], $callback);
+                $valid = true;
             }
         }
 
-        if ($invalid) {
-            throw new \Inphinit\Exception('Invalid controller');
+        return $valid;
+    }
+
+    /**
+     * Instantiates the controller and dispatches its routes against the global $app.
+     * Intended as a one-line convenience call from route definition files.
+     * Throws if the global $app is unavailable or no routes are found.
+     *
+     * @global \Inphinit\App $app
+     * @param int            $modes
+     * @throws \Inphinit\Exception
+     */
+    public static function dispatch($modes = 0)
+    {
+        global $app;
+
+        if (($app instanceof App) === false) {
+            throw new Exception('The global route system was not found');
+        }
+
+        if ($modes === 0) {
+            $modes = self::SLASH | self::NOSLASH;
+        }
+
+        $instance = new static($app, $modes);
+
+        if ($instance->mount() === false) {
+            throw new Exception('This class does not have methods that can be converted into routes');
         }
     }
 
     /**
-     * Define routes based on class methods
-     *
-     * @param \Inphinit\App $context
-     * @throws \Inphinit\Exception
-     * @return mixed
-     */
-    public static function action(App $context)
-    {
-        $instance = new static();
-        $instance->route($context);
-        return $instance;
-    }
-
-    /**
-     * Overwrite path parser
+     * Converts a class method suffix to a kebab-case URL segment.
+     * Example: `public function postFooBarBaz()` becomes `foo-bar-baz`.
+     * Note: Override this method to customize path formatting.
      *
      * @param string $path
      * @return string
      */
-    protected static function parsePath($path)
+    protected static function formatPath($path)
     {
-        return strtolower(preg_replace('#([a-z0-9])([A-Z])#', '$1-$2', $path));
+        return strtolower(preg_replace('#([a-z0-9])([A-Z]+)#', '$1-$2', $path));
     }
 
-    private function putRoute($method, $path, $callback)
+    private function bindRoute($method, $path, $callback)
     {
+        $method = strtoupper($method);
         $callback = array($this, $callback);
 
-        if ($path === '/Index') {
+        if ($path === 'Index') {
             $path = '/';
         } else {
-            $path = self::parsePath($path);
+            $path = '/' . static::formatPath($path);
         }
 
-        if ($this->format) {
-            $format = $this->format;
-        } else {
-            $format = self::SLASH | self::NOSLASH;
-        }
-
-        if ($format & self::NOSLASH) {
+        if ($this->modes & self::NOSLASH) {
             $this->context->action($method, $path, $callback);
         }
 
-        if ($path !== '/' && $format & self::SLASH) {
+        if ($path !== '/' && ($this->modes & self::SLASH)) {
             $this->context->action($method, $path . '/', $callback);
         }
     }
