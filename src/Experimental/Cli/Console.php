@@ -109,8 +109,8 @@ class Console
      * @param int                   $code    If the $code argument is present, then the return status of
      *                                       the executed command will be written to this variable
      *
-     * @global \Inphinit\Experimental\Cli\Console|null         $console
-     * @global \Inphinit\Experimental\Environment\EnvFile|null $env
+     * @global \Inphinit\Experimental\Cli\Console         $console
+     * @global \Inphinit\Experimental\Environment\EnvFile $env
      *
      * @throws \Inphinit\Exception
      * @return string
@@ -210,7 +210,7 @@ class Console
             $code = $console->exec($args);
         } catch (\Exception $ex) {
             \ob_clean();
-            throw new Exception($ex->getMessage(), $ex->getCode(), 0, 3);
+            throw new Exception($ex->getMessage(), $ex->getCode(), 3);
         }
 
         return \ob_get_clean();

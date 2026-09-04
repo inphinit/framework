@@ -342,7 +342,7 @@ class Debug
 
     private function renderError($view, $type, $message, $file, $line)
     {
-        if ($type === \E_ERROR && stripos(trim($message), 'allowed memory size') === 0) {
+        if ($type === \E_ERROR && stripos($message, 'allowed memory size') === 0) {
             die("Fatal error: {$message} in {$file} on line {$line}");
         }
 

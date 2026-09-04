@@ -63,6 +63,7 @@ class Document
      * Create a Document instance
      *
      * @param int $type
+     * @throws \Inphinit\Exception
      */
     public function __construct($type = 0)
     {
@@ -83,6 +84,7 @@ class Document
      * Define libXML errors as exceptions
      *
      * @param int $levels
+     * @throws \Inphinit\Exception
      */
     public static function setSeverityLevels($levels)
     {
@@ -250,6 +252,7 @@ class Document
      * Convert Array to DOM
      *
      * @param array $data
+     * @throws \Inphinit\Exception
      * @throws \Inphinit\Dom\DomException
      */
     public function fromArray(array $data)

@@ -16,6 +16,6 @@ class EnvException extends \Inphinit\Exception
         $this->file = $filename;
         $this->line = $line;
 
-        parent::__construct(trim($message), $code, $previous);
+        parent::__construct($message, $code, $previous);
     }
 }

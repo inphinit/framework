@@ -70,20 +70,22 @@ class Inspector
     /**
      * Utility to check if a regex expression contains issues
      *
-     * @param string $expression
-     * @param string &$errorMessage
-     * @param int    &$errorCode
+     * @param string      $expression
+     * @param string|null &$errorMessage
+     * @param int|null    &$errorCode
      * @return bool
      */
-    public static function regex($expression, &$errorMessage, &$errorCode = 0)
+    public static function regex($expression, &$errorMessage, &$errorCode)
     {
+        $errorCode = 0;
+
         if (is_string($expression) === false) {
             $type = self::type($expression);
             $errorMessage = "Expects to be string, {$type} given";
             return false;
         } elseif (preg_match($expression, 'sample sample sample') !== false) {
-            $errorMessage = '';
-            $errorCode = 0;
+            $errorMessage = null;
+            $errorCode = null;
             return true;
         }
 

@@ -239,7 +239,8 @@ class App extends \Inphinit\App
             $invalids = array_diff($items, $param_patterns);
 
             if (count($invalids)) {
-                throw new Exception('Invalid patterns: ' . self::getParamSuggestions($invalids, $param_patterns), 0, 3);
+                $suggestions = self::getParamSuggestions($invalids, $param_patterns);
+                throw new Exception('Invalid patterns: ' . $suggestions, 0, 3);
             }
         }
     }
