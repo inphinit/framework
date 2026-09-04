@@ -33,6 +33,7 @@ abstract class Treaty
      *
      * @param \Inphinit\App $context
      * @param int $modes
+     * @throws \Inphinit\Exception
      */
     public function __construct(App $context, $modes)
     {
@@ -101,7 +102,9 @@ abstract class Treaty
 
     /**
      * Converts a class method suffix to a kebab-case URL segment.
-     * Example: `public function postFooBarBaz()` becomes `foo-bar-baz`.
+     * Examples:
+     *   - `public function postFooBarBaz()` becomes `foo-bar-baz`.
+     *   - `public function getUserID()` becomes `user-id`.
      * Note: Override this method to customize path formatting.
      *
      * @param string $path

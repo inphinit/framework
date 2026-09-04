@@ -78,6 +78,7 @@ class Checkup
 
             if ($files !== false) {
                 // Remove extra line break in the last file
+                $files = strtr($files, array("\r\n" => "\n", "\r" => "\n"));
                 $files = trim($files, "\r\n");
 
                 // The file delimiter is always `,\n`

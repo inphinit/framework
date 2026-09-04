@@ -183,12 +183,14 @@ class Selector
 
         $queries = explode(',', $query);
 
+        $rules = $this->rules;
+
         foreach ($queries as &$descendants) {
             $descendants = explode(' ', trim($descendants));
 
             foreach ($descendants as &$descendant) {
                 foreach (self::$qxs as &$qx) {
-                    $r = strtr($qx[1], $this->rules);
+                    $r = strtr($qx[1], $rules);
 
                     $descendant = str_replace($prevention_token . 'i]', ' i]', $descendant);
                     $descendant = trim(preg_replace($qx[0], $r, $descendant));

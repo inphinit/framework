@@ -93,7 +93,7 @@ class App extends \Inphinit\App
                 throw new Exception($class_and_method . ' is invalid');
             }
         } elseif (is_callable($callback) === false) {
-            throw new Exception('Callback is not callable');
+            throw new Exception('Defined callback is not callable');
         }
 
         parent::action($methods, $path, $callback);
@@ -180,6 +180,8 @@ class App extends \Inphinit\App
 
     private function checkVisibility($name)
     {
+        $type = null;
+
         try {
             $property = $this->reflection->getProperty($name);
 
@@ -189,14 +191,12 @@ class App extends \Inphinit\App
                 $type = 'private';
             } elseif ($property->isProtected()) {
                 $type = 'protected';
-            } else {
-                $type = null;
             }
         } catch (\ReflectionException $ex) {
             $type = null;
         }
 
-        if ($type) {
+        if ($type !== null) {
             throw new Exception("Cannot access {$type} property {$source_class}::\${$name}", 0, 3);
         }
     }

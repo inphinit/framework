@@ -68,7 +68,7 @@ class Command
                 'method' => $parsed[1]
             );
         } elseif (is_callable($callback) === false) {
-            throw new Exception('Callback is not callable: ' . $callback);
+            throw new Exception('Defined callback is not callable');
         }
 
         $this->name = $name;
