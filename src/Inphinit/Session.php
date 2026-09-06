@@ -44,10 +44,9 @@ class Session
 
         $name = $this->name;
 
-        if (isset($_COOKIE[$name]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
+        if (isset($_COOKIE[$name]) && is_string($_COOKIE[$name]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
             $id = $_COOKIE[$name];
-            $prefix = $this->storePrefix;
-            $filename = $this->storage . '/' . $prefix . '[' . $id . ']';
+            $filename = $this->storage . '/' . $this->storePrefix . '[' . $id . ']';
 
             $this->handle = fopen($filename, 'r+');
 
@@ -70,16 +69,18 @@ class Session
      */
     public function commit()
     {
+        $data = serialize($this->data);
+
         $this->lock(true);
 
         ftruncate($this->handle, 0);
         rewind($this->handle);
 
-        $stored = fwrite($this->handle, serialize($this->data));
+        $stored = fwrite($this->handle, $data);
 
         $this->lock(false);
 
-        if ($stored === false) {
+        if ($stored === false || $stored < strlen($data)) {
             throw new Exception('Failed to store data');
         }
     }
@@ -105,9 +106,13 @@ class Session
         $id = $this->create($dest, $path);
         $source = $this->handle;
 
+        $this->lock(true);
+
         rewind($source);
 
         if (stream_copy_to_stream($source, $dest) === false) {
+            $this->lock(false);
+
             fclose($dest);
             unlink($path);
 
@@ -228,11 +233,13 @@ class Session
             throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
         }
 
-        if (is_array($data)) {
+        $this->lock(false);
+
+        if ($data === false) {
+            throw new Exception('Cannot unserialize data', 0, 3);
+        } elseif (is_array($data)) {
             $this->data = $data;
         }
-
-        $this->lock(false);
     }
 
     private function close()
@@ -339,8 +346,10 @@ class Session
             preg_match('/[\x00-\x1F\x7F]/', $path) ||
             strpos($path, ';') !== false
         ) {
-            throw new Exception('Invalid path', 0, 3);
+            throw new Exception('Missing or invalid path', 0, 3);
         }
+
+        $this->path = $path;
 
         if ($opts->domain !== null) {
             if (strpbrk($opts->domain, " =,;\t\r\n\013\014") !== false) {
