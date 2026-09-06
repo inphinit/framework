@@ -13,26 +13,20 @@ use Inphinit\Exception;
 
 class App extends \Inphinit\App
 {
-    private $reflection;
     private static $allowedMethods = array(
         'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'
     );
-
-    public function __construct()
-    {
-        $this->reflection = new \ReflectionClass($this);
-    }
 
     /**
      * Validate name and get the application configs from `$_ENV` with `APP_` prefix key.
      *
      * @param string $name
      * @throws \Inphinit\Exception
-     * @return scalar
+     * @return string|null
      */
     public static function config($name)
     {
-        if (is_string($name) === false || preg_match('/[a-z0-9]\w*/i', $name) !== 1) {
+        if (is_string($name) === false || preg_match('/^[a-z0-9]\w*$/i', $name) !== 1) {
             throw new Exception('Invalid name: ' . $name);
         }
 
@@ -56,6 +50,8 @@ class App extends \Inphinit\App
                 throw new Exception('One of the methods is not a string');
             }
         }
+
+        $method_entries = array_map('strtoupper', $method_entries);
 
         $diff_methods = array_diff($method_entries, self::$allowedMethods);
 
@@ -131,7 +127,7 @@ class App extends \Inphinit\App
      */
     public function setPattern($name, $regex)
     {
-        if (!$name || is_string($name) === false) {
+        if ($name === '' || is_string($name) === false) {
             throw new Exception('Pattern name is empty or not a string');
         }
 
@@ -162,43 +158,6 @@ class App extends \Inphinit\App
         $this->checkPatterns($pattern);
 
         parent::scope($pattern, $callback);
-    }
-
-    public function __get($name)
-    {
-        $this->checkVisibility($name);
-
-        return parent::__get($name);
-    }
-
-    public function __set($name, $value)
-    {
-        $this->checkVisibility($name);
-
-        parent::__set($name, $value);
-    }
-
-    private function checkVisibility($name)
-    {
-        $type = null;
-
-        try {
-            $property = $this->reflection->getProperty($name);
-
-            $source_class = $property->{'class'};
-
-            if ($property->isPrivate()) {
-                $type = 'private';
-            } elseif ($property->isProtected()) {
-                $type = 'protected';
-            }
-        } catch (\ReflectionException $ex) {
-            $type = null;
-        }
-
-        if ($type !== null) {
-            throw new Exception("Cannot access {$type} property {$source_class}::\${$name}", 0, 3);
-        }
     }
 
     private function checkPatterns($pattern)
