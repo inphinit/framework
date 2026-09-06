@@ -31,8 +31,6 @@ class Session
     private $secure = false;
     private $storePrefix = '~sess';
 
-    private static $useRandomBytes;
-
     /**
      * Reads and stores session data and creates a cookie
      *
@@ -42,10 +40,6 @@ class Session
      */
     public function __construct($config)
     {
-        if (self::$useRandomBytes === null) {
-            self::$useRandomBytes = PHP_VERSION_ID >= 70000;
-        }
-
         $this->loadConfigs($config);
 
         $name = $this->name;
@@ -427,7 +421,7 @@ class Session
 
     private static function createId()
     {
-        if (self::$useRandomBytes) {
+        if (PHP_VERSION_ID >= 70000) {
             try {
                 $bin = \random_bytes(self::BYTES_LENGTH);
             } catch (\Exception $ex) {
