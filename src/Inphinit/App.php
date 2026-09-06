@@ -40,7 +40,7 @@ class App
      * Get the application configs from `$_ENV` with `APP_` prefix key.
      *
      * @param string $name
-     * @return scalar
+     * @return string|null
      */
     public static function config($name)
     {

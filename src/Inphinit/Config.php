@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Diagnostics\Inspector;
+
 class Config
 {
     private $exceptionLevel = 2;
@@ -86,8 +88,9 @@ class Config
      */
     public function __set($name, $value)
     {
-        if (!is_scalar($value) && !is_null($value)) {
-            throw new Exception('Invalid value');
+        if (is_scalar($value) === false && $value !== null) {
+            $type = Inspector::type($value);
+            throw new Exception("Expects to be scalar or null, {$type} given");
         }
 
         $this->data[$name] = $value;

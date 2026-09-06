@@ -9,6 +9,7 @@
 
 namespace Inphinit\Filesystem;
 
+use Inphinit\App;
 use Inphinit\Exception;
 
 class Size
@@ -57,7 +58,7 @@ class Size
      */
     public function __construct($modes = 0)
     {
-        $this->development = \Inphinit\App::config('environment') === 'development';
+        $this->development = App::config('environment') === 'development';
 
         if (self::$osFamily === null) {
             $os = defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : php_uname('s');
