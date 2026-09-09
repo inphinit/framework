@@ -29,109 +29,121 @@ class File
     }
 
     /**
-     * Check if file exists using case-sensitive,
-     * For help developers who using Windows OS and using unix-like for production
+     * Check if a file/directory exists using case-sensitive,
+     * to assist developers who use the Windows operating system
+     * and Unix-like environments in production.
      *
      * @param string $path
      * @return bool
      */
     public static function exists($path)
     {
-        $path = str_replace('\\', '/', $path);
+        if (stripos($path, '#') !== false || stripos($path, '?') !== false) {
+            return false;
+        }
 
-        // Canonicalize the path for support in the inphinit_check_path() function
+        if (file_exists($path) === false) {
+            return false;
+        }
+
+        $path = str_replace('\\', '/', $path);
+        $path = preg_replace('#^file:/+([a-z]:|/)#i', '$1', $path);
+
+        // Resolve `/./`, `/../`, and `/` extras before using `inphinit_check_path()`
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
             $path = Url::canonpath($path);
         }
 
-        if (strpos($path, '/') !== 0 && preg_match('#^[a-zA-Z]+?\:#', $path) !== 1) {
-            $path = str_replace('\\', '/', getcwd()) . '/' . $path;
+        // Paths that start with `/` or contain `:` are likely not relative
+        if (strpos($path, '/') !== 0 && strpos($path, ':') === false) {
+            $current_dir = realpath('.');
+
+            // Caution: Returns false if there are no execute permissions for all directories in the hierarchy
+            if ($current_dir === false) {
+                return false;
+            }
+
+            $path = str_replace('\\', '/', $current_dir) . '/' . $path;
         }
 
         return inphinit_check_path($path);
     }
 
     /**
-     * Get file/folder permissions in a format more readable.
+     * Get file/directory permissions in a format more readable.
      * Return `false` if file is not found
      *
-     * @param string $path
-     * @param bool   $symbolic
+     * @param string $path Path to the file.
+     * @param bool   $full If true, it returns the full format; otherwise, it returns the octal format.
+     * @param bool   $link If true, it indicates that it should return the permissions of a symbolic link and not the source.
      * @throws \Inphinit\Exception
      * @return string|false
      */
-    public static function permissions($path, $symbolic = false)
+    public static function permissions($path, $full = false, $link = false)
     {
+        $cache  = $full ? 'full+' : 'octal+';
+        $cache .= $link ? 'link:' : 'file:';
+        $cache .= $path;
+
+        if (isset(self::$infos[$cache])) {
+            return self::$infos[$cache];
+        }
+
         self::checkInDevMode($path);
 
-        $perms = fileperms($path);
+        if ($link) {
+            $stat = lstat($path);
+            $perms = $stat ? $stat['mode'] : false;
+        } else {
+            $perms = fileperms($path);
+        }
 
         if ($perms === false) {
             return false;
         }
 
-        $type = $symbolic ? 'symbolic' : 'octal';
+        if ($full === false) {
+            $info = substr(sprintf('%o', $perms), -4);
 
-        if (isset(self::$infos[$path][$type])) {
-            return self::$infos[$path][$type];
-        }
+            self::$infos[$cache] = $info;
 
-        if ($symbolic !== true) {
-            return self::$infos[$path][$type] = substr(sprintf('%o', $perms), -4);
+            return $info;
         }
 
         switch ($perms & 0xF000) {
-            case 0xC000: // socket
-                $info = 's';
-                break;
+            case 0x1000: $info = 'p'; break; // FIFO pipe
+            case 0x2000: $info = 'c'; break; // character special
+            case 0x4000: $info = 'd'; break; // directory
+            case 0x6000: $info = 'b'; break; // block special
+            case 0x8000: $info = '-'; break; // regular
+            case 0xA000: $info = 'l'; break; // symbolic link
+            case 0xC000: $info = 's'; break; // socket
 
-            case 0xA000: // symbolic link
-                $info = 'l';
-                break;
-
-            case 0x8000: // regular
-                $info = 'r';
-                break;
-
-            case 0x6000: // block special
-                $info = 'b';
-                break;
-
-            case 0x4000: // directory
-                $info = 'd';
-                break;
-
-            case 0x2000: // character special
-                $info = 'c';
-                break;
-
-            case 0x1000: // FIFO pipe
-                $info = 'p';
-                break;
-
-            default: // unknown
-                $info = 'u';
+            // unknown
+            default: $info = 'u';
         }
 
         // Owner
-        $from = $perms & 0x0800;
-        $info .= $perms & 0x0100 ? 'r' : '-';
-        $info .= $perms & 0x0080 ? 'w' : '-';
-        $info .= $perms & 0x0040 ? ($from ? 's' : 'x') : ($from ? 'S' : '-');
+        $setuid = $perms & 0x0800;
+        $info .= (($perms & 0x0100) ? 'r' : '-');
+        $info .= (($perms & 0x0080) ? 'w' : '-');
+        $info .= (($perms & 0x0040) ? ($setuid ? 's' : 'x') : ($setuid ? 'S' : '-'));
 
         // Group
-        $from = $perms & 0x0400;
-        $info .= $perms & 0x0020 ? 'r' : '-';
-        $info .= $perms & 0x0010 ? 'w' : '-';
-        $info .= $perms & 0x0008 ? ($from ? 's' : 'x') : ($from ? 'S' : '-');
+        $setgid = $perms & 0x0400;
+        $info .= (($perms & 0x0020) ? 'r' : '-');
+        $info .= (($perms & 0x0010) ? 'w' : '-');
+        $info .= (($perms & 0x0008) ? ($setgid ? 's' : 'x') : ($setgid ? 'S' : '-'));
 
-        // World
-        $from = $perms & 0x0200;
-        $info .= $perms & 0x0004 ? 'r' : '-';
-        $info .= $perms & 0x0002 ? 'w' : '-';
-        $info .= $perms & 0x0001 ? ($from ? 't' : 'x') : ($from ? 'T' : '-');
+        // Others
+        $sticky = $perms & 0x0200;
+        $info .= (($perms & 0x0004) ? 'r' : '-');
+        $info .= (($perms & 0x0002) ? 'w' : '-');
+        $info .= (($perms & 0x0001) ? ($sticky ? 't' : 'x') : ($sticky ? 'T' : '-'));
 
-        return self::$infos[$path][$type] = $info;
+        self::$infos[$cache] = $info;
+
+        return $info;
     }
 
     /**
@@ -155,7 +167,7 @@ class File
 
         $buffer = ob_get_level() !== 0;
 
-        if ($length === null || $length < 1) {
+        if ($length < 1) {
             $length = 262144;
         }
 
@@ -215,13 +227,13 @@ class File
 
         $i = 0;
         $output = '';
-        $max = $max + $offset - 1;
+        $limit = $max + $offset - 1;
 
         while (($data = fgets($handle)) !== false) {
             if ($i >= $offset) {
                 $output .= $data;
 
-                if ($i === $max) {
+                if ($i === $limit) {
                     break;
                 }
             }
