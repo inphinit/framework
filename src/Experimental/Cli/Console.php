@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental\Cli;
 
 use Inphinit\Diagnostics\Inspector;
+use Inphinit\Event;
 use Inphinit\Exception;
 
 class Console
@@ -94,11 +95,15 @@ class Console
             if ($response < 0 || $response > 254) {
                 throw new Exception('Exit codes should be in the range 0 to 254');
             }
-
-            return $response;
+        } else {
+            $response = 0;
         }
 
-        return 0;
+        if (PHP_SAPI === 'cli' && class_exists('\\Inphinit\\Event', false)) {
+            Event::trigger('done');
+        }
+
+        return $response;
     }
 
     /**

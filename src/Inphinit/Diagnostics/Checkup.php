@@ -314,7 +314,7 @@ class Checkup
             $entry = $default;
         }
 
-        // According to the PHP FAQ, fractional numbers like 0.5M are interpreted as 0
+        // Caution: According to the PHP FAQ, fractional numbers like 0.5M are interpreted as 0
         if (preg_match('/^(0|[1-9]\d*)(\.\d+|)([KMG]|)$/i', $entry, $matches) !== 1) {
             return false;
         }

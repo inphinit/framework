@@ -32,7 +32,7 @@ class Debug
 
     /** @var array<string, string> List of shortcuts for linking problematic files via link to external editors */
     protected static $editors = array(
-        // Requires: https://packagecontrol.io/packages/subl%20protocol
+        // Caution: https://packagecontrol.io/packages/subl%20protocol is required
         'sublimetext' => 'subl://{path}:{line}',
         'vscode' => 'vscode://file/{path}:{line}:0',
     );
@@ -41,6 +41,7 @@ class Debug
     private $beforeView;
     private $views = array();
     private static $configs;
+    private static $iniDisplayErrors;
 
     /**
      * Set view for display displayed before other defined from a Debug instance
@@ -82,7 +83,8 @@ class Debug
         if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set')) {
             $config = ini_get('display_errors');
 
-            if (empty($config) === false) {
+            if ($config !== false && $config !== '1') {
+                self::$iniDisplayErrors = $config;
                 ini_set('display_errors', '0');
             }
         }
@@ -109,8 +111,8 @@ class Debug
             Event::off($type === 'error' ? $type : 'done', $callback);
         }
 
-        if (function_exists('ini_set')) {
-            ini_set('display_errors', '1');
+        if (self::$iniDisplayErrors !== null && function_exists('ini_set')) {
+            ini_set('display_errors', self::$iniDisplayErrors);
         }
     }
 
@@ -390,6 +392,8 @@ class Debug
 
     private static function details($type, $message, $file, $line)
     {
+        self::boot();
+
         $match = array();
 
         if (preg_match('#called\s+in\s+(.*?)\s+on\s+line\s+(\d+)(\s+)?$#', $message, $match)) {
@@ -404,7 +408,7 @@ class Debug
             case E_CORE_ERROR:
             case E_COMPILE_ERROR:
             case E_RECOVERABLE_ERROR:
-            case E_USER_ERROR: // deprecated as of PHP 8.4
+            case E_USER_ERROR: // Caution: trigger_error(..., E_USER_ERROR) is deprecated (PHP 8.4+)
                 $message = 'Fatal error: ' . $message;
                 break;
 
@@ -444,7 +448,7 @@ class Debug
         );
     }
 
-    /** some errors prevent spl_autoload from continuing, so it is necessary to include */
+    // Caution: some errors prevent spl_autoload from continuing, so it is necessary to include
     private static function boot()
     {
         if (self::$configs === null) {

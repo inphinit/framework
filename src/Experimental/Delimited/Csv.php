@@ -53,7 +53,7 @@ class Csv extends Reader
     {
         self::isSingleChar($escape, 'Proprietary escape must be a single byte character or empty');
 
-        // Note: Prior to PHP 7.4, there was no way to disable the proprietary escape mechanism
+        // Caution: Prior to PHP 7.4, there was no way to disable the proprietary escape mechanism
         if ($escape === '' && PHP_VERSION_ID < 70400) {
             $escape = '\\';
         }

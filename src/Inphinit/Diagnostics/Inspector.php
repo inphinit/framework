@@ -77,11 +77,10 @@ class Inspector
      */
     public static function regex($expression, &$errorMessage, &$errorCode)
     {
-        $errorCode = 0;
-
         if (is_string($expression) === false) {
             $type = self::type($expression);
             $errorMessage = "Expects to be string, {$type} given";
+            $errorCode = 0;
             return false;
         } elseif (preg_match($expression, 'sample sample sample') !== false) {
             $errorMessage = null;

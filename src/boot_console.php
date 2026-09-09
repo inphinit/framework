@@ -87,7 +87,7 @@ $serve = $console->action('serve', function (Command $command, array $options, a
         return 1;
     }
 
-    // In CLI, the binary path is always returned correctly (failures usually occur in FPM).
+    // Caution: In CLI, the binary path is always returned correctly (failures usually occur in FPM).
     $php_bin = PHP_BINARY;
 
     $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
