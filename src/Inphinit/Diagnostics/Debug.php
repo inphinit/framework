@@ -205,21 +205,24 @@ class Debug
         if ($line <= 0 || is_file($file) === false) {
             return null;
         } elseif ($line > 5) {
-            $init = $line - 6;
-            $max = 10;
+            $offset = $line - 6;
+            $limit = 10;
             $breakpoint = 6;
         } else {
-            $init = 0;
-            $max = 5;
+            $offset = 0;
+            $limit = 5;
             $breakpoint = $line;
         }
 
         // Disable strict mode for File::lines, prevent extra-exceptions
-        File::strictMode(false);
+        File::strict(false);
 
-        $preview = preg_split('#\r\n|\n#', File::lines($file, $init, $max));
+        $preview = File::lines($file, $offset, $limit);
 
-        if (count($preview) !== $breakpoint && trim(end($preview)) === '') {
+        if ($preview === false) {
+            $breakpoint = 0;
+            $preview = array();
+        } elseif (count($preview) !== $breakpoint && trim(end($preview)) === '') {
             array_pop($preview);
         }
 

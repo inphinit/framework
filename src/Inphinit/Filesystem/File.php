@@ -16,32 +16,37 @@ use Inphinit\Utility\Url;
 class File
 {
     private static $infos = array();
-    private static $devStrictMode = true;
+    private static $strictMode = true;
 
     /**
-     * Enable or disable strict mode for check if file exists with case-sensitive (available only in development mode)
+     * Enables/disable case-sensitive file and directory existence checks performed by
+     * the framework in most methods of the `File` class. If disabled, case sensitivity
+     * is determined by the operating system or the underlying file system
      *
      * @param bool $enable
+     * @throws \Inphinit\Exception
      */
-    public static function strictMode($enable)
+    public static function strict($enable)
     {
-        self::$devStrictMode = $enable;
+        if (is_bool($enable) === false) {
+            $type = Inspector::type($enable);
+            throw new Exception("Expects to be bool, {$type} given");
+        }
+
+        self::$strictMode = $enable;
     }
 
     /**
-     * Check if a file/directory exists using case-sensitive,
-     * to assist developers who use the Windows operating system
-     * and Unix-like environments in production.
+     * Checks whether a file or directory exists using case-sensitive path
+     * matching, helping developers maintain consistent behavior across
+     * Windows development environments and Unix-like production systems
+     * Note: `File::exists()` method is not affected by this configuration
      *
      * @param string $path
      * @return bool
      */
     public static function exists($path)
     {
-        if (stripos($path, '#') !== false || stripos($path, '?') !== false) {
-            return false;
-        }
-
         if (file_exists($path) === false) {
             return false;
         }
@@ -54,8 +59,8 @@ class File
             $path = Url::canonpath($path);
         }
 
-        // Paths that start with `/` or contain `:` are likely not relative
-        if (strpos($path, '/') !== 0 && strpos($path, ':') === false) {
+        // Paths that start with `/` or contain a drive letter (e.g., `D:/`) are likely not relative
+        if (strpos($path, '/') !== 0 && strpos($path, ':/') === false) {
             $current_dir = realpath('.');
 
             // Caution: Returns false if there are no execute permissions for all directories in the hierarchy
@@ -73,7 +78,7 @@ class File
      * Get file/directory permissions in a format more readable.
      * Return `false` if file is not found
      *
-     * @param string $path Path to the file.
+     * @param string $path File path
      * @param bool   $full If true, it returns the full format; otherwise, it returns the octal format.
      * @param bool   $link If true, it indicates that it should return the permissions of a symbolic link and not the source.
      * @throws \Inphinit\Exception
@@ -89,7 +94,7 @@ class File
             return self::$infos[$cache];
         }
 
-        self::checkInDevMode($path);
+        self::checkCaseSensitive($path);
 
         if ($link) {
             $stat = lstat($path);
@@ -109,6 +114,8 @@ class File
 
             return $info;
         }
+
+        // note: https://github.com/php/doc-en/pull/5842
 
         switch ($perms & 0xF000) {
             case 0x1000: $info = 'p'; break; // FIFO pipe
@@ -147,17 +154,17 @@ class File
     }
 
     /**
-     * Show file in output, if use ob_start is auto used ob_flush. You can set delay in microseconds for cycles
+     * Show file in output, if use ob_start is auto used ob_flush
      *
-     * @param string $path
-     * @param int    $length
-     * @param int    $delay
+     * @param string $path   File path
+     * @param int    $length Up to length number of bytes read
+     * @param int    $delay  Sets the interval between each reading
      * @throws \Inphinit\Exception
      * @return bool
      */
     public static function output($path, $length = 0, $delay = 0)
     {
-        self::checkInDevMode($path);
+        self::checkCaseSensitive($path);
 
         $handle = fopen($path, 'rb');
 
@@ -191,17 +198,18 @@ class File
     }
 
     /**
-     * Read excerpt from a file
+     * Reads file into a string, starting at the specified offset up to length bytes
+     * Note: Same behavior as `file_get_contents`, but case-sensitive in development mode
      *
-     * @param string $path
-     * @param int    $offset
-     * @param int    $length
+     * @param string $path   File path
+     * @param int    $offset The offset where the reading starts on the original stream (Negative offsets count from the end of the stream)
+     * @param int    $length Maximum length of data read. The default is to read until end of file is reached
      * @throws \Inphinit\Exception
      * @return string|false
      */
     public static function portion($path, $offset = 0, $length = 1024)
     {
-        self::checkInDevMode($path);
+        self::checkCaseSensitive($path);
 
         return file_get_contents($path, false, null, $offset, $length);
     }
@@ -209,15 +217,23 @@ class File
     /**
      * Read lines from a file
      *
-     * @param string $path
-     * @param int    $offset
-     * @param int    $max
+     * @param string $path   File path
+     * @param int    $offset Number of rows to skip (`0` disables skips)
+     * @param int    $length Maximum number of lines read (`0` disables line limits)
      * @throws \Inphinit\Exception
-     * @return string|false
+     * @return array|false
      */
-    public static function lines($path, $offset = 0, $max = 32)
+    public static function lines($path, $offset = 0, $length = 100)
     {
-        self::checkInDevMode($path);
+        if (is_int($offset) === false || $offset < 0) {
+            throw new Exception('Invalid offset');
+        }
+
+        if (is_int($length) === false || $length < 0) {
+            throw new Exception('Invalid length');
+        }
+
+        self::checkCaseSensitive($path);
 
         $handle = fopen($path, 'rb');
 
@@ -225,20 +241,20 @@ class File
             return false;
         }
 
-        $i = 0;
-        $output = '';
-        $limit = $max + $offset - 1;
+        $index = 0;
+        $output = array();
+        $last_index = $length === 0 ? -1 : ($offset + $length - 1);
 
         while (($data = fgets($handle)) !== false) {
-            if ($i >= $offset) {
-                $output .= $data;
+            if ($index >= $offset) {
+                $output[] = $data;
 
-                if ($i === $limit) {
+                if ($index === $last_index) {
                     break;
                 }
             }
 
-            ++$i;
+            ++$index;
         }
 
         fclose($handle);
@@ -255,9 +271,9 @@ class File
         clearstatcache();
     }
 
-    private static function checkInDevMode($path, $level = 3)
+    private static function checkCaseSensitive($path, $level = 3)
     {
-        if (self::$devStrictMode && App::config('environment') === 'development' && self::exists($path) === false) {
+        if (self::$strictMode && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 0, $level);
         }
     }

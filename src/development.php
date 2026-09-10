@@ -12,6 +12,9 @@ error_reporting(E_ALL);
 $app = new Inphinit\Diagnostics\App();
 $debug = new Inphinit\Diagnostics\Debug();
 
+// Enable case-sensitive file and directory existence checks performed by the framework
+Inphinit\Filesystem\File::strict(true);
+
 require INPHINIT_SYSTEM . '/dev.php';
 require __DIR__ . '/sendfile.php';
 
