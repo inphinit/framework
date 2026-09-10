@@ -198,12 +198,12 @@ class Debug
      *
      * @param string $file
      * @param int    $line
-     * @return array
+     * @return array|false
      */
     public static function source($file, $line)
     {
         if ($line <= 0 || is_file($file) === false) {
-            return null;
+            return false;
         } elseif ($line > 5) {
             $offset = $line - 6;
             $limit = 10;
@@ -215,9 +215,12 @@ class Debug
         }
 
         // Disable strict mode for File::lines, prevent extra-exceptions
-        File::strict(false);
+        $previous = File::strict(false);
 
         $preview = File::lines($file, $offset, $limit);
+
+        // Restore previous mode
+        File::strict($previous);
 
         if ($preview === false) {
             $breakpoint = 0;
