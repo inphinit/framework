@@ -44,7 +44,7 @@ class View
      */
     public static function strict($enable)
     {
-        if (is_bool($enable) === false) {
+        if ($enable !== null && is_bool($enable) === false) {
             $type = Inspector::type($enable);
             throw new Exception("Expects to be bool, {$type} given");
         }
