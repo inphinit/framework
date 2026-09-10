@@ -13,9 +13,11 @@ use Inphinit\Http\Request;
 
 class Method
 {
-    private static $initial;
-
     private $allowed = array('delete', 'patch', 'put');
+
+    private $cache;
+
+    private static $initial;
 
     private $sources = array(
         // Headers
@@ -50,6 +52,7 @@ class Method
     public function setAllowed(array $methods)
     {
         $this->allowed = array_map('strtolower', $methods);
+        $this->cache = null;
     }
 
     /**
@@ -61,6 +64,7 @@ class Method
     public function addHeader($header, $priority = 0)
     {
         $this->sources[] = array($header, true, $priority);
+        $this->cache = null;
     }
 
     /**
@@ -72,6 +76,7 @@ class Method
     public function addParam($param, $priority = 0)
     {
         $this->sources[] = array($param, false, $priority);
+        $this->cache = null;
     }
 
     /**
@@ -81,6 +86,10 @@ class Method
      */
     public function __toString()
     {
+        if ($this->cache !== null) {
+            return $this->cache;
+        }
+
         usort($this->sources, function ($a, $b) {
             if ($a[2] === $b[2]) {
                 return 0;
@@ -102,8 +111,8 @@ class Method
                 $method = $_GET[$key];
             }
 
-            if ($method && in_array(strtolower($method), $this->allowed)) {
-                return strtoupper($method);
+            if ($method !== null && in_array(strtolower($method), $this->allowed)) {
+                return $this->cache = strtoupper($method);
             }
         }
 

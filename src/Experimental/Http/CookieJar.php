@@ -215,11 +215,9 @@ class CookieJar
         }
 
         // Checks cookie value
-        if ($value === null || is_string($value)) {
-            $value = $value;
-        } elseif (is_numeric($value) || (is_object($value) && method_exists($value, '__toString'))) {
+        if (is_numeric($value) || (is_object($value) && method_exists($value, '__toString'))) {
             $value = (string) $value;
-        } else {
+        } elseif ($value !== null && is_string($value) === false) {
             $type = Inspector::type($value);
             throw new Exception("Expected value to be null, string, number, or Stringable object; {$type} given");
         }

@@ -81,7 +81,7 @@ class Console
         $command = $this->commands[$name];
 
         try {
-            $response = $command->response(self::parseOptions($arguments));
+            $response = $command->response(static::parseOptions($arguments));
         } catch (\Exception $ex) {
             throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
         }

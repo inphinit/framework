@@ -124,7 +124,7 @@ class FileResponse
         }
     }
 
-    private function checkDispatched($overwrite)
+    private static function checkDispatched($overwrite)
     {
         $accel_header = 'X-Accel-Redirect';
         $send_header = 'X-Sendfile';
