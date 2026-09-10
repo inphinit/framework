@@ -40,7 +40,7 @@ class Version
      */
     public function __construct($version)
     {
-        if (preg_match(self::$pattern, $version, $matches)) {
+        if (preg_match(static::$pattern, $version, $matches)) {
             $this->components['major'] = $matches[1];
             $this->components['minor'] = $matches[2];
             $this->components['patch'] = $matches[3];
@@ -104,7 +104,7 @@ class Version
                 }
 
                 if ($name === 'prerelease') {
-                    $id_regex = '#^(?:0|[1-9]\d*|[a-zA-Z-][\da-zA-Z-]*)$#';
+                    $id_regex = '#^(?:0|[1-9]\d*|\d*[a-zA-Z-][\da-zA-Z-]*)$#';
                 } else {
                     $id_regex = '#^[\da-zA-Z-]+$#';
                 }
@@ -114,8 +114,19 @@ class Version
                         throw new Exception("Invalid identifier '{$id}' for {$name} component");
                     }
                 }
-            } elseif (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
-                throw new Exception($name . ' expects a numeric value');
+            } elseif (is_int($value)) {
+                if ($value < 0) {
+                    throw new Exception($name . ' expects a numeric positive value');
+                }
+
+                $value = (string) $value;
+            } elseif (is_string($value)) {
+                if (preg_match('#^(0|[1-9]\d*)$#', $value) !== 1) {
+                    throw new Exception($name . ' expects a numeric value');
+                }
+            } else {
+                $type = Inspector::type($value);
+                throw new Exception("Expected value to be string, int, or null; {$type} given");
             }
         }
 
@@ -155,6 +166,6 @@ class Version
      */
     public static function valid($version)
     {
-        return preg_match(self::$pattern, $version) === 1;
+        return preg_match(static::$pattern, $version) === 1;
     }
 }
