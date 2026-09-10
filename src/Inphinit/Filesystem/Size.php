@@ -46,7 +46,6 @@ class Size
 
     private $comErrorCode;
     private $comErrorMessage;
-    private $development = false;
 
     private static $osFamily;
 
@@ -58,8 +57,6 @@ class Size
      */
     public function __construct($modes = 0)
     {
-        $this->development = App::config('environment') === 'development';
-
         if (self::$osFamily === null) {
             $os = defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : php_uname('s');
 
@@ -107,8 +104,8 @@ class Size
      */
     public function get($path)
     {
-        if ($this->development && File::exists($path) === false) {
-            throw new Exception($path . ' not found (check case-sensitive)');
+        if (File::strict() && File::exists($path) === false) {
+            throw new Exception($path . ' file not found (check case-sensitive)');
         } elseif (is_file($path) === false) {
             throw new Exception($path . ' not found');
         }

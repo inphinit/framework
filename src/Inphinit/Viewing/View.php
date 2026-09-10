@@ -9,6 +9,9 @@
 
 namespace Inphinit\Viewing;
 
+use Inphinit\Diagnostics\Inspector;
+use Inphinit\Exception;
+
 class View
 {
     /** @var int Bypass security trust HTML in the render() method */
@@ -16,8 +19,9 @@ class View
 
     private static $encoding = 'UTF-8';
     private static $force = false;
-    private static $views = array();
     private static $shared = array();
+    private static $strictMode = false;
+    private static $views = array();
 
     /**
      * Set encoding used by escape engine
@@ -25,6 +29,33 @@ class View
     public static function setEncoding($value)
     {
         self::$encoding = $value;
+    }
+
+    /**
+     * Enables or disables strict mode to pre-check for the existence of the view.
+     *
+     * - Note: When enabled, it performs a case-sensitive check on systems that do not support it
+     * - Nota: In development environment, the framework will enable this by default
+     * - Note: In production environment, it is recommended to disable it for performance reasons
+     *
+     * @param bool $enable
+     * @throws \Inphinit\Exception
+     * @return bool
+     */
+    public static function strict($enable)
+    {
+        if (is_bool($enable) === false) {
+            $type = Inspector::type($enable);
+            throw new Exception("Expects to be bool, {$type} given");
+        }
+
+        $previous = self::$strictMode;
+
+        if ($enable !== null) {
+            self::$strictMode = $enable;
+        }
+
+        return $previous;
     }
 
     /**
@@ -99,6 +130,12 @@ class View
      */
     public static function render($view, array $data = array(), $mode = ENT_QUOTES)
     {
+        $path = 'views/' . str_replace('.', '/', $view) . '.php';
+
+        if (self::$strictMode && self::exists($view) === false) {
+            throw new Exception($path . ' view not found (check case-sensitive)');
+        }
+
         if (self::$force === false) {
             return array_push(self::$views, array($view, $data, $mode)) - 1;
         }
@@ -109,7 +146,7 @@ class View
             self::escape($data, $mode);
         }
 
-        inphinit_sandbox('views/' . str_replace('.', '/', $view) . '.php', $data);
+        inphinit_sandbox($path, $data);
     }
 
     /**

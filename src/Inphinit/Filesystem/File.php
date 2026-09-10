@@ -22,19 +22,26 @@ class File
     /**
      * Enables/disable case-sensitive file and directory existence checks performed by
      * the framework in most methods of the `File` class. If disabled, case sensitivity
-     * is determined by the operating system or the underlying file system
+     * is determined by the operating system or the underlying file system.
      *
-     * @param bool $enable
+     * @param bool|null $enable
      * @throws \Inphinit\Exception
+     * @return bool
      */
-    public static function strict($enable)
+    public static function strict($enable = null)
     {
         if (is_bool($enable) === false) {
             $type = Inspector::type($enable);
             throw new Exception("Expects to be bool, {$type} given");
         }
 
-        self::$strictMode = $enable;
+        $previous = self::$strictMode;
+
+        if ($enable !== null) {
+            self::$strictMode = $enable;
+        }
+
+        return $previous;
     }
 
     /**
