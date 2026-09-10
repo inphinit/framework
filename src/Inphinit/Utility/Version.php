@@ -9,6 +9,7 @@
 
 namespace Inphinit\Utility;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
 /**
