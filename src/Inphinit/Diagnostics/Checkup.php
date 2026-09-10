@@ -197,13 +197,20 @@ class Checkup
 
     private function checkAppStorage()
     {
-        $folder = INPHINIT_SYSTEM . '/storage';
-        $folder_visible = $this->development ? $folder : './storage';
+        $directories = array('logs', 'session', 'tmp');
 
-        if (is_dir($folder) === false) {
-            $this->errors[] = "No such directory: `{$folder_visible}`";
-        } elseif (is_writable($folder) === false) {
-            $this->errors[] = "`{$folder_visible}` directory requires write permissions";
+        $base = INPHINIT_SYSTEM . '/storage';
+        $base_visible = $this->development ? $base : './storage';
+
+        foreach ($directories as $directory) {
+            $dir = $base . '/' . $directory;
+            $display = $base_visible . '/' . $directory;
+
+            if (is_dir($dir) === false) {
+                $this->errors[] = "No such directory: `{$display}`";
+            } elseif (is_writable($dir) === false) {
+                $this->errors[] = "`{$display}` directory requires write permissions";
+            }
         }
     }
 
