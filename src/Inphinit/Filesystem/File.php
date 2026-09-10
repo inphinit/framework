@@ -10,13 +10,14 @@
 namespace Inphinit\Filesystem;
 
 use Inphinit\App;
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 use Inphinit\Utility\Url;
 
 class File
 {
     private static $infos = array();
-    private static $strictMode = true;
+    private static $strictMode = false;
 
     /**
      * Enables/disable case-sensitive file and directory existence checks performed by
