@@ -103,38 +103,40 @@ class Parser
             $value = $this->fallback[$var];
         }
 
+        $unset_value = ($value === null);
+        $empty_value = ($value === '' || $unset_value);
+
         switch ($inter_mode) {
             case '+':
+                if ($non_empty) {
+                    // ${VAR:+replacement} Replace
+                    return $empty_value ? '' : $inter_param;
+                }
+
                 // ${VAR+replacement} Replace
-                if ($non_empty) {
-                    return $value === '' ? '' : $inter_param;
-                } else {
-                    return $value === null ? '' : $inter_param;
-                }
+                return $unset_value ? '' : $inter_param;
 
-                break;
             case '-':
-                // ${VAR-default} Default
                 if ($non_empty) {
-                    return $value === '' ? $inter_param : $value;
-                } else {
-                    return $value === null ? $inter_param : $value;
+                    // ${VAR:-default} Default
+                    return $empty_value ? $inter_param : $value;
                 }
 
-                break;
+                // ${VAR-default} Default
+                return $unset_value ? $inter_param : $value;
+
             case '?':
-                // ${VAR?error} Required
                 if ($non_empty) {
-                    if ($value === '' || $value === null) {
+                    // ${VAR:?error} Required
+                    if ($empty_value) {
                         throw new Exception($inter_param, 0, 3);
                     }
-                } elseif ($value === null) {
+                } elseif ($unset_value) {
+                    // ${VAR?error} Required
                     throw new Exception($inter_param, 0, 3);
                 }
-
-                break;
         }
 
-        return $value;
+        return $value !== null ? $value : '';
     }
 }

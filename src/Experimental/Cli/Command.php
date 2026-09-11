@@ -152,7 +152,8 @@ class Command
     public function enableResidues($enable)
     {
         if (is_bool($enable) === false) {
-            throw new Exception('Expected boolean value');
+            $type = Inspector::type($enable);
+            throw new Exception("Expects to be bool, {$type} given");
         }
 
         $this->enabledResidues = $enable;
@@ -170,7 +171,8 @@ class Command
     public function restrictToCli($enable)
     {
         if (is_bool($enable) === false) {
-            throw new Exception('Expected boolean value');
+            $type = Inspector::type($enable);
+            throw new Exception("Expects to be bool, {$type} given");
         }
 
         $this->restrictedToCli = $enable;

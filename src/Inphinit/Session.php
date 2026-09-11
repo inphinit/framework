@@ -82,7 +82,7 @@ class Session
         $this->lock(false);
 
         if ($stored === false || $stored < strlen($data)) {
-            throw new Exception('Failed to store data');
+            throw new Exception('Failed to store session data');
         }
     }
 
@@ -117,7 +117,7 @@ class Session
             fclose($dest);
             unlink($path);
 
-            throw new Exception('Failed copy data');
+            throw new Exception('Failed to copy session data');
         }
 
         $this->close();
@@ -223,26 +223,33 @@ class Session
 
         $data = stream_get_contents($this->handle);
 
-        try {
-            if (PHP_VERSION_ID < 70000) {
-                $data = unserialize($data);
-            } else {
-                $data = unserialize($data, array('allowed_classes' => false));
-            }
-        } catch (\Exception $ex) {
-            $this->close();
+        if ($data === false) {
             $this->setCookie(true);
-            throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
+            throw new Exception('Cannot read session data', 0, 3);
+        }
+
+        if ($data !== '') {
+            try {
+                if (PHP_VERSION_ID < 70000) {
+                    $data = unserialize($data);
+                } else {
+                    $data = unserialize($data, array('allowed_classes' => false));
+                }
+            } catch (\Exception $ex) {
+                $this->close();
+                $this->setCookie(true);
+                throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
+            }
         }
 
         $this->lock(false);
 
-        if ($data === false) {
+        if (is_array($data) === false) {
             $this->setCookie(true);
-            throw new Exception('Cannot unserialize data', 0, 3);
-        } elseif (is_array($data)) {
-            $this->data = $data;
+            throw new Exception('Cannot unserialize session data', 0, 3);
         }
+
+        $this->data = $data;
     }
 
     private function close()
@@ -258,7 +265,7 @@ class Session
     {
         if (headers_sent($file, $line)) {
             $this->close();
-            throw new \ErrorException('Cannot set cookie, headers already sent', 0, E_ERROR, $file, $line);
+            throw new \ErrorException('Cannot set session cookie, headers already sent', 0, E_ERROR, $file, $line);
         }
 
         if ($forceExpires) {
@@ -270,17 +277,15 @@ class Session
         }
 
         $cookie = 'Set-Cookie: ' . $this->name . '=' . $id;
-        $secure = $this->secure === true;
+        $secure = ($this->secure === true);
 
-        if ($this->domain) {
+        if ($this->domain !== null) {
             $cookie .= '; Domain=' . $this->domain;
         }
 
-        if ($this->path) {
-            $cookie .= '; Path=' . $this->path;
-        }
+        $cookie .= '; Path=' . $this->path;
 
-        if ($expires) {
+        if ($expires !== null) {
             $cookie .= '; Expires=' . $expires;
         }
 
@@ -293,7 +298,7 @@ class Session
             $secure = true;
         }
 
-        if ($this->sameSite) {
+        if ($this->sameSite !== null) {
             $cookie .= '; SameSite=' . $this->sameSite;
 
             if ($this->sameSite === 'None') {
@@ -321,7 +326,7 @@ class Session
 
             while (flock($handle, LOCK_EX | LOCK_NB) === false) {
                 if (microtime(true) - $start > $timeout) {
-                    throw new Exception('Lock timeout', 0, 3);
+                    throw new Exception('Lock session data timeout', 0, 3);
                 }
 
                 usleep(1000);
@@ -343,7 +348,7 @@ class Session
         }
 
         if (is_string($opts->name) === false || ctype_alpha($opts->name) === false) {
-            throw new Exception('Invalid name', 0, 3);
+            throw new Exception('Invalid session name configuration', 0, 3);
         }
 
         $this->name = $opts->name;
@@ -357,14 +362,14 @@ class Session
             preg_match('/[\x00-\x1F\x7F]/', $path) ||
             strpos($path, ';') !== false
         ) {
-            throw new Exception('Missing or invalid path', 0, 3);
+            throw new Exception('Missing or invalid session cookie path configuration', 0, 3);
         }
 
         $this->path = $path;
 
         if ($opts->domain !== null) {
             if (strpbrk($opts->domain, " =,;\t\r\n\013\014") !== false) {
-                throw new Exception('Invalid domain', 0, 3);
+                throw new Exception('Invalid session cookie domain configuration', 0, 3);
             }
 
             $this->domain = $opts->domain;
@@ -372,7 +377,7 @@ class Session
 
         if ($opts->expires !== null) {
             if (is_string($opts->expires) === false) {
-                throw new Exception('Invalid expires', 0, 3);
+                throw new Exception('Invalid session cookie expiration configuration', 0, 3);
             }
 
             try {
@@ -385,7 +390,7 @@ class Session
 
         if ($opts->http_only !== null) {
             if (is_bool($opts->http_only) === false) {
-                throw new Exception('Invalid http_only', 0, 3);
+                throw new Exception('Invalid session cookie http_only configuration', 0, 3);
             }
 
             $this->httpOnly = $opts->http_only;
@@ -393,7 +398,7 @@ class Session
 
         if ($opts->partitioned !== null) {
             if (is_bool($opts->partitioned) === false) {
-                throw new Exception('Invalid partitioned', 0, 3);
+                throw new Exception('Invalid session cookie partitioned configuration', 0, 3);
             }
 
             $this->partitioned = $opts->partitioned;
@@ -406,7 +411,7 @@ class Session
                 is_string($same_site) === false ||
                 in_array(strtolower($same_site), array('lax', 'none', 'strict')) === false
             ) {
-                throw new Exception('Invalid same_site', 0, 3);
+                throw new Exception('Invalid session cookie same_site configuration', 0, 3);
             }
 
             $this->sameSite = ucfirst(strtolower($same_site));
@@ -414,7 +419,7 @@ class Session
 
         if ($opts->secure !== null) {
             if (is_bool($opts->secure) === false) {
-                throw new Exception('Invalid secure', 0, 3);
+                throw new Exception('Invalid session cookie secure configuration', 0, 3);
             }
 
             $this->secure = $opts->secure;
@@ -422,7 +427,7 @@ class Session
 
         if ($opts->store_prefix !== null) {
             if (preg_match('#^[\w~\-]+$#', $opts->store_prefix) !== 1) {
-                throw new Exception('Invalid store_prefix', 0, 3);
+                throw new Exception('Invalid session store_prefix configuration', 0, 3);
             }
 
             $this->storePrefix = $opts->store_prefix;
@@ -430,7 +435,7 @@ class Session
 
         if ($opts->storage !== null) {
             if (is_dir($opts->storage) === false) {
-                throw new Exception('Invalid storage path', 0, 3);
+                throw new Exception('Invalid session storage path', 0, 3);
             }
 
             $this->storage = $opts->storage;

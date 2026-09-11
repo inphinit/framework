@@ -43,7 +43,6 @@ class Env
             case 'false':
             case 'no':
             case '0':
-            case '':
                 return false;
 
             case 'true':
@@ -52,7 +51,7 @@ class Env
                 return true;
         }
 
-        throw new Exception("Can not convert {$name}={$value} to boolean");
+        throw new Exception("Cannot convert {$name}={$value} to boolean");
     }
 
     /**
@@ -73,7 +72,7 @@ class Env
             return floatval($value);
         }
 
-        throw new Exception("Can not convert {$name}={$value} to float");
+        throw new Exception("Cannot convert {$name}={$value} to float");
     }
 
     /**
@@ -94,6 +93,6 @@ class Env
             return intval($value, 10);
         }
 
-        throw new Exception("Can not convert {$name}={$value} to int");
+        throw new Exception("Cannot convert {$name}={$value} to int");
     }
 }

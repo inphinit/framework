@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental\Environment;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
 class EnvFile
@@ -27,9 +28,9 @@ class EnvFile
 
     const REGEX_ENTRY = '/^\s*([A-Za-z_][A-Za-z0-9_]*?)\s*=\s*(.*)$/';
     const REGEX_KEY = '/^([A-Za-z_][A-Za-z0-9_]*)$/';
+    const STRIP_CHARS = " \n\r\t";
 
     private $path;
-    private $handle;
     private $entries = array();
     private $override = false;
 
@@ -53,7 +54,7 @@ class EnvFile
     public function setOverride($enable)
     {
         if (is_bool($enable) === false) {
-            $type = Inspector::type($value);
+            $type = Inspector::type($enable);
             throw new Exception("Expects to be bool, {$type} given");
         }
 
@@ -194,23 +195,23 @@ class EnvFile
             throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 3);
         }
 
-        $this->handle = $handle;
-
         $parser = new Parser();
 
         $line = 0;
 
+        $strip_chars = self::STRIP_CHARS;
+
         while (($data = fgets($handle)) !== false) {
             ++$line;
 
-            $data = rtrim($data, "\r\n");
+            $data = rtrim($data, $strip_chars);
 
-            if (empty($data)) {
+            if ($data === '') {
                 continue;
             }
 
             if (preg_match(self::REGEX_ENTRY, $data, $matches) === 1) {
-                $this->addressIssues($parser, $matches[2], $line);
+                $this->addressIssues($handle, $parser, $matches[2], $line);
 
                 $name = $matches[1];
                 $value = $parser->output();
@@ -235,12 +236,12 @@ class EnvFile
         }
     }
 
-    private function addressIssues($parser, $value, $line)
+    private function addressIssues($handle, $parser, $value, $line)
     {
         try {
             $parser->setValue($value);
         } catch (\Exception $ex) {
-            fclose($this->handle);
+            fclose($handle);
 
             throw new EnvException(
                 $ex->getMessage(),
