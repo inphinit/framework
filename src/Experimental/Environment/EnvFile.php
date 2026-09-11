@@ -160,7 +160,7 @@ class EnvFile
      */
     public function __set($name, $value)
     {
-        if (preg_match(self::REGEX_KEY, $name) !== 1) {
+        if (is_string($name) === false || preg_match(self::REGEX_KEY, $name) !== 1) {
             throw new Exception('Invalid name entry');
         }
 

@@ -92,14 +92,11 @@ class Size
 
     /**
      * Get file size using defined modes
-     * Note: If it is not a file or does not exist, this method will return false.
      *
      * @param string $path Path to the file
-     *
-     * @throws \Inphinit\Exception Throws an exception with the last error if all modes fail, or if
-     *                             the file does not exist.
-     *                             Note: Dev mode throws an exception on case-sensitive check failure
-     *
+     * @throws \Inphinit\Exception Throws an exception with the last error if all modes fail,
+     *                             or if the file does not exist, or the action fails the strict
+     *                             mode case-sensitive check.
      * @return float|int|string Each mode may return a different type of value
      */
     public function get($path)
@@ -189,6 +186,15 @@ class Size
     {
         if ($this->bootCurl === null) {
             $boot = curl_init();
+
+            if ($boot === false) {
+                $this->bootCOM = false;
+
+                $errorCode = 0;
+                $errorMessage = 'cURL: Could not initialize a new cURL handle';
+
+                return null;
+            }
 
             curl_setopt($boot, CURLOPT_HEADER, true);
             curl_setopt($boot, CURLOPT_NOBODY, true);
