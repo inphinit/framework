@@ -51,6 +51,7 @@ class Session
             $this->handle = fopen($filename, 'r+');
 
             if ($this->handle === false) {
+                $this->setCookie(true);
                 throw new Exception('Invalid session file');
             }
 
@@ -58,7 +59,7 @@ class Session
             $this->id = $id;
         } else {
             $this->id = $this->create($this->handle, $filename);
-            $this->setCookie();
+            $this->setCookie(false);
         }
     }
 
@@ -124,7 +125,7 @@ class Session
         $this->handle = $dest;
         $this->id = $id;
 
-        $this->setCookie();
+        $this->setCookie(false);
     }
 
     /**
@@ -230,12 +231,14 @@ class Session
             }
         } catch (\Exception $ex) {
             $this->close();
+            $this->setCookie(true);
             throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
         }
 
         $this->lock(false);
 
         if ($data === false) {
+            $this->setCookie(true);
             throw new Exception('Cannot unserialize data', 0, 3);
         } elseif (is_array($data)) {
             $this->data = $data;
@@ -251,15 +254,23 @@ class Session
         }
     }
 
-    private function setCookie()
+    private function setCookie($forceExpires)
     {
         if (headers_sent($file, $line)) {
             $this->close();
             throw new \ErrorException('Cannot set cookie, headers already sent', 0, E_ERROR, $file, $line);
         }
 
-        $cookie = 'Set-Cookie: ' . $this->name . '=' . $this->id;
-        $secure = $this->secure;
+        if ($forceExpires) {
+            $id = '_';
+            $expires = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
+        } else {
+            $id = $this->id;
+            $expires = $this->expires;
+        }
+
+        $cookie = 'Set-Cookie: ' . $this->name . '=' . $id;
+        $secure = $this->secure === true;
 
         if ($this->domain) {
             $cookie .= '; Domain=' . $this->domain;
@@ -269,8 +280,8 @@ class Session
             $cookie .= '; Path=' . $this->path;
         }
 
-        if ($this->expires) {
-            $cookie .= '; Expires=' . $this->expires;
+        if ($expires) {
+            $cookie .= '; Expires=' . $expires;
         }
 
         if ($this->httpOnly) {
