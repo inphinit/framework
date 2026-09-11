@@ -23,7 +23,10 @@ class EnvFile
     /** @var int Define `apache_getenv()` and `apache_setenv()` as source */
     const SOURCE_APACHE = 4;
 
-    /** @var int Define `apache_getenv()` and `apache_setenv()` as source for all layers of Apache */
+    /**
+     * @var int Define `apache_getenv()` and `apache_setenv()` as source for all layers of Apache
+     *          Note: `SOURCE_APACHE_ALL` takes precedence over `SOURCE_APACHE` when both are defined
+     */
     const SOURCE_APACHE_ALL = 8;
 
     const REGEX_ENTRY = '/^\s*([A-Za-z_][A-Za-z0-9_]*?)\s*=\s*(.*)$/';
@@ -107,12 +110,14 @@ class EnvFile
                 putenv("{$name}={$entry}");
             }
 
-            if (($sources & self::SOURCE_APACHE) && ($override || apache_getenv($name) === false)) {
-                apache_setenv($name, $entry);
-            }
-
-            if (($sources & self::SOURCE_APACHE_ALL) && ($override || apache_getenv($name, true) === false)) {
-                apache_setenv($name, $entry, true);
+            if ($sources & self::SOURCE_APACHE_ALL) {
+                if ($override || apache_getenv($name, true) === false) {
+                    apache_setenv($name, $entry, true);
+                }
+            } elseif ($sources & self::SOURCE_APACHE) {
+                if ($override || apache_getenv($name) === false) {
+                    apache_setenv($name, $entry);
+                }
             }
         }
     }
