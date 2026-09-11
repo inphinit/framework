@@ -252,7 +252,7 @@ class Debug
         $option = self::$configs->assistant;
 
         if ($option) {
-            $link = isset(self::$assistants[$option]) ? self::$assistants[$option] : $option;
+            $link = isset(static::$assistants[$option]) ? static::$assistants[$option] : $option;
         }
 
         if ($link && strpos($link, '{error}') !== false) {
@@ -307,7 +307,7 @@ class Debug
             $option = self::$configs->editor;
 
             if ($option) {
-                $link = isset(self::$editors[$option]) ? self::$editors[$option] : $option;
+                $link = isset(static::$editors[$option]) ? static::$editors[$option] : $option;
             }
         }
 
