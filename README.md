@@ -17,10 +17,10 @@ The core of the framework is divided into two parts: [`Inphinit`](https://github
 
 Requirements:
 
-1. See currently supported PHP versions: https://www.php.net/supported-versions.php.
-    * Minimal _PHP 5.4_ (backward compatibility is maintained for users with upgrade limitations).
-1. Intl PHP extension to use `Inphinit\Utility\Strings` class.
-1. COM PHP extension or cURL PHP extension to use `Inphinit\Filesystem\Size` class.
+1. Recommended: *PHP 8* (see the currently supported versions at https://www.php.net/supported-versions.php)
+   - Minimum: *PHP 5.4* (backward compatibility is preserved for environments with upgrade limitations)
+1. Intl PHP extension, required for the `Inphinit\Utility\Strings` class.
+1. COM or cURL PHP extension, required for the `Inphinit\Filesystem\Size` class.
 
 Before submitting a pull-request, it's important to run *LINT* with the following command to check for potential errors:
 
@@ -33,3 +33,11 @@ In Windows environments (cmd) you should run the command:
 ```batch
 for /R %F in (*.php) do @php -l %F
 ```
+
+## Documentation
+
+The documentation contains instructions for using the framework, as well as the basic application that uses the framework.
+
+- English: https://inphinit.github.io/en/docs/
+- Portuguese: https://inphinit.github.io/pt/docs/
+- API Reference: https://inphinit.github.io/api/
