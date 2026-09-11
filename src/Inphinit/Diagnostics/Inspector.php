@@ -35,7 +35,7 @@ class Inspector
     }
 
     /**
-     * Identify and get the possible source of an error message caused by `eval()`
+     * Identifies the file and line from where the failed `eval()` was executed
      *
      * @param string $message
      * @param string &$file

@@ -41,7 +41,7 @@ class Debug
     private $beforeView;
     private $views = array();
     private static $configs;
-    private static $iniDisplayErrors;
+    private static $restoreDisplayErrors;
 
     /**
      * Set view for display displayed before other defined from a Debug instance
@@ -79,14 +79,8 @@ class Debug
     {
         $this->setView('error', $view);
 
-        // Check functions are enabled
-        if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set')) {
-            $config = ini_get('display_errors');
-
-            if ($config !== false && $config !== '1') {
-                self::$iniDisplayErrors = $config;
-                ini_set('display_errors', '0');
-            }
+        if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set') && ini_get('display_errors') === '1') {
+            self::$restoreDisplayErrors = ini_set('display_errors', '0') !== false;
         }
     }
 
@@ -111,8 +105,8 @@ class Debug
             Event::off($type === 'error' ? $type : 'done', $callback);
         }
 
-        if (self::$iniDisplayErrors !== null && function_exists('ini_set')) {
-            ini_set('display_errors', self::$iniDisplayErrors);
+        if (self::$restoreDisplayErrors) {
+            ini_set('display_errors', '1');
         }
     }
 

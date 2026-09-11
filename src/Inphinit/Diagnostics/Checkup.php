@@ -133,7 +133,7 @@ class Checkup
 
             if ($value === false) {
                 $this->errors[] = "Invalid value in entry `memory_limit={$entry}`";
-            } elseif ($value === -1) {
+            } elseif ($value < 0) {
                 if ($this->isHttp) {
                     $this->errors[] = 'Unlimited `memory_limit` is unsafe in Web context';
                 }
