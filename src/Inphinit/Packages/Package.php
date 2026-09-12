@@ -11,6 +11,7 @@ namespace Inphinit\Packages;
 
 use Inphinit\Exception;
 use Inphinit\Utility\Arrays;
+use Inphinit\Utility\PropertyAccessor;
 
 class Package
 {
@@ -42,8 +43,6 @@ class Package
 
     public function __construct()
     {
-        $lock_path = INPHINIT_ROOT . '/composer.lock';
-
         $metadata_dir = INPHINIT_SYSTEM . '/boot/metadata';
 
         if (is_dir($metadata_dir) === false) {
@@ -56,14 +55,14 @@ class Package
 
         $this->metadataDir = $metadata_dir;
 
-        $this->readJson($lock_path);
+        $this->readLock();
     }
 
     /**
      * Get package info
      *
      * @param string $name Set <vendor>/<package>
-     * @param int    $info Set info by constant:
+     * @param int    $type Set info by constant:
      *                     - DESCRIPTION
      *                     - SOURCE
      *                     - TIME
@@ -73,29 +72,27 @@ class Package
      * @param bool   $dev  Set true for get from packages-dev
      * @return string|null
      */
-    public static function info($name, $info, $dev = false)
+    public static function info($name, $type, $dev = false)
     {
-        if (!preg_match('#^([^/]+)/(.*?)$#', $name, $match)) {
+        if (strpos($name, '/') === false) {
             throw new Exception('Invalid package name: ' . $name);
         }
 
         $group = $dev ? 'packages-dev' : 'packages';
-        $name = $group . ':' . $name;
+        $gname = $group . ':' . $name;
 
-        if (isset(self::$cacheInfo[$name]) === false) {
-            $folder = 'boot/metadata';
-            $vendor = $match[1];
-            $package = $match[2];
+        if (isset(self::$cacheInfo[$gname]) === false) {
+            list($vendor, $package) = explode('/', $name, 2);
 
-            $path = sprintf(self::META_FILE, $folder, $group, $vendor);
+            $path = sprintf(self::META_FILE, 'boot/metadata', $group, $vendor);
 
             $data = inphinit_sandbox($path);
 
-            self::$cacheInfo[$name] = isset($data[$package]) ? $data[$package] : false;
+            self::$cacheInfo[$gname] = isset($data[$package]) ? $data[$package] : false;
         }
 
-        if (isset(self::$cacheInfo[$name][$info])) {
-            return self::$cacheInfo[$name][$info];
+        if (isset(self::$cacheInfo[$gname][$type])) {
+            return self::$cacheInfo[$gname][$type];
         }
 
         return null;
@@ -109,59 +106,72 @@ class Package
     public function cache()
     {
         // Loads composer.lock -> `"packages": [...]`
-        $this->createCache(false);
+        $this->createCache('packages', $this->packages);
 
         // Loads composer.lock -> `"packages-dev": [...]`
-        $this->createCache(true);
+        $this->createCache('packages-dev', $this->packagesDev);
     }
 
     /**
      * Clear metadata cache
      *
-     * @throws \Inphinit\Exception
+     * @return bool
      */
     public function clear()
     {
         $search = sprintf(self::META_FILE, $this->metadataDir, '(packages*)', '*');
 
-        foreach (glob($search, GLOB_ERR|GLOB_NOSORT) as $file) {
-            if (is_file($file)) {
-                unlink($file);
+        $files = glob($search, GLOB_ERR|GLOB_NOSORT);
+
+        if ($files === false) {
+            return false;
+        }
+
+        $total = 0;
+
+        foreach ($files as $file) {
+            if (is_file($file) && unlink($file)) {
+                ++$total;
             }
         }
 
+        if (count($files) !== $total) {
+            return false;
+        }
+
         self::$cacheInfo = array();
+
+        return true;
     }
 
-    private function createCache($dev)
+    private function createCache($from, $data)
     {
+        if ($data ===  null) {
+            return null;
+        }
+
         $vendors = array();
         $meta_dir = $this->metadataDir;
 
-        $from = $dev ? 'packages-dev' : 'packages';
-        $data = $dev ? $this->packagesDev : $this->packages;
-
-        if ($data !==  null) {
-            foreach ($data as $package) {
-                if (strpos($package->name, '/') === false) {
-                    continue;
-                }
-
-                list($vendor, $name) = explode('/', $package->name, 2);
-
-                if (isset($vendors[$vendor]) === false) {
-                    $vendors[$vendor] = array();
-                }
-
-                $vendors[$vendor][$name] = array(
-                    self::DESCRIPTION => isset($package->description) ? $package->description : null,
-                    self::SOURCE => isset($package->source->type) ? $package->source->type : null,
-                    self::TIME => isset($package->time) ? $package->time : null,
-                    self::TYPE => isset($package->type) ? $package->type : null,
-                    self::URL => isset($package->source->url) ? $package->source->url : null,
-                    self::VERSION => isset($package->version) ? $package->version : null,
-                );
+        foreach ($data as $package) {
+            if (strpos($package->name, '/') === false) {
+                continue;
             }
+
+            list($vendor, $name) = explode('/', $package->name, 2);
+
+            if (isset($vendors[$vendor]) === false) {
+                $vendors[$vendor] = array();
+            }
+
+            $vendors[$vendor][$name] = array(
+                self::DESCRIPTION => self::getNonEmptyString('description', $package),
+                self::SOURCE => self::getNonEmptyString('source.type', $package),
+                self::TIME => self::getNonEmptyString('time', $package),
+                self::TYPE => self::getNonEmptyString('type', $package),
+                self::URL => self::getNonEmptyString('source.url', $package),
+                self::VERSION => self::getNonEmptyString('version', $package)
+            );
         }
 
         foreach ($vendors as $vendor => $packages) {
@@ -173,17 +183,28 @@ class Package
                 throw new Exception('Failed to write metadata file: ' . $path, 0, 3);
             }
         }
-
-        $vendors = null;
     }
 
-    private function readJson($lockPath)
+    private static function getNonEmptyString($path, $package)
     {
-        if (is_file($lockPath) === false) {
+        $value = PropertyAccessor::getValue($path, $package);
+
+        if (is_string($value) === false || trim($value) === '') {
+            return null;
+        }
+
+        return $value;
+    }
+
+    private function readLock()
+    {
+        $lock_path = INPHINIT_ROOT . '/composer.lock';
+
+        if (is_file($lock_path) === false) {
             throw new Exception('No such file: composer.lock', 0, 3);
         }
 
-        $contents = file_get_contents($lockPath);
+        $contents = file_get_contents($lock_path);
 
         if ($contents === false) {
             throw new Exception('composer.lock can\'t be read', 0, 3);
