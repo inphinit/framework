@@ -188,7 +188,7 @@ class Size
             $boot = curl_init();
 
             if ($boot === false) {
-                $this->bootCOM = false;
+                $this->bootCurl = false;
 
                 $errorCode = 0;
                 $errorMessage = 'cURL: Could not initialize a new cURL handle';
