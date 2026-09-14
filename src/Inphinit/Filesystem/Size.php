@@ -11,6 +11,7 @@ namespace Inphinit\Filesystem;
 
 use Inphinit\App;
 use Inphinit\Exception;
+use Inphinit\Utility\Url;
 
 class Size
 {
@@ -206,9 +207,11 @@ class Size
         }
 
         // In several tests, it was necessary to encode the URL
-        $path = rawurlencode($path);
+        $path = preg_replace_callback('~[()-/=@[]_\\\\]+~sD', function ($matches) {
+            return rawurlencode($matches[0]);
+        }, $path);
 
-        curl_setopt($boot, CURLOPT_URL, 'file:///' . $path);
+        curl_setopt($boot, CURLOPT_URL, 'file://' . $path);
 
         if (curl_exec($boot) === false) {
             $errorCode = curl_errno($boot);
@@ -265,7 +268,7 @@ class Size
             $errorCode = $result_code;
             $errorMessage = 'System: ' . implode(' ', $output);
         } else {
-            $last_line = trim(trim($last_line), '"');
+            $last_line = trim(trim($last_line), '"\'');
 
             if (is_numeric($last_line)) {
                 return $last_line;
