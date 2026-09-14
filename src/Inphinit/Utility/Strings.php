@@ -11,7 +11,7 @@ namespace Inphinit\Utility;
 
 class Strings
 {
-    private static $tAscii;
+    private static $onlyAscii;
 
     /**
      * Convert string to ASCII
@@ -21,11 +21,11 @@ class Strings
      */
     public static function ascii($text)
     {
-        if (self::$tAscii === null) {
-            self::$tAscii = \Transliterator::create('Any-Latin; Latin-ASCII; [:^ASCII:] Remove');
+        if (self::$onlyAscii === null) {
+            self::$onlyAscii = \Transliterator::create('Any-Latin; Latin-ASCII; [:^ASCII:] Remove');
         }
 
-        return self::$tAscii->transliterate($text);
+        return self::$onlyAscii->transliterate($text);
     }
 
     /**
