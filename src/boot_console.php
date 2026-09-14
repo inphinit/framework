@@ -67,17 +67,17 @@ $console->action('pkg:up', function (Command $command, array $options, array $re
 });
 
 $serve = $console->action('serve', function (Command $command, array $options, array $residues) {
-    $host = $options['host'] ? $options['host'] : App::config('built_in_host');
-    $port = $options['port'] ? $options['port'] : App::config('built_in_port');
-    $vars = $options['vars'] ? $options['vars'] : 'EGPCS';
-    $conf = $options['conf'] ? $options['conf'] : php_ini_loaded_file();
+    $host = $options['host'] !== null ? $options['host'] : App::config('built_in_host');
+    $port = $options['port'] !== null ? $options['port'] : App::config('built_in_port');
+    $vars = $options['vars'] !== null ? $options['vars'] : 'EGPCS';
+    $conf = $options['conf'] !== null ? $options['conf'] : php_ini_loaded_file();
 
     if (empty($host)) {
         echo 'Empty host';
         return 1;
     }
 
-    if (empty($port)) {
+    if (empty($port) || ltrim($port, '0') === '') {
         echo 'Empty port';
         return 1;
     }
