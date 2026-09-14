@@ -9,6 +9,7 @@
 
 namespace Inphinit\Utility;
 
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 use Inphinit\Http\Request;
 
@@ -24,30 +25,26 @@ use Inphinit\Http\Request;
  */
 class Url
 {
-    /** @var int Used by the `::normalize()` method to convert the path to ASCII */
-    const PATH_ASCII = 1;
+    /** @var int Used by the `::modify()` method to align scheme case to schemePorts */
+    const SCHEME_ALIGN = 1;
 
-    /** @var int Used by the `::normalize()` method to convert the path to lower unicode */
-    const PATH_UNICODE = 2;
+    /** @var int Used by the `::modify()` method to convert domain to IDNA ASCII form (UTS #46) */
+    const HOST_IDNA_ASCII = 2;
 
-    /** @var int Used by the `::normalize()` method to convert spaces, underscore to scapes and remove unused characteres */
-    const PATH_SLUG = 4;
+    /** @var int Used by the `::modify()` resolve path with `..` and `.` */
+    const PATH_RESOLVE = 4;
 
-    /** @var int Used by the `::normalize()` method to sort querystring */
-    const SORT_QUERY = 8;
+    /** @var int Used by the `::modify()` method to convert the path to ASCII */
+    const PATH_ASCII = 8;
 
-    private static $schemaPorts = array(
-        'ftp' => 21,
-        'sftp' => 22,
-        'http' => 80,
-        'https' => 443
-    );
+    /** @var int Used by the `::modify()` method to convert the path to lower unicode */
+    const PATH_UNICODE = 16;
 
-    private static $slugDict = array(
-        '@' => '-at-'
-    );
+    /** @var int Used by the `::modify()` method to convert spaces and underscores into hyphens and remove unused characters */
+    const PATH_SLUG = 32;
 
-    private static $transliterator;
+    /** @var int Used by the `::modify()` method to sort querystring */
+    const SORT_QUERY = 64;
 
     private $components = array(
         'scheme' => null,
@@ -60,7 +57,21 @@ class Url
         'fragment' => null
     );
 
+    private static $schemePorts = array(
+        'ftp' => 21,
+        'sftp' => 22,
+        'http' => 80,
+        'https' => 443,
+        'ws' => 80,
+        'wss' => 443
+    );
+
+    private static $slugDict = array(
+        '@' => '-at-'
+    );
+
     private $cache;
+    private static $anyLower;
 
     /**
      * Parse URL
@@ -75,7 +86,7 @@ class Url
         }
 
         // Prevent unicode conflicts with parser
-        $encoded = self::encode($url);
+        $encoded = self::encode($url, '#&()-/:=?@[]_\\', true);
 
         $components = parse_url($encoded);
 
@@ -83,25 +94,34 @@ class Url
             throw new Exception('Unrecognized or corrupted URL format: ' . $url);
         }
 
-        foreach ($components as &$component) {
-            $component = rawurldecode($component);
+        foreach ($components as $component => $value) {
+            if ($component === 'port') {
+                $value = self::parsePort($value);
+            } else {
+                $value = rawurldecode($value);
+            }
+
+            if ($component === 'query') {
+                \parse_str($value, $querystring);
+                $value = $querystring;
+            }
+
+            $this->components[$component] = $value;
         }
-
-        $this->components = $components + $this->components;
     }
 
     /**
-     * Sets default ports associated to specific schemas
+     * Set default ports associated with specific schemes.
      *
-     * @param array $ports
+     * @param array<string, int> $ports
      */
-    public static function setSchemaPorts(array $ports)
+    public static function setSchemePorts(array $ports)
     {
-        self::$schemaPorts = $ports;
+        self::$schemePorts = $ports;
     }
 
     /**
-     * Sets slug dictionary
+     * Set slug dictionary
      *
      * @param array<string, string> $dict
      */
@@ -113,14 +133,14 @@ class Url
     /**
      * Get Url instance from current url
      *
-     * @param bool $query
+     * @param bool $appendQuery
      * @return \Inphinit\Utility\Url
      */
-    public static function application($query)
+    public static function application($appendQuery)
     {
         $url = INPHINIT_URL;
 
-        if ($query && ($qs = Request::query())) {
+        if ($appendQuery && ($qs = Request::query())) {
             $url .= '?' . $qs;
         }
 
@@ -128,26 +148,66 @@ class Url
     }
 
     /**
-     * Normalize path and querystring
+     * Creates a new object with modified:
+     * - Scheme is modified if the SCHEME_ALIGN flag is used
+     * - Host is modified if the HOST_IDNA_ASCII flag is used
+     * - Path is modified if the PATH_ASCII, PATH_UNICODE, or PATH_SLUG flags are used
+     * - Query fields are sorted if the SORT_QUERY flag is used
      *
-     * @param int $configs
+     * @param int $flags
+     * @return \Inphinit\Utility\Url
      */
-    public function normalize($configs = 0)
+    public function modify($flags)
     {
-        if ($this->components['scheme']) {
-            $this->components['scheme'] = strtolower($this->components['scheme']);
+        $valid_flags = (
+            self::SCHEME_ALIGN |
+            self::HOST_IDNA_ASCII |
+            self::PATH_RESOLVE |
+            self::PATH_ASCII |
+            self::PATH_UNICODE |
+            self::PATH_SLUG |
+            self::SORT_QUERY
+        );
+
+        if (is_int($flags) === false || ($flags & ~$valid_flags) !== 0) {
+            throw new Exception('Invalid flags');
         }
 
-        $path = $this->components['path'];
+        $components = $this->components;
+        $scheme = $components['scheme'];
+        $host = $components['host'];
+        $path = $components['path'];
+        $query = $components['query'];
 
-        if ($path) {
-            $path = self::canonpath($path);
+        if ($scheme !== null && ($flags & self::SCHEME_ALIGN)) {
+            foreach (self::$schemePorts as $schemePort => $port) {
+                if (strcasecmp($scheme, $schemePort) === 0) {
+                    $scheme = $schemePort;
+                    break;
+                }
+            }
+        }
 
-            if ($this->components['scheme'] === 'file' && $path[0] === '/' && strpos($path, ':') === 2) {
+        if ($host !== null && ($flags & self::HOST_IDNA_ASCII)) {
+            $host_ascii = \idn_to_ascii($host, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46, $idna_info);
+
+            if ($host_ascii === false) {
+                throw new Exception('Cannot convert domain to ascii: ' . self::getIdnaError($idna_info));
+            }
+
+            $host = $host_ascii;
+        }
+
+        if ($path !== null) {
+            if ($scheme === 'file' && $path[0] === '/' && strpos($path, ':') === 2) {
                 $path = ltrim($path, '/');
             }
 
-            if ($configs & self::PATH_ASCII) {
+            if ($flags & self::PATH_RESOLVE) {
+                $path = self::resolvePath($path);
+            }
+
+            if ($flags & self::PATH_ASCII) {
                 $items = explode('/', $path);
 
                 foreach ($items as &$item) {
@@ -157,44 +217,210 @@ class Url
 
                 $path = implode('/', $items);
                 $path = strtolower($path);
-            } elseif ($configs & self::PATH_UNICODE) {
-                if (self::$transliterator === null) {
-                    self::$transliterator = \Transliterator::create('Any-Lower');
+            } elseif ($flags & self::PATH_UNICODE) {
+                if (self::$anyLower === null) {
+                    self::$anyLower = \Transliterator::create('Any-Lower');
                 }
 
-                $path = self::$transliterator->transliterate($path);
+                $path = self::$anyLower->transliterate($path);
             }
 
-            if ($configs & self::PATH_SLUG) {
+            if ($flags & self::PATH_SLUG) {
                 $path = strtr($path, self::$slugDict);
                 $path = preg_replace('#[^\(\)\[\]\/\-\pL\pN\s_]+#u', '', $path);
-                $path = preg_replace('#[\s\-_]+#', '-', $path);
+                $path = preg_replace('#[\s\-_]+#u', '-', $path);
                 $path = str_replace(array('/-', '-/'), '/', $path);
                 $path = preg_replace('#//+#', '/', $path);
             }
-
-            $this->components['path'] = $path;
-            $this->cache = null;
         }
 
-        if ($this->components['query'] && ($configs & self::SORT_QUERY)) {
-            parse_str($this->components['query'], $query);
-
-            if ($query) {
-                Arrays::ksort($query);
-                $this->components['query'] = http_build_query($query);
-                $this->cache = null;
-            }
+        if ($query !== null && ($flags & self::SORT_QUERY)) {
+            Arrays::ksort($query);
         }
+
+        if (
+            $scheme !== $components['scheme'] ||
+            $host !== $components['host'] ||
+            $path !== $components['path'] ||
+            $query !== $components['query']
+        ) {
+            $components['scheme'] = $scheme;
+            $components['host'] = $host;
+            $components['path'] = $path;
+            $components['query'] = $query;
+        }
+
+        $instance = new Url('/');
+
+        foreach ($components as $component => $value) {
+            $instance->{$component} = $value;
+        }
+
+        return $instance;
     }
 
     /**
-     * Resolve paths with `..` and `.`
+     * Creates a new object with modified component
      *
-     * @param string $path
+     * @param string $target
+     * @param string $newValue
+     * @return \Inphinit\Utility\Url
+     */
+    public function with($target, $newValue)
+    {
+        $instance = new Url('/');
+
+        try {
+            $instance->{$target} = $newValue;
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), $ex->getCode());
+        }
+
+        foreach ($this->components as $component => $value) {
+            if ($target !== $component) {
+                $instance->{$component} = $value;
+            }
+        }
+
+        return $instance;
+    }
+
+    /**
+     * Get value for a URL component
+     * Note: `$instance->query` returns an array if the component is present
+     *
+     * @param string $name
+     * @return string|array|null
+     */
+    public function __get($component)
+    {
+        if (array_key_exists($component, $this->components) === false) {
+            throw new Exception('Unexpected URL component');
+        }
+
+        return $this->components[$component];
+    }
+
+    /**
+     * Set value for a URL component
+     *
+     * @param string $component
+     * @param string|array|null $value
+     */
+    public function __set($component, $value)
+    {
+        if (array_key_exists($component, $this->components) === false) {
+            throw new Exception('Unexpected URL component');
+        }
+
+        if ($value !== null) {
+            if ($component === 'port') {
+                $value = self::parsePort($value);
+            }
+
+            if ($component === 'query') {
+                if (is_array($value) === false) {
+                    $type = Inspector::type($value);
+                    throw new Exception("`query` expects to be array, {$type} given");
+                }
+            } elseif (is_string($value) === false) {
+                $type = Inspector::type($value);
+                throw new Exception("`{$component}` expects to be string, {$type} given");
+            }
+
+            if ($component === 'scheme' && preg_match('#^[a-z][a-z\d+.-]*$#i', $value) !== 1) {
+                throw new Exception('Invalid scheme');
+            }
+        }
+
+        $this->components[$component] = $value;
+
+        $this->cache = null;
+    }
+
+    /**
+     * Returns a string encoding only what is necessary
+     *
      * @return string
      */
-    public static function canonpath($path)
+    public function __toString()
+    {
+        if ($this->cache !== null) {
+            return $this->cache;
+        }
+
+        $components = $this->components;
+
+        $user = $components['user'];
+        $pass = $components['pass'];
+        $auth = '';
+
+        if ($user) {
+            $auth .= self::encode($user, '#/:?@\\', false);
+        }
+
+        if ($pass) {
+            $auth .= ':' . self::encode($pass, '#/:?@\\', false);
+        }
+
+        if ($auth !== '') {
+            $auth .= '@';
+        }
+
+        $scheme = $components['scheme'] === null ? '' : $components['scheme'];
+        $host = $components['host'] === null ? '' : $components['host'];
+        $port = $components['port'] === null ? '' : $components['port'];
+        $path = $components['path'] === null ? '' : $components['path'];
+        $query = $components['query'];
+        $fragment = $components['fragment'] === null ? '' : $components['fragment'];
+
+        if ($scheme !== '' && isset(self::$schemePorts[$scheme]) && self::$schemePorts[$scheme] == $port) {
+            $port = '';
+        } elseif ($port !== '') {
+            $port = ':' . $port;
+        }
+
+        if ($host !== '') {
+            $scheme .= '://';
+        } elseif ($scheme === 'file') {
+            $scheme .= '://';
+
+            if (preg_match('#^[A-Z]:#i', $path)) {
+                $scheme .= '/';
+            }
+        } elseif ($scheme !== '') {
+            $scheme .= ':';
+        }
+
+        if ($path !== '') {
+            $path = self::encode($path, "#?\n\r\t\v\x00", false);
+        }
+
+        if ($query !== null && count($query) !== 0) {
+            $query = '?' . \rawurldecode(\http_build_query($query, '', '&', PHP_QUERY_RFC3986));
+        } else {
+            $query = '';
+        }
+
+        if ($fragment !== '') {
+            $fragment = '#' . self::encode($fragment, "\n\r\t\v\x00", false);
+        }
+
+        $this->cache = $scheme . $auth . $host . $port . $path . $query . $fragment;
+
+        return $this->cache;
+    }
+
+    private static function encode($string, $chars, $preserveChars)
+    {
+        $delimiters = ($preserveChars ? '^' : '') . preg_quote($chars, '~');
+
+        return preg_replace_callback('~[' . $delimiters . ']+~sD', function ($matches) {
+            return rawurlencode($matches[0]);
+        }, $string);
+    }
+
+    private static function resolvePath($path)
     {
         if (strpos($path, '\\') !== false) {
             $segment = '\\.\\';
@@ -240,118 +466,81 @@ class Url
         return $path;
     }
 
-    /**
-     * Encode URL while preserving the URI delimiters
-     * `:`, `/`, `@`, `?`, `&`, `=`, `#`, `[`, `]`, `(`, `)`, `_` and `-`
-     *
-     * @param string $url
-     * @return string
-     */
-    public static function encode($url)
+    private static function parsePort($port)
     {
-        return preg_replace_callback('~[^:/@?&=#\[\]\(\)_\-]+~sD', function ($matches) {
-            return rawurlencode($matches[0]);
-        }, $url);
+        if (is_string($port) && ctype_digit($port)) {
+            $port = ltrim($port, '0');
+        } elseif (is_int($port) === false) {
+            throw new Exception('Invalid port', 0, 3);
+        }
+
+        if ($port === '' || $port < 1 || $port > 65535) {
+            throw new Exception('Invalid port range', 0, 3);
+        }
+
+        return (string) $port;
     }
 
-    /**
-     * Get value for a URL component
-     *
-     * @param string $name
-     * @return string|null
-     */
-    public function __get($name)
+    private static function getIdnaError($info)
     {
-        if (array_key_exists($name, $this->components) === false) {
-            throw new Exception('Unexpected URL component: ' . $name);
+        if (isset($info['errors']) === false) {
+            return 'unknown';
         }
 
-        return $this->components[$name];
-    }
+        $errors = $info['errors'];
 
-    /**
-     * Set value for a URL component
-     *
-     * @param string      $name
-     * @param string|null $value
-     */
-    public function __set($name, $value)
-    {
-        if (array_key_exists($name, $this->components) === false) {
-            throw new Exception('Unexpected URL component: ' . $name);
+        if ($errors & \IDNA_ERROR_EMPTY_LABEL) {
+            return 'A non-final domain name label (or the whole domain name) is empty';
         }
 
-        if ($value !== null) {
-            if ($name === 'port') {
-                if (is_numeric($value) === false || preg_match('#^(0|[1-9]\d*)$#', $value) === false) {
-                    throw new Exception('port expects a numeric value');
-                }
-            } elseif (is_string($value) === false || $value === '') {
-                throw new Exception($name . ' expects a non-empty string');
-            }
+        if ($errors & \IDNA_ERROR_LABEL_TOO_LONG) {
+            return 'A domain name label is longer than 63 bytes';
         }
 
-        $this->cache = null;
-        $this->components[$name] = $value;
-    }
-
-    /**
-     * Compose string
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        if ($this->cache !== null) {
-            return $this->cache;
+        if ($errors & \IDNA_ERROR_DOMAIN_NAME_TOO_LONG) {
+            return 'A domain name is longer than 255 bytes in its storage form';
         }
 
-        $components = $this->components;
-
-        $scheme = $components['scheme'];
-        $user = $components['user'];
-        $pass = $components['pass'];
-        $auth = '';
-
-        if ($user) {
-            $auth .= $user;
+        if ($errors & \IDNA_ERROR_LEADING_HYPHEN) {
+            return 'A label starts with a hyphen-minus (-)';
         }
 
-        if ($pass) {
-            $auth .= ':' . $pass;
+        if ($errors & \IDNA_ERROR_TRAILING_HYPHEN) {
+            return 'A label ends with a hyphen-minus (-)';
         }
 
-        if ($auth !== '') {
-            $auth .= '@';
+        if ($errors & \IDNA_ERROR_HYPHEN_3_4) {
+            return 'A label contains hyphen-minus (-) in the third and fourth positions';
         }
 
-        $host = $components['host'] ? $components['host'] : '';
-        $port = $components['port'];
-
-        if ($scheme && isset(self::$schemaPorts[$scheme]) && self::$schemaPorts[$scheme] == $port) {
-            $port = '';
-        } elseif ($port) {
-            $port = ':' . $port;
+        if ($errors & \IDNA_ERROR_LEADING_COMBINING_MARK) {
+            return 'A label starts with a combining mark';
         }
 
-        $path = $components['path'] ? $components['path'] : '';
-        $query = $components['query'] ? ('?' . $components['query']) : '';
-        $fragment = $components['fragment'] ? ('#' . $components['fragment']) : '';
-
-        if ($host) {
-            $scheme .= '://';
-        } elseif ($scheme === 'file') {
-            $scheme .= '://';
-
-            if (preg_match('#^[A-Z]:#i', $path)) {
-                $scheme .= '/';
-            }
-        } elseif ($scheme) {
-            $scheme .= ':';
+        if ($errors & \IDNA_ERROR_DISALLOWED) {
+            return 'A label or domain name contains disallowed characters';
         }
 
-        $this->cache = $scheme . $auth . $host . $port . $path . $query . $fragment;
+        if ($errors & \IDNA_ERROR_PUNYCODE) {
+            return 'A label starts with "xn--" but does not contain valid Punycode';
+        }
 
-        return $this->cache;
+        if ($errors & \IDNA_ERROR_LABEL_HAS_DOT) {
+            return 'A label contains a dot=full stop';
+        }
+
+        if ($errors & \IDNA_ERROR_INVALID_ACE_LABEL) {
+            return 'An ACE label does not contain a valid label string';
+        }
+
+        if ($errors & \IDNA_ERROR_BIDI) {
+            return 'A label does not meet the IDNA BiDi requirements';
+        }
+
+        if ($errors & \IDNA_ERROR_CONTEXTJ) {
+            return 'A label does not meet the IDNA CONTEXTJ requirements';
+        }
+
+        return 'unknown';
     }
 }
