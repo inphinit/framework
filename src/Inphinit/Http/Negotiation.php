@@ -49,7 +49,7 @@ class Negotiation
         foreach (preg_split('#(\r)?\n#', $str) as $line) {
             if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
-                $headers[$key] = ltrim($value);
+                $headers[trim($key)] = ltrim($value);
             }
         }
 
@@ -72,7 +72,7 @@ class Negotiation
     {
         $header = strtolower($header);
 
-        if ($header === 'accept-ranges' || strpos($header, 'accept-control-') === 0) {
+        if ($header === 'accept-ranges' || strpos($header, 'access-control-') === 0) {
             return null;
         }
 
@@ -237,7 +237,7 @@ class Negotiation
 
         if (is_numeric($value) === false) {
             throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
-        } elseif ($value > 1) {
+        } elseif ($value < 0 || $value > 1) {
             throw new Exception('Header contains a q-factor outside the range of 0.0–1.0: "' . $value . '"', 0, 3);
         }
 

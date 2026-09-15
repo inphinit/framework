@@ -165,12 +165,12 @@ final class Status
     }
 
     /**
-     * Validate HTTP code
+     * Checks if the HTTP code is known
      *
      * @param int $code
      * @return bool
      */
-    public static function valid($code)
+    public static function known($code)
     {
         return isset(self::$messages[$code]);
     }

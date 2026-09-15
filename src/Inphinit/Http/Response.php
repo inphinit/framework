@@ -9,10 +9,9 @@
 
 namespace Inphinit\Http;
 
-use Inphinit\App;
 use Inphinit\Event;
 use Inphinit\Exception;
-use Inphinit\Strings;
+use Inphinit\Utility\Strings;
 
 class Response
 {
@@ -154,7 +153,7 @@ class Response
             // Only ASCII
             $filename = '; filename="' . $name . '"';
         } else {
-            // Only UTF-8 + ASCII fallback
+            // UTF-8 + ASCII fallback
             $filename = '; filename="' . Strings::ascii($name) . '"';
 
             if (preg_match('//u', $name)) {
