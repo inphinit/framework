@@ -85,7 +85,7 @@ class Selector
      * Count all nodes matching the given CSS selector. If the selector is not valid, it will return false.
      *
      * @param string $selector
-     * @return int|false
+     * @return float|false
      */
     public function count($selector)
     {
@@ -161,8 +161,10 @@ class Selector
 
     private function toXPath($query)
     {
-        if (isset(self::$cache[$query])) {
-            return self::$cache[$query];
+        $original = $query;
+
+        if (isset(self::$cache[$original])) {
+            return self::$cache[$original];
         }
 
         $this->tokens($query);
@@ -226,7 +228,7 @@ class Selector
 
         $restore = array_combine(array_values($this->prevent), array_keys($this->prevent));
 
-        return self::$cache[$query] = '//' . strtr($query, $restore);
+        return self::$cache[$original] = '//' . strtr($query, $restore);
     }
 
     private function putQuotes($arg)

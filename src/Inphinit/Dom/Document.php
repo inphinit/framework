@@ -207,13 +207,16 @@ class Document
 
         $this->enableInternalErrors(true);
 
-        if ($this->loadOptions !== null) {
+        if ($this->loadOptions !== 0) {
             $callback($source, $this->loadOptions);
         } else {
             $callback($source);
         }
 
         $this->raise(3);
+
+        $this->xpath = null;
+        $this->selector = null;
     }
 
     /**
@@ -304,6 +307,7 @@ class Document
 
             case self::ARRAY_SIMPLE:
                 $this->simple = true;
+                $this->complete = false;
                 break;
 
             default:
@@ -459,7 +463,7 @@ class Document
     {
         if (self::toContents($items)) {
             foreach ($items as $name => &$item) {
-                if (is_array($item) === false || strpos($name, '@') !== false) {
+                if (is_array($item) === false || strpos($name, '@') === 0) {
                     continue;
                 }
 
