@@ -31,17 +31,17 @@ class Url
     /** @var int Used by the `::modify()` method to convert domain to IDNA ASCII form (UTS #46) */
     const HOST_IDNA_ASCII = 2;
 
-    /** @var int Used by the `::modify()` resolve path with `..` and `.` */
-    const PATH_RESOLVE = 4;
-
     /** @var int Used by the `::modify()` method to convert the path to ASCII */
-    const PATH_ASCII = 8;
+    const PATH_ASCII = 4;
 
-    /** @var int Used by the `::modify()` method to convert the path to lower unicode */
-    const PATH_UNICODE = 16;
+    /** @var int Used by the `::modify()` resolve path with `..` and `.` */
+    const PATH_RESOLVE = 8;
 
     /** @var int Used by the `::modify()` method to convert spaces and underscores into hyphens and remove unused characters */
-    const PATH_SLUG = 32;
+    const PATH_SLUG = 16;
+
+    /** @var int Used by the `::modify()` method to convert the path to lower unicode */
+    const PATH_UNICODE = 32;
 
     /** @var int Used by the `::modify()` method to sort querystring */
     const SORT_QUERY = 64;
@@ -227,7 +227,7 @@ class Url
 
             if ($flags & self::PATH_SLUG) {
                 $path = strtr($path, self::$slugDict);
-                $path = preg_replace('#[^\(\)\[\]\/\-\pL\pN\s_]+#u', '', $path);
+                $path = preg_replace('#[^\(\)\[\]\/\\\\\:\-\pL\pN\s_]+#u', '', $path);
                 $path = preg_replace('#[\s\-_]+#u', '-', $path);
                 $path = str_replace(array('/-', '-/'), '/', $path);
                 $path = preg_replace('#//+#', '/', $path);
