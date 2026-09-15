@@ -40,14 +40,16 @@ class Env
         }
 
         switch (strtolower($value)) {
+            case '0':
             case 'false':
             case 'no':
-            case '0':
+            case 'off':
                 return false;
 
+            case '1':
+            case 'on':
             case 'true':
             case 'yes':
-            case '1':
                 return true;
         }
 
@@ -58,6 +60,7 @@ class Env
      * Get value from `$_ENV[...]` as float
      *
      * @param string $name
+     * @param float
      * @return float
      */
     public static function float($name, $alternative = 0.0)
@@ -79,6 +82,7 @@ class Env
      * Get value from `$_ENV[...]` as integer
      *
      * @param string $name
+     * @param int
      * @return int
      */
     public static function int($name, $alternative = 0)
