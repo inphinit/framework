@@ -238,17 +238,10 @@ class Url
             Arrays::ksort($query);
         }
 
-        if (
-            $scheme !== $components['scheme'] ||
-            $host !== $components['host'] ||
-            $path !== $components['path'] ||
-            $query !== $components['query']
-        ) {
-            $components['scheme'] = $scheme;
-            $components['host'] = $host;
-            $components['path'] = $path;
-            $components['query'] = $query;
-        }
+        $components['scheme'] = $scheme;
+        $components['host'] = $host;
+        $components['path'] = $path;
+        $components['query'] = $query;
 
         $instance = new Url('/');
 
