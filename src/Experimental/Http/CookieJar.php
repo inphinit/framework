@@ -62,10 +62,6 @@ class CookieJar
                 }
             }
         }
-
-        if (self::$timeZone === null) {
-            self::$timeZone = new \DateTimeZone('UTC');
-        }
     }
 
     /**
@@ -117,6 +113,10 @@ class CookieJar
      */
     public function setExpires($datetime)
     {
+        if (self::$timeZone === null) {
+            self::$timeZone = new \DateTimeZone('UTC');
+        }
+
         try {
             $dt = new \DateTime($datetime, self::$timeZone);
             $this->expires = $dt->format('D, d M Y H:i:s \G\M\T');
@@ -256,13 +256,13 @@ class CookieJar
         $expires = '';
         $expires_delete = self::DELETE;
 
-        if ($this->domain) {
+        if ($this->domain !== null) {
             $params .= '; Domain=' . $this->domain;
         }
 
         $params .= '; Path=' . $this->path;
 
-        if ($this->expires) {
+        if ($this->expires !== null) {
             $expires = '; Expires=' . $this->expires;
         }
 
@@ -275,7 +275,7 @@ class CookieJar
             $secure = true;
         }
 
-        if ($this->sameSite) {
+        if ($this->sameSite !== null) {
             $params .= '; SameSite=' . $this->sameSite;
 
             if ($this->sameSite === 'None') {
