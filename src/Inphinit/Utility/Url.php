@@ -162,10 +162,10 @@ class Url
         $valid_flags = (
             self::SCHEME_ALIGN |
             self::HOST_IDNA_ASCII |
-            self::PATH_RESOLVE |
             self::PATH_ASCII |
-            self::PATH_UNICODE |
+            self::PATH_RESOLVE |
             self::PATH_SLUG |
+            self::PATH_UNICODE |
             self::SORT_QUERY
         );
 
