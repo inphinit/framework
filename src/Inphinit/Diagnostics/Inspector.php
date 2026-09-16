@@ -46,7 +46,7 @@ class Inspector
     {
         $message = trim($message);
 
-        if (preg_match('#(.*)\((\d+)\)\s+:\s+eval\(\)\'d\s+code(\s+on\s+line\s+\d+)?$#', $message, $match)) {
+        if (preg_match('#^(.*)\((\d+)\)\s+:\s+eval\(\)\'d\s+code(\s+on\s+line\s+\d+)?$#', $message, $match)) {
             $file = $match[1];
             $line = (int) $match[2];
 

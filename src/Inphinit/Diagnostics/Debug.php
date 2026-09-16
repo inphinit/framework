@@ -382,7 +382,7 @@ class Debug
 
     private function render($view, $data)
     {
-        if ($this->rendered === false && $this->beforeView) {
+        if ($this->rendered === false && $this->beforeView !== null) {
             $this->rendered = true;
             View::render($this->beforeView);
         }

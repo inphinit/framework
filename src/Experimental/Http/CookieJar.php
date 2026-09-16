@@ -257,7 +257,7 @@ class CookieJar
     /**
      * Send cookies from jar to headers
      *
-     * @throws \Inphinit\Exception
+     * @throws \ErrorException
      */
     public function send()
     {

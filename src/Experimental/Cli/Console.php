@@ -75,7 +75,15 @@ class Console
         $name = array_shift($arguments);
 
         if (empty($this->commands[$name])) {
-            throw new Exception("Unknown command: {$name}");
+            $suggestions = $this->getCommandSuggestions($name);
+
+            $message = "Unknown command: {$name}";
+
+            if (count($suggestions) !== 0) {
+                $message .= ' - The most similar commands are: ' . implode(', ', $suggestions);
+            }
+
+            throw new Exception($message);
         }
 
         $command = $this->commands[$name];
@@ -219,5 +227,18 @@ class Console
         }
 
         return \ob_get_clean();
+    }
+
+    private function getCommandSuggestions($input)
+    {
+        $suggestions = array();
+
+        foreach ($this->commands as $name => $command) {
+            if (levenshtein($input, $name) < 3) {
+                $suggestions[] = $name;
+            }
+        }
+
+        return $suggestions;
     }
 }

@@ -83,9 +83,10 @@ class FileResponse
     /**
      * Dispatch the file using the preferred available delivery method
      *
-     * @param int  $modes          Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK).
-     * @param bool $overwrite      Optional. Overwrite all possible related headers.
-     * @throws \Inphinit\Exception If headers are already sent or no supported mode is available.
+     * @param int  $modes          Set file delivery modes using bitwise flags (ACCEL, SENDFILE, FALLBACK)
+     * @param bool $overwrite      Optional. Overwrite all possible related headers
+     * @throws \ErrorException     If headers are already sent
+     * @throws \Inphinit\Exception If the mode is invalid or unsupported
      */
     public function send($modes, $overwrite = false)
     {

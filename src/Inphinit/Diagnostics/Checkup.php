@@ -32,7 +32,9 @@ class Checkup
 
     public function __construct()
     {
+        // Using `Inphinit\Diagnostics\App`
         $this->development = App::config('environment') === 'development';
+
         $this->iniGetEnabled = function_exists('ini_get');
         $this->isHttp = isset($_SERVER['REQUEST_METHOD']);
 
@@ -111,10 +113,14 @@ class Checkup
             if ($entry !== strval($value)) {
                 $this->errors[] = "Unexpected value in `max_execution_time={$entry}` (interpreted as `{$value}`)";
             } elseif ($this->isHttp) {
+                $min_exec = self::MIN_EXEC_RECOMMENDED;
+                $max_exec = self::MAX_EXEC_RECOMMENDED;
+
                 if ($value < 1) {
                     $this->errors[] = 'Unlimited `max_execution_time` is unsafe in Web context';
-                } elseif ($value < self::MIN_EXEC_RECOMMENDED || $value > self::MAX_EXEC_RECOMMENDED) {
-                    $this->warnings[] = 'It is recommended to set `max_execution_time` between 30 and 300 in Web context';
+                } elseif ($value < $min_exec || $value > $max_exec) {
+                    $this->warnings[] = "It is recommended to set `max_execution_time` between " .
+                                        "{$min_exec} and {$max_exec} in Web context";
                 }
             }
         }
@@ -172,7 +178,8 @@ class Checkup
                 $max_file_uploads = intval($max_file_uploads_entry);
 
                 if ($max_file_uploads_entry !== strval($max_file_uploads)) {
-                    $this->errors[] = "Unexpected value in `max_file_uploads={$max_file_uploads_entry}` (interpreted as `{$max_file_uploads}`)";
+                    $this->errors[] = "Unexpected value in `max_file_uploads={$max_file_uploads_entry}` " .
+                                      "(interpreted as `{$max_file_uploads}`)";
                 } elseif ($max_file_uploads < 1) {
                     $this->warnings[] = "`max_file_uploads={$max_file_uploads}` may not be enough";
                 }
