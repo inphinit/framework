@@ -14,8 +14,16 @@ use Inphinit\Exception;
 
 class CookieJar
 {
+    /** @var int Does not define the SameSite attribute (Note: Some browsers use Lax as the default value) */
+    const SAME_DEFAULT = 0;
+
+    /** @var int Set the SameSite=Lax attribute when the cookie is sent */
     const SAME_LAX = 1;
+
+    /** @var int Set the SameSite=None attribute when the cookie is sent */
     const SAME_NONE = 2;
+
+    /** @var int Set the SameSite=Strict attribute when the cookie is sent */
     const SAME_STRICT = 3;
 
     const DISALLOW_NAME_CHARS  = " =,;\t\r\n\013\014";
@@ -23,15 +31,18 @@ class CookieJar
     const DELETE = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
     const DELIMITER = ':';
 
-    private $secure = false;
+    private $jar;
+    private $cookies = array();
+
+    // Attributes
     private $domain;
-    private $path = '/';
     private $expires;
     private $httpOnly = false;
     private $partitioned = false;
+    private $path = '/';
     private $sameSite;
-    private $cookies = array();
-    private $jar;
+    private $secure = false;
+
     private static $timeZone;
 
     /**
@@ -158,6 +169,9 @@ class CookieJar
     public function setSameSite($mode)
     {
         switch ($mode) {
+            case self::SAME_DEFAULT:
+                $this->sameSite = null;
+                break;
             case self::SAME_LAX:
                 $this->sameSite = 'Lax';
                 break;
@@ -189,7 +203,7 @@ class CookieJar
      * Magic method for get property value from jar
      *
      * @param string $name
-     * @return mixed
+     * @return string|null
      */
     public function __get($name)
     {
