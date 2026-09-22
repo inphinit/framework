@@ -234,7 +234,9 @@ class Console
         $suggestions = array();
 
         foreach ($this->commands as $name => $command) {
-            if (levenshtein($input, $name) < 3) {
+            similar_text($input, $name, $percent);
+
+            if ($percent > 45) {
                 $suggestions[] = $name;
             }
         }

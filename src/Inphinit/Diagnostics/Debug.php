@@ -21,13 +21,16 @@ class Debug
 {
     /** @var array<string, string> List of shortcuts to link errors to external assistants */
     protected static $assistants = array(
-        'chatgpt' => 'https://chatgpt.com/?hints=search&amp;q={error}',
-        'claude' => 'https://claude.ai/new?q={error}',
-        'duck.ai' => 'https://duckduckgo.com/?q={error}&amp;ia=chat',
-        'duckduckgo' => 'https://duckduckgo.com/?q={error}',
-        'google' => 'https://www.google.com/search?q={error}',
-        'google.ai' => 'https://www.google.com/search?q={error}&amp;udm=50',
-        'perplexity' => 'https://www.perplexity.ai/search?q={error}'
+        'chatgpt'     => 'https://chatgpt.com/?hints=search&amp;q={error}',
+        'claude'      => 'https://claude.ai/new?q={error}',
+        'claude.code' => 'claude-cli://open?q={error}',
+        'codex'       => 'codex://new?prompt={error}',
+        'cursor'      => 'cursor://anysphere.cursor-deeplink/prompt?text={error}',
+        'duck.ai'     => 'https://duck.ai/?q={error}',
+        'duckduckgo'  => 'https://duckduckgo.com/?q={error}',
+        'google'      => 'https://www.google.com/search?q={error}',
+        'google.ai'   => 'https://www.google.com/search?q={error}&amp;udm=50',
+        'perplexity'  => 'https://www.perplexity.ai/search?q={error}',
     );
 
     /** @var array<string, string> List of shortcuts for linking problematic files via link to external editors */
@@ -260,6 +263,7 @@ class Debug
 
             $link_message = html_entity_decode($message);
             $link_message = str_replace(array('"', '\''), '', $link_message);
+            $link_message = preg_replace('#\s+#', ' ', $link_message);
             $link_message = rawurlencode($link_message);
 
             $link = str_replace('{error}', $link_message, $link);

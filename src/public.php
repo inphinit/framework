@@ -24,6 +24,7 @@ if ($inphinit_path !== '/' && strpos($inphinit_path, '/.') === false && is_file(
         foreach ($inphinit_public_media_types as $mime => $suffixes) {
             if (in_array($inphinit_public_suffix, $suffixes)) {
                 $inphinit_public_type = $mime;
+                break;
             }
         }
     }
