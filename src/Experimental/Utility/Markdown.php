@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental\Parser;
+namespace Inphinit\Experimental\Utility;
 
 use Inphinit\Exception;
 use Inphinit\Utility\Strings;
@@ -164,6 +164,16 @@ class Markdown
     {
         $lines = preg_split('/\r?\n/', $markdown);
         return $this->parseLines($lines, true);
+    }
+
+    /**
+     * Convert inline string to inline html
+     *
+     * @param string $markdown
+     */
+    public function fromInlineString($markdown)
+    {
+        return $this->resolveInlines($markdown);
     }
 
     /**
