@@ -52,10 +52,20 @@ class Markdown
     const SUBSCRIPT = 21;
     const SUPERSCRIPT = 22;
 
+    private $customInlines = array();
+    private $enabledErrors = false;
+    private $enabledHtml = false;
     private $ids = array();
     private $templates = array();
 
-    public function __construct()
+    /**
+     * @param bool $enableCustom Enable/disable non-standard inline syntaxes:
+     *                           - !highlight! -> <mark>highlight</mark>
+     *                           - %variable%  -> <var>variable</var>
+     *                           - +inserted+  -> <ins>inserted</ins>
+     *                           - -deleted-   -> <del>deleted</del>
+     */
+    public function __construct($enableCustom = true)
     {
         // Contents
         $this->setTemplate(self::BLOCKQUOTE, '<blockquote>{contents}</blockquote>');
@@ -94,6 +104,33 @@ class Markdown
         // Inline Extended
         $this->setTemplate(self::SUBSCRIPT, '<sub>{contents}</sub>');
         $this->setTemplate(self::SUPERSCRIPT, '<sup>{contents}</sup>');
+
+        if ($enableCustom) {
+            $this->setCustomInline('!', '<mark>{contents}</mark>');
+            $this->setCustomInline('%', '<var>{contents}</var>');
+            $this->setCustomInline('+', '<ins>{contents}</ins>');
+            $this->setCustomInline('-', '<del>{contents}</del>');
+        }
+    }
+
+    /**
+     * Enable/disable parse errors
+     *
+     * @param bool $enable
+     */
+    public function enableErrors($enable)
+    {
+        $this->enabledErrors = $enable;
+    }
+
+    /**
+     * Enable/disable use HTML
+     *
+     * @param bool $enable
+     */
+    public function enableHtml($enable)
+    {
+        $this->enabledHtml = $enable;
     }
 
     /**
@@ -105,6 +142,17 @@ class Markdown
     public function setTemplate($type, $template)
     {
         $this->templates[$type] = $template;
+    }
+
+    /**
+     * Set custom inline HTML template
+     *
+     * @param string $delimiter
+     * @param string $template
+     */
+    public function setCustomInline($delimiter, $template)
+    {
+        $this->customInlines[$delimiter] = $template;
     }
 
     /**
@@ -352,6 +400,25 @@ class Markdown
         );
     }
 
+    private function parseTask($value)
+    {
+        $value = ltrim($value);
+
+        if (strpos($value, '[x] ') === 0) {
+            return '<input type="checkbox" checked>' . substr($value, 3);
+        }
+
+        if (strpos($value, '[ ] ') === 0) {
+            return '<input type="checkbox">' . substr($value, 3);
+        }
+
+        if (strpos($value, '[] ') === 0) {
+            return '<input type="checkbox">' . substr($value, 2);
+        }
+
+        return $value;
+    }
+
     private function parseList(array $lines, $n, $ordered, &$index)
     {
         $start_index = $index;
@@ -412,10 +479,13 @@ class Markdown
 
             if (empty($item_lines) === false) {
                 $nested = $this->parseLines($item_lines, false);
+
                 if (trim($nested) !== '') {
                     $inner .= "\n" . $nested;
                 }
             }
+
+            $inner = $this->parseTask($inner);
 
             $items[] = '<li>' . $inner . '</li>';
         }
@@ -629,7 +699,9 @@ class Markdown
             throw new Exception('Invalid regex');
         }
 
-        switch ($matches['delimiter']) {
+        $delimiter = $matches['delimiter'];
+
+        switch ($delimiter) {
             case '~~':
                 $type = self::STRIKETHROUGH;
                 break;
@@ -653,10 +725,34 @@ class Markdown
                 break;
 
             default:
-                throw new Exception('Invalid delimiter');
+                if ($this->enabledErrors) {
+                    throw new Exception('Invalid delimiter: ' . $delimiter);
+                }
+
+                return $matches['contents'];
         }
 
         return $this->fillTemplate($type, array('contents' => $matches['contents']));
+    }
+
+    private function parseCustomInline($matches)
+    {
+        if (isset($matches['delimiter'], $matches['contents']) === false) {
+            throw new Exception('Invalid regex');
+        }
+
+        $contents = $matches['contents'];
+        $delimiter = $matches['delimiter'];
+
+        if (isset($this->customInlines[$delimiter]) === false) {
+            if ($this->enabledErrors) {
+                throw new Exception('Invalid delimiter: ' . $delimiter);
+            }
+
+            return $contents;
+        }
+
+        return str_replace('{contents}', $contents, $this->customInlines[$delimiter]);
     }
 
     private function parseFigure($matches)
@@ -723,7 +819,9 @@ class Markdown
             $text
         );
 
-        $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        if ($this->enabledHtml === false) {
+            $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        }
 
         // Images ![alt](src "title")
         $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/', array($this, 'parseFigure'), $text);
@@ -749,6 +847,14 @@ class Markdown
 
         // Superscript (5^th^ -> 5<sup>th</sup>)
         $text = preg_replace_callback('/(?P<delimiter>\^)(?P<contents>.+?)\^/s', $inlineCallback, $text);
+
+        $customInlineCallback = array($this, 'parseCustomInline');
+
+        foreach ($this->customInlines as $delimiter => $template) {
+            $delimiter = preg_quote($delimiter, '/');
+            $regex = "/(?P<delimiter>{$delimiter})(?P<contents>.+?){$delimiter}/s";
+            $text = preg_replace_callback($regex, $customInlineCallback, $text);
+        }
 
         // Restore `code`s
         foreach ($codes as $key => $value) {
