@@ -274,7 +274,7 @@ class Markdown
 
                 $code_block = $this->fillTemplate(self::CODE_BLOCK, array(
                     'contents' => htmlspecialchars(implode($eol, $code_lines), ENT_NOQUOTES, 'UTF-8'),
-                    'lang' => htmlspecialchars($lang, ENT_QUOTES, 'UTF-8'),
+                    'lang' => $lang ? self::safe($lang) : 'none',
                 ));
 
                 $out .= $code_block . $eol;
@@ -846,14 +846,14 @@ class Markdown
             '/`([^`]+)`/',
             function ($matches) use (&$codes) {
                 $key = "\x00CODE" . count($codes) . "\x00";
-                $codes[$key] = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
+                $codes[$key] = self::safe($matches[1]);
                 return $key;
             },
             $text
         );
 
         if ($this->enabledHtml === false) {
-            $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+            $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
         }
 
         // Images ![alt](src "title")
@@ -897,9 +897,14 @@ class Markdown
 
         // Restore escaped characters
         foreach ($escapes as $key => $ch) {
-            $text = str_replace($key, htmlspecialchars($ch, ENT_QUOTES, 'UTF-8'), $text);
+            $text = str_replace($key, self::safe($ch), $text);
         }
 
         return $text;
+    }
+
+    private static function safe($input)
+    {
+        return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
     }
 }
