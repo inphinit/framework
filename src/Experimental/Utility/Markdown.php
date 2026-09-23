@@ -158,22 +158,22 @@ class Markdown
     /**
      * Convert markdown string to html string
      *
-     * @param string $markdown
+     * @param string $input
      */
-    public function fromString($markdown)
+    public function fromString($input)
     {
-        $lines = preg_split('/\r?\n/', $markdown);
+        $lines = preg_split('/\r?\n/', $input);
         return $this->parseLines($lines, true);
     }
 
     /**
      * Convert inline string to inline html
      *
-     * @param string $markdown
+     * @param string $input
      */
-    public function fromInlineString($markdown)
+    public function fromInlineString($input)
     {
-        return $this->resolveInlines($markdown);
+        return $this->resolveInlines($input);
     }
 
     /**
