@@ -124,7 +124,7 @@ class Markdown
     }
 
     /**
-     * Enable/disable use HTML
+     * Enable/disable use HTML in markdown body
      *
      * @param bool $enable
      */
@@ -156,30 +156,45 @@ class Markdown
     }
 
     /**
-     * Convert a Markdown string into an HTML string with paragraphs
+     * Convert a markdown string into an HTML string with paragraphs
      *
      * @param string $input
+     * @throws \Inphinit\Exception
+     * @return string
      */
     public function fromString($input)
     {
         $lines = preg_split('/\r?\n/', $input);
-        return $this->parseLines($lines, true);
+
+        try {
+            return $this->parseLines($lines, true);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage());
+        }
     }
 
     /**
      * Convert a markdown string into an HTML string (inline) without paragraphs
      *
      * @param string $input
+     * @throws \Inphinit\Exception
+     * @return string
      */
     public function fromInlineString($input)
     {
-        return $this->resolveInlines($input);
+        try {
+            return $this->resolveInlines($input);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage());
+        }
     }
 
     /**
-     * Convert a Markdown file into an HTML string with paragraphs
+     * Convert a markdown file into an HTML string with paragraphs
      *
      * @param string $path
+     * @throws \Inphinit\Exception
+     * @return string
      */
     public function fromFile($path)
     {
@@ -189,7 +204,11 @@ class Markdown
             throw new Exception('Unable to read the file: ' . $path);
         }
 
-        return $this->parseLines($lines, true);
+        try {
+            return $this->parseLines($lines, true);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage());
+        }
     }
 
     private function getUniqueId($id)
