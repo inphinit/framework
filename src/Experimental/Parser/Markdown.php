@@ -160,7 +160,7 @@ class Markdown
      *
      * @param string $markdown
      */
-    public function convertString($markdown)
+    public function fromString($markdown)
     {
         $lines = preg_split('/\r?\n/', $markdown);
         return $this->parseLines($lines, true);
@@ -171,7 +171,7 @@ class Markdown
      *
      * @param string $path
      */
-    public function convertFile($path)
+    public function fromFile($path)
     {
         $lines = file($path, FILE_IGNORE_NEW_LINES);
 
