@@ -9,6 +9,9 @@
 
 namespace Inphinit;
 
+use Inphinit\Diagnostics\Inspector;
+use Inphinit\Exception;
+
 class Event
 {
     /** @var int Priority level for events that should be executed before others */
@@ -84,17 +87,21 @@ class Event
      * @param string   $name     Event name
      * @param callable $callback Callback to execute when the event is triggered
      * @param int      $priority Execution priority (higher numbers run earlier). Default is 0
+     * @throws \Inphinit\Exception
      */
     public static function on($name, callable $callback, $priority = 0)
     {
-        if (is_string($name)) {
-            if (!isset(self::$events[$name])) {
-                self::$events[$name] = array();
-            }
-
-            self::$events[$name][] = array($callback, $priority);
-            self::$unordered[$name] = true;
+        if (is_string($name) === false) {
+            $type = Inspector::type($name);
+            throw new Exception("Expects to be string, {$type} given");
         }
+
+        if (isset(self::$events[$name]) === false) {
+            self::$events[$name] = array();
+        }
+
+        self::$events[$name][] = array($callback, $priority);
+        self::$unordered[$name] = true;
     }
 
     /**
@@ -102,9 +109,15 @@ class Event
      * all registered events of that type are triggered only once.
      *
      * @param string $name Event name
+     * @throws \Inphinit\Exception
      */
     public static function once($name)
     {
+        if (is_string($name) === false) {
+            $type = Inspector::type($name);
+            throw new Exception("Expects to be string, {$type} given");
+        }
+
         self::$uniques[$name] = false;
     }
 
@@ -114,12 +127,17 @@ class Event
      *
      * @param string        $name     Event name
      * @param callable|null $callback Specific callback to remove, or null to remove all
+     * @throws \Inphinit\Exception
      */
     public static function off($name, $callback = null)
     {
+        if (isset(self::$events[$name]) === false) {
+            throw new Exception('Undefined event');
+        }
+
         if ($callback === null) {
             self::$events[$name] = array();
-        } elseif (isset(self::$events[$name])) {
+        } else {
             $evts = &self::$events[$name];
 
             foreach ($evts as $key => $value) {
