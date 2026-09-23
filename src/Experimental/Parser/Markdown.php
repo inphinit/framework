@@ -219,6 +219,7 @@ class Markdown
 
         $out = '';
         $section_open = false;
+        $eol = "\n";
 
         while ($i < $n) {
             $line = $lines[$i];
@@ -240,14 +241,14 @@ class Markdown
                     ++$i;
                 }
 
-                ++$i; // pula a cerca de fechamento
+                ++$i; // skip enclose
 
                 $code_block = $this->fillTemplate(self::CODE_BLOCK, array(
-                    'contents' => htmlspecialchars(implode("\n", $code_lines), ENT_NOQUOTES, 'UTF-8'),
+                    'contents' => htmlspecialchars(implode($eol, $code_lines), ENT_NOQUOTES, 'UTF-8'),
                     'lang' => htmlspecialchars($lang, ENT_QUOTES, 'UTF-8'),
                 ));
 
-                $out .= "{$code_block}\n";
+                $out .= $code_block . $eol;
 
                 continue;
             }
@@ -268,7 +269,7 @@ class Markdown
             if (preg_match('/^ {0,3}([-*_])( *\1){2,}\s*$/', $line) === 1) {
                 $hr = $this->fillTemplate(self::HR, array());
 
-                $out .= "{$hr}\n";
+                $out .= $hr . $eol;
                 ++$i;
                 continue;
             }
@@ -292,16 +293,16 @@ class Markdown
 
                     if ($topLevel) {
                         if ($section_open) {
-                            $out .= "</section>\n";
+                            $out .= '</section>' . $eol;
                         }
 
-                        $out .= "\n<section>\n";
+                        $out .= $eol . '<section>' . $eol;
                         $section_open = true;
                     }
 
-                    $out .= "{$h2}\n\n";
+                    $out .= $h2 . $eol . $eol;
                 } else {
-                    $out .= $this->parseHeading($level, $inline) . "\n\n";
+                    $out .= $this->parseHeading($level, $inline) . $eol . $eol;
                 }
 
                 ++$i;
@@ -321,7 +322,7 @@ class Markdown
 
                 $blockquote = $this->fillTemplate(self::BLOCKQUOTE, array('contents' => $inner));
 
-                $out  .= "{$blockquote}\n";
+                $out  .= $blockquote . $eol;
 
                 continue;
             }
@@ -331,12 +332,12 @@ class Markdown
 
             if ($list_match !== null && $list_match['indent'] <= 3) {
                 if ($topLevel === false) {
-                    $out .= "\n";
+                    $out .= $eol;
                 }
 
                 $list = $this->parseList($lines, $n, $list_match['ordered'], $i);
 
-                $out .= $list . "\n";
+                $out .= $list . $eol;
                 continue;
             }
 
@@ -351,12 +352,12 @@ class Markdown
             if (empty($paragraphs) === false) {
                 $out .= '<p>' . $this->resolveInlines(implode(' ', $paragraphs)) . "</p>\n";
             } else {
-                ++$i; // segurança contra loop infinito
+                ++$i; // prevent infinity loop
             }
         }
 
         if ($topLevel && $section_open) {
-            $out .= "</section>\n";
+            $out .= '</section>' . $eol;
         }
 
         return $out;
@@ -432,6 +433,7 @@ class Markdown
         $base_indent = $first['indent'];
         $items = array();
         $i = $index;
+        $eol = "\n";
 
         while ($i < $n) {
             $match = $this->matchListItem($lines[$i]);
@@ -481,7 +483,7 @@ class Markdown
                 $nested = $this->parseLines($item_lines, false);
 
                 if (trim($nested) !== '') {
-                    $inner .= "\n" . $nested;
+                    $inner .= $eol . $nested;
                 }
             }
 
@@ -498,7 +500,7 @@ class Markdown
         $index = $i;
 
         return $this->fillTemplate($ordered ? self::OL : self::UL, array(
-            'contents' => implode("\n", $items),
+            'contents' => implode($eol, $items),
         ));
     }
 
@@ -677,10 +679,12 @@ class Markdown
             $table_headers[] = '<th' . $attrs . '>' . $this->resolveInlines($header) . '</th>';
         }
 
+        $eol = "\n";
+
         return $this->fillTemplate(self::TABLE, array(
             'headers' => implode('', $table_headers),
-            'contents' => implode("\n", $rows),
-        )) . "\n";
+            'contents' => implode($eol, $rows),
+        )) . $eol;
     }
 
     private function isTableDataRow($line)
