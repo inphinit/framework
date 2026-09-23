@@ -25,7 +25,7 @@ Event::on('done', function () {
         }
     }
 
-    if ($send_file && !headers_sent()) {
+    if ($send_file && headers_sent() === false) {
         foreach ($remove_headers as $header) {
             header_remove($header);
         }

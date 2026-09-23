@@ -63,7 +63,7 @@ class Forwarded
     {
         $this->parseSource();
 
-        if (!in_array($type, $this->alloweds)) {
+        if (in_array($type, $this->alloweds) === false) {
             throw new Exception("Invalid type: {$type}");
         }
 
@@ -258,7 +258,7 @@ class Forwarded
     private static function isTokenChar($char)
     {
         $code = ord($char);
-        return $code > 31 && $code !== 127 && !self::isDelimiter($char);
+        return $code > 31 && $code !== 127 && self::isDelimiter($char) === false;
     }
 
     private static function isExtended($char)

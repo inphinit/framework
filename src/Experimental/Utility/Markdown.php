@@ -156,7 +156,7 @@ class Markdown
     }
 
     /**
-     * Convert markdown string to html string
+     * Convert a Markdown string into an HTML string with paragraphs
      *
      * @param string $input
      */
@@ -167,7 +167,7 @@ class Markdown
     }
 
     /**
-     * Convert inline string to inline html
+     * Convert a markdown string into an HTML string (inline) without paragraphs
      *
      * @param string $input
      */
@@ -177,7 +177,7 @@ class Markdown
     }
 
     /**
-     * Convert markdown file to html string
+     * Convert a Markdown file into an HTML string with paragraphs
      *
      * @param string $path
      */

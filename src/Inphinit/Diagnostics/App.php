@@ -131,7 +131,7 @@ class App extends \Inphinit\App
             throw new Exception('Pattern name is empty or not a string');
         }
 
-        if (!preg_match('#^\w+$#', $name)) {
+        if (preg_match('#^\w+$#', $name) !== 1) {
             throw new Exception("Invalid pattern name: {$name}");
         }
 
@@ -151,7 +151,7 @@ class App extends \Inphinit\App
      */
     public function scope($pattern, \Closure $callback)
     {
-        if (!preg_match('#^(([a-z*]+)://([^\#?/]+)(\:[\d*]+)?)?(/([^\#?]+)/)?$#', $pattern)) {
+        if (preg_match('#^(([a-z*]+)://([^\#?/]+)(\:[\d*]+)?)?(/([^\#?]+)/)?$#', $pattern) !== 1) {
             throw new Exception('Expected pattern: {scheme}://{host}:{port}/{path}/ or /{path}/ (including wildcard)');
         }
 
