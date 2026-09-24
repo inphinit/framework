@@ -21,6 +21,8 @@ class Scheduler
     private $storage;
     private $tasks = array();
 
+    protected $namespacePrefix = '\\Tasks\\';
+
     /**
      * Create a Scheduler instance
      *
@@ -48,14 +50,14 @@ class Scheduler
     }
 
     /**
-     * Register callable callback
+     * Register callable or controller callback
      *
-     * @param string   $name
-     * @param callable $callback
+     * @param string          $name
+     * @param string|callable $callback
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function action($name, callable $callback)
+    public function action($name, $callback)
     {
         if (is_string($name) === false || preg_match('/^[a-z]\w*$/i', $name) !== 1) {
             throw new Exception('Invalid name');
@@ -63,6 +65,19 @@ class Scheduler
 
         if (isset($this->tasks[$name])) {
             throw new Exception('Task already registered: ' . $name);
+        }
+
+        if (is_string($callback) && strpos($callback, '::') !== false) {
+            $className = $this->namespacePrefix . $callback;
+
+            list($controller, $method) = explode('::', $className, 2);
+
+            $callback = function (Task $task) use ($controller, $method) {
+                $exec = array(new $controller(), $method);
+                $exec($task);
+            };
+        } elseif (is_callable($callback) === false) {
+            throw new Exception('Defined callback is not callable');
         }
 
         $task = new Task($callback);
@@ -123,6 +138,16 @@ class Scheduler
     public function get($name)
     {
         return isset($this->tasks[$name]) ? $this->tasks[$name] : null;
+    }
+
+    /**
+     * Prefixes the namespace to task controller classes
+     *
+     * @param string $prefix
+     */
+    public function setNamespace($prefix)
+    {
+        $this->namespacePrefix = '\\' . $prefix . '\\';
     }
 
     /**
