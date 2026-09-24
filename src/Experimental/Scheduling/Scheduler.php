@@ -20,8 +20,7 @@ class Scheduler
     private $lockHandle;
     private $stateFile;
     private $tasks = array();
-
-    private static $timeZone;
+    private $timeZone;
 
     /**
      * Create a Scheduler instance

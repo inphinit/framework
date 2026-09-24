@@ -122,13 +122,21 @@ class Task
      * Shortcut for scheduling the task to run daily at a fixed time.
      * Equivalent to `cron($minute, $hour, '*', '*', '*')`.
      *
-     * @param string $hour
-     * @param string $minute
+     * @param int|string $hour
+     * @param int|string $minute
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Scheduling\Task
      */
     public function at($hour, $minute)
     {
+        if (is_int($hour) === false && ctype_digit($hour) === false) {
+            throw new Exception('Invalid hour');
+        }
+
+        if (is_int($minute) === false && ctype_digit($minute) === false) {
+            throw new Exception('Invalid minute');
+        }
+
         return $this->cron($minute, $hour, '*', '*', '*');
     }
 

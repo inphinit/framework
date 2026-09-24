@@ -44,6 +44,68 @@ $console->action('schedule:run', function (Command $command, array $options, arr
     $handle->run();
 })->setOption('task', 't', 0, null, 'Execute a specific task')->restrictToCli(true);
 
+$console->action('schedule:enable', function (Command $command, array $options, array $residues) {
+    // Caution: In CLI, the binary path is always returned correctly (failures usually occur in FPM).
+    $php_bin = PHP_BINARY;
+    $script = INPHINIT_ROOT . '/run';
+    $log = INPHINIT_SYSTEM . '/storage/logs/schedule.log';
+
+    // Stable marker used to find/replace this entry on repeated runs
+    $marker = 'managed-by-inphinit-schedule';
+
+    if (stripos(PHP_OS, 'WIN') === 0) {
+        $taskrun = escapeshellarg("{$php_bin} {$script} schedule:run");
+        $taskname = escapeshellarg($marker);
+
+        $execute = "schtasks /create /tn {$taskname} /tr {$taskrun} /sc minute /mo 1 /f";
+    } else {
+        $php_bin = escapeshellarg($php_bin);
+        $script = escapeshellarg($script);
+        $log = escapeshellarg($log);
+        $filter = escapeshellarg('# ' . $marker);
+
+        $expr = "* * * * * {$php_bin} {$script} schedule:run >> {$log} 2>&1 {$marker}";
+        $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}; echo {$expr}) | crontab -";
+    }
+
+    echo "> {$execute}\n";
+
+    \passthru($execute, $code);
+
+    if ($code === 0) {
+        echo "\nSchedule enabled.\n";
+    } else {
+        echo "\nError {$code}\n";
+    }
+
+    return $code;
+})->restrictToCli(true);
+
+$console->action('schedule:disable', function (Command $command, array $options, array $residues) {
+    // Stable marker used to find/replace this entry on repeated runs
+    $marker = 'managed-by-inphinit-schedule';
+
+    if (stripos(PHP_OS, 'WIN') === 0) {
+        $taskname = escapeshellarg($marker);
+        $execute = "schtasks /query /tn {$taskname} >nul 2>&1 && schtasks /delete /tn {$taskname} /f";
+    } else {
+        $filter = escapeshellarg('# ' . $marker);
+        $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}) | crontab -";
+    }
+
+    echo "> {$execute}\n";
+
+    \passthru($execute, $code);
+
+    if ($code === 0) {
+        echo "\nSchedule disabled.\n";
+    } else {
+        echo "\nError {$code}\n";
+    }
+
+    return $code;
+})->restrictToCli(true);
+
 $console->action('app:down', function (Command $command, array $options, array $residues) {
     if (App::down()) {
         echo 'Maintenance mode is now active.';
