@@ -412,7 +412,7 @@ class Markdown
                 $type = self::H6;
         }
 
-        return $this->fillTemplate($type, ['contents' => $contents]);
+        return $this->fillTemplate($type, array('contents' => $contents));
     }
 
     private function isBlockStart($line)
