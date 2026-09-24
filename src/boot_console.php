@@ -21,28 +21,8 @@ $console = new Console();
 $scheduler = new Scheduler();
 
 $scheduler->setBackgroundCommand(escapeshellarg(INPHINIT_ROOT . '/run') . ' --task %s');
-$scheduler->setLockFile(INPHINIT_SYSTEM . '/storage/scheduler.lock');
-$scheduler->setStateFile(INPHINIT_SYSTEM . '/storage/scheduler.json');
-
-$console->action('schedule:run', function (Command $command, array $options, array $residues) use ($scheduler) {
-    $task = $options['task'];
-
-    if ($task === null) {
-        $executed = $scheduler->exec();
-
-        echo "{$executed} tasks were performed.\n";
-
-        return 0;
-    }
-
-    $handle = $scheduler->get($task);
-
-    if ($handle === null) {
-        throw new RuntimeException('Not found task: ' . $task);
-    }
-
-    $handle->run();
-})->setOption('task', 't', 0, null, 'Execute a specific task')->restrictToCli(true);
+$scheduler->setLockFile(INPHINIT_SYSTEM . '/storage/schedule.lock');
+$scheduler->setStateFile(INPHINIT_SYSTEM . '/storage/schedule.json');
 
 $console->action('schedule:enable', function (Command $command, array $options, array $residues) {
     // Caution: In CLI, the binary path is always returned correctly (failures usually occur in FPM).
@@ -53,20 +33,13 @@ $console->action('schedule:enable', function (Command $command, array $options, 
     // Stable marker used to find/replace this entry on repeated runs
     $marker = 'managed-by-inphinit-schedule';
 
-    if (stripos(PHP_OS, 'WIN') === 0) {
-        $taskrun = escapeshellarg("{$php_bin} {$script} schedule:run");
-        $taskname = escapeshellarg($marker);
+    $php_bin = escapeshellarg($php_bin);
+    $script = escapeshellarg($script);
+    $log = escapeshellarg($log);
+    $filter = escapeshellarg('# ' . $marker);
 
-        $execute = "schtasks /create /tn {$taskname} /tr {$taskrun} /sc minute /mo 1 /f";
-    } else {
-        $php_bin = escapeshellarg($php_bin);
-        $script = escapeshellarg($script);
-        $log = escapeshellarg($log);
-        $filter = escapeshellarg('# ' . $marker);
-
-        $expr = "* * * * * {$php_bin} {$script} schedule:run >> {$log} 2>&1 {$marker}";
-        $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}; echo {$expr}) | crontab -";
-    }
+    $expr = "* * * * * {$php_bin} {$script} schedule:run >> {$log} 2>&1 {$marker}";
+    $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}; echo {$expr}) | crontab -";
 
     echo "> {$execute}\n";
 
@@ -76,22 +49,17 @@ $console->action('schedule:enable', function (Command $command, array $options, 
         echo "\nSchedule enabled.\n";
     } else {
         echo "\nError {$code}\n";
-    }
 
-    return $code;
+        return $code;
+    }
 })->restrictToCli(true);
 
 $console->action('schedule:disable', function (Command $command, array $options, array $residues) {
     // Stable marker used to find/replace this entry on repeated runs
     $marker = 'managed-by-inphinit-schedule';
 
-    if (stripos(PHP_OS, 'WIN') === 0) {
-        $taskname = escapeshellarg($marker);
-        $execute = "schtasks /query /tn {$taskname} >nul 2>&1 && schtasks /delete /tn {$taskname} /f";
-    } else {
-        $filter = escapeshellarg('# ' . $marker);
-        $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}) | crontab -";
-    }
+    $filter = escapeshellarg('# ' . $marker);
+    $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}) | crontab -";
 
     echo "> {$execute}\n";
 
@@ -105,6 +73,20 @@ $console->action('schedule:disable', function (Command $command, array $options,
 
     return $code;
 })->restrictToCli(true);
+
+$console->action('schedule:run', function (Command $command, array $options, array $residues) use ($scheduler) {
+    $task = $options['task'];
+
+    if ($task === null) {
+        $executed = $scheduler->exec();
+
+        echo "{$executed} tasks were performed.\n";
+
+        return 0;
+    }
+
+    $scheduler->runTask($task);
+})->setOption('task', 't', 0, null, 'Execute a specific task')->restrictToCli(true);
 
 $console->action('app:down', function (Command $command, array $options, array $residues) {
     if (App::down()) {

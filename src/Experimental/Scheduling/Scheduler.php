@@ -40,6 +40,7 @@ class Scheduler
     {
         if ($this->lockHandle !== null) {
             fclose($this->lockHandle);
+
             $this->lockHandle = null;
         }
     }
@@ -48,6 +49,7 @@ class Scheduler
      * Set the PHP script file used to execute background commands (eg.: `/foo/bar/foo.php %s`)
      *
      * @param string $command
+     * @throws \Inphinit\Exception
      */
     public function setBackgroundCommand($command)
     {
@@ -62,13 +64,14 @@ class Scheduler
      * Set the lock file (used to prevent repeated executions)
      *
      * @param string $path
+     * @throws \Inphinit\Exception
      */
     public function setLockFile($path)
     {
         $dir = dirname($path);
 
         if (is_dir($dir) === false || is_writable($dir) === false) {
-            throw new Exception('Invalid command sintax');
+            throw new Exception($path . ' is not writable');
         }
 
         $this->lockFile = $path;
@@ -78,13 +81,14 @@ class Scheduler
      * Set the state file (used to check if a task has already been executed)
      *
      * @param string $path
+     * @throws \Inphinit\Exception
      */
     public function setStateFile($path)
     {
         $dir = dirname($path);
 
         if (is_dir($dir) === false || is_writable($dir) === false) {
-            throw new Exception('Invalid command sintax');
+            throw new Exception($path . ' is not writable');
         }
 
         $this->stateFile = $path;
@@ -107,9 +111,10 @@ class Scheduler
      * @param callable $command
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function call($name, $callback)
+    public function call($name, callable $callback)
     {
         $task = new Task($callback, $this->timeZone);
+
         $this->tasks[$name] = $task;
 
         return $task;
@@ -126,22 +131,7 @@ class Scheduler
     public function command($name, Command $command, array $options = array())
     {
         return $this->call($name, function (Task $task) use ($command, $options) {
-            $response = $command->response($options);
-
-            if ($response !== null) {
-                if (is_int($response) === false) {
-                    $type = Inspector::type($response);
-                    throw new \RuntimeException("Return must be of type int or null, {$type} given");
-                }
-
-                if ($response < 0 || $response > 254) {
-                    throw new \RuntimeException('Exit codes should be in the range 0 to 254');
-                }
-            } else {
-                $response = 0;
-            }
-
-            return $response;
+            return $command->response($options);
         });
     }
 
@@ -161,19 +151,25 @@ class Scheduler
                 throw new \RuntimeException(implode(' ', $output), $result_code);
             }
 
-            return implode(PHP_EOL, $output);
+            echo implode(PHP_EOL, $output);
         });
     }
 
     /**
-     * Get task using name
+     * Executes a named task
      *
      * @param string $task
-     * @return \Inphinit\Experimental\Scheduling\Task|null
+     * @throws \Inphinit\Exception
      */
-    public function get($name)
+    public function runTask($name)
     {
-        return isset($this->tasks[$name]) ? $this->tasks[$name] : null;
+        if (isset($this->tasks[$name]) === false) {
+            throw new Exception('The task was not found: ' . $name);
+        }
+
+        $task = $this->tasks[$name];
+
+        return $task->run();
     }
 
     /**

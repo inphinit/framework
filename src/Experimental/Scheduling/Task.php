@@ -175,7 +175,7 @@ class Task
      *
      * @param \DateTime $now
      * @param int|null  $lastRun Unix timestamp of the last execution, or null if it never ran
-     * @throws \Inphinit\Exception If no schedule (cron/interval/once/at) was defined
+     * @throws \Inphinit\Exception
      * @return bool
      */
     public function isDue(\DateTime $now, $lastRun)
@@ -200,13 +200,25 @@ class Task
     /**
      * Executes the task's callback
      *
-     * @return mixed
+     * @throws \Inphinit\Exception
+     * @return int
      */
     public function run()
     {
         $callback = $this->callback;
 
-        return $callback($this);
+        $response = $callback($this);
+
+        if (is_int($response) === false) {
+            $type = Inspector::type($response);
+            throw new Exception("Return must be of type int or null, {$type} given");
+        }
+
+        if ($response < 0 || $response > 255) {
+            throw new Exception('Exit codes should be in the range 0 to 255');
+        }
+
+        return $response;
     }
 
     private function matchesCron(\DateTime $now)

@@ -100,8 +100,8 @@ class Console
                 throw new Exception("Return must be of type int or null, {$type} given");
             }
 
-            if ($response < 0 || $response > 254) {
-                throw new Exception('Exit codes should be in the range 0 to 254');
+            if ($response < 0 || $response > 255) {
+                throw new Exception('Exit codes should be in the range 0 to 255');
             }
         } else {
             $response = 0;
