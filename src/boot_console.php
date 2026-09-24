@@ -18,12 +18,31 @@ require_once __DIR__ . '/env_vars.php';
 /** @var Inphinit\Experimental\Environment\EnvFile $env */
 
 $console = new Console();
+$scheduler = new Scheduler();
 
-$scheduler = new Scheduler(
-    INPHINIT_SYSTEM . '/storage/scheduler.lock',
-    INPHINIT_SYSTEM . '/storage/scheduler.json',
-    INPHINIT_ROOT . '/run'
-);
+$scheduler->setBackgroundCommand(escapeshellarg(INPHINIT_ROOT . '/run') . ' --task %s');
+$scheduler->setLockFile(INPHINIT_SYSTEM . '/storage/scheduler.lock');
+$scheduler->setStateFile(INPHINIT_SYSTEM . '/storage/scheduler.json');
+
+$console->action('schedule:run', function (Command $command, array $options, array $residues) use ($scheduler) {
+    $task = $options['task'];
+
+    if ($task === null) {
+        $executed = $scheduler->exec();
+
+        echo "{$executed} tasks were performed.\n";
+
+        return 0;
+    }
+
+    $handle = $scheduler->get($task);
+
+    if ($handle === null) {
+        throw new RuntimeException('Not found task: ' . $task);
+    }
+
+    $handle->run();
+})->setOption('task', 't', 0, null, 'Execute a specific task')->restrictToCli(true);
 
 $console->action('app:down', function (Command $command, array $options, array $residues) {
     if (App::down()) {
@@ -130,26 +149,6 @@ $serve->setOption('port', 'p', 0, null, 'Define server port');
 $serve->setOption('vars', 'v', 0, '#^[EGPCS]+$#', 'Define variables order');
 $serve->setOption('conf', 'c', 0, null, 'Define php.ini path');
 $serve->restrictToCli(true);
-
-$console->action('scheduler:run', function (Command $command, array $options, array $residues) use ($scheduler) {
-    $task = $options['task'];
-
-    if ($task === null) {
-        $executed = $scheduler->exec();
-
-        echo "{$executed} tasks were performed.\n";
-
-        return 0;
-    }
-
-    $handle = $scheduler->get($task);
-
-    if ($handle === null) {
-        throw new RuntimeException('Not found task: ' . $task);
-    }
-
-    $handle->run();
-})->setOption('task', 't', 0, null, 'Execute a specific task')->restrictToCli(true);
 
 // system/console.php
 require INPHINIT_SYSTEM . '/console.php';

@@ -10,80 +10,140 @@
 namespace Inphinit\Experimental\Scheduling;
 
 use Inphinit\Exception;
+use Inphinit\Experimental\Cli\Command;
 use Inphinit\Experimental\Cli\Console;
 
 class Scheduler
 {
+    private $backgroundCommand;
+    private $lockFile;
     private $lockHandle;
-    private $lockPath;
-    private $runScript;
-    private $statePath;
-    private $storage;
+    private $stateFile;
     private $tasks = array();
 
-    protected $namespacePrefix = '\\Tasks\\';
+    private static $timeZone;
 
     /**
      * Create a Scheduler instance
      *
-     * @param string $lockPath  Set the lock file (used to prevent repeated executions)
-     * @param string $statePath Set the state file (used to check if a task has already been executed)
-     * @param string $runScript Set the PHP script file used to execute background commands
      * @throws \Inphinit\Exception
      */
-    public function __construct($lockPath, $statePath, $runScript)
+    public function __construct()
     {
         if (\PHP_SAPI !== 'cli') {
             throw new Exception('The class can only be instantiated in the CLI');
         }
 
-        $this->lockPath = $lockPath;
-        $this->statePath = $statePath;
-        $this->runScript = $runScript;
+        $this->timeZone = new \DateTimeZone('UTC');
     }
 
     public function __destruct()
     {
         if ($this->lockHandle !== null) {
             fclose($this->lockHandle);
+            $this->lockHandle = null;
         }
     }
 
     /**
-     * Register callable or controller callback
+     * Set the PHP script file used to execute background commands (eg.: `/foo/bar/foo.php %s`)
      *
-     * @param string          $name
-     * @param string|callable $callback
-     * @throws \Inphinit\Exception
+     * @param string $command
+     */
+    public function setBackgroundCommand($command)
+    {
+        if (strpos($command, '%s') === false) {
+            throw new Exception('Invalid command sintax');
+        }
+
+        $this->backgroundCommand = $command;
+    }
+
+    /**
+     * Set the lock file (used to prevent repeated executions)
+     *
+     * @param string $path
+     */
+    public function setLockFile($path)
+    {
+        $dir = dirname($path);
+
+        if (is_dir($dir) === false || is_writable($dir) === false) {
+            throw new Exception('Invalid command sintax');
+        }
+
+        $this->lockFile = $path;
+    }
+
+    /**
+     * Set the state file (used to check if a task has already been executed)
+     *
+     * @param string $path
+     */
+    public function setStateFile($path)
+    {
+        $dir = dirname($path);
+
+        if (is_dir($dir) === false || is_writable($dir) === false) {
+            throw new Exception('Invalid command sintax');
+        }
+
+        $this->stateFile = $path;
+    }
+
+    /**
+     * Set timeZone used to control task states
+     *
+     * @param \DateTimeZone $timeZone
+     */
+    public function setTimeZone(\DateTimeZone $timeZone)
+    {
+        $this->timeZone = $timeZone;
+    }
+
+    /**
+     * Register a callback function to execute
+     *
+     * @param string $name
+     * @param callable $command
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function action($name, $callback)
+    public function call($name, $callback)
     {
-        if (is_string($name) === false || preg_match('/^[a-z]\w*$/i', $name) !== 1) {
-            throw new Exception('Invalid name');
-        }
-
-        if (isset($this->tasks[$name])) {
-            throw new Exception('Task already registered: ' . $name);
-        }
-
-        if (is_string($callback) && strpos($callback, '::') !== false) {
-            $className = $this->namespacePrefix . $callback;
-
-            list($controller, $method) = explode('::', $className, 2);
-
-            $callback = function (Task $task) use ($controller, $method) {
-                $exec = array(new $controller(), $method);
-                $exec($task);
-            };
-        } elseif (is_callable($callback) === false) {
-            throw new Exception('Defined callback is not callable');
-        }
-
-        $task = new Task($callback);
+        $task = new Task($callback, $this->timeZone);
         $this->tasks[$name] = $task;
 
         return $task;
+    }
+
+    /**
+     * Register a Console command from `system/console.php` to execute
+     *
+     * @param string  $name
+     * @param Command $command
+     * @param array   $options
+     * @return \Inphinit\Experimental\Scheduling\Task
+     */
+    public function command($name, Command $command, array $options = array())
+    {
+        return $this->call($name, function (Task $task) use ($command, $options) {
+            $response = $command->response($options);
+
+            if ($response !== null) {
+                if (is_int($response) === false) {
+                    $type = Inspector::type($response);
+                    throw new \RuntimeException("Return must be of type int or null, {$type} given");
+                }
+
+                if ($response < 0 || $response > 254) {
+                    throw new \RuntimeException('Exit codes should be in the range 0 to 254');
+                }
+            } else {
+                $response = 0;
+            }
+
+            return $response;
+        });
     }
 
     /**
@@ -91,12 +151,11 @@ class Scheduler
      *
      * @param string $name
      * @param string $command
-     * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function command($name, $command)
+    public function shell($name, $command)
     {
-        return $this->action($name, function (Task $task) use ($command) {
+        return $this->call($name, function (Task $task) use ($command) {
             $last_line = \exec($command, $output, $result_code);
 
             if ($last_line === false || $result_code !== 0) {
@@ -104,28 +163,6 @@ class Scheduler
             }
 
             return implode(PHP_EOL, $output);
-        });
-    }
-
-    /**
-     * Register a command from `system/console.php` to execute
-     *
-     * @param string $name
-     * @param string $command
-     * @param array  $options
-     * @throws \Inphinit\Exception
-     * @return \Inphinit\Experimental\Scheduling\Task
-     */
-    public function run($name, $command, array $options = array())
-    {
-        return $this->action($name, function (Task $task) use ($command, $options) {
-            $output = Console::run($command, $options, $code);
-
-            if ($code !== 0) {
-                throw new \RuntimeException($output, $code);
-            }
-
-            return $output;
         });
     }
 
@@ -141,17 +178,7 @@ class Scheduler
     }
 
     /**
-     * Prefixes the namespace to task controller classes
-     *
-     * @param string $prefix
-     */
-    public function setNamespace($prefix)
-    {
-        $this->namespacePrefix = '\\' . $prefix . '\\';
-    }
-
-    /**
-     * Runs every due task. This method must be executed during all CRON/Schedule calls.
+     * Runs every due task. This method must be executed during all CRON/schedule calls.
      *
      * @throws \Inphinit\Exception
      * @return int
@@ -164,8 +191,10 @@ class Scheduler
             // Prevents overlapping sweeps if the previous task invocation is still running
             if ($this->lock(true)) {
                 $changed = false;
-                $now = new \DateTime();
+
                 $state = $this->loadState();
+
+                $now = new \DateTime('now', $this->timeZone);
 
                 foreach ($this->tasks as $name => $task) {
                     $last_run = isset($state[$name]) ? $state[$name] : null;
@@ -207,10 +236,10 @@ class Scheduler
 
         if ($enable) {
             if ($handle === null) {
-                $handle = fopen($this->lockPath, 'c+');
+                $handle = fopen($this->lockFile, 'c+');
 
                 if ($handle === false) {
-                    throw new \RuntimeException('Unable to create lock file: ' . $this->lockPath);
+                    throw new \RuntimeException('Unable to create lock file: ' . $this->lockFile);
                 }
 
                 $this->lockHandle = $handle;
@@ -226,7 +255,7 @@ class Scheduler
 
     private function loadState()
     {
-        $path = $this->statePath;
+        $path = $this->stateFile;
 
         if (is_file($path) === false) {
             return array();
@@ -245,7 +274,7 @@ class Scheduler
 
     private function saveState(array $state)
     {
-        $path = $this->statePath;
+        $path = $this->stateFile;
 
         if (file_put_contents($path, json_encode($state), LOCK_EX) === false) {
             throw new \RuntimeException('Unable to write schedule state: ' . $path);
@@ -260,17 +289,13 @@ class Scheduler
     {
         $command = array(
             // eg.: /usr/bin/php
-            escapeshellarg(PHP_BINARY),
+            escapeshellarg(\PHP_BINARY),
 
-            // eg.: /home/project/run
-            escapeshellarg($this->runScript),
-
-            'task:run',
-            '--task',
-            escapeshellarg($name)
+            // eg.: /home/project/run schedule:run --task "task_name"
+            sprintf($this->backgroundCommand, escapeshellarg($name))
         );
 
-        // eg.: /usr/bin/php /home/project/run task:run --task "task_name"
+        // eg.: /usr/bin/php /home/project/run schedule:run --task "task_name"
         $exec = implode(' ', $command);
 
         if (stripos(PHP_OS, 'WIN') === 0) {

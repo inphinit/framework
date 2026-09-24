@@ -29,39 +29,42 @@ class Task
     private $intervalSeconds;
     private $mode;
     private $onceAt;
+    private $timeZone;
 
     /**
      * Create a Task instance
      *
-     * @param callable $callback Receives the Task instance as first argument
+     * @param callable      $callback
+     * @param \DateTimeZone $timeZone
      */
-    public function __construct(callable $callback)
+    public function __construct(callable $callback, \DateTimeZone $timeZone)
     {
         $this->callback = $callback;
+        $this->timeZone = $timeZone;
     }
 
     /**
      * Schedule the task using crontab-like fields.
      *
-     * Each field accepts: `*` (any), a single value, a comma-separated list (`1,2,5`),
+     * Note: Each field accepts: `*` (any), a single value, a comma-separated list (`1,2,5`),
      * a range (`1-5`), a step (`*\/5` or `1-30/5`), or a combination of these separated by commas.
      *
-     * @param string $minute  0-59
-     * @param string $hour    0-23
-     * @param string $day     1-31
-     * @param string $month   1-12
-     * @param string $weekday 0-7 (0 and 7 both mean Sunday)
+     * @param int|string $minute  0-59
+     * @param int|string $hour    0-23
+     * @param int|string $day     1-31
+     * @param int|string $month   1-12
+     * @param int|string $weekday 0-7 (0 and 7 both mean Sunday)
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Scheduling\Task
      */
     public function cron($minute, $hour, $day, $month, $weekday)
     {
         $this->cronFields = array(
-            self::parseCronField($minute, 0, 59, false),
-            self::parseCronField($hour, 0, 23, false),
-            self::parseCronField($day, 1, 31, false),
-            self::parseCronField($month, 1, 12, false),
-            self::parseCronField($weekday, 0, 7, true)
+            self::parseCronField((string) $minute, 0, 59, false),
+            self::parseCronField((string) $hour, 0, 23, false),
+            self::parseCronField((string) $day, 1, 31, false),
+            self::parseCronField((string) $month, 1, 12, false),
+            self::parseCronField((string) $weekday, 0, 7, true)
         );
 
         $this->mode = self::MODE_CRON;
@@ -103,7 +106,7 @@ class Task
             $dt = $datetime;
         } else {
             try {
-                $dt = new \DateTime($datetime);
+                $dt = new \DateTime($datetime, $this->timeZone);
             } catch (\Exception $ex) {
                 throw new Exception('Invalid datetime: ' . $datetime, 0, 2, $ex);
             }
@@ -119,17 +122,14 @@ class Task
      * Shortcut for scheduling the task to run daily at a fixed time.
      * Equivalent to `cron($minute, $hour, '*', '*', '*')`.
      *
-     * @param string $time Time in `HH:MM` format (24h)
+     * @param string $hour
+     * @param string $minute
      * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function at($time)
+    public function at($hour, $minute)
     {
-        if (is_string($time) === false || preg_match('#^([01]?\d|2[0-3]):([0-5]\d)$#', $time, $matches) !== 1) {
-            throw new Exception('Invalid time, expected format HH:MM');
-        }
-
-        return $this->cron($matches[2], $matches[1], '*', '*', '*');
+        return $this->cron($minute, $hour, '*', '*', '*');
     }
 
     /**
@@ -226,10 +226,6 @@ class Task
 
         if ($expr === '*') {
             return null;
-        }
-
-        if (is_int($expr)) {
-            $expr = (string) $expr;
         }
 
         if (is_string($expr) === false) {
