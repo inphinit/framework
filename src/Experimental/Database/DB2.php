@@ -32,7 +32,6 @@ class DB2
     private $fetchLimit = 100;
     private $fetchMode;
     private $fetchOffset = 0;
-    private $fetchResult;
     private $fetchSelect;
     private $fetchStmt;
 
@@ -95,7 +94,7 @@ class DB2
      */
     public function setFetch($select, array $binds = array())
     {
-        self::resetExecution($this->fetchStmt, $this->fetchResult);
+        self::resetExecution($this->fetchStmt);
 
         $this->fetchSelect = $select;
         $this->fetchBinds = $binds;
@@ -117,7 +116,7 @@ class DB2
 
         $this->fetchMode = $mode;
 
-        self::resetExecution($this->fetchStmt, $this->fetchResult);
+        self::resetExecution($this->fetchStmt);
     }
 
     /**
@@ -137,7 +136,7 @@ class DB2
             throw new Exception('Invalid limit');
         }
 
-        self::resetExecution($this->fetchStmt, $this->fetchResult);
+        self::resetExecution($this->fetchStmt);
 
         $this->fetchOffset = $offset;
         $this->fetchLimit = $limit;
@@ -169,7 +168,7 @@ class DB2
      */
     public function fetch()
     {
-        if ($this->fetchResult === null) {
+        if ($this->fetchStmt === null) {
             $this->boot();
 
             $binds = $this->fetchBinds;
@@ -179,21 +178,20 @@ class DB2
 
             $query = $this->fetchSelect . ' LIMIT ? OFFSET ?';
 
-            $this->execute($query, $binds, $stmt, $result);
+            $this->execute($query, $binds, $stmt);
 
             $this->fetchStmt = $stmt;
-            $this->fetchResult = $result;
         }
 
         switch ($this->fetchMode) {
             case self::ASSOC:
-                return \db2_fetch_assoc($this->fetchResult);
+                return \db2_fetch_assoc($this->fetchStmt);
 
             case self::NUM:
-                return \db2_fetch_array($this->fetchResult);
+                return \db2_fetch_array($this->fetchStmt);
 
             default:
-                return \db2_fetch_both($this->fetchResult);
+                return \db2_fetch_both($this->fetchStmt);
         }
     }
 
@@ -215,9 +213,9 @@ class DB2
 
         $query = 'INSERT INTO ' . $table . ' (' . implode(',', $cols) . ') VALUES (' . $params . ')';
 
-        $changes = $this->execute($query, $entries, $stmt, $result);
+        $changes = $this->execute($query, $entries, $stmt);
 
-        self::resetExecution($stmt, $result);
+        self::resetExecution($stmt);
 
         return $changes;
     }
@@ -242,9 +240,9 @@ class DB2
 
         $query = 'DELETE FROM ' . $table . ' WHERE ' . implode(' AND ', $where);
 
-        $changes = $this->execute($query, $conditions, $stmt, $result);
+        $changes = $this->execute($query, $conditions, $stmt);
 
-        self::resetExecution($stmt, $result);
+        self::resetExecution($stmt);
 
         return $changes;
     }
@@ -281,9 +279,9 @@ class DB2
 
         $query = 'UPDATE ' . $table . ' SET ' . implode(', ', $sets) . ' WHERE ' . $condition;
 
-        $changes = $this->execute($query, $binds, $stmt, $result);
+        $changes = $this->execute($query, $binds, $stmt);
 
-        self::resetExecution($stmt, $result);
+        self::resetExecution($stmt);
 
         return $changes;
     }
@@ -298,9 +296,9 @@ class DB2
      */
     public function exec($query, array $values = array())
     {
-        $changes = $this->execute($query, $values, $stmt, $result);
+        $changes = $this->execute($query, $values, $stmt);
 
-        self::resetExecution($stmt, $result);
+        self::resetExecution($stmt);
 
         return $changes;
     }
@@ -317,22 +315,18 @@ class DB2
         return $this->handle;
     }
 
-    private function execute($query, array $binds, &$stmt, &$result)
+    private function execute($query, array $binds, &$stmt)
     {
         $this->boot();
 
-        $stmt = \db2_prepare($conn, $query);
+        $stmt = \db2_prepare($this->handle, $query);
 
         if ($stmt === false) {
             $stmt = null;
             $this->raiseLastError(4);
         }
 
-        $result = \db2_execute($stmt, $binds);
-
-        if ($result === false) {
-            $result = null;
-
+        if (\db2_execute($stmt, $binds) === false) {
             $code = \db2_stmt_error($this->handle);
             $message = \db2_stmt_errormsg($this->handle);
 
@@ -359,22 +353,17 @@ class DB2
         throw new Exception($message, $code, $level);
     }
 
-    private function resetExecution(&$stmt, &$result)
+    private function resetExecution(&$stmt)
     {
         if ($stmt !== null) {
             \db2_free_stmt($stmt);
             $stmt = null;
         }
-
-        if ($result !== null) {
-            \db2_next_result($result);
-            $result = null;
-        }
     }
 
     public function __destruct()
     {
-        self::resetExecution($this->fetchStmt, $this->fetchResult);
+        self::resetExecution($this->fetchStmt);
 
         if ($this->handle !== null) {
             \db2_close($this->handle);

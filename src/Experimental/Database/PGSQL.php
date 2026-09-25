@@ -238,7 +238,7 @@ class PGSQL
      */
     public function delete($table, array $conditions)
     {
-        self::isEmpty($contains, 'Conditions is empty');
+        self::isEmpty($conditions, 'Conditions is empty');
 
         $substitute = 0;
         $where = array();
@@ -319,7 +319,7 @@ class PGSQL
      * Obtains the handler used to manage the database
      *
      * @throws \Inphinit\Exception
-     * @return \PgSql\Result|resource
+     * @return \PgSql\Connection|resource
      */
     public function getHandler()
     {
@@ -343,7 +343,7 @@ class PGSQL
         }
 
         // 'SELECT * FROM shops WHERE name = $1 or surname = $2'
-        $result = \pg_query_params($dbconn, $query, $args);
+        $result = \pg_query_params($this->handle, $query, $args);
 
         if ($result === false) {
             $result = null;

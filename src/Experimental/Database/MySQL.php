@@ -88,7 +88,7 @@ class MySQL
                 $change_charset = \mysqli_set_charset($handle, $charset);
 
                 if ($change_charset === false) {
-                    throw new \RuntimeException(\mysqli_error($handle), \mysqli_errno($this->handle));
+                    throw new \RuntimeException(\mysqli_error($handle), \mysqli_errno($handle));
                 }
             } catch (\Exception $ex) {
                 \mysqli_close($handle);
@@ -195,6 +195,13 @@ class MySQL
 
             $this->execute($query, $binds, $stmt, $result);
 
+            $result = \mysqli_stmt_get_result($stmt);
+
+            if ($result === false) {
+                self::resetExecution($stmt, $result);
+                $this->raiseLastError(4);
+            }
+
             $this->fetchStmt = $stmt;
             $this->fetchResult = $result;
         }
@@ -237,7 +244,7 @@ class MySQL
      */
     public function delete($table, array $conditions)
     {
-        self::isEmpty($contains, 'Conditions is empty');
+        self::isEmpty($conditions, 'Conditions is empty');
 
         $where = array();
 
@@ -371,12 +378,6 @@ class MySQL
 
             $stmt = null;
 
-            $this->raiseLastError(4);
-        }
-
-        $result = \mysqli_stmt_get_result($stmt);
-
-        if ($result === false) {
             $this->raiseLastError(4);
         }
 

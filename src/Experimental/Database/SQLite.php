@@ -183,20 +183,20 @@ class SQLite
      * Shortcut to insert data from a table based on an SQL statement
      *
      * @param int $table
-     * @param array $columns
+     * @param array $entries
      * @throws \Inphinit\Exception
      * @return int
      */
-    public function insert($table, array $columns)
+    public function insert($table, array $entries)
     {
         self::isEmpty($entries, 'Entries is empty');
 
-        $cols = array_keys($columns);
+        $cols = array_keys($entries);
         $binds = array();
 
-        $max = count($columns);
+        $max = count($entries);
 
-        foreach ($columns as $value) {
+        foreach ($entries as $value) {
             self::createUniqueBind($value, $max, $binds);
         }
 

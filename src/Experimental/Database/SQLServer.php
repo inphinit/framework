@@ -169,9 +169,9 @@ class SQLServer
             $binds[] = $this->fetchOffset;
             $binds[] = $this->fetchLimit;
 
-            $query = $this->fetchSelect . 'OFFSET ? ROWS FETCH NEXT ? ROWS ONLY';
+            $query = $this->fetchSelect . ' OFFSET ? ROWS FETCH NEXT ? ROWS ONLY';
 
-            $this->execute($query, $binds, $stmt, $result);
+            $this->execute($query, $binds, $stmt);
 
             $this->fetchStmt = $stmt;
         }
@@ -208,23 +208,23 @@ class SQLServer
      * Shortcut to delete data from a table based on an SQL statement
      *
      * @param string $table
-     * @param array<string,string> $contains
+     * @param array<string,string> $conditions
      * @throws \Inphinit\Exception
      * @return int
      */
-    public function delete($table, array $contains)
+    public function delete($table, array $conditions)
     {
-        self::isEmpty($contains, 'Conditions is empty');
+        self::isEmpty($conditions, 'Conditions is empty');
 
         $where = array();
 
-        foreach ($contains as $column => $value) {
+        foreach ($conditions as $column => $value) {
             $where[] = $column . '=?';
         }
 
         $query = 'DELETE FROM ' . $table . ' WHERE ' . implode(' AND ', $where);
 
-        $changes = $this->execute($query, $contains, $stmt, $result);
+        $changes = $this->execute($query, $conditions, $stmt);
 
         self::resetExecution($stmt);
 
@@ -263,7 +263,7 @@ class SQLServer
 
         $query = 'UPDATE ' . $table . ' SET ' . implode(', ', $sets) . ' WHERE ' . $condition;
 
-        $changes = $this->execute($query, $binds, $stmt, $result);
+        $changes = $this->execute($query, $binds, $stmt);
 
         self::resetExecution($stmt);
 
@@ -280,7 +280,7 @@ class SQLServer
      */
     public function exec($query, array $values = array())
     {
-        $changes = $this->execute($query, $values, $stmt, $result);
+        $changes = $this->execute($query, $values, $stmt);
 
         self::resetExecution($stmt);
 
@@ -314,7 +314,7 @@ class SQLServer
             $args[] = &$value;
         }
 
-        $stmt = call_user_func_array('sqlsrv_prepare', $args);
+        $stmt = \sqlsrv_prepare($this->handle, $query, $args);
 
         if ($stmt === false) {
             $stmt = null;
@@ -339,13 +339,9 @@ class SQLServer
         $errors = \sqlsrv_errors();
 
         if (isset($errors[0])) {
-            $first_error = $errors[0];
-
-            foreach( $errors as $error ) {
-                $state = $error['SQLSTATE'];
-                $code = $error['code'];
-                $message = $error['message'];
-            }
+            $state = $errors[0]['SQLSTATE'];
+            $code = $errors[0]['code'];
+            $message = $errors[0]['message'];
         } else {
             $code = 0;
             $message = 'Unknown error';
