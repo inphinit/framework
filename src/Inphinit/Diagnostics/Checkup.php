@@ -9,6 +9,8 @@
 
 namespace Inphinit\Diagnostics;
 
+use Inphinit\Dom\Document;
+
 class Checkup
 {
     const MIN_MEMORY_RECOMMENDED = 16777216;
@@ -26,6 +28,7 @@ class Checkup
     private $iniGetEnabled;
     private $isHttp;
     private static $iniFiles;
+    private static $phpBuildDate;
 
     private $errors = array();
     private $warnings = array();
@@ -102,6 +105,41 @@ class Checkup
         self::$iniFiles = $entries;
 
         return $entries;
+    }
+
+    /**
+     * Get PHP build date (backward compatibility support)
+     *
+     * @throws \Inphinit\Exception
+     * @return string
+     */
+    public static function getPhpBuildDate()
+    {
+        if (defined('PHP_BUILD_DATE')) {
+            return PHP_BUILD_DATE;
+        } elseif (self::$phpBuildDate === null) {
+            if (function_exists('phpinfo') === false) {
+                throw new Exception('PHP release date could not be determined (`phpinfo()` is disabled)');
+            }
+
+            $handle = new Document(Document::HTML);
+
+            \ob_start();
+
+            \phpinfo(\INFO_GENERAL);
+
+            $handle->load(\ob_get_clean());
+
+            $node = $handle->selector()->first('td:contains(Build Date)+td');
+
+            if ($node !== null && ($value = trim($node->textContent)) !== '') {
+                self::$phpBuildDate = $value;
+            } else {
+                throw new Exception('PHP release date could not be determined (missing info in `phpinfo()`)');
+            }
+        }
+
+        return self::$phpBuildDate;
     }
 
     private function checkExecutionTime()
@@ -280,7 +318,7 @@ class Checkup
     private function exec()
     {
         if ($this->iniGetEnabled === false) {
-            $this->warnings[] = 'The `ini_get` function is disabled, so no further checks can be performed';
+            $this->warnings[] = '`ini_get()` is disabled, so no further checks can be performed';
         }
 
         if (function_exists('php_ini_loaded_file') === false) {
