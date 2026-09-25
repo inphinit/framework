@@ -184,8 +184,6 @@ class MySQL
     public function fetch()
     {
         if ($this->fetchResult === null) {
-            $this->boot();
-
             $binds = $this->fetchBinds;
 
             $binds[] = $this->fetchLimit;

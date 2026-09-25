@@ -162,8 +162,6 @@ class SQLServer
     public function fetch()
     {
         if ($this->fetchStmt === null) {
-            $this->boot();
-
             $binds = $this->fetchBinds;
 
             $binds[] = $this->fetchOffset;

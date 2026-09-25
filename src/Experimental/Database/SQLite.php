@@ -159,8 +159,6 @@ class SQLite
     public function fetch()
     {
         if ($this->fetchResult === null) {
-            $this->boot();
-
             $binds = $this->fetchBinds;
 
             $max = count($binds) + 2;

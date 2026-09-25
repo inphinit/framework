@@ -169,8 +169,6 @@ class DB2
     public function fetch()
     {
         if ($this->fetchStmt === null) {
-            $this->boot();
-
             $binds = $this->fetchBinds;
 
             $binds[] = $this->fetchLimit;
