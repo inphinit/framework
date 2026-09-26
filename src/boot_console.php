@@ -196,14 +196,14 @@ $serve->setOption('conf', 'c', 0, null, 'Define php.ini path');
 $serve->restrictToCli(true);
 
 $console->action('session:clear', function (Command $command, array $options, array $residues) {
-    $max_inactive = App::config('session_max_inactive');
+    $max = App::config('session_max_inactive');
 
-    if ($max_inactive === null || ctype_digit($max_inactive) === false || $max_inactive[0] === '0' || $max_inactive < 1) {
+    if ($max === null || ctype_digit($max) === false || $max[0] === '0' || $max < 1) {
         echo 'Environment variable APP_SESSION_MAX_INACTIVE is missing or has an invalid value';
         return -1;
     }
 
-    $expires = time() - $max_inactive;
+    $expires = time() - $max;
     $attempts = $options['attempts'] === null ? 20 : intval($options['attempts']);
 
     $affecteds = Storage::clear('session', $expires, $attempts, function ($filename) {
