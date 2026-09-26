@@ -84,7 +84,13 @@ $console->action('schedule:run', function (Command $command, array $options, arr
     if ($task === null) {
         $executed = $scheduler->exec();
 
-        echo "{$executed} tasks were performed.\n";
+        if ($executed > 0) {
+            echo $executed, ' scheduled task(s) were executed.';
+        } else {
+            echo 'No scheduled task was executed.';
+        }
+
+        echo PHP_EOL;
 
         return 0;
     }
@@ -202,7 +208,7 @@ $console->action('session:clear', function (Command $command, array $options, ar
     $max = App::config('session_max_inactive');
 
     if ($max === null || ctype_digit($max) === false || $max[0] === '0' || $max < 1) {
-        echo 'Environment variable APP_SESSION_MAX_INACTIVE is missing or has an invalid value';
+        echo 'Environment variable APP_SESSION_MAX_INACTIVE is missing or has an invalid value', PHP_EOL;
         return -1;
     }
 
@@ -213,7 +219,7 @@ $console->action('session:clear', function (Command $command, array $options, ar
         return strpos($filename, '~sess') === 0;
     });
 
-    echo $affecteds . ' session files were removed';
+    echo $affecteds, ' session files were removed', PHP_EOL;
 })->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')->restrictToCli(true);
 
 // system/console.php

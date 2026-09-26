@@ -64,7 +64,7 @@ class Console
     public function exec(array $arguments)
     {
         if (empty($arguments[1])) {
-            throw new Exception('Missing command name');
+            throw new Exception('Missing command name' . PHP_EOL);
         }
 
         // Remove the first argument "$arguments[0]"
@@ -83,7 +83,7 @@ class Console
                 $message .= ' - The most similar commands are: ' . implode(', ', $suggestions);
             }
 
-            throw new Exception($message);
+            throw new Exception($message . PHP_EOL);
         }
 
         $command = $this->commands[$name];
@@ -91,17 +91,17 @@ class Console
         try {
             $response = $command->response(static::parseOptions($arguments));
         } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
+            throw new Exception($ex->getMessage() . PHP_EOL, $ex->getCode(), 2, $ex);
         }
 
         if ($response !== null) {
             if (is_int($response) === false) {
                 $type = Inspector::type($response);
-                throw new Exception("Return must be of type int or null, {$type} given");
+                throw new Exception("Return must be of type int or null, {$type} given" . PHP_EOL);
             }
 
             if ($response < 0 || $response > 255) {
-                throw new Exception('Exit codes should be in the range 0 to 255');
+                throw new Exception('Exit codes should be in the range 0 to 255' . PHP_EOL);
             }
         } else {
             $response = 0;
@@ -112,6 +112,21 @@ class Console
         }
 
         return $response;
+    }
+
+    /**
+     * Get a command by name
+     *
+     * @param string $name
+     * @return \Inphinit\Experimental\Cli\Command|null
+     */
+    public function getCommand($name)
+    {
+        if (isset($this->commands[$name])) {
+            return $this->commands[$name];
+        }
+
+        return null;
     }
 
     /**

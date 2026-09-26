@@ -209,13 +209,17 @@ class Task
 
         $response = $callback($this);
 
-        if (is_int($response) === false) {
-            $type = Inspector::type($response);
-            throw new Exception("Return must be of type int or null, {$type} given");
-        }
+        if ($response !== null) {
+            if (is_int($response) === false) {
+                $type = Inspector::type($response);
+                throw new Exception("Return must be of type int or null, {$type} given" . PHP_EOL);
+            }
 
-        if ($response < 0 || $response > 255) {
-            throw new Exception('Exit codes should be in the range 0 to 255');
+            if ($response < 0 || $response > 255) {
+                throw new Exception('Exit codes should be in the range 0 to 255' . PHP_EOL);
+            }
+        } else {
+            $response = 0;
         }
 
         return $response;
@@ -246,11 +250,6 @@ class Task
 
         if ($expr === '*') {
             return null;
-        }
-
-        if (is_string($expr) === false) {
-            $type = Inspector::type($expr);
-            throw new Exception("Expects to be string, {$type} given", 0, 3);
         }
 
         $values = array();
