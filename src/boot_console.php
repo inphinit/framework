@@ -11,6 +11,7 @@ use Inphinit\App;
 use Inphinit\Experimental\Cli\Command;
 use Inphinit\Experimental\Cli\Console;
 use Inphinit\Experimental\Scheduling\Scheduler;
+use Inphinit\Experimental\Storage;
 
 require_once __DIR__ . '/boot.php';
 require_once __DIR__ . '/env_vars.php';
@@ -193,6 +194,24 @@ $serve->setOption('port', 'p', 0, null, 'Define server port');
 $serve->setOption('vars', 'v', 0, '#^[EGPCS]+$#', 'Define variables order');
 $serve->setOption('conf', 'c', 0, null, 'Define php.ini path');
 $serve->restrictToCli(true);
+
+$console->action('session:clear', function (Command $command, array $options, array $residues) {
+    $max_inactive = App::config('session_max_inactive');
+
+    if ($max_inactive === null || ctype_digit($max_inactive) === false || $max_inactive[0] === '0' || $max_inactive < 1) {
+        echo 'Environment variable APP_SESSION_MAX_INACTIVE is missing or has an invalid value';
+        return -1;
+    }
+
+    $expires = time() - $max_inactive;
+    $attempts = $options['attempts'] === null ? 20 : intval($options['attempts']);
+
+    $affecteds = Storage::clear('session', $expires, $attempts, function ($filename) {
+        return strpos($filename, '~sess') === 0;
+    });
+
+    echo $affecteds . ' session files were removed';
+})->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')->restrictToCli(true);
 
 // system/console.php
 require INPHINIT_SYSTEM . '/console.php';
