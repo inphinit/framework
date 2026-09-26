@@ -78,6 +78,7 @@ abstract class Reader
     /**
      * Get headers from file
      *
+     * @throws \Inphinit\Exception
      * @return array<int, string>
      */
     public function getHeaders()
@@ -89,6 +90,7 @@ abstract class Reader
     /**
      * Get file pointer resource
      *
+     * @throws \Inphinit\Exception
      * @return resource
      */
     public function getStream()
@@ -130,6 +132,7 @@ abstract class Reader
      * Note: To ensure the key format, use `setFilter()` method.
      *
      * @param string|null $dto
+     * @throws \Inphinit\Exception
      */
     public function setDataTransferObject($dto)
     {
@@ -144,6 +147,7 @@ abstract class Reader
      * Set end-of-line
      *
      * @param string $eol
+     * @throws \Inphinit\Exception
      */
     public function setEndOfLine($eol)
     {

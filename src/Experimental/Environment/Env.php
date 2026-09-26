@@ -29,6 +29,7 @@ class Env
      * Get value from `$_ENV[...]` as boolean
      *
      * @param string $name
+     * @throws \Inphinit\Exception
      * @return bool
      */
     public static function bool($name)
@@ -61,6 +62,7 @@ class Env
      *
      * @param string $name
      * @param float
+     * @throws \Inphinit\Exception
      * @return float
      */
     public static function float($name, $alternative = 0.0)
@@ -83,6 +85,7 @@ class Env
      *
      * @param string $name
      * @param int
+     * @throws \Inphinit\Exception
      * @return int
      */
     public static function int($name, $alternative = 0)

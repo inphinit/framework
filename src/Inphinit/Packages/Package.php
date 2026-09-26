@@ -33,29 +33,54 @@ class Package
     /** @var int Package version string */
     const VERSION = 6;
 
+    const META_DIR = 'boot/metadata';
     const META_FILE = '%s/(%s)-%s.php';
 
-    private $metadataDir;
+    private $composerLock;
+    private $metadataAbsoluteDir;
     private $packages;
     private $packagesDev;
 
     private static $cacheInfo = array();
 
-    public function __construct()
+    /**
+     * Open Composer lock file (eg.: composer.lock)
+     *
+     * @param string $composerLock
+     * @throws \Inphinit\Exception
+     */
+    public function __construct($composerLock)
     {
-        $metadata_dir = INPHINIT_SYSTEM . '/boot/metadata';
+        $metadata_dir = INPHINIT_SYSTEM . '/' . self::META_DIR;
 
         if (is_dir($metadata_dir) === false) {
-            throw new Exception($metadata_dir . ' not exists');
+            throw new Exception('No such directory: ' . $metadata_dir);
         }
 
         if (is_writable($metadata_dir) === false) {
             throw new Exception($metadata_dir . ' is not writable');
         }
 
-        $this->metadataDir = $metadata_dir;
+        $this->metadataAbsoluteDir = $metadata_dir;
 
-        $this->readLock();
+        if (is_file($composerLock) === false) {
+            throw new Exception('No such file: ' . $composerLock);
+        }
+
+        $contents = file_get_contents($composerLock);
+
+        if ($contents === false) {
+            throw new Exception('Can\'t be read: ' . $composerLock);
+        }
+
+        $data = json_decode($contents);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error parsing: ' . $composerLock);
+        }
+
+        $this->packages = self::readFrom('packages', true, $data);
+        $this->packagesDev = self::readFrom('packages-dev', false, $data);
     }
 
     /**
@@ -84,7 +109,7 @@ class Package
         if (isset(self::$cacheInfo[$gname]) === false) {
             list($vendor, $package) = explode('/', $name, 2);
 
-            $path = sprintf(self::META_FILE, 'boot/metadata', $group, $vendor);
+            $path = sprintf(self::META_FILE, self::META_DIR, $group, $vendor);
 
             $data = inphinit_sandbox($path);
 
@@ -119,7 +144,7 @@ class Package
      */
     public function clear()
     {
-        $search = sprintf(self::META_FILE, $this->metadataDir, '(packages*)', '*');
+        $search = sprintf(self::META_FILE, $this->metadataAbsoluteDir, '(packages*)', '*');
 
         $files = glob($search, GLOB_ERR|GLOB_NOSORT);
 
@@ -151,7 +176,7 @@ class Package
         }
 
         $vendors = array();
-        $meta_dir = $this->metadataDir;
+        $metadata_dir = $this->metadataAbsoluteDir;
 
         foreach ($data as $package) {
             if (strpos($package->name, '/') === false) {
@@ -175,7 +200,7 @@ class Package
         }
 
         foreach ($vendors as $vendor => $packages) {
-            $path = sprintf(self::META_FILE, $meta_dir, $from, $vendor);
+            $path = sprintf(self::META_FILE, $metadata_dir, $from, $vendor);
 
             $contents = "<?php\nreturn " . var_export($packages, true) . ";\n";
 
@@ -194,30 +219,6 @@ class Package
         }
 
         return $value;
-    }
-
-    private function readLock()
-    {
-        $lock_path = INPHINIT_ROOT . '/composer.lock';
-
-        if (is_file($lock_path) === false) {
-            throw new Exception('No such file: composer.lock', 0, 3);
-        }
-
-        $contents = file_get_contents($lock_path);
-
-        if ($contents === false) {
-            throw new Exception('composer.lock can\'t be read', 0, 3);
-        }
-
-        $data = json_decode($contents);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Error parsing composer.lock', 0, 3);
-        }
-
-        $this->packages = self::readFrom('packages', true, $data);
-        $this->packagesDev = self::readFrom('packages-dev', false, $data);
     }
 
     private static function readFrom($from, $required, $data)

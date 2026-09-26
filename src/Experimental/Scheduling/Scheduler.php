@@ -160,6 +160,7 @@ class Scheduler
      *
      * @param string $task
      * @throws \Inphinit\Exception
+     * @return int
      */
     public function runTask($name)
     {

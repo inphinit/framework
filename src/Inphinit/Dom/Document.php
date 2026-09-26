@@ -189,17 +189,32 @@ class Document
     }
 
     /**
-     * Load string or file
+     * Load file
      *
-     * @param string $source
-     * @param bool   $file
+     * @param string $file
      * @throws \Inphinit\Dom\DomException
      */
-    public function load($source, $file = false)
+    public function loadFile($file)
+    {
+        $this->loadSource($file, true);
+    }
+
+    /**
+     * Load string
+     *
+     * @param string $string
+     * @throws \Inphinit\Dom\DomException
+     */
+    public function loadString($string)
+    {
+        $this->loadSource($file, false);
+    }
+
+    private function loadSource($source, $fileMode)
     {
         if ($this->type === self::HTML) {
             $callback = array($this->base, $file ? 'loadHTMLFile' : 'loadHTML');
-        } elseif ($file) {
+        } elseif ($fileMode) {
             $callback = array($this->base, 'load');
         } else {
             $callback = array($this->base, 'loadXML');
@@ -213,7 +228,7 @@ class Document
             $callback($source);
         }
 
-        $this->raise(3);
+        $this->raise(4);
 
         $this->xpath = null;
         $this->selector = null;
@@ -223,6 +238,7 @@ class Document
      * Convert document to XML string, HTML string or array
      *
      * @param \DOMNode $node
+     * @return string|false
      */
     public function dump(\DOMNode $node)
     {
@@ -236,9 +252,10 @@ class Document
     }
 
     /**
-     * Save document to file
+     * Save document to file and returns the number of bytes written or false if an error occurred
      *
      * @param string $file
+     * @return int|false
      */
     public function save($file)
     {

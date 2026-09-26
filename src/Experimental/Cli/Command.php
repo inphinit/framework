@@ -84,6 +84,7 @@ class Command
      *                                 or should be used without a value
      * @param string|null $pattern     Optional. Define expected value format (not work with `ARG_NO_VALUE`)
      * @param string|null $description Optional. Define option description
+     * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Cli\Command
      */
     public function setOption($long, $short = null, $modes = 0, $pattern = null, $description = null)

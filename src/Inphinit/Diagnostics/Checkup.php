@@ -128,7 +128,7 @@ class Checkup
 
             \phpinfo(\INFO_GENERAL);
 
-            $handle->load(\ob_get_clean());
+            $handle->loadString(\ob_get_clean());
 
             $node = $handle->selector()->first('td:contains(Build Date)+td');
 

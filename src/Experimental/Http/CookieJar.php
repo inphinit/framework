@@ -47,6 +47,7 @@ class CookieJar
 
     /**
      * @param string $jar Define jar name (cookie name prefix)
+     * @throws \Inphinit\Exception
      */
     public function __construct($jar)
     {
@@ -81,6 +82,7 @@ class CookieJar
      * dots in domain names (`.example.com`) are ignored.
      *
      * @param string $domain
+     * @throws \Inphinit\Exception
      */
     public function setDomain($domain)
     {
@@ -100,6 +102,7 @@ class CookieJar
      * to send the Cookie header.
      *
      * @param string $path
+     * @throws \Inphinit\Exception
      */
     public function setPath($path)
     {
@@ -121,6 +124,7 @@ class CookieJar
      * Note: Accept English textual datetime descriptions (e.g., '+1 day', 'last Monday').
      *
      * @param string $datetime
+     * @throws \Inphinit\Exception
      */
     public function setExpires($datetime)
     {
@@ -142,6 +146,7 @@ class CookieJar
      * through the `Document.cookie` property.
      *
      * @param bool $enable
+     * @throws \Inphinit\Exception
      */
     public function setHttpOnly($enable)
     {
@@ -154,6 +159,7 @@ class CookieJar
      * Note that if this is set, the Secure directive must also be set.
      *
      * @param bool $enable
+     * @throws \Inphinit\Exception
      */
     public function setPartitioned($enable)
     {
@@ -165,6 +171,7 @@ class CookieJar
      * Controls whether or not a cookie is sent with cross-site requests.
      *
      * @param int $mode
+     * @throws \Inphinit\Exception
      */
     public function setSameSite($mode)
     {
@@ -192,6 +199,7 @@ class CookieJar
      * is more resistant to man-in-the-middle attacks.
      *
      * @param bool $enable
+     * @throws \Inphinit\Exception
      */
     public function setSecure($enable)
     {

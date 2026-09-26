@@ -43,7 +43,9 @@ class Debug
     private $rendered = false;
     private $beforeView;
     private $views = array();
-    private static $configs;
+    private static $booted = false;
+    private static $currentAssistant;
+    private static $currentEditor;
     private static $restoreDisplayErrors;
 
     /**
@@ -246,7 +248,7 @@ class Debug
 
         $link = null;
 
-        $option = self::$configs->assistant;
+        $option = self::$currentAssistant;
 
         if ($option) {
             $link = isset(static::$assistants[$option]) ? static::$assistants[$option] : $option;
@@ -302,7 +304,7 @@ class Debug
          * Note: The error could also be a bug in a library, report the bug
          */
         if (strpos($file, $vendor) !== 0) {
-            $option = self::$configs->editor;
+            $option = self::$currentEditor;
 
             if ($option) {
                 $link = isset(static::$editors[$option]) ? static::$editors[$option] : $option;
@@ -348,7 +350,7 @@ class Debug
 
     private function renderError($view, $type, $message, $file, $line)
     {
-        if ($type === \E_ERROR && stripos($message, 'allowed memory size') === 0) {
+        if ($type === E_ERROR && stripos($message, 'allowed memory size') === 0) {
             die("Fatal error: {$message} in {$file} on line {$line}");
         }
 
@@ -455,7 +457,9 @@ class Debug
     // Caution: some errors prevent spl_autoload from continuing, so it is necessary to include
     private static function boot()
     {
-        if (self::$configs === null) {
+        if (self::$booted === false) {
+            self::$booted = true;
+
             include_once __DIR__ . '/Inspector.php';
             include_once __DIR__ . '/../Config.php';
             include_once __DIR__ . '/../Event.php';
@@ -465,8 +469,10 @@ class Debug
             include_once __DIR__ . '/../Http/Response.php';
             include_once __DIR__ . '/../Viewing/View.php';
 
-            self::$configs = new Config('debug');
-            self::$configs->assistant; // Test
+            $configs = new Config('debug');
+
+            self::$currentAssistant = $configs->assistant;
+            self::$currentEditor = $configs->editor;
         }
     }
 }

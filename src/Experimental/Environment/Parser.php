@@ -29,6 +29,7 @@ class Parser
      * Define the value that will be processed
      *
      * @param string $value
+     * @throws \Inphinit\Exception
      */
     public function setValue($value)
     {
