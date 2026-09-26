@@ -39,7 +39,9 @@ $console->action('schedule:enable', function (Command $command, array $options, 
     $log = escapeshellarg($log);
     $filter = escapeshellarg('# ' . $marker);
 
-    $expr = "* * * * * {$php_bin} {$script} schedule:run >> {$log} 2>&1 {$marker}";
+    $expr = "* * * * * {$php_bin} {$script} schedule:run >> {$log} 2>&1 # {$marker}";
+    $expr = escapeshellarg($expr);
+
     $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}; echo {$expr}) | crontab -";
 
     echo "> {$execute}\n";
@@ -60,6 +62,7 @@ $console->action('schedule:disable', function (Command $command, array $options,
     $marker = 'managed-by-inphinit-schedule';
 
     $filter = escapeshellarg('# ' . $marker);
+
     $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}) | crontab -";
 
     echo "> {$execute}\n";
