@@ -29,10 +29,6 @@ class Scheduler
      */
     public function __construct()
     {
-        if (\PHP_SAPI !== 'cli') {
-            throw new Exception('The class can only be instantiated in the CLI');
-        }
-
         $this->timeZone = new \DateTimeZone('UTC');
     }
 
@@ -181,6 +177,10 @@ class Scheduler
      */
     public function exec()
     {
+        if (\PHP_SAPI !== 'cli') {
+            throw new Exception('Execution only supported in the CLI');
+        }
+
         $executed = 0;
 
         try {
