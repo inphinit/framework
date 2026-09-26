@@ -35,7 +35,7 @@ class View
      * Enables or disables strict mode to pre-check for the existence of the view.
      *
      * - Note: When enabled, it performs a case-sensitive check on systems that do not support it
-     * - Nota: In development environment, the framework will enable this by default
+     * - Note: In development environment, the framework will enable this by default
      * - Note: In production environment, it is recommended to disable it for performance reasons
      *
      * @param bool $enable
