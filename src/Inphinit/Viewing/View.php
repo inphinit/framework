@@ -128,7 +128,7 @@ class View
      *                     - `ENT_HTML5`
      * @return int|null
      */
-    public static function render($view, array $data = array(), $mode = ENT_QUOTES)
+    public static function render($view, array $data = array(), $mode = ENT_COMPAT)
     {
         $path = 'views/' . str_replace('.', '/', $view) . '.php';
 
