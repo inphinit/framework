@@ -60,10 +60,10 @@ class Markdown
 
     /**
      * @param bool $enableCustom Enable/disable non-standard inline syntaxes:
-     *                           - !highlight! -> <mark>highlight</mark>
-     *                           - %variable%  -> <var>variable</var>
-     *                           - +inserted+  -> <ins>inserted</ins>
-     *                           - -deleted-   -> <del>deleted</del>
+     *                           - !!highlight!! -> <mark>highlight</mark>
+     *                           - %%variable%%  -> <var>variable</var>
+     *                           - ++inserted++  -> <ins>inserted</ins>
+     *                           - --deleted--   -> <del>deleted</del>
      */
     public function __construct($enableCustom = true)
     {
@@ -106,10 +106,10 @@ class Markdown
         $this->setTemplate(self::SUPERSCRIPT, '<sup>{contents}</sup>');
 
         if ($enableCustom) {
-            $this->setCustomInline('!', '<mark>{contents}</mark>');
-            $this->setCustomInline('%', '<var>{contents}</var>');
-            $this->setCustomInline('+', '<ins>{contents}</ins>');
-            $this->setCustomInline('-', '<del>{contents}</del>');
+            $this->setCustomInline('!!', '<mark>{contents}</mark>');
+            $this->setCustomInline('%%', '<var>{contents}</var>');
+            $this->setCustomInline('++', '<ins>{contents}</ins>');
+            $this->setCustomInline('--', '<del>{contents}</del>');
         }
     }
 
@@ -152,6 +152,10 @@ class Markdown
      */
     public function setCustomInline($delimiter, $template)
     {
+        if (is_string($delimiter) === false || isset($delimiter[1]) === false) {
+            throw new \RuntimeException('Custom Inline delimiters requires 2 or more character');
+        }
+
         $this->customInlines[$delimiter] = $template;
     }
 
@@ -169,7 +173,7 @@ class Markdown
         try {
             return $this->parseLines($lines, true);
         } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage());
+            throw new Exception($ex->getMessage(), $ex->getCode(), $ex);
         }
     }
 
@@ -185,7 +189,7 @@ class Markdown
         try {
             return $this->resolveInlines($input);
         } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage());
+            throw new Exception($ex->getMessage(), $ex->getCode(), $ex);
         }
     }
 
@@ -207,7 +211,7 @@ class Markdown
         try {
             return $this->parseLines($lines, true);
         } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage());
+            throw new Exception($ex->getMessage(), $ex->getCode(), $ex);
         }
     }
 
@@ -229,7 +233,7 @@ class Markdown
     private function fillTemplate($type, array $entries)
     {
         if (isset($this->templates[$type]) === false) {
-            throw new Exception('Invalid template');
+            throw new \RuntimeException('Invalid template');
         }
 
         $translates = array();
@@ -357,14 +361,12 @@ class Markdown
             }
 
             // Lists (nested lists are handled recursively by parseList())
-            $list_match = $this->matchListItem($line);
-
-            if ($list_match !== null && $list_match['indent'] <= 3) {
+            if ($this->matchListItem($line, $ordered, $indent) !== false && $indent <= 3) {
                 if ($topLevel === false) {
                     $out .= $eol;
                 }
 
-                $list = $this->parseList($lines, $n, $list_match['ordered'], $i);
+                $list = $this->parseList($lines, $n, $ordered, $i);
 
                 $out .= $list . $eol;
                 continue;
@@ -434,16 +436,16 @@ class Markdown
     {
         $value = ltrim($value);
 
-        if (strpos($value, '[x] ') === 0) {
-            return '<input type="checkbox" checked>' . substr($value, 3);
+        if (strpos($value, '[x]') === 0) {
+            return '<input type="checkbox" checked> ' . substr($value, 3);
         }
 
-        if (strpos($value, '[ ] ') === 0) {
-            return '<input type="checkbox">' . substr($value, 3);
+        if (strpos($value, '[ ]') === 0) {
+            return '<input type="checkbox"> ' . substr($value, 3);
         }
 
-        if (strpos($value, '[] ') === 0) {
-            return '<input type="checkbox">' . substr($value, 2);
+        if (strpos($value, '[]') === 0) {
+            return '<input type="checkbox"> ' . substr($value, 2);
         }
 
         return $value;
@@ -453,25 +455,23 @@ class Markdown
     {
         $start_index = $index;
         $line = isset($lines[$index]) ? $lines[$index] : '';
-        $first = $this->matchListItem($line, $ordered);
+        $first = $this->matchListItem($line, $ord, $base_indent);
 
-        if ($first === null) {
+        if ($first === false) {
             return '';
         }
 
-        $base_indent = $first['indent'];
         $items = array();
         $i = $index;
         $eol = "\n";
 
         while ($i < $n) {
-            $match = $this->matchListItem($lines[$i]);
+            $contents = $this->matchListItem($lines[$i], $ord, $indent);
 
-            if ($match === null || $match['indent'] !== $base_indent || $match['ordered'] !== $ordered) {
+            if ($contents === false || $indent !== $base_indent || $ord !== $ordered) {
                 break;
             }
 
-            $itemText = $match['text'];
             ++$i;
 
             $item_lines = array();
@@ -506,7 +506,7 @@ class Markdown
                 ++$i;
             }
 
-            $inner = $this->resolveInlines($itemText);
+            $inner = $this->resolveInlines($contents);
 
             if (empty($item_lines) === false) {
                 $nested = $this->parseLines($item_lines, false);
@@ -533,27 +533,25 @@ class Markdown
         ));
     }
 
-    private function matchListItem($line)
+    private function matchListItem($line, &$ordered, &$indent)
     {
+        $ordered = null;
+
         if (preg_match('/^(\s*)(\d+)[.)]\s+(.*)$/', $line, $matches) === 1) {
-            return array(
-                'indent' => strlen(str_replace('\t', '    ', $matches[1])),
-                'ordered' => true,
-                'number' => $matches[2],
-                'text' => $matches[3],
-            );
+            $ordered = true;
+            // $type = 'number'; // $matches[2]
+        } elseif (preg_match('/^(\s*)([-*+])\s+(.*)$/', $line, $matches) === 1) {
+            $ordered = false;
+            // $type = 'marker'; // $matches[2]
         }
 
-        if (preg_match('/^(\s*)([-*+])\s+(.*)$/', $line, $matches) === 1) {
-            return array(
-                'indent' => strlen(str_replace('\t', '    ', $matches[1])),
-                'ordered' => false,
-                'marker' => $matches[2],
-                'text' => $matches[3],
-            );
+        if ($ordered === null) {
+            return false;
         }
 
-        return null;
+        $indent = strlen(str_replace("\t", '    ', $matches[1]));
+
+        return $matches[3];
     }
 
     private function stripListIndent($line, $minimum)
@@ -561,7 +559,7 @@ class Markdown
         $indent = $this->indentOf($line);
 
         if ($indent < $minimum) {
-            return ltrim($line, ' \t');
+            return ltrim($line, " \t");
         }
 
         $remove = min($indent, $minimum);
@@ -729,7 +727,7 @@ class Markdown
     private function parseInline($matches)
     {
         if (isset($matches['delimiter'], $matches['contents']) === false) {
-            throw new Exception('Invalid regex');
+            throw new \RuntimeException('Invalid regex');
         }
 
         $delimiter = $matches['delimiter'];
@@ -759,7 +757,7 @@ class Markdown
 
             default:
                 if ($this->enabledErrors) {
-                    throw new Exception('Invalid delimiter: ' . $delimiter);
+                    throw new \RuntimeException('Invalid delimiter: ' . $delimiter);
                 }
 
                 return $matches['contents'];
@@ -771,7 +769,7 @@ class Markdown
     private function parseCustomInline($matches)
     {
         if (isset($matches['delimiter'], $matches['contents']) === false) {
-            throw new Exception('Invalid regex');
+            throw new \RuntimeException('Invalid regex');
         }
 
         $contents = $matches['contents'];
@@ -779,7 +777,7 @@ class Markdown
 
         if (isset($this->customInlines[$delimiter]) === false) {
             if ($this->enabledErrors) {
-                throw new Exception('Invalid delimiter: ' . $delimiter);
+                throw new \RuntimeException('Invalid delimiter: ' . $delimiter);
             }
 
             return $contents;
@@ -862,31 +860,33 @@ class Markdown
         // Links [texto](href "title")
         $text = preg_replace_callback('/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/', array($this, 'parseAnchor'), $text);
 
-        $inlineCallback = array($this, 'parseInline');
+        $inline_callback = array($this, 'parseInline');
+
+        // (?<!\w)...(?!\w)
 
         // Bold (** or __)
-        $text = preg_replace_callback('/(?P<delimiter>\*\*)(?P<contents>.+?)\*\*/s', $inlineCallback, $text);
-        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>__)(?P<contents>.+?)__(?!\w)/s', $inlineCallback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>\*\*)(?P<contents>.+?)\*\*/s', $inline_callback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>__)(?P<contents>.+?)__/s', $inline_callback, $text);
 
         // Italic (* or _)
-        $text = preg_replace_callback('/(?P<delimiter>\*)(?P<contents>.+?)\*/s', $inlineCallback, $text);
-        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>_)(?P<contents>.+?)_(?!\w)/s', $inlineCallback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>\*)(?P<contents>.+?)\*/s', $inline_callback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>_)(?P<contents>.+?)_/s', $inline_callback, $text);
 
         // Strikethrough (* or _)
-        $text = preg_replace_callback('/(?P<delimiter>~~)(?P<contents>.+?)~~/s', $inlineCallback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>~~)(?P<contents>.+?)~~/s', $inline_callback, $text);
 
         // Subscript (H~2~O -> H<sub>2</sub>O)
-        $text = preg_replace_callback('/(?P<delimiter>~)(?P<contents>.+?)~/s', $inlineCallback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>~)(?P<contents>.+?)~/s', $inline_callback, $text);
 
         // Superscript (5^th^ -> 5<sup>th</sup>)
-        $text = preg_replace_callback('/(?P<delimiter>\^)(?P<contents>.+?)\^/s', $inlineCallback, $text);
+        $text = preg_replace_callback('/(?P<delimiter>\^)(?P<contents>.+?)\^/s', $inline_callback, $text);
 
-        $customInlineCallback = array($this, 'parseCustomInline');
+        $custom_inline_callback = array($this, 'parseCustomInline');
 
         foreach ($this->customInlines as $delimiter => $template) {
             $delimiter = preg_quote($delimiter, '/');
-            $regex = "/(?P<delimiter>{$delimiter})(?P<contents>.+?){$delimiter}/s";
-            $text = preg_replace_callback($regex, $customInlineCallback, $text);
+            $regex = "/(?<!\w)(?P<delimiter>{$delimiter})(?P<contents>.+?){$delimiter}/s";
+            $text = preg_replace_callback($regex, $custom_inline_callback, $text);
         }
 
         // Restore `code`s
