@@ -57,6 +57,7 @@ class Markdown
     private $enabledHtml = false;
     private $ids = array();
     private $templates = array();
+    private $reservedIndex = 0;
 
     /**
      * @param bool $enableCustom Enable/disable non-standard inline syntaxes:
@@ -824,31 +825,37 @@ class Markdown
         ));
     }
 
+    private function replaceWithReservedCodes($regex, $text, &$reserveds)
+    {
+        $reserveds = array();
+
+        $index = $this->reservedIndex;
+
+        $output = preg_replace_callback($regex, function ($matches) use (&$reserveds, &$index) {
+            ++$index;
+
+            $key = "\x00RESERVED" . $index . "\x00";
+            $reserveds[$key] = $matches[1];
+
+            return $key;
+        }, $text);
+
+        $this->reservedIndex = $index;
+
+        return $output;
+    }
+
     private function resolveInlines($text)
     {
         // Protect escaped characters \X (https://www.markdownguide.org/basic-syntax/#characters-you-can-escape)
-        $escapes = array();
-        $text = preg_replace_callback(
-            '/\\\\([\\\\`*_{}\[\]()#+\-.!|<>])/',
-            function ($matches) use (&$escapes) {
-                $key = "\x00ESC" . count($escapes) . "\x00";
-                $escapes[$key] = $matches[1];
-                return $key;
-            },
-            $text
-        );
+        $to_escape = '\\`*_{}[]<>()#+-.!|' . implode('', array_keys($this->customInlines));
+        $to_escape = implode('', str_split($to_escape, 1));
+        $to_escape = preg_quote($to_escape, '/');
+
+        $text = $this->replaceWithReservedCodes('/\\\\([' . $to_escape . '])/', $text, $escapes);
 
         // Protect `code`s
-        $codes = array();
-        $text = preg_replace_callback(
-            '/`([^`]+)`/',
-            function ($matches) use (&$codes) {
-                $key = "\x00CODE" . count($codes) . "\x00";
-                $codes[$key] = self::safe($matches[1]);
-                return $key;
-            },
-            $text
-        );
+        $text = $this->replaceWithReservedCodes('/`([^`]+)`/', $text, $codes);
 
         if ($this->enabledHtml === false) {
             $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
@@ -862,17 +869,17 @@ class Markdown
 
         $inline_callback = array($this, 'parseInline');
 
-        // (?<!\w)...(?!\w)
+        // Note: (?<!\w)...(?!\w) preserve snake_case strings
 
         // Bold (** or __)
         $text = preg_replace_callback('/(?P<delimiter>\*\*)(?P<contents>.+?)\*\*/s', $inline_callback, $text);
-        $text = preg_replace_callback('/(?P<delimiter>__)(?P<contents>.+?)__/s', $inline_callback, $text);
+        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>__)(?P<contents>.+?)__(?!\w)/s', $inline_callback, $text);
 
         // Italic (* or _)
         $text = preg_replace_callback('/(?P<delimiter>\*)(?P<contents>.+?)\*/s', $inline_callback, $text);
-        $text = preg_replace_callback('/(?P<delimiter>_)(?P<contents>.+?)_/s', $inline_callback, $text);
+        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>_)(?P<contents>.+?)_(?!\w)/s', $inline_callback, $text);
 
-        // Strikethrough (* or _)
+        // Strikethrough (~~)
         $text = preg_replace_callback('/(?P<delimiter>~~)(?P<contents>.+?)~~/s', $inline_callback, $text);
 
         // Subscript (H~2~O -> H<sub>2</sub>O)
