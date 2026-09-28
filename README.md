@@ -41,3 +41,17 @@ The documentation contains instructions for using the framework, as well as the 
 - English: https://inphinit.github.io/en/docs/
 - Portuguese: https://inphinit.github.io/pt/docs/
 - API Reference: https://inphinit.github.io/api/
+
+## To-Do List
+
+### To-Do
+
+- [ ] Built-in Authentication
+
+### In Progress
+
+- [ ] Database layer with [Config](src/Inphinit/Config.php)
+
+### Done
+
+- [x] Initial setup completed
