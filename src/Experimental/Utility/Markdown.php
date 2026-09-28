@@ -279,7 +279,7 @@ class Markdown
 
                 $code_block = $this->fillTemplate(self::CODE_BLOCK, array(
                     'contents' => htmlspecialchars(implode($eol, $code_lines), ENT_NOQUOTES, 'UTF-8'),
-                    'lang' => $lang ? self::safe($lang) : 'none',
+                    'lang' => $lang ? self::safe($lang) : 'none'
                 ));
 
                 $out .= $code_block . $eol;
@@ -289,12 +289,12 @@ class Markdown
 
             // Table
             if ($this->isTableStart($line)) {
-                $tableIndex = $i;
-                $table = $this->parseTable($lines, $tableIndex);
+                $table_index = $i;
+                $table = $this->parseTable($lines, $table_index);
 
                 if ($table !== '') {
                     $out .= $table;
-                    $i = $tableIndex;
+                    $i = $table_index;
                     continue;
                 }
             }
@@ -322,7 +322,7 @@ class Markdown
 
                     $h2 = $this->fillTemplate(self::H2, array(
                         'contents' => $inline,
-                        'id' => $id,
+                        'id' => $id
                     ));
 
                     if ($topLevel) {
@@ -346,6 +346,7 @@ class Markdown
             // Blockquote (nested)
             if (preg_match('/^ {0,3}>/', $line) === 1) {
                 $blockquote_lines = array();
+
                 while ($i < $n && preg_match('/^ {0,3}>/', $lines[$i]) === 1) {
                     // removes only ONE level of '>' (leaves '>>' etc. for the recursion).
                     $blockquote_lines[] = preg_replace('/^ {0,3}> ?/', '', $lines[$i]);
@@ -402,15 +403,19 @@ class Markdown
             case 1:
                 $type = self::H1;
                 break;
+
             case 3:
                 $type = self::H3;
                 break;
+
             case 4:
                 $type = self::H4;
                 break;
+
             case 5:
                 $type = self::H5;
                 break;
+
             default:
                 $type = self::H6;
         }
@@ -486,6 +491,7 @@ class Markdown
 
                 if (trim($current) === '') {
                     $j = $i + 1;
+
                     while ($j < $n && trim($lines[$j]) === '') {
                         ++$j;
                     }
@@ -530,7 +536,7 @@ class Markdown
         $index = $i;
 
         return $this->fillTemplate($ordered ? self::OL : self::UL, array(
-            'contents' => implode($eol, $items),
+            'contents' => implode($eol, $items)
         ));
     }
 
@@ -564,6 +570,7 @@ class Markdown
         }
 
         $remove = min($indent, $minimum);
+
         return preg_replace('/^[ \t]{' . $remove . '}/', '', $line);
     }
 
@@ -689,29 +696,29 @@ class Markdown
                 $cells = array_slice($cells, 0, count($headers));
             }
 
-            $cellsHtml = array();
+            $cells_html = array();
 
             foreach ($cells as $pos => $cell) {
-                $attrs = $alignments[$pos] !== '' ? ' align="' . $alignments[$pos] . '"' : '';
-                $cellsHtml[] = '<td' . $attrs . '>' . $this->resolveInlines($cell) . '</td>';
+                $attrs = $alignments[$pos] !== '' ? ' style="text-align: ' . $alignments[$pos] . '"' : '';
+                $cells_html[] = '<td' . $attrs . '>' . $this->resolveInlines($cell) . "</td>\n";
             }
 
-            $rows[] = '<tr>' . implode('', $cellsHtml) . '</tr>';
+            $rows[] = '<tr>' . implode('', $cells_html) . '</tr>';
             ++$index;
         }
 
         $table_headers = array();
 
         foreach ($headers as $pos => $header) {
-            $attrs = $alignments[$pos] !== '' ? ' align="' . $alignments[$pos] . '"' : '';
+            $attrs = $alignments[$pos] !== '' ? ' style="text-align: ' . $alignments[$pos] . '"' : '';
             $table_headers[] = '<th' . $attrs . '>' . $this->resolveInlines($header) . '</th>';
         }
 
         $eol = "\n";
 
         return $this->fillTemplate(self::TABLE, array(
-            'headers' => implode('', $table_headers),
-            'contents' => implode($eol, $rows),
+            'headers' => implode($eol, $table_headers),
+            'contents' => implode($eol, $rows)
         )) . $eol;
     }
 
@@ -795,14 +802,14 @@ class Markdown
         if (isset($matches[3]) === false) {
             return $this->fillTemplate(self::FIGURE, array(
                 'alternative' => $alt,
-                'url' => $src,
+                'url' => $src
             ));
         }
 
         return $this->fillTemplate(self::FIGURE_CAPTION, array(
             'alternative' => $alt,
             'title' => $matches[3],
-            'url' => $src,
+            'url' => $src
         ));
     }
 
@@ -814,14 +821,14 @@ class Markdown
         if (isset($matches[3]) === false) {
             return $this->fillTemplate(self::ANCHOR, array(
                 'contents' => $contents,
-                'url' => $url,
+                'url' => $url
             ));
         }
 
         return $this->fillTemplate(self::ANCHOR_TITLE, array(
             'contents' => $contents,
             'title' => $matches[3],
-            'url' => $url,
+            'url' => $url
         ));
     }
 
@@ -859,14 +866,6 @@ class Markdown
 
         if ($this->enabledHtml === false) {
             $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
-        }
-
-        $hr_prefix = substr($text, 3);
-
-        if ($hr_prefix === '***' || $hr_prefix === '---' || $hr_prefix === '___') {
-            if (trim($text, $hr_prefix[0]) === '') {
-                $text = '<hr>';
-            }
         }
 
         // Images ![alt](src "title")
