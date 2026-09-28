@@ -21,7 +21,7 @@ require_once __DIR__ . '/env_vars.php';
 $console = new Console();
 $scheduler = new Scheduler();
 
-$scheduler->setBackgroundCommand(escapeshellarg(INPHINIT_ROOT . '/run') . ' --task %s');
+$scheduler->setBackgroundTaskDispatcher(escapeshellarg(INPHINIT_ROOT . '/run') . ' schedule:run --task %s');
 $scheduler->setLockFile(INPHINIT_SYSTEM . '/storage/schedule.lock');
 $scheduler->setStateFile(INPHINIT_SYSTEM . '/storage/schedule.json');
 
@@ -46,7 +46,7 @@ $console->action('schedule:enable', function (Command $command, array $options, 
 
     echo "> {$execute}\n";
 
-    \passthru($execute, $code);
+    passthru($execute, $code);
 
     if ($code === 0) {
         echo "\nSchedule enabled.\n";
@@ -67,7 +67,7 @@ $console->action('schedule:disable', function (Command $command, array $options,
 
     echo "> {$execute}\n";
 
-    \passthru($execute, $code);
+    passthru($execute, $code);
 
     if ($code === 0) {
         echo "\nSchedule disabled.\n";

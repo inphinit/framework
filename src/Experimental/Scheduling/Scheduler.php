@@ -15,7 +15,8 @@ use Inphinit\Experimental\Cli\Console;
 
 class Scheduler
 {
-    private $backgroundCommand;
+    private $backgroundDispatcher;
+    private $prioritizedBackgroundTasks;
     private $lockFile;
     private $lockHandle;
     private $stateFile;
@@ -44,16 +45,26 @@ class Scheduler
     /**
      * Set the PHP script file used to execute background commands (eg.: `/foo/bar/foo.php %s`)
      *
-     * @param string $command
+     * @param string $dispatcher
      * @throws \Inphinit\Exception
      */
-    public function setBackgroundCommand($command)
+    public function setBackgroundTaskDispatcher($dispatcher)
     {
-        if (strpos($command, '%s') === false) {
-            throw new Exception('Invalid command sintax');
+        if (strpos($dispatcher, '%s') === false) {
+            throw new Exception('Invalid dispatcher sintax');
         }
 
-        $this->backgroundCommand = $command;
+        $this->backgroundDispatcher = $dispatcher;
+    }
+
+    /**
+     * If enabled, background tasks will be triggered before the others
+     *
+     * @param bool $enable
+     */
+    public function prioritizeBackgroundTasks($enable)
+    {
+        $this->prioritizedBackgroundTasks = $enable;
     }
 
     /**
@@ -169,6 +180,19 @@ class Scheduler
         return $task->run();
     }
 
+    private function sortTasks($a, $b)
+    {
+        if ($a->isBackground() === $b->isBackground()) {
+            return 0;
+        }
+
+        if ($a->isBackground()) {
+            return -1;
+        }
+
+        return 1;
+    }
+
     /**
      * Runs every due task. This method must be executed during all CRON/schedule calls.
      *
@@ -192,7 +216,13 @@ class Scheduler
 
                 $now = new \DateTime('now', $this->timeZone);
 
-                foreach ($this->tasks as $name => $task) {
+                $tasks = $this->tasks;
+
+                if ($this->prioritizedBackgroundTasks) {
+                    uasort($tasks, array($this, 'sortTasks'));
+                }
+
+                foreach ($tasks as $name => $task) {
                     $last_run = isset($state[$name]) ? $state[$name] : null;
 
                     if ($task->isDue($now, $last_run) === false) {
@@ -288,7 +318,7 @@ class Scheduler
             escapeshellarg(\PHP_BINARY),
 
             // eg.: /home/project/run schedule:run --task "task_name"
-            sprintf($this->backgroundCommand, escapeshellarg($name))
+            sprintf($this->backgroundDispatcher, escapeshellarg($name))
         );
 
         // eg.: /usr/bin/php /home/project/run schedule:run --task "task_name"
