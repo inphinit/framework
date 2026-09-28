@@ -847,11 +847,11 @@ class Markdown
 
     private function resolveInlines($text)
     {
-        // Protect escaped characters \X (https://www.markdownguide.org/basic-syntax/#characters-you-can-escape)
         $to_escape = '\\`*_{}[]<>()#+-.!|' . implode('', array_keys($this->customInlines));
-        $to_escape = implode('', str_split($to_escape, 1));
+        $to_escape = implode('', array_unique(str_split($to_escape, 1), SORT_STRING));
         $to_escape = preg_quote($to_escape, '/');
 
+        // Protect escaped characters \X (https://www.markdownguide.org/basic-syntax/#characters-you-can-escape)
         $text = $this->replaceWithReservedCodes('/\\\\([' . $to_escape . '])/', $text, $escapes);
 
         // Protect `code`s
@@ -861,40 +861,59 @@ class Markdown
             $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8');
         }
 
+        $hr_prefix = substr($text, 3);
+
+        if ($hr_prefix === '***' || $hr_prefix === '---' || $hr_prefix === '___') {
+            if (trim($text, $hr_prefix[0]) === '') {
+                $text = '<hr>';
+            }
+        }
+
         // Images ![alt](src "title")
         $text = preg_replace_callback('/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/', array($this, 'parseFigure'), $text);
+
+        // Quick links
+        $text = preg_replace('/[<](\S+?@\S+?|\w+?[:].+?)[>]/', '[$1]($1)', $text);
 
         // Links [texto](href "title")
         $text = preg_replace_callback('/\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/', array($this, 'parseAnchor'), $text);
 
-        $inline_callback = array($this, 'parseInline');
-
         // Note: (?<!\w)...(?!\w) preserve snake_case strings
-
-        // Bold (** or __)
-        $text = preg_replace_callback('/(?P<delimiter>\*\*)(?P<contents>.+?)\*\*/s', $inline_callback, $text);
-        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>__)(?P<contents>.+?)__(?!\w)/s', $inline_callback, $text);
-
-        // Italic (* or _)
-        $text = preg_replace_callback('/(?P<delimiter>\*)(?P<contents>.+?)\*/s', $inline_callback, $text);
-        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>_)(?P<contents>.+?)_(?!\w)/s', $inline_callback, $text);
-
-        // Strikethrough (~~)
-        $text = preg_replace_callback('/(?P<delimiter>~~)(?P<contents>.+?)~~/s', $inline_callback, $text);
-
-        // Subscript (H~2~O -> H<sub>2</sub>O)
-        $text = preg_replace_callback('/(?P<delimiter>~)(?P<contents>.+?)~/s', $inline_callback, $text);
-
-        // Superscript (5^th^ -> 5<sup>th</sup>)
-        $text = preg_replace_callback('/(?P<delimiter>\^)(?P<contents>.+?)\^/s', $inline_callback, $text);
 
         $custom_inline_callback = array($this, 'parseCustomInline');
 
         foreach ($this->customInlines as $delimiter => $template) {
+            if (strpos($delimiter, '_') !== false) {
+                $nprefix = '(?<!\w)';
+                $nsufix = '(?!\w)';
+            } else {
+                $nprefix = '';
+                $nsufix = '';
+            }
+
             $delimiter = preg_quote($delimiter, '/');
-            $regex = "/(?<!\w)(?P<delimiter>{$delimiter})(?P<contents>.+?){$delimiter}/s";
+            $regex = "/{$nprefix}(?P<delimiter>{$delimiter})(?P<contents>.+?){$delimiter}{$nsufix}/s";
             $text = preg_replace_callback($regex, $custom_inline_callback, $text);
         }
+
+        $inline_callback = array($this, 'parseInline');
+
+        // Bold (** or __)
+        $text = preg_replace_callback('/(?P<delimiter>\*\*)(?P<contents>.+?)\*\*/', $inline_callback, $text);
+        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>__)(?P<contents>.+?)__(?!\w)/', $inline_callback, $text);
+
+        // Italic (* or _)
+        $text = preg_replace_callback('/(?P<delimiter>\*)(?P<contents>.+?)\*/', $inline_callback, $text);
+        $text = preg_replace_callback('/(?<!\w)(?P<delimiter>_)(?P<contents>.+?)_(?!\w)/', $inline_callback, $text);
+
+        // Strikethrough (~~)
+        $text = preg_replace_callback('/(?P<delimiter>~~)(?P<contents>.+?)~~/', $inline_callback, $text);
+
+        // Subscript (H~2~O -> H<sub>2</ub>O)
+        $text = preg_replace_callback('/(?P<delimiter>~)(?P<contents>.+?)~/', $inline_callback, $text);
+
+        // Superscript (5^th^ -> 5<sup>th</up>)
+        $text = preg_replace_callback('/(?P<delimiter>\^)(?P<contents>.+?)\^/', $inline_callback, $text);
 
         // Restore `code`s
         foreach ($codes as $key => $value) {
