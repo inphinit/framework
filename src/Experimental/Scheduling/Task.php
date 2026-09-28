@@ -9,6 +9,7 @@
 
 namespace Inphinit\Experimental\Scheduling;
 
+use Inphinit\App;
 use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
@@ -26,21 +27,19 @@ class Task
     private $background = false;
     private $callback;
     private $cronFields;
+    private $environments;
     private $intervalSeconds;
     private $mode;
     private $onceAt;
-    private $timeZone;
 
     /**
      * Create a Task instance
      *
      * @param callable      $callback
-     * @param \DateTimeZone $timeZone
      */
-    public function __construct(callable $callback, \DateTimeZone $timeZone)
+    public function __construct(callable $callback)
     {
         $this->callback = $callback;
-        $this->timeZone = $timeZone;
     }
 
     /**
@@ -96,23 +95,12 @@ class Task
      * Schedule the task to run exactly once, at (or after) the given date/time.
      * Once executed, it will never run again.
      *
-     * @param string|\DateTime $datetime Anything accepted by \DateTime, or a \DateTime instance
-     * @throws \Inphinit\Exception
+     * @param \DateTime $datetime
      * @return \Inphinit\Experimental\Scheduling\Task
      */
-    public function once($datetime)
+    public function once(\DateTime $datetime)
     {
-        if ($datetime instanceof \DateTime) {
-            $dt = $datetime;
-        } else {
-            try {
-                $dt = new \DateTime($datetime, $this->timeZone);
-            } catch (\Exception $ex) {
-                throw new Exception('Invalid datetime: ' . $datetime, 0, 2, $ex);
-            }
-        }
-
-        $this->onceAt = $dt;
+        $this->onceAt = $datetime;
         $this->mode = self::MODE_ONCE;
 
         return $this;
@@ -171,6 +159,20 @@ class Task
     }
 
     /**
+     * Configure the environments in which this task should be dispatched
+     * when the APP_ENVIRONMENT environment variable matches.
+     *
+     * @param array<int, string> $environments
+     * @return \Inphinit\Experimental\Scheduling\Task
+     */
+    public function runInEnvironments(array $environments)
+    {
+        $this->environments = $environments;
+
+        return $this;
+    }
+
+    /**
      * Checks whether the task is due to run now, given the last time it ran
      *
      * @param \DateTime $now
@@ -184,7 +186,7 @@ class Task
 
         switch ($this->mode) {
             case self::MODE_CRON:
-                return $this->matchesCron($now);
+                return $this->matchesCron($now) && ($lastRun === null || floor($lastRun / 60) < floor($timestamp / 60));
 
             case self::MODE_INTERVAL:
                 return $lastRun === null || ($timestamp - $lastRun) >= $this->intervalSeconds;
@@ -205,6 +207,11 @@ class Task
      */
     public function run()
     {
+        // Caution: Skips execution if the environment does not match
+        if ($this->environments !== null && in_array(App::config('environment'), $this->environments) === false) {
+            return 0;
+        }
+
         $callback = $this->callback;
 
         $response = $callback($this);
@@ -212,11 +219,11 @@ class Task
         if ($response !== null) {
             if (is_int($response) === false) {
                 $type = Inspector::type($response);
-                throw new Exception("Return must be of type int or null, {$type} given" . PHP_EOL);
+                throw new Exception("Return must be of type int or null, {$type} given");
             }
 
             if ($response < 0 || $response > 255) {
-                throw new Exception('Exit codes should be in the range 0 to 255' . PHP_EOL);
+                throw new Exception('Exit codes should be in the range 0 to 255');
             }
         } else {
             $response = 0;
@@ -241,7 +248,15 @@ class Task
     private static function fieldMatches($allowed, $value)
     {
         // null means "*" (any value is accepted)
-        return $allowed === null || in_array($value, $allowed);
+        if ($allowed === null) {
+            return true;
+        }
+
+        $value = ltrim($value, '0');
+
+        $int_value = $value === '' ? 0 : intval($value);
+
+        return in_array($int_value, $allowed);
     }
 
     private static function parseCronField($expr, $min, $max, $isWeekday)

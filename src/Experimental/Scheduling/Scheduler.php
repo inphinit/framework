@@ -120,7 +120,9 @@ class Scheduler
      */
     public function call($name, callable $callback)
     {
-        $task = new Task($callback, $this->timeZone);
+        $this->checkExists($name);
+
+        $task = new Task($callback);
 
         $this->tasks[$name] = $task;
 
@@ -137,6 +139,8 @@ class Scheduler
      */
     public function command($name, Command $command, array $options = array())
     {
+        $this->checkExists($name);
+
         return $this->call($name, function (Task $task) use ($command, $options) {
             return $command->response($options);
         });
@@ -151,6 +155,8 @@ class Scheduler
      */
     public function shell($name, $command)
     {
+        $this->checkExists($name);
+
         return $this->call($name, function (Task $task) use ($command) {
             $last_line = \exec($command, $output, $result_code);
 
@@ -172,12 +178,19 @@ class Scheduler
     public function runTask($name)
     {
         if (isset($this->tasks[$name]) === false) {
-            throw new Exception('The task was not found: ' . $name);
+            throw new Exception('The task was not found: ' . $name, 0, 3);
         }
 
         $task = $this->tasks[$name];
 
         return $task->run();
+    }
+
+    private function checkExists($name)
+    {
+        if (isset($this->tasks[$name])) {
+            throw new Exception('There is already another task with this name: ' . $name, 0, 3);
+        }
     }
 
     private function sortTasks($a, $b)
@@ -233,6 +246,8 @@ class Scheduler
                         $this->dispatchBackground($name);
                     } else {
                         $task->run();
+
+                        echo PHP_EOL;
                     }
 
                     $state[$name] = $now->getTimestamp();
@@ -248,7 +263,8 @@ class Scheduler
             }
         } catch(\Exception $ex) {
             $this->lock(false);
-            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
+
+            throw new Exception($ex->getMessage() . PHP_EOL, $ex->getCode(), 2, $ex);
         }
 
         $this->lock(false);
