@@ -9,6 +9,8 @@
 
 namespace Inphinit;
 
+use Inphinit\Utility\Strings;
+
 class Session
 {
     const BYTES_LENGTH = 16;
@@ -200,7 +202,7 @@ class Session
                 throw new Exception('Create session file timeout', 0, 3);
             }
 
-            $id = self::createId();
+            $id = Strings::random(self::BYTES_LENGTH);
             $file = $storage . '/' . $prefix . '[' . $id . ']';
             $stream = fopen($file, 'x+');
 
@@ -442,26 +444,5 @@ class Session
         } else {
             $this->storage = INPHINIT_SYSTEM . '/storage/session';
         }
-    }
-
-    private static function createId()
-    {
-        if (PHP_VERSION_ID >= 70000) {
-            try {
-                $bin = \random_bytes(self::BYTES_LENGTH);
-            } catch (\Exception $ex) {
-                throw new Exception($ex->getMessage(), 0, 3, $ex);
-            }
-        } elseif (function_exists('mcrypt_create_iv')) {
-            $bin = \mcrypt_create_iv(self::BYTES_LENGTH, \MCRYPT_DEV_URANDOM);
-
-            if ($bin === false || strlen($bin) !== self::BYTES_LENGTH) {
-                throw new Exception('MCRYPT: Unable to generate random bytes', 0, 3);
-            }
-        } else {
-            throw new Exception('No supported CSPRNG source is available', 0, 3);
-        }
-
-        return \bin2hex($bin);
     }
 }

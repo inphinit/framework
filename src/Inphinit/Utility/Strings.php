@@ -35,6 +35,7 @@ class Strings
      * Convert string to camelCase
      *
      * @param string $text
+     * @throws \Inphinit\Exception
      * @return string
      */
     public static function camel($text)
@@ -56,6 +57,7 @@ class Strings
      * Convert string to kebab-case
      *
      * @param string $text
+     * @throws \Inphinit\Exception
      * @return string
      */
     public static function kebab($text)
@@ -67,6 +69,7 @@ class Strings
      * Convert string to PascalCase
      *
      * @param string $text
+     * @throws \Inphinit\Exception
      * @return string
      */
     public static function pascal($text)
@@ -84,6 +87,7 @@ class Strings
      * Convert string to snake_case
      *
      * @param string $text
+     * @throws \Inphinit\Exception
      * @return string
      */
     public static function snake($text)
@@ -113,5 +117,36 @@ class Strings
         $entries = array_filter(preg_split('/[\s\-_]+/', $text), 'strlen');
 
         return array_values($entries);
+    }
+
+    /**
+     * Generates a hexadecimal string from $length random bytes.
+     *
+     * - Note: PHP 7+ will use random_bytes().
+     * - Note: PHP 5 will use mcrypt.
+     *
+     * @param int $length
+     * @throws \Inphinit\Exception
+     * @return string
+     */
+    public static function random($length = 16)
+    {
+        if (PHP_VERSION_ID >= 70000) {
+            try {
+                $bin = \random_bytes($length);
+            } catch (\Exception $ex) {
+                throw new Exception($ex->getMessage(), 0, 2, $ex);
+            }
+        } elseif (function_exists('mcrypt_create_iv')) {
+            $bin = \mcrypt_create_iv($length, \MCRYPT_DEV_URANDOM);
+
+            if ($bin === false || strlen($bin) !== $length) {
+                throw new Exception('MCRYPT: Unable to generate random bytes');
+            }
+        } else {
+            throw new Exception('No supported CSPRNG source is available');
+        }
+
+        return \bin2hex($bin);
     }
 }
