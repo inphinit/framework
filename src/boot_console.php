@@ -22,8 +22,7 @@ $console = new Console();
 $scheduler = new Scheduler();
 
 $scheduler->setBackgroundTaskDispatcher(escapeshellarg(INPHINIT_ROOT . '/run') . ' schedule:run --task %s');
-$scheduler->setLockFile(INPHINIT_SYSTEM . '/storage/schedule.lock');
-$scheduler->setStateFile(INPHINIT_SYSTEM . '/storage/schedule.json');
+$scheduler->setStorage(INPHINIT_SYSTEM . '/storage/schedule');
 
 $console->action('schedule:enable', function (Command $command, array $options, array $residues) {
     // Caution: In CLI, the binary path is always returned correctly (failures usually occur in FPM).

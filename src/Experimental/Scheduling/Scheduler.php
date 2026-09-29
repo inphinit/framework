@@ -12,13 +12,14 @@ namespace Inphinit\Experimental\Scheduling;
 use Inphinit\Exception;
 use Inphinit\Experimental\Cli\Command;
 use Inphinit\Experimental\Cli\Console;
+use Inphinit\Utility\Strings;
 
 class Scheduler
 {
     private $backgroundDispatcher;
-    private $prioritizedBackgroundTasks;
     private $lockFile;
     private $lockHandle;
+    private $prioritizedBackgroundTasks;
     private $stateFile;
     private $tasks = array();
     private $timeZone;
@@ -68,37 +69,33 @@ class Scheduler
     }
 
     /**
-     * Set the lock file (used to prevent repeated executions)
+     * Set directory used to store:
      *
-     * @param string $path
+     * - Lock file is used to prevent repeated executions.
+     * - State file is used to check if a task has already been executed.
+     *
+     * @param string $dir
      * @throws \Inphinit\Exception
      */
-    public function setLockFile($path)
+    public function setStorage($dir)
     {
-        $dir = dirname($path);
-
         if (is_dir($dir) === false || is_writable($dir) === false) {
-            throw new Exception($path . ' is not writable');
+            throw new Exception($dir . ' is not writable');
         }
 
-        $this->lockFile = $path;
-    }
+        $lock_file = $dir . '/lock';
+        $state_file = $dir . '/state';
 
-    /**
-     * Set the state file (used to check if a task has already been executed)
-     *
-     * @param string $path
-     * @throws \Inphinit\Exception
-     */
-    public function setStateFile($path)
-    {
-        $dir = dirname($path);
-
-        if (is_dir($dir) === false || is_writable($dir) === false) {
-            throw new Exception($path . ' is not writable');
+        if (\touch($lock_file) === false) {
+            throw new Exception('Failed to write: ' . $lock_file);
         }
 
-        $this->stateFile = $path;
+        if (\touch($state_file) === false) {
+            throw new Exception('Failed to write: ' . $state_file);
+        }
+
+        $this->lockFile = $lock_file;
+        $this->stateFile = $state_file;
     }
 
     /**

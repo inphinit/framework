@@ -35,6 +35,7 @@ class Console
         } elseif ($callback instanceof Command) {
             $command = $callback;
         } else {
+            // Caution: Command validates callback
             $command = new Command($name, $callback);
         }
 
