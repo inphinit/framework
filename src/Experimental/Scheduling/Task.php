@@ -275,7 +275,7 @@ class Task
             }
 
             $range = $matches[1];
-            $step = isset($matches[2]) ? (int) $matches[2] : 1;
+            $step = isset($matches[2]) ? intval($matches[2]) : 1;
 
             if ($step < 1) {
                 throw new Exception('Invalid cron step: ' . $expr, 0, 3);

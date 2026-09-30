@@ -138,7 +138,7 @@ class Url
      */
     public static function application($appendQuery)
     {
-        $url = INPHINIT_URL;
+        $url = INPHINIT_BASE_URL . INPHINIT_PATH;
 
         if ($appendQuery && ($qs = Request::query())) {
             $url .= '?' . $qs;

@@ -377,9 +377,9 @@ class Import
         }
 
         // Same depth -> alphabetical on the remaining path
-        $restA = substr($entry1, strlen($top_entry1) + 1);
-        $restB = substr($entry2, strlen($top_entry2) + 1);
+        $rest_a = substr($entry1, strlen($top_entry1) + 1);
+        $rest_b = substr($entry2, strlen($top_entry2) + 1);
 
-        return strnatcasecmp($restA, $restB);
+        return strnatcasecmp($rest_a, $rest_b);
     }
 }

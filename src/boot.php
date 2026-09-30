@@ -197,7 +197,7 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 define('INPHINIT_PATH', $inphinit_path);
-define('INPHINIT_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
+define('INPHINIT_BASE_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
 
 if ($inphinit_config_development) {
     require __DIR__ . '/development.php';

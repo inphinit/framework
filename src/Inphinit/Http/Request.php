@@ -53,7 +53,7 @@ class Request
                 return self::headerMatches('save-data', 'on');
 
             case 'secure':
-                return strpos(INPHINIT_URL, 'https') === 0;
+                return strpos(INPHINIT_BASE_URL, 'https') === 0;
 
             case 'xhr':
                 return self::headerMatches('x-requested-with', 'xmlhttprequest');

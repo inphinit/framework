@@ -139,10 +139,10 @@ class App
         }, $scope_regex);
 
         $full = $pattern[0] !== '/';
-        $subject = $full ? (INPHINIT_URL . INPHINIT_PATH) : INPHINIT_PATH;
+        $subject = $full ? (INPHINIT_BASE_URL . INPHINIT_PATH) : INPHINIT_PATH;
 
         if (preg_match('#^' . $scope_regex . '#', $subject, $params)) {
-            $path = $full ? substr($params[0], strlen(INPHINIT_URL)) : $params[0];
+            $path = $full ? substr($params[0], strlen(INPHINIT_BASE_URL)) : $params[0];
 
             if ($path) {
                 $this->pathPrefix = $path;
