@@ -117,7 +117,7 @@ class Cache
         $this->started = true;
 
         if (static::valid($this->method) === false) {
-            return self::FAILED;
+            return $this->debugWithHeader(self::FAILED);
         }
 
         $hash = $this->hash;
@@ -181,7 +181,7 @@ class Cache
             $this->finish(false);
         }
 
-        return self::FAILED;
+        return $this->debugWithHeader(self::FAILED);
     }
 
     /**
