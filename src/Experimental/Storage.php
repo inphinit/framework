@@ -45,7 +45,7 @@ class Storage
      */
     public static function modified($path, $modified)
     {
-        $modified = self::getUnixTimestamp($modified, 'Invalid modified');
+        $modified = self::getUnixTimestamp($modified, 'Invalid modified datetime');
         $current = static::path($path);
         $access = fileatime($current);
 
@@ -63,7 +63,7 @@ class Storage
      */
     public static function access($path, $access)
     {
-        $access = self::getUnixTimestamp($access, 'Invalid modified');
+        $access = self::getUnixTimestamp($access, 'Invalid access datetime');
         $current = static::path($path);
         $modified = filemtime($current);
 
@@ -88,7 +88,7 @@ class Storage
 
         $full = self::path($path);
 
-        $expires = self::getUnixTimestamp($expires, 'Invalid expires');
+        $expires = self::getUnixTimestamp($expires, 'Invalid expires datetime');
 
         if (is_dir($full) === false || ($handle = opendir($full)) === false) {
             throw new Exception('Cannot read directory: ' . $full);
