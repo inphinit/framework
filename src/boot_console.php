@@ -214,12 +214,30 @@ $console->action('session:clear', function (Command $command, array $options, ar
     $expires = time() - $max;
     $attempts = $options['attempts'] === null ? 20 : intval($options['attempts']);
 
+    echo 'Cleaning session files ...', PHP_EOL;
+
     $affecteds = Storage::clear('session', $expires, $attempts, function ($filename) {
         return strpos($filename, '~sess') === 0;
     });
 
     echo $affecteds, ' session files were removed', PHP_EOL;
-})->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')->restrictToCli(true);
+})
+->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')
+->restrictToCli(true);
+
+$console->action('cache:clear', function (Command $command, array $options, array $residues) {
+    $expires = $options['expires'] === null ? 7200 : $options['expires'];
+    $attempts = $options['attempts'] === null ? 20 : intval($options['attempts']);
+
+    echo 'Cleaning cache files ...', PHP_EOL;
+
+    $affecteds = Storage::clear('cache/output', $expires, $attempts);
+
+    echo $affecteds, ' cache files were removed', PHP_EOL;
+})
+->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')
+->setOption('expires', 'e', 0, '#^[1-9](\d*?)$#', 'Define expires time (Default: 7200)')
+->restrictToCli(true);
 
 // system/console.php
 require INPHINIT_SYSTEM . '/console.php';

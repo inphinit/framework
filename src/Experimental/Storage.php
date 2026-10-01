@@ -138,6 +138,8 @@ class Storage
     {
         if ($date instanceof \DateTime) {
             $date = $date->getTimestamp();
+        } elseif (is_string($date) && ctype_digit($date)) {
+            $date = intval($date);
         }
 
         if (is_int($date) === false || $date < 0) {
