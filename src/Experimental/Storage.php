@@ -35,6 +35,29 @@ class Storage
     }
 
     /**
+     * Create the directory in storage recursively if it does not exist
+     *
+     * @param string   $path        Path of the folder(s) to be created
+     * @param int|null $permissions Set the permission for the folder(s); if null, the permission of the storage folder will be used
+     * @throws \Inphinit\Exception  Throw an exception if the path has an unexpected value
+     * @return bool                 Returns true if the directory already exists or has been created
+     */
+    public static function mkdir($path, $permissions = null)
+    {
+        $full = static::path($path);
+
+        if (is_dir($full)) {
+            return true;
+        }
+
+        if ($permissions === null) {
+            $permissions = fileperms(INPHINIT_SYSTEM . '/storage/');
+        }
+
+        return mkdir($full, $permissions, true);
+    }
+
+    /**
      * Updates only the modification date of a file in the application's storage directory and preserves the access date.
      * Note: If file not exists, it is created
      *
