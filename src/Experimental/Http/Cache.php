@@ -61,7 +61,21 @@ class Cache
             }
         }
 
-        $this->hash = static::createHash($path);
+        $hash = static::createHash($path);
+
+        if (is_string($hash) === false || trim($hash) === '' || strpos($hash, '"') !== false) {
+            $reflect = new \ReflectionClass($this);
+            $chash = $reflect->getMethod('createHash');
+            $file = $chash->getFileName();
+            $line = $chash->getStartLine();
+            $message = 'createHash() created an invalid hash';
+
+            if ($file === false || $line === false) {
+                throw new Exception($message);
+            }
+
+            throw new \ErrorException($message, 0, E_ERROR, $file, $line);
+        }
 
         if ($method === null) {
             $method = $_SERVER['REQUEST_METHOD'];
@@ -96,11 +110,11 @@ class Cache
      * - Returns `FAILED` if the method/cache is not writable, or the cache could not be created
      *
      * @param int $expires
-     * @param int $bufferSize
+     * @param int $chuckSize
      * @throws \ErrorException
      * @return int
      */
-    public function start($expires = 3600, $bufferSize = 1024)
+    public function start($expires = 3600, $chuckSize = 1024)
     {
         self::checkHeadersSent();
 
@@ -127,7 +141,7 @@ class Cache
             Response::cache($expires, $modified);
             header('Etag: "' . $hash . '"');
 
-            if (static::match($modified, $hash)) {
+            if (static::match($hash, $modified)) {
                 Response::status(304);
             } elseif ($this->method !== 'HEAD') {
                 File::output($cache);
@@ -216,13 +230,13 @@ class Cache
     }
 
     /**
-     * Check If-Modified-Since with cache modified datetime and If-None-Match with ETag
+     * Check If-None-Match with ETag and If-Modified-Since with cache modified datetim
      *
-     * @param string $modified
      * @param string $etag
+     * @param int    $modified
      * @return bool
      */
-    protected static function match($modified, $etag)
+    protected static function match($etag, $modified)
     {
         $none_match = Request::header('If-None-Match');
 
