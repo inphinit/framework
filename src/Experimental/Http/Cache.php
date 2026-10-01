@@ -34,6 +34,7 @@ class Cache
     private $debug = false;
     private $handle;
     private $hash;
+    private $headerStorage;
     private $method;
     private $noErrors = true;
     private $started = false;
@@ -77,17 +78,8 @@ class Cache
         $this->storage = $storage;
     }
 
-    public function __destruct()
-    {
-        if ($this->noErrors && $this->handle && ($response = ob_get_contents())) {
-            $this->write($response, 0);
-        }
-
-        $this->finish($this->noErrors);
-    }
-
     /*
-     * Set a method to overwrite the buffer (can be used for sanitization)
+     * Set a method to overwrite the buffer
      *
      * @param callable $callback
      */
@@ -110,22 +102,26 @@ class Cache
      */
     public function start($expires = 3600, $bufferSize = 1024)
     {
+        self::checkHeadersSent();
+
+        if (static::valid($this->method) === false) {
+            return $this->debugWithHeader(self::FAILED);
+        }
+
         if ($this->started) {
             throw new Exception('The cache has already been started');
         }
 
         $this->started = true;
 
-        if (static::valid($this->method) === false) {
-            return $this->debugWithHeader(self::FAILED);
-        }
-
         $hash = $this->hash;
         $time = time();
 
         $cache = INPHINIT_SYSTEM . '/' . $this->storage . '/' . $hash;
 
-        if (is_file($cache) && ($modified = filemtime($cache)) > ($time - $expires)) {
+        $this->headerStorage = $cache . '.headers';
+
+        if (is_file($cache) && ($modified = filemtime($cache)) > ($time - $expires) && $this->sendHeaders()) {
             $this->debugWithHeader(self::CACHED);
 
             Response::cache($expires, $modified);
@@ -144,9 +140,7 @@ class Cache
             ob_end_flush();
         }
 
-        if (headers_sent($file, $line)) {
-            throw new \ErrorException('Headers already sent', 0, E_ERROR, $file, $line);
-        }
+        self::checkHeadersSent();
 
         $cache_temp = $cache . '.tmp';
 
@@ -185,6 +179,43 @@ class Cache
     }
 
     /**
+     * Stops the cache and writes the content and headers obtained so far
+     * Note: Under normal circumstances, `__destruct` will execute this method automatically
+     */
+    public function stop()
+    {
+        if ($this->noErrors && $this->handle) {
+            $contents = ob_get_contents();
+
+            if ($contents !== false) {
+                $this->write($contents, 0);
+            }
+
+            // If the write() method did not fail
+            if ($this->noErrors) {
+                $headers = implode("\n", headers_list());
+
+                $dheaders = $this->headerStorage;
+                $theaders = $dheaders . '.tmp';
+
+                if (
+                    file_put_contents($theaders, $headers, LOCK_EX) === false ||
+                    rename($theaders, $dheaders) === false
+                ) {
+                    $this->noErrors = false;
+                }
+            }
+        }
+
+        $this->finish($this->noErrors);
+    }
+
+    public function __destruct()
+    {
+        $this->stop();
+    }
+
+    /**
      * Check If-Modified-Since with cache modified datetime and If-None-Match with ETag
      *
      * @param string $modified
@@ -202,7 +233,8 @@ class Cache
         $since = Request::header('If-Modified-Since');
 
         if ($since !== null) {
-            return $modified <= strtotime($since);
+            $timestamp = strtotime($since);
+            return $timestamp !== false && $modified <= $timestamp;
         }
 
         return false;
@@ -228,6 +260,28 @@ class Cache
     protected static function createHash($path)
     {
         return \hash('sha256', $path);
+    }
+
+    private function checkHeadersSent()
+    {
+        if (headers_sent($file, $line)) {
+            throw new \ErrorException('Headers already sent', 0, E_ERROR, $file, $line);
+        }
+    }
+
+    private function sendHeaders()
+    {
+        $headers = file($this->headerStorage, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+
+        if ($headers === false) {
+            return false;
+        }
+
+        foreach ($headers as $header) {
+            header($header);
+        }
+
+        return true;
     }
 
     private function error()
