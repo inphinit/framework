@@ -45,7 +45,7 @@ class Storage
      */
     public static function modified($path, $modified)
     {
-        $modified = self::getUnixTimestamp($modified, 'Invalid modified datetime');
+        $modified = self::getUnixTimestamp($modified, 0, 'Invalid modified datetime');
         $current = static::path($path);
         $access = fileatime($current);
 
@@ -63,7 +63,7 @@ class Storage
      */
     public static function access($path, $access)
     {
-        $access = self::getUnixTimestamp($access, 'Invalid access datetime');
+        $access = self::getUnixTimestamp($access, 0, 'Invalid access datetime');
         $current = static::path($path);
         $modified = filemtime($current);
 
@@ -88,7 +88,7 @@ class Storage
 
         $full = self::path($path);
 
-        $expires = self::getUnixTimestamp($expires, 'Invalid expires datetime');
+        $expires = self::getUnixTimestamp($expires, time(), 'Invalid expires datetime');
 
         if (is_dir($full) === false || ($handle = opendir($full)) === false) {
             throw new Exception('Cannot read directory: ' . $full);
@@ -134,10 +134,10 @@ class Storage
         return $changes;
     }
 
-    private static function getUnixTimestamp($date, $message)
+    private static function getUnixTimestamp($date, $incrementSeconds, $message)
     {
         if ($date instanceof \DateTime) {
-            $date = $date->getTimestamp();
+            return $date->getTimestamp();
         } elseif (is_string($date) && ctype_digit($date)) {
             $date = intval($date);
         }
@@ -146,6 +146,6 @@ class Storage
             throw new Exception($message, 0, 3);
         }
 
-        return $date;
+        return $incrementSeconds + $date;
     }
 }
