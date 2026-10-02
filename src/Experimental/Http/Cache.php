@@ -49,10 +49,6 @@ class Cache
      */
     public function __construct($method = null, $path = null, $storage = null)
     {
-        if (App::config('environment') === 'development') {
-            $this->debug = true;
-        }
-
         if ($path === null) {
             $path = INPHINIT_PATH;
 
@@ -81,15 +77,19 @@ class Cache
             $method = $_SERVER['REQUEST_METHOD'];
         }
 
-        $this->method = strtoupper($method);
-
         if ($storage === null) {
             $storage = 'storage/cache/output';
         } else {
             $storage = ltrim($storage, '/');
         }
 
+        $this->hash = $hash;
+        $this->method = strtoupper($method);
         $this->storage = $storage;
+
+        if (App::config('environment') === 'development') {
+            $this->debug = true;
+        }
     }
 
     /*
@@ -129,6 +129,7 @@ class Cache
         $this->started = true;
 
         $hash = $this->hash;
+
         $time = time();
 
         $cache = INPHINIT_SYSTEM . '/' . $this->storage . '/' . $hash;
@@ -167,7 +168,7 @@ class Cache
             if (
                 flock($handle, LOCK_EX | LOCK_NB) &&
                 ftruncate($this->handle, 0) &&
-                ob_start(array($this, 'write'), $bufferSize, PHP_OUTPUT_HANDLER_FLUSHABLE)
+                ob_start(array($this, 'write'), $chuckSize, PHP_OUTPUT_HANDLER_FLUSHABLE)
             ) {
 
                 $this->cache = $cache;
