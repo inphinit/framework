@@ -7,7 +7,7 @@
  * Released under the MIT license
  */
 
-namespace Inphinit\Experimental;
+namespace Inphinit\Experimental\Utility;
 
 use Inphinit\Exception;
 
@@ -35,12 +35,13 @@ class Storage
     }
 
     /**
-     * Create the directory in storage recursively if it does not exist
+     * Create the directory in storage recursively if it does not exist.
+     * Note: If the permission is not defined, the permission of the system/storage directory will be used.
      *
-     * @param string   $path        Path of the folder(s) to be created
-     * @param int|null $permissions Set the permission for the folder(s); if null, the permission of the storage folder will be used
-     * @throws \Inphinit\Exception  Throw an exception if the path has an unexpected value
-     * @return bool                 Returns true if the directory already exists or has been created
+     * @param string   $path
+     * @param int|null $permissions
+     * @throws \Inphinit\Exception
+     * @return bool
      */
     public static function mkdir($path, $permissions = null)
     {
@@ -54,67 +55,84 @@ class Storage
             $permissions = fileperms(INPHINIT_SYSTEM . '/storage/');
         }
 
-        return mkdir($full, $permissions, true);
+        if ($permissions !== false && mkdir($full, $permissions & 0777, true)) {
+            return true;
+        }
+
+        clearstatcache(false, $full);
+
+        return is_dir($full);
     }
 
     /**
-     * Updates only the modification date of a file in the application's storage directory and preserves the access date.
-     * Note: If file not exists, it is created
+     * Set the modified time of a file located in the storage directory, preserving the access time.
      *
      * @param string        $path
-     * @param int|\DateTime $modified
+     * @param int|\DateTime $time
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function modified($path, $modified)
+    public static function modified($path, $time)
     {
-        $modified = self::getUnixTimestamp($modified, 0, 'Invalid modified datetime');
-        $current = static::path($path);
-        $access = fileatime($current);
+        $update = self::getUnixTimestamp($time, 'Invalid modified time');
+        $source = static::path($path);
+        $source_time = fileatime($source);
 
-        return $access !== false && touch($current, $modified, $access);
+        if ($source_time === false) {
+            $source_time = time();
+        }
+
+        return touch($source, $update, $source_time);
     }
 
     /**
-     * Updates only the access date of a file in the application's storage directory and preserves the modification date.
-     * Note: If file not exists, it is created
+     * Set the access time of a file located in the storage directory, preserving the modification time.
      *
      * @param string        $path
-     * @param int|\DateTime $modified
+     * @param int|\DateTime $time
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function access($path, $access)
+    public static function access($path, $time)
     {
-        $access = self::getUnixTimestamp($access, 0, 'Invalid access datetime');
-        $current = static::path($path);
-        $modified = filemtime($current);
+        $update = self::getUnixTimestamp($time, 'Invalid access time');
+        $source = static::path($path);
+        $source_time = filemtime($source);
 
-        return $modified !== false && touch($current, $modified, $access);
+        if ($source_time === false) {
+            $source_time = time();
+        }
+
+        return touch($source, $source_time, $update);
     }
 
     /**
-     * Clear contents of storage application directory after specified expires date, and returns number of deleted files
+     * Clear contents of storage application directory after specified expires date (or UNIX time),
+     * and returns number of deleted files
      *
      * @param string        $directory
-     * @param int|\DateTime $expires
+     * @param int|\DateTime $expiresAt
      * @param int           $attempts
      * @param callable      $filter
      * @throws \Inphinit\Exception
      * @return int
      */
-    public static function clear($path, $expires, $attempts = 100, $filter = null)
+    public static function clear($path, $expiresAt, $attempts = 100, $filter = null)
     {
-        if ($filter !== null && is_callable($filter) === false) {
-            throw new Exception('Filter is not callable');
-        }
-
         $full = self::path($path);
-
-        $expires = self::getUnixTimestamp($expires, time(), 'Invalid expires datetime');
 
         if (is_dir($full) === false || ($handle = opendir($full)) === false) {
             throw new Exception('Cannot read directory: ' . $full);
+        }
+
+        $expires = self::getUnixTimestamp($expiresAt, 'Invalid expires datetime');
+
+        if (is_int($attempts) === false || $attempts < 0) {
+            throw new Exception('Attempts expects an integer value greater than zero');
+        }
+
+        if ($filter !== null && is_callable($filter) === false) {
+            throw new Exception('Filter is not callable');
         }
 
         $full .= '/';
@@ -132,7 +150,13 @@ class Storage
                 $file = $full . $name;
 
                 // Caution: strpos() skips `.`, `..`, and hidden files
-                if (strpos($name, '.') !== 0 && is_file($file) && filemtime($file) < $expires) {
+                if (strpos($name, '.') !== 0 && is_file($file)) {
+                    $mtime = filemtime($file);
+
+                    if ($mtime === false || $mtime >= $expires) {
+                        continue;
+                    }
+
                     if ($filter !== null && $filter($name) !== true) {
                         continue;
                     }
@@ -157,11 +181,13 @@ class Storage
         return $changes;
     }
 
-    private static function getUnixTimestamp($date, $incrementSeconds, $message)
+    private static function getUnixTimestamp($date, $message)
     {
         if ($date instanceof \DateTime) {
             return $date->getTimestamp();
-        } elseif (is_string($date) && ctype_digit($date)) {
+        }
+
+        if (is_string($date) && ctype_digit($date)) {
             $date = intval($date);
         }
 
@@ -169,6 +195,6 @@ class Storage
             throw new Exception($message, 0, 3);
         }
 
-        return $incrementSeconds + $date;
+        return $date;
     }
 }
