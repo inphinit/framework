@@ -39,6 +39,7 @@ class Cache
     private $noErrors = true;
     private $started = false;
     private $writerCallback;
+    private $writing = false;
 
     /*
      * Creates a Cache instance
@@ -59,18 +60,13 @@ class Cache
 
         $hash = static::createHash($path);
 
-        if (is_string($hash) === false || trim($hash) === '' || strpos($hash, '"') !== false) {
-            $reflect = new \ReflectionClass($this);
-            $chash = $reflect->getMethod('createHash');
-            $file = $chash->getFileName();
-            $line = $chash->getStartLine();
-            $message = 'createHash() created an invalid hash';
-
-            if ($file === false || $line === false) {
-                throw new Exception($message);
-            }
-
-            throw new \ErrorException($message, 0, E_ERROR, $file, $line);
+        if (
+            is_string($hash) === false ||
+            trim($hash) === '' ||
+            ctype_print($hash) === false
+            strpbrk($opts->domain, ' "\\/') !== false
+        ) {
+            throw new Exception('createHash() created an invalid hash');
         }
 
         if ($method === null) {
@@ -110,20 +106,20 @@ class Cache
      * - Returns `FAILED` if the method/cache is not writable, or the cache could not be created
      *
      * @param int $expires
-     * @param int $chuckSize
+     * @param int $chunkSize
      * @throws \ErrorException
      * @return int
      */
-    public function start($expires = 3600, $chuckSize = 1024)
+    public function start($expires = 3600, $chunkSize = 1024)
     {
-        self::checkHeadersSent();
-
-        if (static::valid($this->method) === false) {
-            return $this->debugWithHeader(self::FAILED);
-        }
-
         if ($this->started) {
             throw new Exception('The cache has already been started');
+        }
+
+        self::checkHeadersSent();
+
+        if (static::valid(http_response_code(), $this->method) === false) {
+            return $this->debugWithHeader(self::FAILED);
         }
 
         $this->started = true;
@@ -164,13 +160,15 @@ class Cache
         if ($handle !== false) {
             $this->handle = $handle;
 
+            $flags = PHP_OUTPUT_HANDLER_FLUSHABLE | PHP_OUTPUT_HANDLER_REMOVABLE;
+
             // Caution: If the flock fails, it is likely because another request is writing to the cache
             if (
                 flock($handle, LOCK_EX | LOCK_NB) &&
-                ftruncate($this->handle, 0) &&
-                ob_start(array($this, 'write'), $chuckSize, PHP_OUTPUT_HANDLER_FLUSHABLE)
+                ftruncate($handle, 0) &&
+                ob_start(array($this, 'write'), $chunkSize, $flags)
             ) {
-
+                $this->writing = true;
                 $this->cache = $cache;
                 $this->cacheTemp = $cache_temp;
 
@@ -223,6 +221,12 @@ class Cache
         }
 
         $this->finish($this->noErrors);
+
+        if ($this->writing) {
+            $this->writing = false;
+
+            ob_end_flush();
+        }
     }
 
     public function __destruct()
@@ -256,14 +260,15 @@ class Cache
     }
 
     /**
-     * Check if is HEAD or GET - This method can be overridden
+     * Check valid HTTP statuses and methods for the cache - This method can be overridden
      *
+     * @param int $status
      * @param string $method
      * @return bool
      */
-    protected static function valid($method)
+    protected static function valid($status, $method)
     {
-        return $method === 'GET' || $method === 'HEAD';
+        return $status === 200 && ($method === 'GET' || $method === 'HEAD');
     }
 
     /**
@@ -315,8 +320,8 @@ class Cache
             flock($handle, LOCK_UN);
             fclose($handle);
 
-            if ($move) {
-                rename($this->cacheTemp, $this->cache);
+            if ($move && rename($this->cacheTemp, $this->cache)) {
+               $this->noErrors = false;
             }
         }
     }
@@ -336,7 +341,7 @@ class Cache
             }
         }
 
-        return $data;
+        return $this->method === 'HEAD' ? '' : $data;
     }
 
     private function debugWithHeader($flag)
