@@ -32,7 +32,7 @@ class Markdown
     // External
     const ANCHOR = 10;
     const ANCHOR_TITLE = 11;
-    const FIGURE  = 12;
+    const FIGURE = 12;
     const FIGURE_CAPTION = 13;
 
     // List
@@ -56,8 +56,8 @@ class Markdown
     private $enabledErrors = false;
     private $enabledHtml = false;
     private $ids = array();
-    private $templates = array();
     private $reservedIndex = 0;
+    private $templates = array();
 
     /**
      * @param bool $enableCustom Enable/disable non-standard inline syntaxes:
@@ -487,7 +487,7 @@ class Markdown
             // when they are followed by another indented line.
             while ($i < $n) {
                 $current = $lines[$i];
-                $current_indent = $this->indentOf($current);
+                $current_indent = self::indentOf($current);
 
                 if (trim($current) === '') {
                     $j = $i + 1;
@@ -496,7 +496,7 @@ class Markdown
                         ++$j;
                     }
 
-                    if ($j < $n && $this->indentOf($lines[$j]) > $base_indent) {
+                    if ($j < $n && self::indentOf($lines[$j]) > $base_indent) {
                         $item_lines[] = '';
                         ++$i;
                         continue;
@@ -563,7 +563,7 @@ class Markdown
 
     private function stripListIndent($line, $minimum)
     {
-        $indent = $this->indentOf($line);
+        $indent = self::indentOf($line);
 
         if ($indent < $minimum) {
             return ltrim($line, " \t");
@@ -687,7 +687,7 @@ class Markdown
 
         $rows = array();
 
-        while ($index < $n && trim($lines[$index]) !== '' && $this->isTableDataRow($lines[$index])) {
+        while ($index < $n && self::isTableDataRow($lines[$index])) {
             $cells = $this->splitTableRow($lines[$index]);
 
             if (count($cells) < count($headers)) {
@@ -720,16 +720,6 @@ class Markdown
             'headers' => implode($eol, $table_headers),
             'contents' => implode($eol, $rows)
         )) . $eol;
-    }
-
-    private function isTableDataRow($line)
-    {
-        return strpos($line, '|') !== false;
-    }
-
-    private function indentOf($line)
-    {
-        return strlen($line) - strlen(ltrim($line, ' '));
     }
 
     private function parseInline($matches)
@@ -854,6 +844,8 @@ class Markdown
 
     private function resolveInlines($text)
     {
+        $text = str_replace("\x00", '', $text);
+
         $to_escape = '\\`*_{}[]<>()#+-.!|' . implode('', array_keys($this->customInlines));
         $to_escape = implode('', array_unique(str_split($to_escape, 1), SORT_STRING));
         $to_escape = preg_quote($to_escape, '/');
@@ -916,7 +908,9 @@ class Markdown
 
         // Restore `code`s
         foreach ($codes as $key => $value) {
-            $template = $this->fillTemplate(self::CODE, array('contents' => $value));
+            $template = $this->fillTemplate(self::CODE, array(
+                'contents' => self::safe($value)
+            ));
             $text = str_replace($key, $template, $text);
         }
 
@@ -931,5 +925,15 @@ class Markdown
     private static function safe($input)
     {
         return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function indentOf($line)
+    {
+        return strlen($line) - strlen(ltrim($line, ' '));
+    }
+
+    private static function isTableDataRow($line)
+    {
+        return trim($line) !== '' && strpos($line, '|') !== false;
     }
 }

@@ -370,7 +370,7 @@ class Session
         $this->path = $path;
 
         if ($opts->domain !== null) {
-            if (strpbrk($opts->domain, " =,;\t\r\n\013\014") !== false) {
+            if (strpbrk($opts->domain, " =,;\t\r\n\x0B\x0C") !== false) {
                 throw new Exception('Invalid session cookie domain configuration', 0, 3);
             }
 

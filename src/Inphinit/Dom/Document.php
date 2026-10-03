@@ -207,13 +207,13 @@ class Document
      */
     public function loadString($string)
     {
-        $this->loadSource($file, false);
+        $this->loadSource($string, false);
     }
 
     private function loadSource($source, $fileMode)
     {
         if ($this->type === self::HTML) {
-            $callback = array($this->base, $file ? 'loadHTMLFile' : 'loadHTML');
+            $callback = array($this->base, $fileMode ? 'loadHTMLFile' : 'loadHTML');
         } elseif ($fileMode) {
             $callback = array($this->base, 'load');
         } else {
