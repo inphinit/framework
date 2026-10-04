@@ -63,8 +63,8 @@ class Cache
         if (
             is_string($hash) === false ||
             trim($hash) === '' ||
-            ctype_print($hash) === false
-            strpbrk($opts->domain, ' "\\/') !== false
+            ctype_print($hash) === false ||
+            strpbrk($hash, ' "\\/') !== false
         ) {
             throw new Exception('createHash() created an invalid hash');
         }
@@ -260,7 +260,7 @@ class Cache
     }
 
     /**
-     * Check valid HTTP statuses and methods for the cache - This method can be overridden
+     * Checks if the HTTP status code and method are valid for caching – This method can be overridden.
      *
      * @param int $status
      * @param string $method
@@ -320,7 +320,7 @@ class Cache
             flock($handle, LOCK_UN);
             fclose($handle);
 
-            if ($move && rename($this->cacheTemp, $this->cache)) {
+            if ($move && rename($this->cacheTemp, $this->cache) === false) {
                $this->noErrors = false;
             }
         }
