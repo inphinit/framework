@@ -339,7 +339,7 @@ class Import
         }
 
         // It currently does not support interpolation or resolution of $HOME and USERPROFILE
-        if (preg_match('#(\$|\{|\})#', $vendor) === 1) {
+        if (strpbrk($vendor, '${}') !== false) {
             throw new Exception('"vendor-dir" contains invalid characters: ' . $vendor, 0, 3);
         }
 

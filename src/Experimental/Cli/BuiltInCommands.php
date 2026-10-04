@@ -38,8 +38,8 @@ class BuiltInCommands
     public function __construct(Console $console, EnvFile $env, Scheduler $scheduler)
     {
         $this->console = $console;
-        $this->scheduler = $scheduler;
         $this->env = $env;
+        $this->scheduler = $scheduler;
     }
 
     public function register()
