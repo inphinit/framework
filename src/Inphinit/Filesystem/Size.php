@@ -102,9 +102,12 @@ class Size
      */
     public function get($path)
     {
+        // Caution: Strict mode checks case-sensitively whether the file or directory exists
         if (File::strict() && File::exists($path) === false) {
             throw new Exception($path . ' file not found (check case-sensitive)');
-        } elseif (is_file($path) === false) {
+        }
+
+        if (is_file($path) === false) {
             throw new Exception($path . ' not found');
         }
 
@@ -242,20 +245,20 @@ class Size
             $os = self::$osFamily;
 
             if (strpos($os, 'linux') === 0) {
-                // sprintf: %%s -> %s (Note: Linux)
-                $command = 'stat -c %%s %s 2>&1';
-            } elseif (strpos($os, 'darwin') !== false || strpos($os, 'bsd') !== false) {
-                // sprintf: -f%%z -> -f%z (Note: macOS and BSD)
-                $command = 'stat -f%%z %s 2>&1';
+                // [Linux] `sprintf` converts `%%s` to literal `%s`.
+                $command = 'stat -c %%s %s';
+            } elseif (strpos($os, 'bsd') !== false || strpos($os, 'darwin') !== false) {
+                // [BSD/macOS] `sprintf` converts `-f%%z` to literal `-f%z`.
+                $command = 'stat -f%%z %s';
             } elseif (strpos($os, 'win') === 0) {
-                // sprintf: %%F -> %F; %%~zF -> %~zF (Note: Windows)
-                $command = '(for %%F in (%s) do @echo "%%~zF") 2>&1';
+                // [Windows] `sprintf` converts `%%F` and `%%~zF` to literal `%F` and `%~zF`.
+                $command = '(for %%F in (%s) do @echo "%%~zF")';
             } else {
-                // Fallback
-                $command = 'wc -c < %s 2>&1';
+                // [Fallback]
+                $command = 'wc -c < %s';
             }
 
-            $this->bootSystem = $command;
+            $this->bootSystem = $command . ' 2>&1';
         } else {
             $command = $this->bootSystem;
         }
