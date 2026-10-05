@@ -245,7 +245,9 @@ class Document
     {
         if (empty($data)) {
             throw new Exception('Array is empty');
-        } elseif (count($data) > 1) {
+        }
+
+        if (count($data) > 1) {
             throw new Exception('Root array accepts only a key');
         }
 
@@ -253,7 +255,9 @@ class Document
 
         if ($this->type === self::HTML && strcasecmp($root, 'html') !== 0) {
             throw new Exception('Document::HTML expects "html" key as root');
-        } elseif ($this->type === self::XML && self::validTag($root) === false) {
+        }
+
+        if ($this->type === self::XML && self::validTag($root) === false) {
             throw new Exception('Invalid "' . $root . '" key as root');
         }
 

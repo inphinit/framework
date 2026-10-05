@@ -390,9 +390,9 @@ abstract class Reader
             if ($total_fields === 1) {
                 if ($this->flags & self::STRICT) {
                     throw new Exception('No separator was detected in the document header', 0, 3);
-                } else {
-                    $inferred_separator = '';
                 }
+
+                $inferred_separator = '';
             }
 
             $this->filterFields($fields);

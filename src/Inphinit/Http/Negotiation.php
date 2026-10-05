@@ -208,10 +208,10 @@ class Negotiation
             if (isset($current[1])) {
                 $found = preg_match_all('#(^|;)\s*q\s*=\s*([^;]*)#', $current[1], $matches);
 
-                if ($found > 1) {
-                    throw new Exception('The header contains more than one q= in "' . $current[0] . '"');
-                } elseif ($found === 1) {
+                if ($found === 1) {
                     $qvalue = self::parseQValue($matches[2][0]);
+                } elseif ($found > 1) {
+                    throw new Exception('The header contains more than one q= in "' . $current[0] . '"');
                 }
             }
 
@@ -237,7 +237,9 @@ class Negotiation
 
         if (is_numeric($value) === false) {
             throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
-        } elseif ($value < 0 || $value > 1) {
+        }
+
+        if ($value < 0 || $value > 1) {
             throw new Exception('Header contains a q-factor outside the range of 0.0–1.0: "' . $value . '"', 0, 3);
         }
 
