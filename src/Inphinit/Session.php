@@ -42,8 +42,6 @@ class Session
      */
     public function __construct($config)
     {
-        self::checkHeadersSent();
-
         $this->loadConfigs($config);
 
         $name = $this->name;
@@ -62,6 +60,8 @@ class Session
             $this->read();
             $this->id = $id;
         } else {
+            self::checkHeadersSent();
+
             $this->id = $this->create($this->handle, $filename);
             $this->setCookie(false);
         }

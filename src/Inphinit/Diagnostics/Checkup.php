@@ -117,18 +117,24 @@ class Checkup
     {
         if (defined('PHP_BUILD_DATE')) {
             return PHP_BUILD_DATE;
-        } elseif (self::$phpBuildDate === null) {
+        }
+
+        if (self::$phpBuildDate === null) {
             if (function_exists('phpinfo') === false) {
                 throw new Exception('PHP release date could not be determined (`phpinfo()` is disabled)');
             }
 
             $handle = new Document(Document::HTML);
 
-            \ob_start();
+            ob_start();
 
-            \phpinfo(\INFO_GENERAL);
+            phpinfo(INFO_GENERAL);
 
-            $handle->loadString(\ob_get_clean());
+            $html = ob_get_contents();
+
+            ob_end_clean();
+
+            $handle->loadString($html);
 
             $node = $handle->selector()->first('td:contains(Build Date)+td');
 

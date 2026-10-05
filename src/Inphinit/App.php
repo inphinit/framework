@@ -45,7 +45,7 @@ class App
     public static function config($name)
     {
         $name = 'APP_' . strtoupper($name);
-        return isset($_ENV[$name]) && $_ENV[$name] !== '' ? $_ENV[$name] : null;
+        return isset($_ENV[$name][0]) ? $_ENV[$name] : null;
     }
 
     /**

@@ -171,10 +171,10 @@ class EnvFile
 
         if ($value === null) {
             unset($this->entries[$name]);
-        } elseif (is_string($value) === false) {
-            throw new Exception('A string value is expected');
-        } else {
+        } elseif (is_string($value)) {
             $this->entries[$name] = $value;
+        } else {
+            throw new Exception('A string value is expected');
         }
     }
 

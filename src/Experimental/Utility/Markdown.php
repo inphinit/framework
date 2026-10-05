@@ -686,14 +686,15 @@ class Markdown
         $index += 2;
 
         $rows = array();
+        $total_headers = count($headers);
 
         while ($index < $n && self::isTableDataRow($lines[$index])) {
             $cells = $this->splitTableRow($lines[$index]);
 
-            if (count($cells) < count($headers)) {
-                $cells = array_pad($cells, count($headers), '');
-            } elseif (count($cells) > count($headers)) {
-                $cells = array_slice($cells, 0, count($headers));
+            if (count($cells) < $total_headers) {
+                $cells = array_pad($cells, $total_headers, '');
+            } elseif (count($cells) > $total_headers) {
+                $cells = array_slice($cells, 0, $total_headers);
             }
 
             $cells_html = array();

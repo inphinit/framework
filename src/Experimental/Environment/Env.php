@@ -22,7 +22,7 @@ class Env
      */
     public static function entry($name, $alternative = null)
     {
-        return isset($_ENV[$name]) && $_ENV[$name] !== '' ? $_ENV[$name] : $alternative;
+        return isset($_ENV[$name][0]) ? $_ENV[$name] : $alternative;
     }
 
     /**

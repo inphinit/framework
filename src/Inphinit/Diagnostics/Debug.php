@@ -203,7 +203,9 @@ class Debug
     {
         if ($line <= 0 || is_file($file) === false) {
             return false;
-        } elseif ($line > 5) {
+        }
+
+        if ($line > 5) {
             $offset = $line - 6;
             $limit = 10;
             $breakpoint = 6;

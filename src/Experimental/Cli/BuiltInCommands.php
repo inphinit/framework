@@ -142,7 +142,7 @@ class BuiltInCommands
         $env_file = INPHINIT_SYSTEM . '/boot/env.php';
 
         if (is_file($env_file) === false) {
-            echo 'Optimization of the `.env` is already disabled';
+            echo 'Optimization of the `.env` is already disabled.';
         } elseif (unlink($env_file)) {
             echo 'Disabled `.env` optimization at boot.';
         } else {
@@ -288,7 +288,7 @@ class BuiltInCommands
         $max = App::config('session_max_inactive');
 
         if ($max === null || ctype_digit($max) === false || $max[0] === '0' || $max < 1) {
-            echo 'Environment variable APP_SESSION_MAX_INACTIVE is missing or has an invalid value', PHP_EOL;
+            echo 'The APP_SESSION_MAX_INACTIVE environment variable is missing or has an invalid value', PHP_EOL;
             return -1;
         }
 
