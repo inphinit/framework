@@ -196,8 +196,9 @@ class EnvFile
         $handle = fopen($path, 'rb');
 
         if ($handle === false) {
-            $err = error_get_last();
-            throw new Exception($err ? $err['message'] : 'Unknown error', $err ? $err['type'] : 0, 3);
+            $error = error_get_last();
+
+            throw new Exception($error ? trim($error['message']) : 'Unknown error', $error ? $error['type'] : 0, 3);
         }
 
         $parser = new Parser();

@@ -63,7 +63,7 @@ abstract class Treaty
         foreach ($reflect->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             $callback = $method->getName();
 
-            if ($method->isStatic() === false && preg_match($pattern, $callback, $match)) {
+            if ($method->isStatic() === false && preg_match($pattern, $callback, $match) === 1) {
                 $this->bindRoute($match[1], $match[2], $callback);
                 $valid = true;
             }

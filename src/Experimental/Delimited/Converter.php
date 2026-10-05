@@ -252,8 +252,9 @@ class Converter
                 return $handle;
             }
 
-            $err = error_get_last();
-            throw new Exception($err ? $err['message'] : 'Could not open file for writing', $err ? $err['type'] : 0, 4);
+            $error = error_get_last();
+
+            throw new Exception($error ? $error['message'] : 'Could not open file for writing', $err ? $err['type'] : 0, 4);
         }
     }
 

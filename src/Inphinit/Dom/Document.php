@@ -235,40 +235,6 @@ class Document
     }
 
     /**
-     * Convert document to XML string, HTML string or array
-     *
-     * @param \DOMNode $node
-     * @return string|false
-     */
-    public function dump(\DOMNode $node)
-    {
-        if ($this->type === self::XML) {
-            $callback = array($this->base, 'saveXML');
-            return $callback($node, $this->saveOptions);
-        }
-
-        $callback = array($this->base, 'saveHTML');
-        return $callback($node);
-    }
-
-    /**
-     * Save document to file and returns the number of bytes written or false if an error occurred
-     *
-     * @param string $file
-     * @return int|false
-     */
-    public function save($file)
-    {
-        if ($this->type === self::XML) {
-            $callback = array($this->base, 'save');
-            return $callback($file, $this->saveOptions);
-        }
-
-        $callback = array($this->base, 'saveHTMLFile');
-        return $callback($file);
-    }
-
-    /**
      * Convert Array to DOM
      *
      * @param array $data
@@ -332,6 +298,41 @@ class Document
         }
 
         return $this->getNodes($this->base->childNodes);
+    }
+
+    /**
+     * Convert document to XML string, HTML string or array
+     *
+     * @param \DOMNode $node
+     * @return string|false
+     */
+    public function dump(\DOMNode $node)
+    {
+        return $this->saveSource($node, 'saveXML', 'saveHTML');
+    }
+
+    /**
+     * Save document to file and returns the number of bytes written or false if an error occurred
+     *
+     * @param string $file
+     * @return int|false
+     */
+    public function save($file)
+    {
+        return $this->saveSource($file, 'save', 'saveHTMLFile');
+    }
+
+    private function saveSource($source, $xmlMethod, $htmlMethod)
+    {
+        if ($this->type === self::XML) {
+            $callback = array($this->base, $xmlMethod);
+
+            return $callback($source, $this->saveOptions);
+        }
+
+        $callback = array($this->base, $htmlMethod);
+
+        return $callback($source);
     }
 
     private function enableInternalErrors($enable)
@@ -413,7 +414,7 @@ class Document
 
     private static function validTag($tagName)
     {
-        return preg_match('#^([a-z_](\w+|)|[a-z_](\w+|):[a-z_](\w+|))$#i', $tagName) > 0;
+        return preg_match('#^([a-z_](\w+|)|[a-z_](\w+|):[a-z_](\w+|))$#i', $tagName) === 1;
     }
 
     private function add($name, $value, \DOMNode $node)

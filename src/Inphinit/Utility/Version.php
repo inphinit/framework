@@ -41,7 +41,7 @@ class Version
      */
     public function __construct($version)
     {
-        if (preg_match(static::$pattern, $version, $matches)) {
+        if (preg_match(static::$pattern, $version, $matches) === 1) {
             $this->components['major'] = $matches[1];
             $this->components['minor'] = $matches[2];
             $this->components['patch'] = $matches[3];

@@ -402,7 +402,7 @@ class Debug
 
         $match = array();
 
-        if (preg_match('#called\s+in\s+(.*?)\s+on\s+line\s+(\d+)(\s+)?$#', $message, $match)) {
+        if (preg_match('#called\s+in\s+(.*?)\s+on\s+line\s+(\d+)(\s+)?$#', $message, $match) === 1) {
             $file = $match[1];
             $line = (int) $match[2];
         }

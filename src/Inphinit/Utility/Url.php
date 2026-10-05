@@ -81,7 +81,7 @@ class Url
      */
     public function __construct($url)
     {
-        if (preg_match('#^[A-Z]\:#i', $url)) {
+        if (preg_match('#^[A-Z]\:#i', $url) === 1) {
             $url = 'file:///' . $url;
         }
 
@@ -378,7 +378,7 @@ class Url
         } elseif ($scheme === 'file') {
             $scheme .= '://';
 
-            if (preg_match('#^[A-Z]\:#i', $path)) {
+            if (preg_match('#^[A-Z]\:#i', $path) === 1) {
                 $scheme .= '/';
             }
         } elseif ($scheme !== '') {

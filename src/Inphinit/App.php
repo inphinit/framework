@@ -141,7 +141,7 @@ class App
         $full = $pattern[0] !== '/';
         $subject = $full ? (INPHINIT_BASE_URL . INPHINIT_PATH) : INPHINIT_PATH;
 
-        if (preg_match('#^' . $scope_regex . '#', $subject, $params)) {
+        if (preg_match('#^' . $scope_regex . '#', $subject, $params) === 1) {
             $path = $full ? substr($params[0], strlen(INPHINIT_BASE_URL)) : $params[0];
 
             if ($path) {
@@ -312,7 +312,7 @@ class App
 
             $group_regex = str_replace('#route_', '?<route_', $group_regex);
 
-            if (preg_match('#^((?J)(' . $group_regex . '))$#', INPHINIT_PATH, $params)) {
+            if (preg_match('#^((?J)(' . $group_regex . '))$#', INPHINIT_PATH, $params) === 1) {
                 foreach ($params as $index => $value) {
                     if ($value === '' || is_int($index)) {
                         unset($params[$index]);

@@ -149,14 +149,14 @@ class Response
             throw new Exception('Invalid name: ' . $name);
         }
 
-        if (preg_match('#^[\x00-\x7F]+$#', $name)) {
+        if (preg_match('#^[\x00-\x7F]+$#', $name) === 1) {
             // Only ASCII
             $filename = '; filename="' . $name . '"';
         } else {
             // UTF-8 + ASCII fallback
             $filename = '; filename="' . Strings::ascii($name) . '"';
 
-            if (preg_match('//u', $name)) {
+            if (preg_match('//u', $name) === 1) {
                 $filename .= '; filename*=UTF-8\'\'' . rawurlencode($name);
             }
         }

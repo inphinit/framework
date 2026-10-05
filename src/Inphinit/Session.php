@@ -42,12 +42,14 @@ class Session
      */
     public function __construct($config)
     {
+        self::checkHeadersSent();
+
         $this->loadConfigs($config);
 
         $name = $this->name;
+        $id = isset($_COOKIE[$name][0]) ? $_COOKIE[$name] : null;
 
-        if (isset($_COOKIE[$name]) && is_string($_COOKIE[$name]) && preg_match('#^[a-f\d]{32}$#', $_COOKIE[$name])) {
-            $id = $_COOKIE[$name];
+        if ($id !== null && is_string($id) && strlen($id) === 32 && strspn($id, '0123456789abcdef') === 32) {
             $filename = $this->storage . '/' . $this->storePrefix . '[' . $id . ']';
 
             $this->handle = fopen($filename, 'r+');
@@ -99,13 +101,15 @@ class Session
     }
 
     /**
-     * Regenerate data
+     * Generates a new session containing a copy of the data, under a new ID
      *
      * @throws \Inphinit\Exception
      * @throws \ErrorException
      */
     public function regenerate()
     {
+        self::checkHeadersSent();
+
         $id = $this->create($dest, $path);
         $source = $this->handle;
 
@@ -187,6 +191,13 @@ class Session
         $this->close();
     }
 
+    private static function checkHeadersSent()
+    {
+        if (headers_sent($file, $line)) {
+            throw new \ErrorException('Cannot set session cookie, headers already sent', 0, E_ERROR, $file, $line);
+        }
+    }
+
     private function create(&$handle, &$filename)
     {
         $start = microtime(true);
@@ -206,9 +217,17 @@ class Session
             $file = $storage . '/' . $prefix . '[' . $id . ']';
             $stream = fopen($file, 'x+');
 
-            if ($stream === false) {
-                usleep(1000);
+            if ($stream !== false) {
+                break;
             }
+
+            $error = error_get_last();
+
+            if (isset($error['message']) && stripos($error['message'], 'File exists') === false) {
+                throw new Exception('Failed to create session file', 0, 3);
+            }
+
+            usleep(1000);
         }
 
         $handle = $stream;
@@ -226,7 +245,9 @@ class Session
         $data = stream_get_contents($this->handle);
 
         if ($data === false) {
+            $this->close();
             $this->setCookie(true);
+
             throw new Exception('Cannot read session data', 0, 3);
         }
 
@@ -240,16 +261,19 @@ class Session
             } catch (\Exception $ex) {
                 $this->close();
                 $this->setCookie(true);
+
                 throw new Exception($ex->getMessage(), $ex->getCode(), 3, $ex);
             }
         }
 
-        $this->lock(false);
-
         if (is_array($data) === false) {
+            $this->close();
             $this->setCookie(true);
+
             throw new Exception('Cannot unserialize session data', 0, 3);
         }
+
+        $this->lock(false);
 
         $this->data = $data;
     }
@@ -265,14 +289,9 @@ class Session
 
     private function setCookie($forceExpires)
     {
-        if (headers_sent($file, $line)) {
-            $this->close();
-            throw new \ErrorException('Cannot set session cookie, headers already sent', 0, E_ERROR, $file, $line);
-        }
-
         if ($forceExpires) {
             $id = '_';
-            $expires = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
+            $expires = 'Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
         } else {
             $id = $this->id;
             $expires = $this->expires;

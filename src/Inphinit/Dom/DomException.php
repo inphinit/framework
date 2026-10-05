@@ -36,6 +36,6 @@ class DomException extends \Inphinit\Exception
             $trace = 0;
         }
 
-        parent::__construct($error->message, $error->code, $trace);
+        parent::__construct(trim($error->message), $error->code, $trace);
     }
 }
