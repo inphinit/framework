@@ -146,7 +146,7 @@ class Package
     {
         $search = sprintf(self::META_FILE, $this->metadataAbsoluteDir, '(packages*)', '*');
 
-        $files = glob($search, GLOB_ERR|GLOB_NOSORT);
+        $files = glob($search, GLOB_ERR | GLOB_NOSORT);
 
         if ($files === false) {
             return false;

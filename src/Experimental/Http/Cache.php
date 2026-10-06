@@ -29,36 +29,33 @@ class Cache
 
     private $cache;
     private $cacheTemp;
-    private $storage;
+    private $storage = 'storage/cache/output';
 
     private $debug = false;
     private $handle;
     private $hash;
     private $headerStorage;
     private $method;
+    private $modified;
     private $noErrors = true;
     private $started = false;
     private $writerCallback;
     private $writing = false;
 
     /*
-     * Creates a Cache instance
+     * Define HTTP and request target. By default, the query string is not used;
+     * combine INPHINIT_PATH with $_SERVER[QUERY_STRING].
      *
-     * @param string      $method
-     * @param string      $path
-     * @param string|null $storage
+     * @param string|null $method Optional. Default is $_SERVER[REQUEST_METHOD].
+     * @param string|null $target Optional. Default is INPHINIT_PATH.
      */
-    public function __construct($method = null, $path = null, $storage = null)
+    public function __construct($method = null, $target = null)
     {
-        if ($path === null) {
-            $path = INPHINIT_PATH;
-
-            if (isset($_SERVER['QUERY_STRING'])) {
-                $path .= '?' . $_SERVER['QUERY_STRING'];
-            }
+        if ($target === null) {
+            $target = INPHINIT_PATH;
         }
 
-        $hash = static::createHash($path);
+        $hash = static::createHash($target);
 
         if (
             is_string($hash) === false ||
@@ -73,19 +70,38 @@ class Cache
             $method = $_SERVER['REQUEST_METHOD'];
         }
 
-        if ($storage === null) {
-            $storage = 'storage/cache/output';
-        } else {
-            $storage = ltrim($storage, '/');
+        if (App::config('environment') === 'development') {
+            $this->debug = true;
         }
 
         $this->hash = $hash;
         $this->method = strtoupper($method);
-        $this->storage = $storage;
+    }
 
-        if (App::config('environment') === 'development') {
-            $this->debug = true;
+    /*
+     * Set the modification date to update the ETag, if necessary. (Note: Don't use 'now')
+     *
+     * @param \DateTime $datetime
+     */
+    public function modifiedOn(\DateTime $datetime)
+    {
+        $this->modified = $datetime->getTimestamp();
+    }
+
+    /*
+     * Set storage location
+     *
+     * @param string $path
+     */
+    public function setStorage($path)
+    {
+        $full = Storage::path($path);
+
+        if (is_dir($full) === false || is_writable($full)) {
+            throw new Exception('Invalid directory');
         }
+
+        $this->storage = trim($path, '/');
     }
 
     /*
@@ -126,13 +142,18 @@ class Cache
 
         $hash = $this->hash;
 
-        $time = time();
+        // Caution: timestamp will be used as the ETag suffix.
+        if ($this->modified !== null) {
+            $hash .= '-' . $this->modified;
+        }
+
+        $now = time();
 
         $cache = INPHINIT_SYSTEM . '/' . $this->storage . '/' . $hash;
 
         $this->headerStorage = $cache . '.headers';
 
-        if (is_file($cache) && ($modified = filemtime($cache)) > ($time - $expires) && $this->sendHeaders()) {
+        if (is_file($cache) && ($modified = filemtime($cache)) > ($now - $expires) && $this->sendHeaders()) {
             $this->debugWithHeader(self::CACHED);
 
             Response::cache($expires, $modified);
@@ -146,12 +167,6 @@ class Cache
 
             return self::CACHED;
         }
-
-        if (ob_get_level() > 0) {
-            ob_end_flush();
-        }
-
-        self::checkHeadersSent();
 
         $cache_temp = $cache . '.tmp';
 
@@ -178,7 +193,7 @@ class Cache
                     $error();
                 });
 
-                Response::cache($expires, $time);
+                Response::cache($expires, $now);
 
                 header('Etag: "' . $hash . '"');
 
@@ -282,16 +297,16 @@ class Cache
         return \hash('sha256', $path);
     }
 
-    private function checkHeadersSent()
+    private static function checkHeadersSent()
     {
         if (headers_sent($file, $line)) {
-            throw new \ErrorException('Headers already sent', 0, E_ERROR, $file, $line);
+            throw new \ErrorException('Cache cannot start, headers already sent', 0, E_ERROR, $file, $line);
         }
     }
 
     private function sendHeaders()
     {
-        $headers = file($this->headerStorage, FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES);
+        $headers = file($this->headerStorage, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         if ($headers === false) {
             return false;

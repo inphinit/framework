@@ -119,33 +119,37 @@ class Checkup
             return PHP_BUILD_DATE;
         }
 
-        if (self::$phpBuildDate === null) {
-            if (function_exists('phpinfo') === false) {
-                throw new Exception('PHP release date could not be determined (`phpinfo()` is disabled)');
-            }
-
-            $handle = new Document(Document::HTML);
-
-            ob_start();
-
-            phpinfo(INFO_GENERAL);
-
-            $html = ob_get_contents();
-
-            ob_end_clean();
-
-            $handle->loadString($html);
-
-            $node = $handle->selector()->first('td:contains(Build Date)+td');
-
-            if ($node !== null && ($value = trim($node->textContent)) !== '') {
-                self::$phpBuildDate = $value;
-            } else {
-                throw new Exception('PHP release date could not be determined (missing info in `phpinfo()`)');
-            }
+        if (self::$phpBuildDate !== null) {
+            return self::$phpBuildDate;
         }
 
-        return self::$phpBuildDate;
+        if (function_exists('phpinfo') === false) {
+            throw new Exception('PHP release date could not be determined (`phpinfo()` is disabled)');
+        }
+
+        $handle = new Document(Document::HTML);
+
+        ob_start();
+
+        phpinfo(INFO_GENERAL);
+
+        $html = ob_get_contents();
+
+        ob_end_clean();
+
+        $handle->loadString($html);
+
+        $node = $handle->selector()->first('td:contains(Build Date)+td');
+
+        $value = $node !== null ? trim($node->textContent) : '';
+
+        if ($value === '') {
+            throw new Exception('PHP release date could not be determined (missing info in `phpinfo()`)');
+        }
+
+        self::$phpBuildDate = $value;
+
+        return $value;
     }
 
     private function checkExecutionTime()
@@ -347,7 +351,7 @@ class Checkup
         $this->checkAppStorage();
 
         if ($this->development && count($this->errors) > 0) {
-            $ini_files = self::getIniFiles();
+            $ini_files = static::getIniFiles();
 
             $message = 'Adjustments should be made in ';
 

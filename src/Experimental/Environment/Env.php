@@ -28,30 +28,28 @@ class Env
     /**
      * Get value from `$_ENV[...]` as boolean
      *
+     * - Returns bool(true) for '1', 'true', 'on', and 'yes'.
+     * - Returns bool(false) for '0', 'false', 'off', and 'no'.
+     *
      * @param string $name
+     * @param bool $alternative
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function bool($name)
+    public static function bool($name, $alternative = false)
     {
-        $value = self::entry($name);
+        $value = static::entry($name);
 
         if ($value === null) {
-            return false;
+            return $alternative;
         }
 
-        switch (strtolower($value)) {
-            case '0':
-            case 'false':
-            case 'no':
-            case 'off':
-                return false;
+        if ($value !== '' && trim($value) === $value) {
+            $result = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
-            case '1':
-            case 'on':
-            case 'true':
-            case 'yes':
-                return true;
+            if ($result !== null) {
+                return $result;
+            }
         }
 
         throw new Exception("Cannot convert {$name}={$value} to boolean");
@@ -61,20 +59,24 @@ class Env
      * Get value from `$_ENV[...]` as float
      *
      * @param string $name
-     * @param float
+     * @param float $alternative
      * @throws \Inphinit\Exception
      * @return float
      */
     public static function float($name, $alternative = 0.0)
     {
-        $value = self::entry($name);
+        $value = static::entry($name);
 
         if ($value === null) {
             return $alternative;
         }
 
-        if (is_numeric($value)) {
-            return floatval($value);
+        if (trim($value) === $value) {
+            $result = filter_var($value, FILTER_VALIDATE_FLOAT);
+
+            if ($result !== false && is_finite($result)) {
+                return $result;
+            }
         }
 
         throw new Exception("Cannot convert {$name}={$value} to float");
@@ -84,20 +86,24 @@ class Env
      * Get value from `$_ENV[...]` as integer
      *
      * @param string $name
-     * @param int
+     * @param int $alternative
      * @throws \Inphinit\Exception
      * @return int
      */
     public static function int($name, $alternative = 0)
     {
-        $value = self::entry($name);
+        $value = static::entry($name);
 
         if ($value === null) {
             return $alternative;
         }
 
-        if (is_numeric($value)) {
-            return intval($value, 10);
+        if (trim($value) === $value) {
+            $result = filter_var($value, FILTER_VALIDATE_INT);
+
+            if ($result !== false) {
+                return $result;
+            }
         }
 
         throw new Exception("Cannot convert {$name}={$value} to int");

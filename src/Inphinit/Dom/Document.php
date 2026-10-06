@@ -72,7 +72,7 @@ class Document
         }
 
         if (self::$severityLevels === null) {
-            self::setSeverityLevels(self::FATAL);
+            static::setSeverityLevels(self::FATAL);
         }
 
         $this->type = $type;

@@ -158,7 +158,7 @@ class Size
 
         if ($boot === null) {
             try {
-                $boot = new com('Scripting.FileSystemObject');
+                $boot = new \com('Scripting.FileSystemObject');
 
                 $this->bootCOM = $boot;
             } catch (\Exception $ex) {

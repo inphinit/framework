@@ -14,7 +14,7 @@ use Inphinit\Exception;
 class App extends \Inphinit\App
 {
     private static $allowedMethods = array(
-        'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT'
+        'ANY', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'QUERY'
     );
 
     /**

@@ -82,7 +82,7 @@ class Negotiation
             $value = Request::header($header);
         }
 
-        return $value ? self::qFactor($value, $sort) : null;
+        return $value ? static::qFactor($value, $sort) : null;
     }
 
     /**

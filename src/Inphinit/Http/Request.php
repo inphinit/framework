@@ -36,7 +36,7 @@ class Request
     {
         switch ($type) {
             case 'gpc':
-                return self::header('sec-gpc', '') === '1';
+                return static::header('sec-gpc', '') === '1';
 
             case 'pjax':
                 return self::headerMatches('x-pjax', 'true');
@@ -65,7 +65,7 @@ class Request
 
     private static function headerMatches($header, $target)
     {
-        return strcasecmp(self::header($header, ''), $target) === 0;
+        return strcasecmp(static::header($header, ''), $target) === 0;
     }
 
     /**
@@ -89,13 +89,13 @@ class Request
     }
 
     /**
-     * Get querystring - Note: same as `$_SERVER['QUERY_STRING']`, but with framework adjustments on IIS web server
+     * Get querystring - Note: same as `$_SERVER['QUERY_STRING']`
      *
      * @return string|null
      */
     public static function query()
     {
-        return empty($_GET['INPHINIT_REDIRECT']) && isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
+        return isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : null;
     }
 
     /**

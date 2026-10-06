@@ -41,25 +41,11 @@ class Debug
     );
 
     private $rendered = false;
-    private $beforeView;
     private $views = array();
     private static $booted = false;
     private static $currentAssistant;
     private static $currentEditor;
     private static $restoreDisplayErrors;
-
-    /**
-     * Set view for display displayed before other defined from a Debug instance
-     * Note: This method does not affect behavior in the CLI environment
-     *
-     * @param string $view
-     */
-    public function setBeforeView($view)
-    {
-        if (PHP_SAPI !== 'cli') {
-            $this->beforeView = $view;
-        }
-    }
 
     /**
      * Set view for display defined constants, functions and classes
@@ -371,31 +357,21 @@ class Debug
 
         View::dispatch();
 
-        $this->render($view, $data);
+        View::render($view, $data);
     }
 
     private function renderPerformance($view)
     {
-        $this->render($view, self::performance());
+        View::render($view, static::performance());
     }
 
     private function renderDefined($view)
     {
-        $this->render($view, array(
-            'classes' => self::classes(),
-            'constants' => self::constants(),
-            'functions' => self::functions()
+        View::render($view, array(
+            'classes' => static::classes(),
+            'constants' => static::constants(),
+            'functions' => static::functions()
         ));
-    }
-
-    private function render($view, $data)
-    {
-        if ($this->rendered === false && $this->beforeView !== null) {
-            $this->rendered = true;
-            View::render($this->beforeView);
-        }
-
-        View::render($view, $data);
     }
 
     private static function details($type, $message, $file, $line)
@@ -445,7 +421,7 @@ class Debug
         $source = null;
 
         if ($line > -1) {
-            $source = self::source($file, $line);
+            $source = static::source($file, $line);
         }
 
         return array(

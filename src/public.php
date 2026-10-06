@@ -9,7 +9,7 @@
 
 use Inphinit\Filesystem\File;
 
-function inphinit_sandbox_public($sandbox_path)
+function inphinit_public_sandbox($sandbox_path)
 {
     $sandbox_path = INPHINIT_ROOT . '/public/' . $sandbox_path;
 
@@ -21,9 +21,34 @@ function inphinit_sandbox_public($sandbox_path)
     }
 }
 
+function inphinit_public_index($path)
+{
+    $php = $path . 'index.php';
+
+    if (is_file($php)) {
+        return $php;
+    }
+
+    $html = $path . 'index.php';
+
+    if (is_file($html)) {
+        return $html;
+    }
+
+    return false;
+}
+
 $inphinit_public_source = INPHINIT_ROOT . '/public' . $inphinit_path;
 
-if ($inphinit_path !== '/' && strpos($inphinit_path, '/.') === false && is_file($inphinit_public_source)) {
+if ($inphinit_path === '/' || strpos($inphinit_path, '/.') !== false) {
+    $inphinit_public_source = false;
+} elseif (substr($inphinit_path, -1) === '/') {
+    $inphinit_public_source = inphinit_public_index($inphinit_public_source);
+} elseif (is_file($inphinit_public_source) === false) {
+    $inphinit_public_source = false;
+}
+
+if ($inphinit_public_source !== false) {
     $inphinit_public_type = null;
 
     $inphinit_public_suffix = pathinfo($inphinit_path, PATHINFO_EXTENSION);
@@ -32,7 +57,7 @@ if ($inphinit_path !== '/' && strpos($inphinit_path, '/.') === false && is_file(
         $inphinit_public_suffix = strtolower($inphinit_public_suffix);
 
         if (strcasecmp($inphinit_public_suffix, 'php') === 0) {
-            inphinit_sandbox_public($inphinit_path);
+            inphinit_public_sandbox($inphinit_path);
         }
 
         $inphinit_public_media_types = require INPHINIT_SYSTEM . '/boot/media_types.php';

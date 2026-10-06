@@ -22,14 +22,20 @@ class Storage
      */
     public static function path($path)
     {
+        if (
+            $path === '' ||
+            $path === '..' ||
+            is_string($path) === false ||
+            strpos($path, '../') === 0 ||
+            strpos($path, '/..') !== false
+        ) {
+            throw new Exception('Invalid path');
+        }
+
         $base = INPHINIT_SYSTEM . '/storage/';
         $path = str_replace('\\', '/', $path);
 
         $full = $base . $path;
-
-        if ($path === '' || $path === '..' || strpos($path, '../') === 0 || strpos($path, '/..') !== false) {
-            throw new Exception('Invalid path level: ' . $full);
-        }
 
         return $full;
     }
@@ -67,14 +73,14 @@ class Storage
     /**
      * Set the modified time of a file located in the storage directory, preserving the access time.
      *
-     * @param string        $path
-     * @param int|\DateTime $time
+     * @param string    $path
+     * @param \DateTime $time
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function modified($path, $time)
+    public static function modified($path, \DateTime $datetime)
     {
-        $update = self::getUnixTimestamp($time, 'Invalid modified time');
+        $update = $datetime->getTimestamp();
         $source = static::path($path);
         $source_time = fileatime($source);
 
@@ -88,14 +94,14 @@ class Storage
     /**
      * Set the access time of a file located in the storage directory, preserving the modification time.
      *
-     * @param string        $path
-     * @param int|\DateTime $time
+     * @param string    $path
+     * @param \DateTime $time
      * @throws \Inphinit\Exception
      * @return bool
      */
-    public static function access($path, $time)
+    public static function access($path, \DateTime $datetime)
     {
-        $update = self::getUnixTimestamp($time, 'Invalid access time');
+        $update = $datetime->getTimestamp();
         $source = static::path($path);
         $source_time = filemtime($source);
 
@@ -110,14 +116,14 @@ class Storage
      * Clear contents of storage application directory after specified expires date (or UNIX time),
      * and returns number of deleted files
      *
-     * @param string        $directory
-     * @param int|\DateTime $expiresAt
-     * @param int           $attempts
-     * @param callable      $filter
+     * @param string    $directory
+     * @param \DateTime $expiresAt
+     * @param int       $attempts
+     * @param callable  $filter
      * @throws \Inphinit\Exception
      * @return int
      */
-    public static function clear($path, $expiresAt, $attempts = 100, $filter = null)
+    public static function clear($path, \DateTime $expiresAt, $attempts = 100, $filter = null)
     {
         $full = self::path($path);
 
@@ -125,7 +131,7 @@ class Storage
             throw new Exception('Cannot read directory: ' . $full);
         }
 
-        $expires = self::getUnixTimestamp($expiresAt, 'Invalid expires datetime');
+        $expires = $expiresAt->getTimestamp();
 
         if (is_int($attempts) === false || $attempts < 0) {
             throw new Exception('Attempts expects an integer value greater than zero');
@@ -179,22 +185,5 @@ class Storage
         }
 
         return $changes;
-    }
-
-    private static function getUnixTimestamp($date, $message)
-    {
-        if ($date instanceof \DateTime) {
-            return $date->getTimestamp();
-        }
-
-        if (is_string($date) && ctype_digit($date)) {
-            $date = intval($date);
-        }
-
-        if (is_int($date) === false || $date < 0) {
-            throw new Exception($message, 0, 3);
-        }
-
-        return $date;
     }
 }

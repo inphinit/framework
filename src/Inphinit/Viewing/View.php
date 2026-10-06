@@ -19,6 +19,7 @@ class View
 
     private static $encoding = 'UTF-8';
     private static $force = false;
+    private static $onceViews = array();
     private static $shared = array();
     private static $strictMode = false;
     private static $views = array();
@@ -44,16 +45,14 @@ class View
      */
     public static function strict($enable)
     {
-        if ($enable !== null && is_bool($enable) === false) {
+        if (is_bool($enable) === false) {
             $type = Inspector::type($enable);
             throw new Exception("Expects to be bool, {$type} given");
         }
 
         $previous = self::$strictMode;
 
-        if ($enable !== null) {
-            self::$strictMode = $enable;
-        }
+        self::$strictMode = $enable;
 
         return $previous;
     }
@@ -77,7 +76,7 @@ class View
 
             foreach (self::$views as $value) {
                 if ($value) {
-                    self::render($value[0], $value[1], $value[2]);
+                    static::render($value[0], $value[1], $value[2]);
                 }
             }
         }
@@ -126,13 +125,14 @@ class View
      *                     - `ENT_XML1`
      *                     - `ENT_XHTML`
      *                     - `ENT_HTML5`
+     * @throws \Inphinit\Exception
      * @return int|null
      */
     public static function render($view, array $data = array(), $mode = ENT_COMPAT)
     {
         $path = 'views/' . str_replace('.', '/', $view) . '.php';
 
-        if (self::$strictMode && self::exists($view) === false) {
+        if (self::$strictMode && static::exists($view) === false) {
             throw new Exception($path . ' view not found (check case-sensitive)');
         }
 
@@ -147,6 +147,36 @@ class View
         }
 
         inphinit_sandbox($path, $data);
+    }
+
+    /**
+     * This method is similar to `::render()`, except that the view will only be rendered once,
+     * ignoring subsequent calls.
+     *
+     * @param string $view
+     * @param array  $data
+     * @param int    $mode
+     * @throws \Inphinit\Exception
+     */
+    public static function once($view, array $data = array(), $mode = ENT_COMPAT)
+    {
+        if (isset(self::$onceViews[$view]) === false) {
+            self::$onceViews[$view] = true;
+
+            $previous = self::$force;
+
+            self::$force = true;
+
+            try {
+                static::render($view, $data, $mode);
+
+                self::$force = $previous;
+            } catch (\Exception $ex) {
+                self::$force = $previous;
+
+                throw new Exception($ex->getMessage(), 0, 2, $ex);
+            }
+        }
     }
 
     /**
@@ -166,10 +196,12 @@ class View
         foreach ($data as &$item) {
             if (is_array($item)) {
                 self::escape($item, $mode);
-            } elseif (is_string($item)) {
-                $item = htmlspecialchars($item, $mode, self::$encoding);
             } elseif (is_object($item) && method_exists($item, '__toString')) {
-                $item = htmlspecialchars((string) $item, $mode, self::$encoding);
+                $item = (string) $item;
+            }
+
+            if (is_string($item)) {
+                $item = htmlspecialchars($item, $mode, self::$encoding);
             }
         }
     }

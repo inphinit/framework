@@ -59,7 +59,7 @@ class Arrays
 
         foreach ($array as &$item) {
             if (is_array($item)) {
-                self::ksort($item, $flags, $descending);
+                static::ksort($item, $flags, $descending);
             }
         }
     }

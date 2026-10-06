@@ -13,7 +13,7 @@ use Inphinit\Http\Request;
 
 class Method
 {
-    private $allowed = array('delete', 'patch', 'put');
+    private $allowed = array('delete', 'patch', 'put', 'query');
 
     private $cache;
 
@@ -37,7 +37,7 @@ class Method
      */
     public function __construct($reset = false)
     {
-        self::original();
+        static::original();
 
         if ($reset) {
             $this->sources = array();
@@ -111,7 +111,7 @@ class Method
                 $method = $_GET[$key];
             }
 
-            if ($method !== null && in_array(strtolower($method), $this->allowed)) {
+            if ($method !== null && in_array(strtolower($method), $this->allowed, true)) {
                 return $this->cache = strtoupper($method);
             }
         }

@@ -171,7 +171,7 @@ class App
      */
     public function exec()
     {
-        $code = self::maintenance() ? 503 : http_response_code();
+        $code = static::maintenance() ? 503 : http_response_code();
         $params = null;
         $callback = null;
         $output = null;

@@ -26,7 +26,7 @@ class Inspector
         if (isset($trace[$level]['file'], $trace[$level]['line'])) {
             $info = $trace[$level];
 
-            self::evalSource($info['file'], $info['file'], $info['line']);
+            static::evalSource($info['file'], $info['file'], $info['line']);
 
             return true;
         }
@@ -78,7 +78,7 @@ class Inspector
     public static function regex($expression, &$errorMessage, &$errorCode)
     {
         if (is_string($expression) === false) {
-            $type = self::type($expression);
+            $type = static::type($expression);
             $errorMessage = "Expects to be string, {$type} given";
             $errorCode = 0;
             return false;
@@ -115,7 +115,7 @@ class Inspector
                 $message = 'The offset did not correspond to the beginning of a valid UTF-8 code point';
                 break;
             default:
-                if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $error) {
+                if (defined('PREG_JIT_STACKLIMIT_ERROR') && PREG_JIT_STACKLIMIT_ERROR === $errorCode) {
                     $message = 'JIT stack limit exhausted';
                 }
         }
