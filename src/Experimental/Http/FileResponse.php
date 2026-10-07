@@ -74,7 +74,7 @@ class FileResponse
 
         if (isset($_SERVER[$env_var])) {
             $value = strtolower($_SERVER[$env_var]);
-            return in_array($value, array('1', 'on', 'true', 'yes'));
+            return in_array($value, array('1', 'on', 'true', 'yes'), true);
         }
 
         return false;

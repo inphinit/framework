@@ -93,7 +93,7 @@ class Command
             throw new Exception('Invalid long option');
         }
 
-        if (in_array($long, $this->longs)) {
+        if (in_array($long, $this->longs, true)) {
             throw new Exception($long . ' is already defined');
         }
 

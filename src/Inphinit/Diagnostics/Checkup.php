@@ -165,10 +165,10 @@ class Checkup
                 $max_exec = self::MAX_EXEC_RECOMMENDED;
 
                 if ($value < 1) {
-                    $this->errors[] = 'Unlimited `max_execution_time` is unsafe in Web context';
+                    $this->errors[] = 'Unlimited `max_execution_time` is unsafe in WEB context';
                 } elseif ($value < $min_exec || $value > $max_exec) {
                     $this->warnings[] = "It is recommended to set `max_execution_time` between " .
-                                        "{$min_exec} and {$max_exec} in Web context";
+                                        "{$min_exec} and {$max_exec} in WEB context";
                 }
             }
         }
@@ -189,7 +189,7 @@ class Checkup
                 $this->errors[] = "Invalid value in entry `memory_limit={$entry}`";
             } elseif ($value < 0) {
                 if ($this->isHttp) {
-                    $this->errors[] = 'Unlimited `memory_limit` is unsafe in Web context';
+                    $this->errors[] = 'Unlimited `memory_limit` is unsafe in WEB context';
                 }
             } elseif ($value < self::MIN_MEMORY_RECOMMENDED) {
                 $this->warnings[] = "`memory_limit={$entry}` may not be enough";

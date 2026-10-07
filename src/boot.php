@@ -65,7 +65,7 @@ function inphinit_error($type, $message, $file, $line, $context = null)
 
     $collect = $file . ':' . $line;
 
-    if (in_array($collect, $collected_errors) === false) {
+    if (in_array($collect, $collected_errors, true) === false) {
         $collected_errors[] = $collect;
 
         if (class_exists('\\Inphinit\\Event', false) && (error_reporting() & $type)) {

@@ -59,11 +59,11 @@ class Task
     public function cron($minute, $hour, $day, $month, $weekday)
     {
         $this->cronFields = array(
-            self::parseCronField((string) $minute, 0, 59, false),
-            self::parseCronField((string) $hour, 0, 23, false),
-            self::parseCronField((string) $day, 1, 31, false),
-            self::parseCronField((string) $month, 1, 12, false),
-            self::parseCronField((string) $weekday, 0, 7, true)
+            self::parseCronField($minute, 0, 59, false),
+            self::parseCronField($hour, 0, 23, false),
+            self::parseCronField($day, 1, 31, false),
+            self::parseCronField($month, 1, 12, false),
+            self::parseCronField($weekday, 0, 7, true)
         );
 
         $this->mode = self::MODE_CRON;
@@ -208,7 +208,7 @@ class Task
     public function run()
     {
         // Caution: Skips execution if the environment does not match
-        if ($this->environments !== null && in_array(App::config('environment'), $this->environments) === false) {
+        if ($this->environments !== null && in_array(App::config('environment'), $this->environments, true) === false) {
             return 0;
         }
 
@@ -252,11 +252,9 @@ class Task
             return true;
         }
 
-        $value = ltrim($value, '0');
+        $value = $value === '' ? 0 : intval($value);
 
-        $int_value = $value === '' ? 0 : intval($value);
-
-        return in_array($int_value, $allowed);
+        return in_array($value, $allowed, true);
     }
 
     private static function parseCronField($expr, $min, $max, $isWeekday)
@@ -266,6 +264,8 @@ class Task
         if ($expr === '*') {
             return null;
         }
+
+        $expr = (string) $expr;
 
         $values = array();
 

@@ -430,7 +430,7 @@ class Session
         if ($same_site !== null) {
             if (
                 is_string($same_site) === false ||
-                in_array(strtolower($same_site), array('lax', 'none', 'strict')) === false
+                in_array(strtolower($same_site), array('lax', 'none', 'strict'), true) === false
             ) {
                 throw new Exception('Invalid session cookie same_site configuration', 0, 3);
             }

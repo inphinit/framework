@@ -194,7 +194,6 @@ class Cache
                 });
 
                 Response::cache($expires, $now);
-
                 header('Etag: "' . $hash . '"');
 
                 return $this->debugWithHeader(self::WRITING);

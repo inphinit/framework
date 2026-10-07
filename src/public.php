@@ -11,8 +11,6 @@ use Inphinit\Filesystem\File;
 
 function inphinit_public_sandbox($sandbox_path)
 {
-    $sandbox_path = INPHINIT_ROOT . '/public/' . $sandbox_path;
-
     if (realpath($sandbox_path) === false) {
         http_response_code(404);
     } else {
@@ -29,7 +27,7 @@ function inphinit_public_index($path)
         return $php;
     }
 
-    $html = $path . 'index.php';
+    $html = $path . 'index.html';
 
     if (is_file($html)) {
         return $html;
@@ -51,19 +49,19 @@ if ($inphinit_path === '/' || strpos($inphinit_path, '/.') !== false) {
 if ($inphinit_public_source !== false) {
     $inphinit_public_type = null;
 
-    $inphinit_public_suffix = pathinfo($inphinit_path, PATHINFO_EXTENSION);
+    $inphinit_public_suffix = pathinfo($inphinit_public_source, PATHINFO_EXTENSION);
 
     if ($inphinit_public_suffix) {
         $inphinit_public_suffix = strtolower($inphinit_public_suffix);
 
-        if (strcasecmp($inphinit_public_suffix, 'php') === 0) {
-            inphinit_public_sandbox($inphinit_path);
+        if ($inphinit_public_suffix === 'php') {
+            inphinit_public_sandbox($inphinit_public_source);
         }
 
         $inphinit_public_media_types = require INPHINIT_SYSTEM . '/boot/media_types.php';
 
         foreach ($inphinit_public_media_types as $mime => $suffixes) {
-            if (in_array($inphinit_public_suffix, $suffixes)) {
+            if (in_array($inphinit_public_suffix, $suffixes, true)) {
                 $inphinit_public_type = $mime;
                 break;
             }
