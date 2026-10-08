@@ -27,19 +27,21 @@ class Cache
     /** @var int Returned by `start()` when the current response started being recorded to the cache */
     const WRITING = 3;
 
+    const DEFAULT_CHUNK_SIZE = 1048576;
+
     private $cache;
     private $cacheTemp;
-    private $storage = 'storage/cache/output';
-
     private $debug = false;
+    private $expiresAt;
+    private $finishContentLength = 0;
     private $handle;
     private $hash;
     private $headerStorage;
     private $method;
-    private $modified;
     private $noErrors = true;
     private $started = false;
-    private $writerCallback;
+    private $storage = 'storage/cache/output';
+    private $lifetime;
     private $writing = false;
 
     /*
@@ -51,6 +53,14 @@ class Cache
      */
     public function __construct($method = null, $target = null)
     {
+        if ($method === null) {
+            if (isset($_SERVER['REQUEST_METHOD'][0])) {
+                $method = $_SERVER['REQUEST_METHOD'];
+            } else {
+                throw new Exception('REQUEST_METHOD not defined');
+            }
+        }
+
         if ($target === null) {
             $target = INPHINIT_PATH;
         }
@@ -66,10 +76,6 @@ class Cache
             throw new Exception('createHash() created an invalid hash');
         }
 
-        if ($method === null) {
-            $method = $_SERVER['REQUEST_METHOD'];
-        }
-
         if (App::config('environment') === 'development') {
             $this->debug = true;
         }
@@ -79,13 +85,34 @@ class Cache
     }
 
     /*
-     * Set the modification date to update the ETag, if necessary. (Note: Don't use 'now')
+     * Set how long the cache should remain valid before it is refreshed
+     * Note: This value is also used to set the Expires header.
      *
-     * @param \DateTime $datetime
+     * @param int $minutes
+     * @param int $hours
+     * @param int $days
      */
-    public function modifiedOn(\DateTime $datetime)
+    public function setLifetime($minutes, $hours, $days)
     {
-        $this->modified = $datetime->getTimestamp();
+        if ($days < 0 || $days > 365) {
+            throw new Exception('Days must be between 0 and 365');
+        }
+
+        if ($hours < 0 || $hours > 23) {
+            throw new \Exception('Hours must be between 0 and 23');
+        }
+
+        if ($minutes < 0 || $minutes > 59) {
+            throw new Exception('Minutes must be between 0 and 59');
+        }
+
+        $lifetime = $minutes * 60 + $hours * 3600 + $days * 86400;
+
+        if ($lifetime < 1) {
+            throw new Exception('Lifetime must be greater than zero');
+        }
+
+        $this->lifetime = $lifetime;
     }
 
     /*
@@ -97,21 +124,11 @@ class Cache
     {
         $full = Storage::path($path);
 
-        if (is_dir($full) === false || is_writable($full)) {
+        if (is_dir($full) === false || is_writable($full) === false) {
             throw new Exception('Invalid directory');
         }
 
         $this->storage = trim($path, '/');
-    }
-
-    /*
-     * Set a method to overwrite the buffer
-     *
-     * @param callable $callback
-     */
-    public function setWriter(callable $callback)
-    {
-        $this->writerCallback = $callback;
     }
 
     /**
@@ -126,13 +143,25 @@ class Cache
      * @throws \ErrorException
      * @return int
      */
-    public function start($expires = 3600, $chunkSize = 1024)
+    public function start($chunkSize = null)
     {
         if ($this->started) {
-            throw new Exception('The cache has already been started');
+            throw new Exception('Cache has already been started');
         }
 
-        self::checkHeadersSent();
+        if ($chunkSize === null) {
+            $chunkSize = self::DEFAULT_CHUNK_SIZE;
+        }
+
+        $lifetime = $this->lifetime;
+
+        if ($lifetime === null) {
+            throw new Exception('Lifetime has not been defined');
+        }
+
+        if (headers_sent($file, $line)) {
+            throw new \ErrorException('Cache cannot start, headers already sent', 0, E_ERROR, $file, $line);
+        }
 
         if (static::valid(http_response_code(), $this->method) === false) {
             return $this->debugWithHeader(self::FAILED);
@@ -142,24 +171,20 @@ class Cache
 
         $hash = $this->hash;
 
-        // Caution: timestamp will be used as the ETag suffix.
-        if ($this->modified !== null) {
-            $hash .= '-' . $this->modified;
-        }
-
-        $now = time();
-
         $cache = INPHINIT_SYSTEM . '/' . $this->storage . '/' . $hash;
 
         $this->headerStorage = $cache . '.headers';
 
-        if (is_file($cache) && ($modified = filemtime($cache)) > ($now - $expires) && $this->sendHeaders()) {
+        $fmtime = @filemtime($cache);
+
+        if ($fmtime !== false && ($fmtime + $lifetime) > time() && $this->sendCachedHeaders()) {
             $this->debugWithHeader(self::CACHED);
 
-            Response::cache($expires, $modified);
-            header('Etag: "' . $hash . '"');
+            $this->setHeaders(filesize($cache), $fmtime);
 
-            if (static::match($hash, $modified)) {
+            $etag = "{$hash}-{$fmtime}";
+
+            if (static::match($etag, $fmtime)) {
                 Response::status(304);
             } elseif ($this->method !== 'HEAD') {
                 File::output($cache);
@@ -193,9 +218,6 @@ class Cache
                     $error();
                 });
 
-                Response::cache($expires, $now);
-                header('Etag: "' . $hash . '"');
-
                 return $this->debugWithHeader(self::WRITING);
             }
 
@@ -211,7 +233,7 @@ class Cache
      */
     public function stop()
     {
-        if ($this->noErrors && $this->handle) {
+        if ($this->noErrors && $this->handle !== null) {
             $contents = ob_get_contents();
 
             if ($contents !== false) {
@@ -246,6 +268,17 @@ class Cache
     public function __destruct()
     {
         $this->stop();
+    }
+
+    /**
+     * Create hash used by cache name and Etag header - This method can be overridden
+     *
+     * @param string $path
+     * @return string
+     */
+    protected static function createHash($path)
+    {
+        return \hash('sha256', $path);
     }
 
     /**
@@ -285,25 +318,7 @@ class Cache
         return $status === 200 && ($method === 'GET' || $method === 'HEAD');
     }
 
-    /**
-     * Create hash used by cache name and Etag header - This method can be overridden
-     *
-     * @param string $path
-     * @return string
-     */
-    protected static function createHash($path)
-    {
-        return \hash('sha256', $path);
-    }
-
-    private static function checkHeadersSent()
-    {
-        if (headers_sent($file, $line)) {
-            throw new \ErrorException('Cache cannot start, headers already sent', 0, E_ERROR, $file, $line);
-        }
-    }
-
-    private function sendHeaders()
+    private function sendCachedHeaders()
     {
         $headers = file($this->headerStorage, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
@@ -334,8 +349,11 @@ class Cache
             flock($handle, LOCK_UN);
             fclose($handle);
 
-            if ($move && rename($this->cacheTemp, $this->cache) === false) {
-               $this->noErrors = false;
+            $cache_temp = $this->cacheTemp;
+
+            if ($move && rename($cache_temp, $this->cache) && headers_sent() === false) {
+                // If this request can't include the header, the next one will
+                $this->setHeaders($this->finishContentLength, filemtime($this->cache));
             }
         }
     }
@@ -343,19 +361,31 @@ class Cache
     private function write($data, $phase)
     {
         if ($this->noErrors && $this->handle !== null) {
-            $callback = $this->writerCallback;
+            $size = strlen($data);
 
-            if ($callback !== null) {
-                $data = $callback($data);
-            }
-
-            if (fwrite($this->handle, $data) !== strlen($data)) {
+            if (fwrite($this->handle, $data) !== $size) {
                 $this->noErrors = false;
                 $this->finish(false);
+            } else {
+                $this->finishContentLength += $size;
             }
         }
 
         return $this->method === 'HEAD' ? '' : $data;
+    }
+
+    private function setHeaders($contenLength, $lastModified)
+    {
+        $expires = $this->lifetime + $lastModified;
+        $hash = $this->hash;
+
+        header("Etag: \"{$hash}-{$lastModified}\"");
+        header('Expires: ' . gmdate('D, d M Y H:i:s', $expires) . ' GMT');
+        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
+
+        // Caution: Firefox requires Content-Length for HTTP conditional (If-None-Match/If-Modified-Since).
+        // See: https://bugzilla.mozilla.org/show_bug.cgi?id=2077994
+        header('Content-Length: ' . $contenLength);
     }
 
     private function debugWithHeader($flag)
