@@ -50,8 +50,9 @@ class Cache
      *
      * @param string|null $method Optional. Default is $_SERVER[REQUEST_METHOD].
      * @param string|null $target Optional. Default is INPHINIT_PATH.
+     * @param string|null $query  Optional. Default is not to use a querystring.
      */
-    public function __construct($method = null, $target = null)
+    public function __construct($method = null, $target = null, $querystring = null)
     {
         if ($method === null) {
             if (isset($_SERVER['REQUEST_METHOD'][0])) {
@@ -63,6 +64,10 @@ class Cache
 
         if ($target === null) {
             $target = INPHINIT_PATH;
+        }
+
+        if ($querystring !== null) {
+            $target .= '?' . $querystring;
         }
 
         $hash = static::createHash($target);
@@ -99,7 +104,7 @@ class Cache
         }
 
         if ($hours < 0 || $hours > 23) {
-            throw new \Exception('Hours must be between 0 and 23');
+            throw new Exception('Hours must be between 0 and 23');
         }
 
         if ($minutes < 0 || $minutes > 59) {
@@ -138,7 +143,6 @@ class Cache
      * - Returns `WRITING` if recording of the current response just started
      * - Returns `FAILED` if the method/cache is not writable, or the cache could not be created
      *
-     * @param int $expires
      * @param int $chunkSize
      * @throws \ErrorException
      * @return int
@@ -233,22 +237,27 @@ class Cache
      */
     public function stop()
     {
-        if ($this->noErrors && $this->handle !== null) {
-            $contents = ob_get_contents();
+        $headers = $this->headersList();
 
-            if ($contents !== false) {
-                $this->write($contents, 0);
+        if ($this->noErrors && $this->handle !== null) {
+            if (static::valid(http_response_code(), $this->method)) {
+                $contents = ob_get_contents();
+
+                if ($contents !== false) {
+                    $this->write($contents, 0);
+                }
+            } else {
+                $this->noErrors = false;
             }
 
             // If the write() method did not fail
             if ($this->noErrors) {
-                $headers = implode("\n", headers_list());
-
                 $dheaders = $this->headerStorage;
                 $theaders = $dheaders . '.tmp';
+                $wheaders = implode("\n", $headers);
 
                 if (
-                    file_put_contents($theaders, $headers, LOCK_EX) === false ||
+                    file_put_contents($theaders, $wheaders, LOCK_EX) === false ||
                     rename($theaders, $dheaders) === false
                 ) {
                     $this->noErrors = false;
@@ -316,6 +325,50 @@ class Cache
     protected static function valid($status, $method)
     {
         return $status === 200 && ($method === 'GET' || $method === 'HEAD');
+    }
+
+    private function headersList()
+    {
+        $skip = array(
+            'content-length', 'etag', 'last-modified', 'expires', 'date', 'age',
+            'transfer-encoding', 'connection', 'keep-alive', 'x-powered-by',
+            'x-inphinit-experimental-cache', 'cache-control', 'pragma',
+            'x-request-id', 'x-correlation-id', 'server-timing', 'traceparent',
+        );
+
+        $abort = array(
+            'set-cookie', 'www-authenticate', 'location', 'refresh',
+        );
+
+        $vary = '/\*|\b(?:cookie|authorization|accept-language|user-agent)\b/i';
+
+        $headers = array();
+
+        foreach (headers_list() as $header) {
+            $pos = explode(':', $header, 2);
+
+            if (isset($pos[1]) === false) {
+                continue;
+            }
+
+            $name = strtolower(trim($pos[0]));
+
+            if (in_array($name, $abort, true)) {
+                $this->noErrors = false;
+                break;
+            }
+
+            if ($name === 'vary' && preg_match($vary, trim($pos[1])) === 1) {
+                $this->noErrors = false;
+                break;
+            }
+
+            if (in_array($name, $skip, true) === false) {
+                $headers[] = $header;
+            }
+        }
+
+        return $headers;
     }
 
     private function sendCachedHeaders()
