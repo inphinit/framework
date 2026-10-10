@@ -128,12 +128,16 @@ class View
      * @throws \Inphinit\Exception
      * @return int|null
      */
-    public static function render($view, array $data = array(), $mode = ENT_COMPAT)
+    public static function render($view, array $data = array(), $mode = null)
     {
         $path = 'views/' . str_replace('.', '/', $view) . '.php';
 
         if (self::$strictMode && static::exists($view) === false) {
             throw new Exception($path . ' view not found (check case-sensitive)');
+        }
+
+        if ($mode === null) {
+            $mode = ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5;
         }
 
         if (self::$force === false) {
