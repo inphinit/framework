@@ -97,7 +97,7 @@ class Cache
      * @param int $hours
      * @param int $days
      */
-    public function setLifetime($minutes, $hours, $days)
+    public function setLifetime($days, $hours, $minutes)
     {
         if ($days < 0 || $days > 365) {
             throw new Exception('Days must be between 0 and 365');
@@ -111,7 +111,7 @@ class Cache
             throw new Exception('Minutes must be between 0 and 59');
         }
 
-        $lifetime = $minutes * 60 + $hours * 3600 + $days * 86400;
+        $lifetime = ($minutes * 60) + ($hours * 3600) + ($days * 86400);
 
         if ($lifetime < 1) {
             throw new Exception('Lifetime must be greater than zero');
