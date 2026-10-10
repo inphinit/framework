@@ -153,10 +153,6 @@ class Cache
             throw new Exception('Cache has already been started');
         }
 
-        if ($chunkSize === null) {
-            $chunkSize = self::DEFAULT_CHUNK_SIZE;
-        }
-
         $lifetime = $this->lifetime;
 
         if ($lifetime === null) {
@@ -167,8 +163,16 @@ class Cache
             throw new \ErrorException('Cache cannot start, headers already sent', 0, E_ERROR, $file, $line);
         }
 
+        if ($this->debug && $this->headersList($headers, $error) === false) {
+            throw new Exception($error);
+        }
+
         if (static::valid(http_response_code(), $this->method) === false) {
             return $this->debugWithHeader(self::FAILED);
+        }
+
+        if ($chunkSize === null) {
+            $chunkSize = self::DEFAULT_CHUNK_SIZE;
         }
 
         $this->started = true;
@@ -190,6 +194,7 @@ class Cache
 
             if (static::match($etag, $fmtime)) {
                 Response::status(304);
+                header_remove('Content-Length');
             } elseif ($this->method !== 'HEAD') {
                 File::output($cache);
             }
@@ -204,22 +209,20 @@ class Cache
         if ($handle !== false) {
             $this->handle = $handle;
 
-            $flags = PHP_OUTPUT_HANDLER_FLUSHABLE | PHP_OUTPUT_HANDLER_REMOVABLE;
-
             // Caution: If the flock fails, it is likely because another request is writing to the cache
             if (
                 flock($handle, LOCK_EX | LOCK_NB) &&
                 ftruncate($handle, 0) &&
-                ob_start(array($this, 'write'), $chunkSize, $flags)
+                ob_start(array($this, 'write'), $chunkSize)
             ) {
                 $this->writing = true;
                 $this->cache = $cache;
                 $this->cacheTemp = $cache_temp;
 
-                $error = array($this, 'error');
+                $errorCallback = array($this, 'error');
 
-                Event::on('error', function ($type, $message, $file, $line) use ($error) {
-                    $error();
+                Event::on('error', function ($type, $message, $file, $line) use ($errorCallback) {
+                    $errorCallback();
                 });
 
                 return $this->debugWithHeader(self::WRITING);
@@ -237,9 +240,7 @@ class Cache
      */
     public function stop()
     {
-        $headers = $this->headersList();
-
-        if ($this->noErrors && $this->handle !== null) {
+        if ($this->noErrors && $this->handle !== null && $this->headersList($headers, $error)) {
             if (static::valid(http_response_code(), $this->method)) {
                 $contents = ob_get_contents();
 
@@ -327,8 +328,10 @@ class Cache
         return $status === 200 && ($method === 'GET' || $method === 'HEAD');
     }
 
-    private function headersList()
+    private function headersList(&$headers, &$error)
     {
+        $error = null;
+
         $skip = array(
             'content-length', 'etag', 'last-modified', 'expires', 'date', 'age',
             'transfer-encoding', 'connection', 'keep-alive', 'x-powered-by',
@@ -353,14 +356,11 @@ class Cache
 
             $name = strtolower(trim($pos[0]));
 
-            if (in_array($name, $abort, true)) {
+            if (in_array($name, $abort, true) || ($name === 'vary' && preg_match($vary, trim($pos[1])) === 1)) {
                 $this->noErrors = false;
-                break;
-            }
-
-            if ($name === 'vary' && preg_match($vary, trim($pos[1])) === 1) {
-                $this->noErrors = false;
-                break;
+                $error = "'{$header}' header cannot be used with cache";
+                $headers = array();
+                return false;
             }
 
             if (in_array($name, $skip, true) === false) {
@@ -368,7 +368,7 @@ class Cache
             }
         }
 
-        return $headers;
+        return true;
     }
 
     private function sendCachedHeaders()
