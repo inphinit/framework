@@ -13,7 +13,7 @@ use Inphinit\Diagnostics\Inspector;
 
 class Config
 {
-    private $exceptionLevel = 2;
+    private $exceptionLevel = 3;
     private $data = array();
     private $path;
 
@@ -30,8 +30,6 @@ class Config
         }
 
         $this->path = 'configs/' . str_replace('.', '/', $path) . '.php';
-
-        $this->exceptionLevel = 3;
 
         $this->reload();
     }
