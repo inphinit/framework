@@ -47,10 +47,12 @@ class Markdown
 
     // Extended
     const TABLE = 20;
+    const TASK = 21;
+    const TASK_DONE = 22;
 
     // Inline Extended
-    const SUBSCRIPT = 21;
-    const SUPERSCRIPT = 22;
+    const SUBSCRIPT = 23;
+    const SUPERSCRIPT = 24;
 
     private $customInlines = array();
     private $enabledErrors = false;

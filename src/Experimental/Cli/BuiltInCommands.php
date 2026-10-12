@@ -260,7 +260,7 @@ class BuiltInCommands
         $log = escapeshellarg(INPHINIT_SYSTEM . '/storage/logs/errors.log');
         $server = escapeshellarg($host . ':' . $port);
         $public = escapeshellarg(INPHINIT_ROOT . '/public');
-        $router = escapeshellarg(INPHINIT_ROOT . '/index.php');
+        $router = escapeshellarg(INPHINIT_ROOT . '/public/index.php');
         $vars = escapeshellarg($vars);
 
         $ini  = $conf ? "-c {$conf} " : '';
