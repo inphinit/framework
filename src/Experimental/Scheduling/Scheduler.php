@@ -286,6 +286,7 @@ class Scheduler
 
             return flock($handle, LOCK_EX | LOCK_NB);
         } elseif ($handle !== null) {
+            fflush($handle);
             return flock($handle, LOCK_UN);
         }
 

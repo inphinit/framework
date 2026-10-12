@@ -340,10 +340,11 @@ class Session
             return null;
         }
 
+        $handle = $this->handle;
+
         if ($enable) {
             $start = microtime(true);
             $timeout = self::LOCK_TIMEOUT;
-            $handle = $this->handle;
 
             while (flock($handle, LOCK_EX | LOCK_NB) === false) {
                 if (microtime(true) - $start > $timeout) {
@@ -352,12 +353,12 @@ class Session
 
                 usleep(1000);
             }
-
-            $this->locked = true;
         } else {
-            flock($this->handle, LOCK_UN);
-            $this->locked = false;
+            fflush($handle);
+            flock($handle, LOCK_UN);
         }
+
+        $this->locked = $enable;
     }
 
     private function loadConfigs($config)

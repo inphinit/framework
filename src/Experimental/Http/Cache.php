@@ -399,6 +399,7 @@ class Cache
 
             $this->handle = null;
 
+            fflush($handle);
             flock($handle, LOCK_UN);
             fclose($handle);
 
