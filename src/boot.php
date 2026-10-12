@@ -191,7 +191,7 @@ if (PHP_SAPI === 'cli-server') {
     $inphinit_prefix = '';
     include __DIR__ . '/public.php';
 } else {
-    $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/index.php');
+    $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/public/index.php');
     $inphinit_prefix = substr($inphinit_path, 0, $inphinit_pos);
     $inphinit_path = substr($inphinit_path, $inphinit_pos);
 }
