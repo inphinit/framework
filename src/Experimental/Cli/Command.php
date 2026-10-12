@@ -214,7 +214,7 @@ class Command
     /**
      * This method will be used automatically by the `Inphinit\Cli\Console` instance
      *
-     * @param array $entries
+     * @param array<string, string> $entries
      * @throws \Inphinit\Exception
      * @return mixed
      */

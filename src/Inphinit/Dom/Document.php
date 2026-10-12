@@ -237,7 +237,7 @@ class Document
     /**
      * Convert Array to DOM
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @throws \Inphinit\Exception
      * @throws \Inphinit\Dom\DomException
      */

@@ -112,9 +112,9 @@ class View
     /**
      * Register or render a View. If View is registered this method returns the index number from View
      *
-     * @param string $view View path
-     * @param array  $data Array that will be extracted to variables in the view
-     * @param int    $mode Supported flags (may vary depending on the version):
+     * @param string               $view View path
+     * @param array<string, mixed> $data Array that will be extracted to variables in the view
+     * @param int                  $mode Supported flags (may vary depending on the version):
      *                     - `ENT_COMPAT`
      *                     - `ENT_QUOTES`
      *                     - `ENT_NOQUOTES`
@@ -157,9 +157,9 @@ class View
      * This method is similar to `::render()`, except that the view will only be rendered once,
      * ignoring subsequent calls.
      *
-     * @param string $view
-     * @param array  $data
-     * @param int    $mode
+     * @param string               $view
+     * @param array<string, mixed> $data
+     * @param int                  $mode
      * @throws \Inphinit\Exception
      */
     public static function once($view, array $data = array(), $mode = ENT_COMPAT)

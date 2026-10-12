@@ -162,7 +162,7 @@ class Task
      * Configure the environments in which this task should be dispatched
      * when the APP_ENVIRONMENT environment variable matches.
      *
-     * @param array<int, string> $environments
+     * @param string[] $environments
      * @return \Inphinit\Experimental\Scheduling\Task
      */
     public function runInEnvironments(array $environments)

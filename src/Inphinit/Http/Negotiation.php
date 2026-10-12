@@ -27,7 +27,7 @@ class Negotiation
     /**
      * Create a Negotiation instance from request headers or from a Array
      *
-     * @param array $headers Optional. You can set with headers returned by cURL or other way
+     * @param array<string, string> $headers Optional. You can set with headers returned by cURL or other way
      */
     public function __construct(array $headers = array())
     {

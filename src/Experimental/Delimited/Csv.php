@@ -64,7 +64,7 @@ class Csv extends Reader
     /**
      * Set separators
      *
-     * @param array<int, string> $separators
+     * @param string[] $separators
      * @throws \Inphinit\Exception
      */
     public function setSeparators(array $separators)

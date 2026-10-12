@@ -58,7 +58,7 @@ class Console
      * Receives the arguments to execute the command
      * If the command is not found, an exception will be thrown
      *
-     * @param array $arguments Define `$argv` without changes
+     * @param string[] $arguments Define `$argv` without changes
      * @throws \Inphinit\Exception
      * @return int
      */
@@ -186,7 +186,7 @@ class Console
      *
      * @param array $entries
      * @throws \Inphinit\Exception
-     * @return array
+     * @return array<string, string>
      */
     protected static function parseOptions(array $entries)
     {
