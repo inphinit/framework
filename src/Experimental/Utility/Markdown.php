@@ -101,6 +101,8 @@ class Markdown
 
         // Extended
         $this->setTemplate(self::TABLE, '<table><thead><tr>{headers}</tr></thead><tbody>{contents}</tbody></table>');
+        $this->setTemplate(self::TASK, '<label><input type="checkbox"> {contents}</label>');
+        $this->setTemplate(self::TASK_DONE, '<label><input type="checkbox" checked> {contents}</label>');
 
         // Inline Extended
         $this->setTemplate(self::SUBSCRIPT, '<sub>{contents}</sub>');
@@ -441,20 +443,20 @@ class Markdown
     private function parseTask($value)
     {
         $value = ltrim($value);
-
-        if (strpos($value, '[x]') === 0) {
-            return '<input type="checkbox" checked> ' . substr($value, 3);
-        }
+        $type = self::TASK;
 
         if (strpos($value, '[ ]') === 0) {
-            return '<input type="checkbox"> ' . substr($value, 3);
+            $value = substr($value, 3);
+        } elseif (strpos($value, '[]') === 0) {
+            $value = substr($value, 2);
+        } elseif (strpos($value, '[x]') === 0) {
+            $value = substr($value, 3);
+            $type = self::TASK_DONE;
         }
 
-        if (strpos($value, '[]') === 0) {
-            return '<input type="checkbox"> ' . substr($value, 2);
-        }
-
-        return $value;
+        return $this->fillTemplate($type, array(
+            'contents' => self::safe($value)
+        ));
     }
 
     private function parseList(array $lines, $n, $ordered, &$index)
