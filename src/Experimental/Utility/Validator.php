@@ -272,12 +272,15 @@ class Validator
                 $value = filter_var($value, $validate, $flags);
                 return $value !== null;
 
-            case 'digit':
-                $value = filter_var($value, FILTER_VALIDATE_INT, $flags);
+            case 'decimal':
+                $value = filter_var($value, FILTER_VALIDATE_FLOAT, array(
+                    'flags' => $flags,
+                    'options' => array('decimal' => $arg === null ? '.' : $arg)
+                ));
                 return $value !== null;
 
-            case 'decimal':
-                $value = filter_var($value, FILTER_VALIDATE_FLOAT, $flags);
+            case 'digit':
+                $value = filter_var($value, FILTER_VALIDATE_INT, $flags);
                 return $value !== null;
 
             case 'email':
