@@ -1,7 +1,6 @@
 <?php
 namespace Inphinit\Experimental\Validation\Rules;
 
-use Inphinit\Exception;
 use Inphinit\Experimental\Validation\Rule;
 
 class Ip extends Rule

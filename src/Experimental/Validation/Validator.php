@@ -47,6 +47,7 @@ class Validator
             'bool' => 'On, Yes, True, 1, Off, No, False, and 0',
             'decimal' => 'decimal format',
             'email' => 'a valid email',
+            'equals' => 'not matches with %s',
             'in' => 'unexpected value',
             'integer' => 'integer format',
             'max' => 'maximum %s of %s',
@@ -303,7 +304,7 @@ class Validator
                 $numeral = is_int($value) || is_float($value);
             } else {
                 $this->messages[$extName] = $instance->getFailure();
-                $this->appendFailure($extName, array($path));
+                $this->appendFailure($extName, array());
                 return false;
             }
         }
@@ -314,9 +315,11 @@ class Validator
         foreach ($ruleset as $type => $arg) {
             if ($this->apply($path, $type, $arg, $value, $numeral) === false) {
                 if ($type === 'max' || $type === 'min') {
-                    $this->appendFailure($type, array($path, $numeral ? 'size' : 'length', $arg));
+                    $this->appendFailure($type, array($numeral ? 'size' : 'length', $arg));
+                } elseif ($type === 'equals') {
+                    $this->appendFailure($type, array($arg));
                 } else {
-                    $this->appendFailure($type, array($path));
+                    $this->appendFailure($type, array());
                 }
 
                 return false;
@@ -417,12 +420,15 @@ class Validator
                 ));
                 return $value !== null;
 
+            case 'email':
+                return filter_var($value, FILTER_VALIDATE_EMAIL, $flags) !== null;
+
             case 'int':
                 $value = filter_var($value, FILTER_VALIDATE_INT, $flags);
                 return $value !== null;
 
-            case 'email':
-                return filter_var($value, FILTER_VALIDATE_EMAIL, $flags) !== null;
+            case 'equals':
+                return $value === (isset($this->data[$arg]) ? $this->data[$arg] : null);
 
             case 'in':
                 return in_array((string) $value, explode(',', $arg), true);
