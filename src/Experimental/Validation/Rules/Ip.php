@@ -7,39 +7,37 @@ use Inphinit\Experimental\Validation\Rule;
 class Ip extends Rule
 {
     private $messages = array(
-        'ipv4' => 'Invalid IPv4',
-        'ipv6' => 'Invalid IPv6',
-        'no_priv_range' => 'Contains private address',
-        'no_res_range' => 'Contains reserved address',
+        'default' => 'Invalid IP',
     );
 
-    public function exec($path, &$value, $params, array $rules)
+    public function exec($path, &$value, array $params, array $rules)
     {
+        parent::exec($path, $value, $params, $rules);
+
         $flags = FILTER_NULL_ON_FAILURE;
 
-        if (is_array($args)) {
-            if (in_array('ipv4', $args, true)) {
-                $flags |= FILTER_FLAG_IPV4;
-            }
-
-            if (in_array('ipv6', $args, true)) {
-                $flags |= FILTER_FLAG_IPV6;
-            }
-
-            if (in_array('no_private', $args, true)) {
-                $flags |= FILTER_FLAG_NO_PRIV_RANGE;
-            }
-
-            if (in_array('no_reserved', $args, true)) {
-                $flags |= FILTER_FLAG_NO_RES_RANGE;
-            }
+        if (in_array('v4', $params, true)) {
+            $flags |= FILTER_FLAG_IPV4;
         }
 
-        return filter_var($value, FILTER_VALIDATE_IP, $flags) !== null;
-    }
+        if (in_array('v6', $params, true)) {
+            $flags |= FILTER_FLAG_IPV6;
+        }
 
-    public function getFailure()
-    {
-        return $this->failure;
+        if (in_array('no_private', $params, true)) {
+            $flags |= FILTER_FLAG_NO_PRIV_RANGE;
+        }
+
+        if (in_array('no_reserved', $params, true)) {
+            $flags |= FILTER_FLAG_NO_RES_RANGE;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_IP, $flags) !== null) {
+            return true;
+        }
+
+        $this->failure = $this->messages['default'];
+
+        return false;
     }
 }

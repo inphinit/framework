@@ -12,7 +12,7 @@ abstract class Rule
      * @param array  $rules  Other rules
      * @return mixed         Returns the sanitized value
      */
-    public function exec($path, &$value, $params, array $rules)
+    public function exec($path, &$value, array $params, array $rules)
     {
         $this->failure = null;
     }

@@ -15,13 +15,13 @@ class Password extends Rule
         'upper' => 'The password must contain at least one uppercase letter',
     );
 
-    public function exec($path, &$value, $params, array $rules)
+    public function exec($path, &$value, array $params, array $rules)
     {
         if (empty($rules) === false) {
             throw new Exception('Invalid combination of rules');
         }
 
-        $this->failure = null;
+        parent::exec($path, $value, $params, $rules);
 
         if (strpbrk($value, '0123456789') === false) {
             $this->failure = $this->messages['number'];
@@ -38,10 +38,5 @@ class Password extends Rule
         }
 
         return $this->failure === null;
-    }
-
-    public function getFailure()
-    {
-        return $this->failure;
     }
 }

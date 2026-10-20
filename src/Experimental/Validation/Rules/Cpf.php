@@ -10,13 +10,13 @@ class Cpf extends Rule
         'default' => 'Invalid CPF',
     );
 
-    public function exec($path, &$value, $params, array $rules)
+    public function exec($path, &$value, array $params, array $rules)
     {
         if (empty($rules) === false) {
             throw new Exception('Invalid combination of rules');
         }
 
-        $this->failure = null;
+        parent::exec($path, $value, $params, $rules);
 
         if (preg_match('/^(?:\d{11}|\d{3}\.\d{3}\.\d{3}-\d{2})$/D', $value) !== 1) {
             $this->failure = $this->messages['default'];
@@ -34,12 +34,13 @@ class Cpf extends Rule
         $dv1 = self::modulo11($base, range(10, 2));
         $dv2 = self::modulo11($base . $dv1, range(11, 2));
 
-        return substr($cpf, 9) === $dv1 . $dv2;
-    }
+        if (substr($cpf, 9) === $dv1 . $dv2) {
+            return true;
+        }
 
-    public function getFailure()
-    {
-        return $this->failure;
+        $this->failure = $this->messages['default'];
+
+        return false;
     }
 
     private static function modulo11($base, array $weight)

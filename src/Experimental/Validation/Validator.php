@@ -249,6 +249,23 @@ class Validator
         return $this->failureMessages;
     }
 
+    /**
+     * Get an instance of an extended rule
+     *
+     * @return \Inphinit\Experimental\Validation\Rule
+     */
+    public function getRuleInstance($rule)
+    {
+        if (isset($this->extendInstances[$rule])) {
+            $instance = $this->extendInstances[$rule];
+        } else {
+            $instance = new $rule();
+            $this->extendInstances[$rule] = $instance;
+        }
+
+        return $instance;
+    }
+
     private function exec($path, &$value, $ruleset)
     {
         $types = array_keys($ruleset);
@@ -257,13 +274,17 @@ class Validator
             throw new Exception('There cannot be duplicate rules', 0, 3);
         }
 
+        $extArgs = array();
         $extName = null;
         $extRule = null;
         $instance = null;
 
         foreach ($this->extendRules as $name => $extend) {
             if (in_array($name, $types, true)) {
-                $extArgs = $ruleset[$name];
+                if (isset($ruleset[$name])) {
+                    $extArgs = $ruleset[$name];
+                }
+
                 $extName = $name;
                 $extRule = $extend;
                 unset($ruleset[$name]);
@@ -303,18 +324,6 @@ class Validator
         }
 
         return true;
-    }
-
-    private function getRuleInstance($rule)
-    {
-        if (isset($this->extendInstances[$rule])) {
-            $instance = $this->extendInstances[$rule];
-        } else {
-            $instance = new $rule();
-            $this->extendInstances[$rule] = $instance;
-        }
-
-        return $instance;
     }
 
     private static function checksCombinations($types)
