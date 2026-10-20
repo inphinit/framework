@@ -108,4 +108,28 @@ class Env
 
         throw new Exception("Cannot convert {$name}={$value} to int");
     }
+
+    /*
+     * If `variables_order` does not contain `E`, then $_ENV will be populated via `getenv()`.
+     */
+    public static function fillInVariables()
+    {
+        // If `variables_order` contains E, it is not necessary to perform padding.
+        if (function_exists('ini_get') && strpos(ini_get('variables_order'), 'E') !== false) {
+            return null;
+        }
+
+        if (PHP_VERSION_ID >= 70100) {
+            $_ENV = getenv();
+            return null;
+        }
+
+        foreach ($_SERVER as $name => $svalue) {
+            $value = getenv($name);
+
+            if ($value !== false) {
+                $_ENV[$name] = $value;
+            }
+        }
+    }
 }

@@ -9,7 +9,13 @@
 
 use Inphinit\Experimental\Cli\BuiltInCommands;
 use Inphinit\Experimental\Cli\Console;
+use Inphinit\Experimental\Environment\Env;
 use Inphinit\Experimental\Scheduling\Scheduler;
+
+require_once __DIR__ . '/Experimental/Environment/Env.php';
+
+// Fallback to populate $_ENV in environments where 'E' is not present in `variables_order`
+Env::fillInVariables();
 
 require_once __DIR__ . '/boot.php';
 require_once __DIR__ . '/env_vars.php';
