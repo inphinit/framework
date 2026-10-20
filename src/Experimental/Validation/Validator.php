@@ -4,7 +4,6 @@ namespace Inphinit\Experimental\Validation;
 use Inphinit\App;
 use Inphinit\Exception;
 use Inphinit\Utility\PropertyAccessor;
-use Inphinit\Experimental\Validation\RuleInterface;
 
 class Validator
 {
@@ -29,7 +28,7 @@ class Validator
     private static $checkHttp = array('https', 'http');
     private static $decimalRules = array('decimal', 'in', 'regex', 'min', 'max');
     private static $intRules = array('integer', 'in', 'regex', 'min', 'max');
-    private static $p1 = array('bool', 'decimal', 'int');
+    private static $p1 = array('bool', 'decimal', 'integer');
     private static $p2 = array('min', 'max');
 
     /**
@@ -44,19 +43,19 @@ class Validator
         $this->mode = $mode;
 
         $this->messages = array(
-            'bool' => 'On, Yes, True, 1, Off, No, False, and 0',
-            'decimal' => 'decimal format',
-            'email' => 'a valid email',
-            'equals' => 'not matches with %s',
-            'in' => 'unexpected value',
-            'integer' => 'integer format',
-            'max' => 'maximum %s of %s',
-            'min' => 'minimum %s of %s',
-            'regex' => 'not match with the expected format',
-            'required' => 'is required',
-            'type' => 'unexpected type',
-            'unicode_error' => 'invalid Unicode characters',
-            'url' => 'a valid url',
+            'bool' => 'Must be a boolean value (on, yes, true, 1, off, no, false or 0)',
+            'decimal' => 'Must be a valid decimal number',
+            'email' => 'Must be a valid email address',
+            'equals' => 'Must match the "%s" field',
+            'in' => 'Must be one of the allowed values',
+            'integer' => 'Must be a valid integer',
+            'max' => 'The %s must be at most %s',
+            'min' => 'The %s must be at least %s',
+            'regex' => 'Invalid format',
+            'required' => 'This field is required',
+            'type' => 'Invalid type: expected a string, number or boolean',
+            'unicode_error' => 'Contains invalid Unicode (UTF-8) characters',
+            'url' => 'Must be a valid HTTP or HTTPS URL',
         );
     }
 
@@ -104,7 +103,7 @@ class Validator
             throw new Exception('Invalid message type');
         }
 
-        if (is_string($message) === false || strpos($message, '%') === false) {
+        if (is_string($message) === false) {
             throw new Exception('Invalid message');
         }
 
@@ -114,6 +113,8 @@ class Validator
         if (substr_count($prev_message, '%') !== substr_count($new_message, '%')) {
             throw new Exception("The {$type} message must contain {$prev_count} specifiers");
         }
+
+        $this->messages[$type] = $message;
 
         return $this;
     }
@@ -148,10 +149,10 @@ class Validator
      * Supported rules:
      * - bool (On, Yes, True, 1, Off, No, False, and 0)
      * - decimal (if valid convert to float)
+     * - equals:<field>
      * - email (validates only the format)
      * - in:<a,b,c> (unexpected value)
-     * - int (if valid convert to int)
-     * - ip (validate IP format)
+     * - integer (if valid convert to int)
      * - max:<n> (value for decimal and int; length for strings)
      * - min:<n> (value for decimal and int; length for strings)
      * - regex:<pattern> (not match with the expected format)
@@ -206,7 +207,7 @@ class Validator
 
         if ($value === null || $value === '') {
             if (in_array('required', $rules, true)) {
-                $this->appendFailure('required', array($path));
+                $this->appendFailure('required', $path);
 
                 return $this;
             }
@@ -219,7 +220,7 @@ class Validator
         }
 
         if (is_scalar($value) === false) {
-            $this->appendFailure('type', array($path));
+            $this->appendFailure('type', $path);
             return $this;
         }
 
@@ -253,15 +254,24 @@ class Validator
     /**
      * Get an instance of an extended rule
      *
+     * @throws \Inphinit\Exception
      * @return \Inphinit\Experimental\Validation\Rule
      */
     public function getRuleInstance($rule)
     {
         if (isset($this->extendInstances[$rule])) {
             $instance = $this->extendInstances[$rule];
+        } elseif (isset($this->extendRules[$rule])) {
+            $cls = $this->extendRules[$rule];
+            $instance = new $cls();
+
+            if ($instance instanceof Rule) {
+                $this->extendInstances[$rule] = $instance;
+            } else {
+                throw new Exception('Invalid extended rule class');
+            }
         } else {
-            $instance = new $rule();
-            $this->extendInstances[$rule] = $instance;
+            throw new Exception('Invalid extended rule');
         }
 
         return $instance;
@@ -271,11 +281,7 @@ class Validator
     {
         $types = array_keys($ruleset);
 
-        if (count($types) !== count(array_flip($types))) {
-            throw new Exception('There cannot be duplicate rules', 0, 3);
-        }
-
-        $extArgs = array();
+        $extArg = null;
         $extName = null;
         $extRule = null;
         $instance = null;
@@ -283,7 +289,7 @@ class Validator
         foreach ($this->extendRules as $name => $extend) {
             if (in_array($name, $types, true)) {
                 if (isset($ruleset[$name])) {
-                    $extArgs = $ruleset[$name];
+                    $extArg = $ruleset[$name];
                 }
 
                 $extName = $name;
@@ -296,15 +302,15 @@ class Validator
         if ($extRule === null) {
             $numeral = self::checksCombinations($types);
         } else {
-            $instance = $this->getRuleInstance($extRule);
+            $instance = $this->getRuleInstance($extName);
         }
 
         if ($instance !== null) {
-            if ($instance->exec($path, $value, $extArgs, $ruleset)) {
+            if ($instance->exec($path, $value, $extArg, $ruleset)) {
                 $numeral = is_int($value) || is_float($value);
             } else {
                 $this->messages[$extName] = $instance->getFailure();
-                $this->appendFailure($extName, array());
+                $this->appendFailure($extName, $path, array());
                 return false;
             }
         }
@@ -315,11 +321,11 @@ class Validator
         foreach ($ruleset as $type => $arg) {
             if ($this->apply($path, $type, $arg, $value, $numeral) === false) {
                 if ($type === 'max' || $type === 'min') {
-                    $this->appendFailure($type, array($numeral ? 'size' : 'length', $arg));
+                    $this->appendFailure($type, $path, array($numeral ? 'size' : 'length', $arg));
                 } elseif ($type === 'equals') {
-                    $this->appendFailure($type, array($arg));
+                    $this->appendFailure($type, $path, array($arg));
                 } else {
-                    $this->appendFailure($type, array());
+                    $this->appendFailure($type, $path, array());
                 }
 
                 return false;
@@ -345,11 +351,11 @@ class Validator
             }
 
             return true;
-        } elseif (in_array('int', $types, true)) {
+        } elseif (in_array('integer', $types, true)) {
             $rules = array_diff($types, self::$intRules);
 
             if (empty($rules) === false) {
-                throw new Exception('`int` rule can only be combined with the rules: `in`, `min`, `max` and `regex`', 0, 3);
+                throw new Exception('`integer` rule can only be combined with the rules: `in`, `min`, `max` and `regex`', 0, 3);
             }
 
             return true;
@@ -358,10 +364,9 @@ class Validator
         return false;
     }
 
-    private function appendFailure($type, $args)
+    private function appendFailure($type, $path, $args = array())
     {
         if ($this->stopped === false) {
-            $path = $args[0];
             $message = vsprintf($this->messages[$type], $args);
 
             if (isset($this->failureMessages[$path]) === false) {
@@ -423,7 +428,7 @@ class Validator
             case 'email':
                 return filter_var($value, FILTER_VALIDATE_EMAIL, $flags) !== null;
 
-            case 'int':
+            case 'integer':
                 $value = filter_var($value, FILTER_VALIDATE_INT, $flags);
                 return $value !== null;
 
@@ -474,7 +479,7 @@ class Validator
             return $length;
         }
 
-        $this->appendFailure('unicode_error', array($path));
+        $this->appendFailure('unicode_error', $path);
 
         return false;
     }

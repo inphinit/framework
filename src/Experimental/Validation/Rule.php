@@ -4,15 +4,16 @@ namespace Inphinit\Experimental\Validation;
 abstract class Rule
 {
     protected $failure;
+    protected $messages = array();
 
     /**
      * @param string $path   Path being validated
      * @param string &$value Path value
-     * @param array  $params Parameters
+     * @param string $param  Parameter
      * @param array  $rules  Other rules
      * @return mixed         Returns the sanitized value
      */
-    public function exec($path, &$value, array $params, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
         $this->failure = null;
     }

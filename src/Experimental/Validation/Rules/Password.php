@@ -6,22 +6,18 @@ use Inphinit\Experimental\Validation\Rule;
 
 class Password extends Rule
 {
-    private $messages = array(
+    protected $messages = array(
         'lower' => 'The password must contain at least one lowercase letter',
         'number' => 'The password must contain at least one number',
         'repeated' => 'The password cannot have the same character repeated 3 or more times in a row',
         'spaces' => 'The password cannot contain spaces',
-        'special' => 'The password must contain at least one special character (e.g., !@#$%)',
+        'special' => 'The password must contain at least one special character (e.g., !@#$%%)',
         'upper' => 'The password must contain at least one uppercase letter',
     );
 
-    public function exec($path, &$value, array $params, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
-        if (empty($rules) === false) {
-            throw new Exception('Invalid combination of rules');
-        }
-
-        parent::exec($path, $value, $params, $rules);
+        parent::exec($path, $value, $param, $rules);
 
         if (strpbrk($value, '0123456789') === false) {
             $this->failure = $this->messages['number'];

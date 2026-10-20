@@ -6,17 +6,17 @@ use Inphinit\Experimental\Validation\Rule;
 
 class Cnpj extends Rule
 {
-    private $messages = array(
+    protected $messages = array(
         'default' => 'Invalid CNPJ',
     );
 
-    public function exec($path, &$value, array $params, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
         if (empty($rules) === false) {
-            throw new Exception('Invalid combination of rules');
+            throw new Exception('Invalid combination of rules: ' . get_class($this));
         }
 
-        parent::exec($path, $value, $params, $rules);
+        parent::exec($path, $value, $param, $rules);
 
         $cnpj = strtoupper($value);
 
