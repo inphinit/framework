@@ -15,7 +15,7 @@ class Password extends Rule
         'upper' => 'The password must contain at least one uppercase letter',
     );
 
-    public function exec($path, &$value, $param, array $rules)
+    public function exec($path, $value, $param, array $rules)
     {
         parent::exec($path, $value, $param, $rules);
 
@@ -33,6 +33,6 @@ class Password extends Rule
             $this->failure = $this->messages['repeated'];
         }
 
-        return $this->failure === null;
+        return $this->failure === null ? $value : null;
     }
 }

@@ -10,7 +10,7 @@ class Cnpj extends Rule
         'default' => 'Invalid CNPJ',
     );
 
-    public function exec($path, &$value, $param, array $rules)
+    public function exec($path, $value, $param, array $rules)
     {
         if (empty($rules) === false) {
             throw new Exception('Invalid combination of rules: ' . get_class($this));
@@ -24,14 +24,14 @@ class Cnpj extends Rule
 
         if (preg_match($format, $cnpj) !== 1) {
             $this->failure = $this->messages['default'];
-            return false;
+            return null;
         }
 
         $cnpj = preg_replace('/[^A-Z0-9]+/', '', $cnpj);
 
         if (preg_match('/^(.)\1{13}$/', $cnpj) === 1) {
             $this->failure = $this->messages['default'];
-            return false;
+            return null;
         }
 
         $base = substr($cnpj, 0, 12);
@@ -39,12 +39,12 @@ class Cnpj extends Rule
         $dv2 = self::modulo11($base . $dv1, array_merge(range(6, 2), range(9, 2)));
 
         if (substr($cnpj, 12) === $dv1 . $dv2) {
-            return true;
+            return $value;
         }
 
         $this->failure = $this->messages['default'];
 
-        return false;
+        return null;
     }
 
     private static function modulo11($base, array $weight)

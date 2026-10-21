@@ -9,7 +9,7 @@ class Ip extends Rule
         'default' => 'Invalid IP',
     );
 
-    public function exec($path, &$value, $param, array $rules)
+    public function exec($path, $value, $param, array $rules)
     {
         parent::exec($path, $value, $param, $rules);
 
@@ -36,11 +36,11 @@ class Ip extends Rule
         }
 
         if (filter_var($value, FILTER_VALIDATE_IP, $flags) !== null) {
-            return true;
+            return $value;
         }
 
         $this->failure = $this->messages['default'];
 
-        return false;
+        return null;
     }
 }

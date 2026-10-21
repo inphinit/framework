@@ -10,7 +10,7 @@ class CpfCnpj extends Rule
         'default' => 'Invalid document',
     );
 
-    public function exec($path, &$value, $param, array $rules)
+    public function exec($path, $value, $param, array $rules)
     {
         if (empty($rules) === false) {
             throw new Exception('Invalid combination of rules: ' . get_class($this));
@@ -20,18 +20,22 @@ class CpfCnpj extends Rule
 
         $cpf = new Cpf();
 
-        if ($cpf->exec($path, $value, $params, $rules)) {
-            return true;
+        $result = $cpf->exec($path, $value, $params, $rules);
+
+        if ($result !== null) {
+            return $result;
         }
 
         $cnpj = new Cnpj();
 
-        if ($cnpj->exec($path, $value, $params, $rules)) {
-            return true;
+        $result = $cpf->exec($path, $value, $params, $rules);
+
+        if ($result !== null) {
+            return $result;
         }
 
         $this->failure = $this->messages['default'];
 
-        return false;
+        return null;
     }
 }

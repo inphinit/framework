@@ -11,10 +11,6 @@ class Validator
     const MODE_THROW = 2;
 
     private $data;
-    private $failureMessages = array();
-    private $messages;
-    private $mode;
-    private $stopped = false;
     private $extendInstances = array();
     private $extendRules = array(
         'cnpj' => 'Inphinit\Experimental\Validation\Rules\Cnpj',
@@ -23,40 +19,39 @@ class Validator
         'ip' => 'Inphinit\Experimental\Validation\Rules\Ip',
         'password' => 'Inphinit\Experimental\Validation\Rules\Password',
     );
+    private $failureMessages = array();
+    private $messages = array(
+        'boolean' => 'Must be a boolean value (on, yes, true, 1, off, no, false or 0)',
+        'decimal' => 'Must be a valid decimal number',
+        'email' => 'Must be a valid email address',
+        'equals' => 'Must match the \'%s\' field',
+        'in' => 'Must be one of the allowed values',
+        'integer' => 'Must be a valid integer',
+        'invalid' => 'Invalid value',
+        'max' => 'Enter no more than %s characters',
+        'min' => 'Enter at least %s characters',
+        'max_numeral' => 'Enter a number no greater than %s',
+        'min_numeral' => 'Enter a number greater than or equal to %s',
+        'regex' => 'Invalid format',
+        'required' => 'This field is required',
+        'type' => 'Invalid type: expected a string, number or boolean',
+        'unicode_error' => 'Contains invalid Unicode (UTF-8) characters',
+        'url' => 'Must be a valid HTTP or HTTPS url',
+    );
+    private $mode;
+    private $stopped = false;
 
-    private static $booleanRules = array('bool', 'in');
-    private static $checkHttp = array('https', 'http');
-    private static $decimalRules = array('decimal', 'in', 'regex', 'min', 'max');
-    private static $intRules = array('integer', 'in', 'regex', 'min', 'max');
-    private static $p1 = array('bool', 'decimal', 'integer');
-    private static $p2 = array('min', 'max');
+    private static $allowedInBoolean = array('boolean', 'in');
+    private static $allowedInDecimal = array('decimal', 'in', 'regex', 'min', 'max');
+    private static $allowedInInteger = array('integer', 'in', 'regex', 'min', 'max');
+    private static $conversionRules = array('boolean', 'decimal', 'integer');
+    private static $rangeRules = array('min', 'max');
+    private static $urlRuleScheme = array('https', 'http');
 
-    /**
-     * Create a Validator instance
-     *
-     * @param array $data
-     * @param int   $mode
-     */
     public function __construct(array $data, $mode = 0)
     {
         $this->data = $data;
         $this->mode = $mode;
-
-        $this->messages = array(
-            'bool' => 'Must be a boolean value (on, yes, true, 1, off, no, false or 0)',
-            'decimal' => 'Must be a valid decimal number',
-            'email' => 'Must be a valid email address',
-            'equals' => 'Must match the "%s" field',
-            'in' => 'Must be one of the allowed values',
-            'integer' => 'Must be a valid integer',
-            'max' => 'The %s must be at most %s',
-            'min' => 'The %s must be at least %s',
-            'regex' => 'Invalid format',
-            'required' => 'This field is required',
-            'type' => 'Invalid type: expected a string, number or boolean',
-            'unicode_error' => 'Contains invalid Unicode (UTF-8) characters',
-            'url' => 'Must be a valid HTTP or HTTPS URL',
-        );
     }
 
     /**
@@ -82,7 +77,8 @@ class Validator
     }
 
     /**
-     * Configures failure messages
+     * Configures failure messages of standard rules.
+     * Note: To customize the messages for additional rules, use the `getRuleInstance()` method.
      *
      * @param string $type
      * @param string $message
@@ -90,15 +86,6 @@ class Validator
      */
     public function setMessage($type, $message)
     {
-        if (strpos($type, ':') !== false) {
-            list($rule, $type) = explode(':', $type, 2);
-
-            $instance = $this->getRuleInstance($rule);
-            $instance->setMessage($type, $message);
-
-            return $this;
-        }
-
         if (isset($this->messages[$type]) === false) {
             throw new Exception('Invalid message type');
         }
@@ -107,10 +94,11 @@ class Validator
             throw new Exception('Invalid message');
         }
 
-        $prev_message = str_replace('%%', '', $this->messages[$type]);
         $new_message = str_replace('%%', '', $message);
+        $prev_message = str_replace('%%', '', $this->messages[$type]);
+        $prev_count = substr_count($prev_message, '%');
 
-        if (substr_count($prev_message, '%') !== substr_count($new_message, '%')) {
+        if ($prev_count !== substr_count($new_message, '%')) {
             throw new Exception("The {$type} message must contain {$prev_count} specifiers");
         }
 
@@ -129,6 +117,7 @@ class Validator
     public function setRule($name, $rule)
     {
         $this->extendRules[$name] = $rule;
+        $this->extendInstances[$name] = null;
 
         if (App::config('environment') === 'development') {
             try {
@@ -157,12 +146,10 @@ class Validator
      * - min:<n> (value for decimal and int; length for strings)
      * - regex:<pattern> (not match with the expected format)
      * - required (is required)
-     * - type (unexpected type)
-     * - unicode_error (invalid Unicode characters)
      * - url (a valid url)
      *
      * @param string       $path
-     * @param mixed        $var
+     * @param mixed        &$var
      * @param string|array $rules
      * @param mixed        $default Used when absent/empty and not required.
      * @throws \Inphinit\Exception
@@ -180,53 +167,112 @@ class Validator
             $rules = explode('|', $rules);
         }
 
+        $numeral = false;
         $ruleset = array();
+        $value = PropertyAccessor::getValue($path, $this->data);
+
+        if ($value === null || $value === '') {
+            if (in_array('required', $rules, true)) {
+                $this->appendFailure($this->messages['required'], $path, null);
+            } else {
+                $var = $default;
+            }
+
+            return $this;
+        }
+
+        if (is_scalar($value) === false) {
+            $this->appendFailure($this->messages['type'], $path, null);
+            return $this;
+        }
 
         foreach ($rules as $rule) {
             if ($rule === 'required') {
                 continue;
             }
 
-            if (is_string($rule)) {
-                $parts = explode(':', $rule, 2);
+            if (strpos($rule, ':') !== false) {
+                list($rule, $param) = explode(':', $rule, 2);
             } else {
-                $parts = $rule;
+                $param = null;
             }
 
-            $type = $parts[0];
-            $arg = isset($parts[1]) ? $parts[1] : null;
-
-            if (isset($ruleset[$type])) {
-                throw new Exception('Duplicate rule: ' . $type);
+            if (array_key_exists($rule, $ruleset)) {
+                throw new Exception('Duplicate rule: ' . $rule);
             }
 
-            $ruleset[$type] = $arg;
+            $ruleset[$rule] = $param;
         }
 
-        $value = PropertyAccessor::getValue($path, $this->data);
+        if (array_key_exists('in', $ruleset) && (isset($ruleset['in']) === false || strpos($ruleset['in'], ',') === false)) {
+            throw new Exception('`in` rule is misconfigured');
+        }
 
-        if ($value === null || $value === '') {
-            if (in_array('required', $rules, true)) {
-                $this->appendFailure('required', $path);
+        $rules = array_keys($ruleset);
+
+        if (in_array('boolean', $rules, true)) {
+            $diff = array_diff($rules, self::$allowedInBoolean);
+
+            if (empty($diff) === false) {
+                throw new Exception('`boolean` rule can only be combined with the `in` rule');
+            }
+        } elseif (in_array('decimal', $rules, true)) {
+            $diff = array_diff($rules, self::$allowedInDecimal);
+            $numeral = true;
+
+            if (empty($diff) === false) {
+                throw new Exception('`decimal` rule can only be combined with the rules: `in`, `min`, `max` and `regex`');
+            }
+        } elseif (in_array('integer', $rules, true)) {
+            $diff = array_diff($rules, self::$allowedInInteger);
+            $numeral = true;
+
+            if (empty($diff) === false) {
+                throw new Exception('`integer` rule can only be combined with the rules: `in`, `min`, `max` and `regex`');
+            }
+        }
+
+        // Prioritize rules that do not perform type conversions
+        uksort($ruleset, array($this, 'priorityRules'));
+
+        foreach ($ruleset as $rule => $arg) {
+            if (isset($this->extendRules[$rule])) {
+                unset($ruleset[$rule]);
+
+                $instance = $this->getRuleInstance($rule);
+                $value = $instance->exec($path, $value, $arg, $ruleset);
+
+                if ($value === null) {
+                    $message = $instance->getFailure();
+
+                    if ($message === null) {
+                        $message = $this->messages['invalid'];
+                    }
+
+                    $this->appendFailure($message, $path, null);
+
+                    return $this;
+                }
+
+                $numeral = is_int($value) || is_float($value);
+            } else {
+                $value = $this->apply($path, $rule, $arg, $value, $numeral, $info);
+            }
+
+            if ($value === null) {
+                if ($numeral && $rule === 'max') {
+                    $rule = 'max_numeral';
+                } elseif ($numeral && $rule === 'min') {
+                    $rule = 'min_numeral';
+                }
+
+                $this->appendFailure($this->messages[$rule], $path, $info);
 
                 return $this;
             }
-
-            if ($default === null) {
-                return $this;
-            }
-
-            $value = $default;
         }
 
-        if (is_scalar($value) === false) {
-            $this->appendFailure('type', $path);
-            return $this;
-        }
-
-        if ($this->exec($path, $value, $ruleset)) {
-            $var = $value;
-        }
+        $var = $value;
 
         return $this;
     }
@@ -244,7 +290,7 @@ class Validator
     /**
      * Returns all error messages
      *
-     * @return array<string, string[]>
+     * @return array<string, string>
      */
     public function failures()
     {
@@ -263,9 +309,9 @@ class Validator
             $instance = $this->extendInstances[$rule];
         } elseif (isset($this->extendRules[$rule])) {
             $cls = $this->extendRules[$rule];
-            $instance = new $cls();
 
-            if ($instance instanceof Rule) {
+            if (is_subclass_of($cls, 'Inphinit\Experimental\Validation\Rule')) {
+                $instance = new $cls();
                 $this->extendInstances[$rule] = $instance;
             } else {
                 throw new Exception('Invalid extended rule class');
@@ -277,111 +323,24 @@ class Validator
         return $instance;
     }
 
-    private function exec($path, &$value, $ruleset)
+    private function appendFailure($message, $path, $info)
     {
-        $types = array_keys($ruleset);
-
-        $extArg = null;
-        $extName = null;
-        $extRule = null;
-        $instance = null;
-
-        foreach ($this->extendRules as $name => $extend) {
-            if (in_array($name, $types, true)) {
-                if (isset($ruleset[$name])) {
-                    $extArg = $ruleset[$name];
-                }
-
-                $extName = $name;
-                $extRule = $extend;
-                unset($ruleset[$name]);
-                break;
-            }
-        }
-
-        if ($extRule === null) {
-            $numeral = self::checksCombinations($types);
+        if ($info !== null) {
+            $message = sprintf($message, $info);
         } else {
-            $instance = $this->getRuleInstance($extName);
+            $message = str_replace('%%', '%', $message);
         }
 
-        if ($instance !== null) {
-            if ($instance->exec($path, $value, $extArg, $ruleset)) {
-                $numeral = is_int($value) || is_float($value);
-            } else {
-                $this->messages[$extName] = $instance->getFailure();
-                $this->appendFailure($extName, $path, array());
-                return false;
-            }
+        if ($this->mode & self::MODE_THROW) {
+            throw new Exception($path . ': ' . $message, 0, 3);
         }
 
-        // Prioritize rules that do not perform type conversions
-        uksort($ruleset, array($this, 'priorityRules'));
-
-        foreach ($ruleset as $type => $arg) {
-            if ($this->apply($path, $type, $arg, $value, $numeral) === false) {
-                if ($type === 'max' || $type === 'min') {
-                    $this->appendFailure($type, $path, array($numeral ? 'size' : 'length', $arg));
-                } elseif ($type === 'equals') {
-                    $this->appendFailure($type, $path, array($arg));
-                } else {
-                    $this->appendFailure($type, $path, array());
-                }
-
-                return false;
-            }
+        if (isset($this->failureMessages[$path]) === false) {
+            $this->failureMessages[$path] = $message;
         }
 
-        return true;
-    }
-
-    private static function checksCombinations($types)
-    {
-        if (in_array('bool', $types, true)) {
-            $rules = array_diff($types, self::$booleanRules);
-
-            if (empty($rules) === false) {
-                throw new Exception('`bool` rule can only be combined with the `in` rule', 0, 3);
-            }
-        } elseif (in_array('decimal', $types, true)) {
-            $rules = array_diff($types, self::$decimalRules);
-
-            if (empty($rules) === false) {
-                throw new Exception('`decimal` rule can only be combined with the rules: `in`, `min`, `max` and `regex`', 0, 3);
-            }
-
-            return true;
-        } elseif (in_array('integer', $types, true)) {
-            $rules = array_diff($types, self::$intRules);
-
-            if (empty($rules) === false) {
-                throw new Exception('`integer` rule can only be combined with the rules: `in`, `min`, `max` and `regex`', 0, 3);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private function appendFailure($type, $path, $args = array())
-    {
-        if ($this->stopped === false) {
-            $message = vsprintf($this->messages[$type], $args);
-
-            if (isset($this->failureMessages[$path]) === false) {
-                $this->failureMessages[$path] = array($message);
-            } else {
-                $this->failureMessages[$path][] = $message;
-            }
-
-            if ($this->mode & self::MODE_THROW) {
-                throw new Exception($message, 0, 3);
-            }
-
-            if ($this->mode & self::MODE_STOP) {
-                $this->stopped = true;
-            }
+        if ($this->mode & self::MODE_STOP) {
+            $this->stopped = true;
         }
     }
 
@@ -392,86 +351,103 @@ class Validator
 
     private static function rulePriority($rule)
     {
-        if (in_array($rule, self::$p2, true)) {
+        if (in_array($rule, self::$rangeRules, true)) {
             return 2;
         }
 
-        if (in_array($rule, self::$p1, true)) {
+        if (in_array($rule, self::$conversionRules, true)) {
             return 1;
         }
 
         return 0;
     }
 
-    private function apply($path, $rule, $arg, &$value, $numeral)
+    private function apply($path, $rule, $arg, $input, $numeral, &$info)
     {
         $flags = FILTER_NULL_ON_FAILURE;
+        $info = null;
+        $valid = false;
 
         switch ($rule) {
-            case 'bool':
+            case 'boolean':
                 if (defined('FILTER_VALIDATE_BOOL')) {
-                    $validate = FILTER_VALIDATE_BOOL;
+                    $filter = FILTER_VALIDATE_BOOL;
                 } else {
-                    $validate = FILTER_VALIDATE_BOOLEAN;
+                    $filter = FILTER_VALIDATE_BOOLEAN;
                 }
-
-                $value = filter_var($value, $validate, $flags);
-                return $value !== null;
+                return filter_var($input, $filter, $flags);
 
             case 'decimal':
-                $value = filter_var($value, FILTER_VALIDATE_FLOAT, array(
-                    'flags' => $flags,
-                    'options' => array('decimal' => $arg === null ? '.' : $arg)
-                ));
-                return $value !== null;
+                return filter_var($input, FILTER_VALIDATE_FLOAT, array('flags' => $flags, 'options' => array(
+                    'decimal' => $arg === null ? '.' : $arg
+                )));
 
             case 'email':
-                return filter_var($value, FILTER_VALIDATE_EMAIL, $flags) !== null;
+                $valid = filter_var($input, FILTER_VALIDATE_EMAIL);
+                break;
 
             case 'integer':
-                $value = filter_var($value, FILTER_VALIDATE_INT, $flags);
-                return $value !== null;
+                return filter_var($input, FILTER_VALIDATE_INT, $flags);
 
             case 'equals':
-                return $value === (isset($this->data[$arg]) ? $this->data[$arg] : null);
+                $info = $arg;
+                $valid = PropertyAccessor::getValue($arg, $this->data) === $input;
+                break;
 
             case 'in':
-                return in_array((string) $value, explode(',', $arg), true);
-
-            case 'ip':
-                return filter_var($value, FILTER_VALIDATE_IP, $flags) !== null;
+                $valid = in_array((string) $input, explode(',', $arg), true);
+                break;
 
             case 'max':
-                $current = $numeral ? ((float) $value) : $this->strLength($path, $value);
-                return $current !== false && $current <= (float) $arg;
+                $info = $arg;
+
+                if ($numeral) {
+                    $valid = $input <= $arg;
+                } else {
+                    $length = $this->stringLength($path, $input);
+                    $valid = $length !== false && $length <= $arg;
+                }
+                break;
 
             case 'min':
-                $current = $numeral ? ((float) $value) : $this->strLength($path, $value);
-                return $current !== false && $current >= (float) $arg;
+                $info = $arg;
+
+                if ($numeral) {
+                    $valid = $input >= $arg;
+                } else {
+                    $length = $this->stringLength($path, $input);
+                    $valid = $length !== false && $length >= $arg;
+                }
+                break;
 
             case 'regex':
-                return preg_match($arg, (string) $value) === 1;
+                $valid = preg_match($arg, $input) === 1;
+                break;
 
             case 'url':
                 if (PHP_VERSION_ID < 70300) {
                     // Caution: Provides PHP 7.3+ equivalent behavior on older PHP versions
-                    $flags |= FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED;
+                    $flags = FILTER_FLAG_SCHEME_REQUIRED | FILTER_FLAG_HOST_REQUIRED;
+                } else {
+                    $flags = FILTER_FLAG_NONE;
                 }
 
                 if (
-                    filter_var($value, FILTER_VALIDATE_URL, $flags) === null ||
-                    in_array(strtolower(parse_url($value, PHP_URL_SCHEME)), self::$checkHttp, true) === false
+                    filter_var($input, FILTER_VALIDATE_URL, $flags) &&
+                    in_array(strtolower(parse_url($input, PHP_URL_SCHEME)), self::$urlRuleScheme, true)
                 ) {
-                    $value = null;
+                    $valid = true;
                 }
+                break;
 
-                return $value !== null;
+            default:
+                throw new Exception('Unknown rule: ' . $rule, 0, 3);
         }
 
-        throw new Exception('Unknown rule: ' . $rule, 0, 3);
+        return $valid ? $input : null;
     }
 
-    private function strLength($path, $value)
+    private function stringLength($path, $value)
     {
         $length = preg_match_all('/./su', (string) $value);
 
@@ -479,7 +455,7 @@ class Validator
             return $length;
         }
 
-        $this->appendFailure('unicode_error', $path);
+        $this->appendFailure($this->messages['unicode_error'], $path, null);
 
         return false;
     }

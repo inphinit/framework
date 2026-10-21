@@ -1,6 +1,8 @@
 <?php
 namespace Inphinit\Experimental\Validation;
 
+use Inphinit\Exception;
+
 abstract class Rule
 {
     protected $failure;
@@ -8,18 +10,18 @@ abstract class Rule
 
     /**
      * @param string $path   Path being validated
-     * @param string &$value Path value
+     * @param string $value Path value
      * @param string $param  Parameter
      * @param array  $rules  Other rules
-     * @return mixed         Returns the sanitized value
+     * @return mixed         Returns the original or sanitized value; if failed return a null value
      */
-    public function exec($path, &$value, $param, array $rules)
+    public function exec($path, $value, $param, array $rules)
     {
         $this->failure = null;
     }
 
     /**
-     * @return string Returns the error message
+     * @return string|null Returns a string if a failure occurs; otherwise, returns null
      */
     public function getFailure()
     {
