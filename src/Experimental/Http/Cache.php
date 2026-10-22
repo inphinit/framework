@@ -16,6 +16,8 @@ use Inphinit\Filesystem\File;
 use Inphinit\Http\Request;
 use Inphinit\Http\Response;
 
+use Inphinit\Experimental\Utility\Storage;
+
 class Cache
 {
     /** @var int Returned by `start()` when a fresh cached response was served */
@@ -93,9 +95,9 @@ class Cache
      * Set how long the cache should remain valid before it is refreshed
      * Note: This value is also used to set the Expires header.
      *
-     * @param int $minutes
-     * @param int $hours
      * @param int $days
+     * @param int $hours
+     * @param int $minutes
      */
     public function setLifetime($days, $hours, $minutes)
     {
