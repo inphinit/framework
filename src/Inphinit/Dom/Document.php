@@ -130,7 +130,7 @@ class Document
     /**
      * Get root element
      *
-     * @return \DOMDocument
+     * @return \DOMElement|null
      */
     public function root()
     {

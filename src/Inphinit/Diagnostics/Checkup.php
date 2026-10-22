@@ -9,6 +9,7 @@
 
 namespace Inphinit\Diagnostics;
 
+use Inphinit\Exception;
 use Inphinit\Dom\Document;
 
 class Checkup
@@ -17,6 +18,7 @@ class Checkup
     const MIN_EXEC_RECOMMENDED = 30;
     const MAX_EXEC_RECOMMENDED = 300;
     const MIN_REQUEST_SIZE_RECOMMENDED = 1048576;
+    const MAX_REQUEST_SIZE_VULNERABLE = 33554432;
 
     private static $shorthands = array(
         'K' => 1,
@@ -27,6 +29,7 @@ class Checkup
     private $development;
     private $iniGetEnabled;
     private $isHttp;
+    private $vulnerable = false;
     private static $iniFiles;
     private static $phpBuildDate;
 
@@ -41,7 +44,7 @@ class Checkup
         $this->iniGetEnabled = function_exists('ini_get');
         $this->isHttp = isset($_SERVER['REQUEST_METHOD']);
 
-        $this->exec();
+        $this->run();
     }
 
     /**
@@ -152,6 +155,102 @@ class Checkup
         return $value;
     }
 
+    private function checkSecurity()
+    {
+        $version_id = PHP_VERSION_ID;
+        $message = null;
+
+        if ($version_id < 80200) {
+            $message = 'Upgrade PHP or look into temporary workarounds';
+        } elseif ($version_id < 80235) {
+            $message = 'Upgrade to 8.2.35';
+        } elseif ($version_id >= 80300 && $version_id < 80336) {
+            $message = 'Upgrade to 8.3.36';
+        } elseif ($version_id >= 80400 && $version_id < 80427) {
+            $message = 'Upgrade to 8.4.27';
+        } elseif ($version_id >= 80500 && $version_id < 80512) {
+            $message = 'Upgrade to 8.5.12';
+        }
+
+        if ($message !== null) {
+            $this->vulnerable = true;
+            // Some distributions backport fixes without changing `PHP_VERSION_ID`
+            $this->errors[] = 'The PHP version is affected by CVE-2026-109618 and CVE-2026-109619. ' . $message .
+                              ' (or confirm that your distribution backported the fix)';
+        }
+    }
+
+    /**
+     * Partial mitigations for CVE-2026-109618 and CVE-2026-109619,
+     * evaluated only while the PHP version is still vulnerable
+     */
+    private function checkSecurityMitigations()
+    {
+        if ($this->vulnerable === false || $this->iniGetEnabled === false) {
+            return;
+        }
+
+        $message = 'While PHP is not upgraded, set `%s=%s` and restart all workers (partial mitigation)';
+
+        if (PHP_VERSION_ID >= 80500 && self::enabled('fatal_error_backtraces')) {
+            $this->warnings[] = sprintf($message, 'fatal_error_backtraces', '0');
+        }
+
+        if (self::enabled('session.upload_progress.enabled')) {
+            $this->warnings[] = sprintf($message, 'session.upload_progress.enabled', '0');
+        }
+    }
+
+    /**
+     * Early INI diagnostics can consume stale state (CVE-2026-109619),
+     * evaluated only while the PHP version is still vulnerable
+     */
+    private function checkSecurityDiagnostics()
+    {
+        if ($this->vulnerable === false || $this->iniGetEnabled === false) {
+            return;
+        }
+
+        $message = '`%s` can emit a diagnostic before request startup (CVE-2026-109619); %s';
+
+        if (PHP_VERSION_ID >= 80100 && extension_loaded('filter')) {
+            $filter = ini_get('filter.default');
+
+            if ($filter !== false && $filter !== '' && $filter !== 'unsafe_raw') {
+                $this->warnings[] = sprintf($message, "filter.default={$filter}", 'restore the default value');
+            }
+        }
+
+        if (PHP_VERSION_ID >= 80500) {
+            if (ini_get('report_memleaks') !== false && self::enabled('report_memleaks') === false) {
+                $this->warnings[] = sprintf($message, 'report_memleaks=0', 'remove it');
+            }
+
+            if (extension_loaded('intl') && intval(ini_get('intl.error_level')) !== 0) {
+                $this->warnings[] = sprintf($message, 'intl.error_level', 'restore the default value (0)');
+            }
+        }
+
+        $encodings = array(
+            'mbstring' => array('mbstring.http_input', 'mbstring.http_output', 'mbstring.internal_encoding'),
+            'iconv' => array('iconv.input_encoding', 'iconv.output_encoding', 'iconv.internal_encoding'),
+        );
+
+        foreach ($encodings as $extension => $keys) {
+            if (extension_loaded($extension) === false) {
+                continue;
+            }
+
+            foreach ($keys as $key) {
+                $value = ini_get($key);
+
+                if ($value !== false && $value !== '') {
+                    $this->warnings[] = sprintf($message, "{$key}={$value}", 'remove it (use `default_charset`)');
+                }
+            }
+        }
+    }
+
     private function checkExecutionTime()
     {
         if ($this->iniGetEnabled) {
@@ -189,7 +288,13 @@ class Checkup
                 $this->errors[] = "Invalid value in entry `memory_limit={$entry}`";
             } elseif ($value < 0) {
                 if ($this->isHttp) {
-                    $this->errors[] = 'Unlimited `memory_limit` is unsafe in WEB context';
+                    if ($this->vulnerable) {
+                        // Recommended as a partial mitigation by CVE-2026-109618
+                        $this->warnings[] = 'Unlimited `memory_limit` is unsafe in WEB context; it is only ' .
+                                            'acceptable as a partial mitigation until PHP is upgraded';
+                    } else {
+                        $this->errors[] = 'Unlimited `memory_limit` is unsafe in WEB context';
+                    }
                 }
             } elseif ($value < self::MIN_MEMORY_RECOMMENDED) {
                 $this->warnings[] = "`memory_limit={$entry}` may not be enough";
@@ -207,6 +312,9 @@ class Checkup
                 $this->errors[] = "Invalid value in entry `post_max_size={$post_max_size_entry}`";
             } elseif ($post_max_size < self::MIN_REQUEST_SIZE_RECOMMENDED) {
                 $this->warnings[] = "`post_max_size={$post_max_size_entry}` may not be enough";
+            } elseif ($this->vulnerable && $post_max_size > self::MAX_REQUEST_SIZE_VULNERABLE) {
+                $this->warnings[] = "`post_max_size={$post_max_size_entry}` is above the recommended cap while " .
+                                    'PHP is not upgraded (8M without uploads, 32M with uploads)';
             }
 
             if (self::enabled('file_uploads')) {
@@ -232,7 +340,7 @@ class Checkup
                     $this->warnings[] = "`max_file_uploads={$max_file_uploads}` may not be enough";
                 }
             } else {
-                $this->warnings[] = '`file_uploads=Off` is disabled. If this is not intentional enable it';
+                $this->warnings[] = '`file_uploads` is disabled (`Off`). If this is not intentional, enable it';
             }
         }
     }
@@ -294,7 +402,14 @@ class Checkup
 
         if ($this->iniGetEnabled) {
             if (self::enabled('auto_detect_line_endings')) {
-                $this->warnings[] = 'Disable the deprecated `auto_detect_line_endings`';
+                $message = 'Disable the deprecated `auto_detect_line_endings`';
+
+                if ($this->vulnerable && PHP_VERSION_ID >= 80100) {
+                    // Emits a deprecation before request startup (CVE-2026-109619)
+                    $this->errors[] = $message;
+                } else {
+                    $this->warnings[] = $message;
+                }
             }
 
             if ($this->development) {
@@ -325,7 +440,7 @@ class Checkup
         }
     }
 
-    private function exec()
+    private function run()
     {
         if ($this->iniGetEnabled === false) {
             $this->warnings[] = '`ini_get()` is disabled, so no further checks can be performed';
@@ -336,6 +451,11 @@ class Checkup
         } elseif (php_ini_loaded_file() === false) {
             $this->warnings[] = '`php.ini` is not configured; Ignore this if you are using flags';
         }
+
+        // PHP security (must run first: sets `$this->vulnerable`)
+        $this->checkSecurity();
+        $this->checkSecurityMitigations();
+        $this->checkSecurityDiagnostics();
 
         // PHP configurations
         $this->checkExecutionTime();
@@ -365,11 +485,24 @@ class Checkup
         }
     }
 
+    /**
+     * Check if a boolean ini entry is enabled
+     *
+     * @param string $key
+     * @return bool
+     */
     private static function enabled($key)
     {
         return ini_get($key) === '1';
     }
 
+    /**
+     * Convert ini size shorthand (K, M, G) to bytes
+     *
+     * @param string $entry
+     * @param string $default
+     * @return float|false Returns `false` if the value is invalid
+     */
     private static function convertSize($entry, $default)
     {
         if ($entry === '') {
