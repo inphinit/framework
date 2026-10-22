@@ -219,10 +219,10 @@ class Cache
                 $this->cache = $cache;
                 $this->cacheTemp = $cache_temp;
 
-                $errorCallback = array($this, 'error');
+                $callback = array($this, 'error');
 
-                Event::on('error', function ($type, $message, $file, $line) use ($errorCallback) {
-                    $errorCallback();
+                Event::on('error', function ($type, $message, $file, $line) use ($callback) {
+                    $callback();
                 });
 
                 return $this->debugWithHeader(self::WRITING);
