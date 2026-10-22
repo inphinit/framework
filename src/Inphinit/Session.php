@@ -126,7 +126,15 @@ class Session
             throw new Exception('Failed to copy session data');
         }
 
+        // Caminho do arquivo antigo precisa ser capturado antes de trocar $this->id,
+        // para que o ID anterior seja invalidado (evita session fixation).
+        $old_file = $this->storage . '/' . $this->storePrefix . '[' . $this->id . ']';
+
         $this->close();
+
+        if (is_file($old_file)) {
+            unlink($old_file);
+        }
 
         $this->handle = $dest;
         $this->id = $id;
@@ -215,7 +223,7 @@ class Session
 
             $id = Strings::random(self::BYTES_LENGTH);
             $file = $storage . '/' . $prefix . '[' . $id . ']';
-            $stream = fopen($file, 'x+');
+            $stream = @fopen($file, 'x+');
 
             if ($stream !== false) {
                 break;
