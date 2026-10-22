@@ -107,11 +107,11 @@ class Size
             throw new Exception($path . ' file not found (check case-sensitive)');
         }
 
-        if (is_file($path) === false) {
+        $path = realpath($path);
+
+        if ($path === false || is_file($path) === false) {
             throw new Exception($path . ' not found');
         }
-
-        $path = realpath($path);
 
         $size = null;
 
