@@ -234,7 +234,7 @@ abstract class Reader
      * Fetch a row from file pointer
      *
      * @throws \Inphinit\Exception
-     * @return array<int, string>|array<string, string>|false
+     * @return mixed
      */
     public function fetch()
     {
@@ -428,5 +428,7 @@ abstract class Reader
                 return false;
             }
         }
+
+        return true;
     }
 }

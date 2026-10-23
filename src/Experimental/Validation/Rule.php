@@ -18,6 +18,7 @@ abstract class Rule
     public function exec($path, $value, $param, array $rules)
     {
         $this->failure = null;
+        return null;
     }
 
     /**

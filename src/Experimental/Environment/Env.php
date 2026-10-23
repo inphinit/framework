@@ -116,12 +116,12 @@ class Env
     {
         // If `variables_order` contains E, it is not necessary to perform padding.
         if (function_exists('ini_get') && strpos(ini_get('variables_order'), 'E') !== false) {
-            return null;
+            return;
         }
 
         if (PHP_VERSION_ID >= 70100) {
             $_ENV = getenv();
-            return null;
+            return;
         }
 
         foreach ($_SERVER as $name => $svalue) {

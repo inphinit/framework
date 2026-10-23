@@ -151,6 +151,8 @@ class View
         }
 
         inphinit_sandbox($path, $data);
+
+        return null;
     }
 
     /**

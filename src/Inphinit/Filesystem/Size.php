@@ -184,6 +184,8 @@ class Size
             $errorCode = $ex->getCode();
             $errorMessage = 'COM: ' . $message;
         }
+
+        return null;
     }
 
     private function fromCurl($path, &$errorMessage, &$errorCode)
@@ -237,6 +239,8 @@ class Size
 
         $errorCode = 0;
         $errorMessage = 'cURL: Unknown size';
+
+        return null;
     }
 
     private function fromSystem($path, &$errorMessage, &$errorCode)

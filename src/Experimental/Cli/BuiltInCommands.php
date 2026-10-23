@@ -95,20 +95,22 @@ class BuiltInCommands
     {
         if (App::down()) {
             echo 'Maintenance mode is now active.';
-        } else {
-            echo 'Unable to activate maintenance mode.';
-            return 1;
+            return 0;
         }
+
+        echo 'Unable to activate maintenance mode.';
+        return 1;
     }
 
     private function appUp(Command $command, array $options, array $residues)
     {
         if (App::up()) {
             echo 'The application is active, and maintenance mode has been disabled.';
-        } else {
-            echo 'Unable to deactivate maintenance mode.';
-            return 1;
+            return 0;
         }
+
+        echo 'Unable to deactivate maintenance mode.';
+        return 1;
     }
 
     private function cacheClear(Command $command, array $options, array $residues)
@@ -131,10 +133,11 @@ class BuiltInCommands
 
         if ($this->env->storeAsVars(INPHINIT_SYSTEM . '/boot/env.php')) {
             echo 'Optimized `.env` with caching on boot.';
-        } else {
-            echo 'Unable to optimize `.env`.';
-            return 1;
+            return 0;
         }
+
+        echo 'Unable to optimize `.env`.';
+        return 1;
     }
 
     private function envSource(Command $command, array $options, array $residues)
@@ -143,12 +146,16 @@ class BuiltInCommands
 
         if (is_file($env_file) === false) {
             echo 'Optimization of the `.env` is already disabled.';
-        } elseif (unlink($env_file)) {
-            echo 'Disabled `.env` optimization at boot.';
-        } else {
-            echo 'Unable to disable `.env` optimization.';
-            return 1;
+            return 0;
         }
+
+        if (unlink($env_file)) {
+            echo 'Disabled `.env` optimization at boot.';
+            return 0;
+        }
+
+        echo 'Unable to disable `.env` optimization.';
+        return 1;
     }
 
     private function packageUpdate(Command $command, array $options, array $residues)
@@ -206,9 +213,9 @@ class BuiltInCommands
             echo "\nSchedule enabled.\n";
         } else {
             echo "\nError {$code}\n";
-
-            return $code;
         }
+
+        return $code;
     }
 
     private function scheduleRun(Command $command, array $options, array $residues)
@@ -229,7 +236,7 @@ class BuiltInCommands
             return 0;
         }
 
-        $this->scheduler->runTask($task);
+        return $this->scheduler->runTask($task);
     }
 
     private function serve(Command $command, array $options, array $residues)
@@ -289,7 +296,7 @@ class BuiltInCommands
 
         if ($max === null || ctype_digit($max) === false || $max[0] === '0' || $max < 1) {
             echo 'The APP_SESSION_MAX_INACTIVE environment variable is missing or has an invalid value', PHP_EOL;
-            return -1;
+            return 1;
         }
 
         $expires = time() - $max;
@@ -302,5 +309,7 @@ class BuiltInCommands
         });
 
         echo $affecteds, ' session files were removed', PHP_EOL;
+
+        return 0;
     }
 }

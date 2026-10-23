@@ -172,7 +172,7 @@ class Package
     private function createCache($from, $data)
     {
         if ($data ===  null) {
-            return null;
+            return;
         }
 
         $vendors = array();

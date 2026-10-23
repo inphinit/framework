@@ -345,7 +345,7 @@ class Session
     private function lock($enable)
     {
         if ($this->locked === $enable) {
-            return null;
+            return;
         }
 
         $handle = $this->handle;
