@@ -126,8 +126,6 @@ class Session
             throw new Exception('Failed to copy session data');
         }
 
-        // Caminho do arquivo antigo precisa ser capturado antes de trocar $this->id,
-        // para que o ID anterior seja invalidado (evita session fixation).
         $old_file = $this->storage . '/' . $this->storePrefix . '[' . $this->id . ']';
 
         $this->close();
