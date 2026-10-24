@@ -12,6 +12,7 @@ namespace Inphinit\Experimental\Cli;
 use Inphinit\App;
 use Inphinit\Experimental\Cli\Console;
 use Inphinit\Experimental\Environment\EnvFile;
+use Inphinit\Experimental\Scaffolding\FileGenerator;
 use Inphinit\Experimental\Scheduling\Scheduler;
 use Inphinit\Experimental\Utility\Storage;
 
@@ -22,6 +23,9 @@ class BuiltInCommands
     const APP_DOWN = 'app:down';
     const APP_UP = 'app:up';
     const CACHE_CLEAR = 'cache:clear';
+    const CREATE_COMMAND = 'create:command';
+    const CREATE_CONTROLLER = 'create:controller';
+    const CREATE_VIEW = 'create:view';
     const ENV_BOOT = 'env:boot';
     const ENV_SOURCE = 'env:source';
     const PKG_UP = 'pkg:up';
@@ -34,6 +38,7 @@ class BuiltInCommands
     private $console;
     private $scheduler;
     private $env;
+    private $fileGenerator;
 
     public function __construct(Console $console, EnvFile $env, Scheduler $scheduler)
     {
@@ -52,6 +57,33 @@ class BuiltInCommands
             ->setOption('attempts', 'a', 0, '#^[1-9](\d*?)$#', 'Define number attempts (Default: 20)')
             ->setOption('expires', 'e', 0, '#^[1-9](\d*?)$#', 'Define expires time (Default: 7200)')
             ->restrictToCli(true);
+
+        $this->registerCommand(self::CREATE_COMMAND, 'createCommand')
+            ->setOption(
+                'name',
+                'n',
+                Command::ARG_REQUIRED,
+                '#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D',
+                'Define controller name',
+            );
+
+        $this->registerCommand(self::CREATE_CONTROLLER, 'createController')
+            ->setOption(
+                'name',
+                'n',
+                Command::ARG_REQUIRED,
+                '#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D',
+                'Define command name',
+            );
+
+        $this->registerCommand(self::CREATE_VIEW, 'createView')
+            ->setOption(
+                'name',
+                'n',
+                Command::ARG_REQUIRED,
+                '#^[a-z_][a-z0-9_]*(?:/[a-z_][a-z0-9_]*)*$#D',
+                'Define view name',
+            );
 
         $this->registerCommand(self::ENV_BOOT, 'envBoot')
             ->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
@@ -123,6 +155,39 @@ class BuiltInCommands
         $affecteds = Storage::clear('cache/output', $expires, $attempts);
 
         echo $affecteds, ' cache files were removed', PHP_EOL;
+    }
+
+    private function createCommand(Command $command, array $options, array $residues)
+    {
+        if ($this->fileGenerator === null) {
+            $this->fileGenerator = new FileGenerator();
+        }
+
+        $path = $this->fileGenerator->command($options['name']);
+
+        echo 'Created command class: ', $path;
+    }
+
+    private function createController(Command $command, array $options, array $residues)
+    {
+        if ($this->fileGenerator === null) {
+            $this->fileGenerator = new FileGenerator();
+        }
+
+        $path = $this->fileGenerator->controller($options['name']);
+
+        echo 'Created controller class: ', $path;
+    }
+
+    private function createView(Command $command, array $options, array $residues)
+    {
+        if ($this->fileGenerator === null) {
+            $this->fileGenerator = new FileGenerator();
+        }
+
+        $path = $this->fileGenerator->view($options['name']);
+
+        echo 'Created view file: ', $path;
     }
 
     private function envBoot(Command $command, array $options, array $residues)
