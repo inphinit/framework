@@ -5,9 +5,11 @@
 namespace ${NAMESPACE};
 #end
 
+use Inphinit\App;
+
 class ${NAME}
 {
-    public function index()
+    public function index(App $app, array $params)
     {
     }
 }
