@@ -59,31 +59,13 @@ class BuiltInCommands
             ->restrictToCli(true);
 
         $this->registerCommand(self::CREATE_COMMAND, 'createCommand')
-            ->setOption(
-                'name',
-                'n',
-                Command::ARG_REQUIRED,
-                '#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D',
-                'Define command name',
-            );
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define command name');
 
         $this->registerCommand(self::CREATE_CONTROLLER, 'createController')
-            ->setOption(
-                'name',
-                'n',
-                Command::ARG_REQUIRED,
-                '#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D',
-                'Define command name',
-            );
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define controller name');
 
         $this->registerCommand(self::CREATE_VIEW, 'createView')
-            ->setOption(
-                'name',
-                'n',
-                Command::ARG_REQUIRED,
-                '#^[a-z_][a-z0-9_]*(?:/[a-z_][a-z0-9_]*)*$#D',
-                'Define view name',
-            );
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define view name');
 
         $this->registerCommand(self::ENV_BOOT, 'envBoot')
             ->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
