@@ -1,4 +1,6 @@
 <?php
+#parse("header")
+
 use Inphinit\Viewing\View;
 ?>
 <!DOCTYPE html>

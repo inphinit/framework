@@ -64,7 +64,7 @@ class BuiltInCommands
                 'n',
                 Command::ARG_REQUIRED,
                 '#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D',
-                'Define controller name',
+                'Define command name',
             );
 
         $this->registerCommand(self::CREATE_CONTROLLER, 'createController')

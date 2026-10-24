@@ -9,7 +9,6 @@
 
 namespace Inphinit\Experimental\Scaffolding;
 
-use Inphinit\App;
 use Inphinit\Config;
 use Inphinit\Exception;
 
@@ -28,7 +27,6 @@ class FileGenerator
     {
         $config = new Config('create');
         $this->data = inphinit_sandbox('boot/namespaces.php');
-        $this->includeDir = INPHINIT_SYSTEM . '/stubs/includes/';
         $this->vars = array(
             'LICENSE' => $config->license,
             'USER' => $config->user,
@@ -85,13 +83,13 @@ class FileGenerator
             throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate, 0, 3);
         }
 
-        $template = self::render($template, array(
+        $template = $this->render($template, array(
             'NAMESPACE' => $namespace,
             'NAME' => $class,
             'FULL_NAME' => $namespace . '\\' . $class
         ));
 
-        $result = $this->createFile($dest, fileperms($dir), $template);
+        $result = $this->createFile($dest, $permissions, $template);
 
         if ($result !== true) {
             throw new Exception($result, 0, 3);
@@ -121,9 +119,9 @@ class FileGenerator
             throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate, 0, 3);
         }
 
-        $template = self::render($template, array());
+        $template = $this->render($template, array());
 
-        $result = $this->createFile($dest, fileperms($dir), $template);
+        $result = $this->createFile($dest, $permissions, $template);
 
         if ($result !== true) {
             throw new Exception($result, 0, 3);
@@ -196,9 +194,11 @@ class FileGenerator
      */
     private function render($template, array $vars, $depth = 0)
     {
+        $this->vars += $this->vars;
+
         // #parse("filename")
         if ($depth < self::PARSE_MAX_DEPTH) {
-            $parse_re = '/#parse\s*\(\s*["\']([^"\']+)["\']\s*\)[ t]*\r?\n?/';
+            $parse_re = '/#parse\s*\(\s*["\']([^"\']+)["\']\s*\)[ \t]*\r?\n?/';
 
             $template = preg_replace_callback($parse_re, function ($match) use ($vars, $depth) {
                 $filename = $match[1];
@@ -207,23 +207,19 @@ class FileGenerator
                     return '';
                 }
 
-                $file = $this->includeDir . $filename . '.ft';
+                $contents = self::getTemplateSource('includes/' . $filename . '.ft');
 
-                if (is_file($file) === false) {
+                var_dump($contents);
+
+                if ($contents === false) {
                     return '';
                 }
 
-                $content = file_get_contents($file);
-
-                if ($content === false || trim($content) === '') {
-                    return '';
-                }
-
-                return self::render($content, $vars, $depth + 1);
+                return $this->render($contents, $vars, $depth + 1);
             }, $template);
         }
 
-        $fill = $vars + array('DATETIME' => gmdate('Y-m-d h:i:s') . ' GMT');
+        $fill = $vars + array('DATETIME' => gmdate('Y-m-d H:i:s') . ' GMT');
         $re = '/#if\s*\(\s*\$\{(\w+)\}\s*\)(.*?)(?:#else(.*?))?#end[ t]*\r?\n?/s';
 
         // #if (${VAR}) ... #else ... #end
@@ -241,7 +237,6 @@ class FileGenerator
         $map = array();
 
         foreach ($fill as $key => $value) {
-            var_dump('${' . $key . '}');
             $map['${' . $key . '}'] = $value;
         }
 

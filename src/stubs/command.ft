@@ -1,4 +1,6 @@
 <?php
+#parse("header")
+
 #if (${NAMESPACE})
 namespace ${NAMESPACE};
 #end
