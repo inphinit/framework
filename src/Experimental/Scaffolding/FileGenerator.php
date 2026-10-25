@@ -22,22 +22,28 @@ class FileGenerator
     private $data;
     private $vars;
     private static $reserved = array(
-        '__halt_compiler', 'abstract', 'and', 'array', 'as', 'bool', 'break',
-        'callable', 'case', 'catch', 'class', 'clone', 'const', 'continue',
-        'declare', 'default', 'die', 'do', 'echo', 'else', 'elseif', 'empty',
-        'enddeclare', 'endfor', 'endforeach', 'endif', 'endswitch', 'endwhile',
-        'eval', 'exit', 'extends', 'false', 'final', 'finally', 'float', 'fn',
-        'for', 'foreach', 'function', 'global', 'goto', 'if', 'implements',
-        'include', 'include_once', 'instanceof', 'insteadof', 'int', 'interface',
-        'isset', 'iterable', 'list', 'match', 'mixed', 'namespace', 'never',
-        'new', 'null', 'numeric', 'object', 'or', 'parent', 'print', 'private',
-        'protected', 'public', 'readonly', 'require', 'require_once', 'resource',
-        'return', 'self', 'static', 'string', 'switch', 'throw', 'trait', 'true',
-        'try', 'unset', 'use', 'var', 'void', 'while', 'xor', 'yield',
-        '__class__', '__dir__', '__file__', '__function__',
-        '__line__', '__method__', '__namespace__', '__trait__',
+        '__class__', '__compiler_halt_offset__', '__dir__', '__file__', '__function__',
+        '__halt_compiler', '__line__', '__method__', '__namespace__', '__trait__',
+        'abstract', 'and', 'array', 'as', 'bool', 'break', 'callable', 'case', 'catch',
+        'class', 'clone', 'const', 'continue', 'declare', 'default', 'die',
+        'do', 'echo', 'else', 'elseif', 'empty', 'enddeclare', 'endfor', 'endforeach',
+        'endif', 'endswitch', 'endwhile', 'enum', 'eval', 'exit', 'extends', 'false',
+        'final', 'finally', 'float', 'fn', 'for', 'foreach', 'function', 'global',
+        'goto', 'if', 'implements', 'include', 'include_once', 'instanceof',
+        'insteadof', 'int', 'interface', 'isset', 'iterable', 'list', 'match',
+        'mixed', 'namespace', 'never', 'new', 'null', 'numeric', 'object', 'or',
+        'parent', 'print', 'private', 'protected', 'public', 'readonly', 'require',
+        'require_once', 'resource', 'return', 'self', 'static', 'string', 'switch',
+        'throw', 'trait', 'true', 'try', 'unset', 'use', 'var', 'void', 'while',
+        'xor', 'yield',
     );
+    private static $reservedMap;
 
+    /**
+     * Create a FileGenerator instance
+     *
+     * @throws \Inphinit\Exception
+     */
     public function __construct()
     {
         $config = new Config('create');
@@ -48,20 +54,87 @@ class FileGenerator
         );
     }
 
+    /**
+     * Create command class from file template
+     *
+     * @param string $name
+     * @param string $fileTemplate
+     * @throws \Inphinit\Exception
+     * @return string
+     */
     public function command($name, $fileTemplate = 'command.ft')
     {
         return $this->createClass(self::COMMANDS_NAMESPACE, $name, $fileTemplate);
     }
 
+    /**
+     * Create controller class from file template
+     *
+     * @param string $name
+     * @param string $fileTemplate
+     * @throws \Inphinit\Exception
+     * @return string
+     */
     public function controller($name, $fileTemplate = 'controller.ft')
     {
         return $this->createClass(self::CONTROLLERS_NAMESPACE, $name, $fileTemplate);
+    }
+
+    /**
+     * Create view from file template
+     *
+     * @param string $name
+     * @param string $fileTemplate
+     * @throws \Inphinit\Exception
+     * @return string
+     */
+    public function view($name, $fileTemplate = 'view.ft')
+    {
+        if (preg_match('#^[a-z_][a-z0-9_]*(?:/[a-z_][a-z0-9_]*)*$#D', $name) !== 1) {
+            throw new Exception('Invalid path: ' . $name);
+        }
+
+        if (self::isNotSafeName($fileTemplate)) {
+            throw new Exception('Invalid file template');
+        }
+
+        $dir = INPHINIT_SYSTEM . '/views';
+
+        if (is_dir($dir) === false) {
+            throw new Exception('Directory not found: ' . $dir);
+        }
+
+        $dest = $dir . '/' . $name . '.php';
+        $permissions = @fileperms($dir);
+
+        if ($permissions === false) {
+            throw new Exception('Failed to read directory permissions: ' . $dir);
+        }
+
+        $template = self::getTemplateSource($fileTemplate);
+
+        if ($template === false) {
+            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate);
+        }
+
+        try {
+            $template = $this->render($template, array());
+            $this->createFile($dest, $permissions, $template);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), 0, 2, $ex);
+        }
+
+        return $dest;
     }
 
     private function createClass($namespace, $name, $fileTemplate)
     {
         if (preg_match('#^[A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*$#D', $name) !== 1) {
             throw new Exception('Invalid path: ' . $name, 0, 3);
+        }
+
+        if (self::isNotSafeName($fileTemplate)) {
+            throw new Exception('Invalid file template', 0, 3);
         }
 
         $parts = explode('/', $name);
@@ -112,52 +185,15 @@ class FileGenerator
             throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate, 0, 3);
         }
 
-        $template = $this->render($template, array(
-            'NAMESPACE' => $namespace,
-            'NAME' => $class,
-            'FULL_NAME' => $namespace . '\\' . $class
-        ));
-
-        $result = $this->createFile($dest, $permissions, $template);
-
-        if ($result !== true) {
-            throw new Exception($result, 0, 3);
-        }
-
-        return $dest;
-    }
-
-    public function view($name, $fileTemplate = 'view.ft')
-    {
-        if (preg_match('#^[a-z_][a-z0-9_]*(?:/[a-z_][a-z0-9_]*)*$#D', $name) !== 1) {
-            throw new Exception('Invalid path: ' . $name, 0, 3);
-        }
-
-        $dir = INPHINIT_SYSTEM . '/views';
-
-        if (is_dir($dir) === false) {
-            throw new Exception('Not found directory: ' . $dir, 0, 3);
-        }
-
-        $dest = $dir . '/' . $name . '.php';
-        $permissions = @fileperms($dir);
-
-        if ($permissions === false) {
-            throw new Exception('Failed to read directory permissions: ' . $dir, 0, 3);
-        }
-
-        $template = self::getTemplateSource($fileTemplate);
-
-        if ($template === false) {
-            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate, 0, 3);
-        }
-
-        $template = $this->render($template, array());
-
-        $result = $this->createFile($dest, $permissions, $template);
-
-        if ($result !== true) {
-            throw new Exception($result, 0, 3);
+        try {
+            $template = $this->render($template, array(
+                'NAMESPACE' => $namespace,
+                'NAME' => $class,
+                'FULL_NAME' => $namespace . '\\' . $class
+            ));
+            $this->createFile($dest, $permissions, $template);
+        } catch (\Exception $ex) {
+            throw new Exception($ex->getMessage(), 0, 3, $ex);
         }
 
         return $dest;
@@ -186,7 +222,7 @@ class FileGenerator
             return false;
         }
 
-        $source_data = file_get_contents($path);
+        $source_data = @file_get_contents($path);
 
         if ($source_data === false) {
             return false;
@@ -201,25 +237,23 @@ class FileGenerator
 
         $dir = dirname($dest);
 
-        if (is_dir($dir) === false && mkdir($dir, $permissions, true) === false) {
-            return 'Unable to create directory: ' . $dir;
+        if (is_dir($dir) === false && @mkdir($dir, $permissions, true) === false) {
+            throw new \RuntimeException('Could not create the directory: ' . $dir);
         }
 
         $handle = @fopen($dest, 'x');
 
         if ($handle === false) {
-            return 'The file cannot be created (it may already exist): ' . $dest;
+            throw new \RuntimeException('Cannot create (it may already exist): ' . $dest);
         }
 
         if (fwrite($handle, $data) !== strlen($data)) {
             fclose($handle);
             @unlink($dest);
-            return 'Saving the file failed or was only partial: ' . $dest;
+            throw new \RuntimeException('Saving the file failed or was only partial: ' . $dest);
         }
 
         fclose($handle);
-
-        return true;
     }
 
     /**
@@ -229,12 +263,11 @@ class FileGenerator
      * - #if (${VAR}) ... #end     conditional (optional #else, no nesting)
      * - #parse("File Header.php") include `system/stubs/includes/<filename>.ft`
      *
-     * Unknown variables are left untouched.
+     * @throws \RuntimeException
      */
     private function render($template, array $vars)
     {
         $vars = $vars + $this->vars;
-
         $template = $this->expandIncludes($template, 0);
 
         $fill = $vars + array('DATETIME' => gmdate('Y-m-d H:i:s') . ' GMT');
@@ -251,6 +284,10 @@ class FileGenerator
             return preg_replace('/^[ \t]*\r?\n/', '', $body);
         }, $template);
 
+        if ($template === null) {
+            throw new \RuntimeException('The structure caused a failure in the parser');
+        }
+
         // ${VAR}
         $map = array();
 
@@ -265,33 +302,50 @@ class FileGenerator
     {
         $re = '/#parse\s*\(\s*["\']([^"\']+)["\']\s*\)[ \t]*\r?\n?/';
 
-        return preg_replace_callback($re, function ($match) use ($depth) {
-            // Depth limit reached or unsafe name: the directive is removed
-            if ($depth >= self::PARSE_MAX_DEPTH || self::isSafeName($match[1]) === false) {
-                return '';
+        $template = preg_replace_callback($re, function ($match) use ($depth) {
+            if ($depth >= self::PARSE_MAX_DEPTH) {
+                throw new \RuntimeException('Maximum parser depth exceeded');
             }
 
-            $contents = self::getTemplateSource('includes/' . $match[1] . '.ft');
+            $include_name = $match[1];
+
+            if (self::isNotSafeName($include_name)) {
+                throw new \RuntimeException('Invalid include filename: ' . $include_name);
+            }
+
+            $contents = self::getTemplateSource('includes/' . $include_name . '.ft');
 
             if ($contents === false) {
-                return '';
+                throw new \RuntimeException('Cannot load the file: ' . $include_name);
             }
 
             return $this->expandIncludes($contents, $depth + 1);
         }, $template);
+
+        if ($template === null) {
+            throw new \RuntimeException('The structure caused a failure in the parser');
+        }
+
+        return $template;
     }
 
-    private static function isSafeName($name)
+    private static function isNotSafeName($name)
     {
-        return is_string($name)
-            && $name !== ''
-            && strpbrk($name, "/\\\0") === false
-            && strpos($name, '..') === false;
+        return (
+            is_string($name) === false ||
+            trim($name) === '' ||
+            strpos($name, '..') !== false ||
+            strpbrk($name, "/\\\0") !== false
+        );
     }
 
     private static function findReserved(array $parts)
     {
-        $reserved = array_flip(self::$reserved);
+        if (self::$reservedMap === null) {
+            self::$reservedMap = array_flip(self::$reserved);
+        }
+
+        $reserved = self::$reservedMap;
 
         foreach ($parts as $part) {
             if (isset($reserved[strtolower($part)])) {
