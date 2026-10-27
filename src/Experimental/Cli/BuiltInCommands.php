@@ -308,6 +308,14 @@ class BuiltInCommands
             return 1;
         }
 
+        $conn = @fsockopen($host, $port, $errno, $errstr, 1);
+
+        if ($conn) {
+            fclose($conn);
+            echo "Address already in use: {$host}:{$port}";
+            return 1;
+        }
+
         // Caution: In CLI, the binary path is always returned correctly (failures usually occur in FPM).
         $php_bin = PHP_BINARY;
 
