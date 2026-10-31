@@ -13,39 +13,23 @@ use Inphinit\Exception;
 
 class Forwarded
 {
-    /** @var int Uses `X-Forwarded-For: <client>, <proxy>, ..., <proxyN>` */
-    const SOURCE_FORWARDED_FOR = 1;
+    /** @var int Specifies that the IP should be obtained from the header */
+    const IP = 1;
 
-    /** @var int Uses `CF-Connecting-IP:` (Cloudflare) */
-    const SOURCE_CF_CONNECTING_IP = 2;
+    /** @var int Specifies that the protocol should be obtained from the header */
+    const PROTO = 2;
 
-    /** @var int Uses `True-Client-IP:` (Cloudflare Enterprise, Akamai) */
-    const SOURCE_TRUE_CLIENT_IP = 4;
+    /** @var int Specifies that the host should be obtained from the header */
+    const HOST = 4;
 
-    /** @var int Uses `X-Real-IP:` (commonly set by nginx) */
-    const SOURCE_REAL_IP = 8;
-
-    /** @var int Uses `X-Forwarded-Proto: <http|https>` */
-    const SOURCE_FORWARDED_PROTO = 16;
-
-    /** @var int Uses `X-Forwarded-Ssl: <on|off>` */
-    const SOURCE_FORWARDED_SSL = 32;
-
-    /** @var int Uses `X-Url-Scheme: <http|https>` */
-    const SOURCE_URL_SCHEME = 64;
-
-    /** @var int Uses `X-Forwarded-Host:` */
-    const SOURCE_FORWARDED_HOST = 128;
-
-    /** @var int Uses `X-Forwarded-Prefix:` */
-    const SOURCE_FORWARDED_PREFIX = 256;
+    /** @var int Specifies that the path prefix should be obtained from the header */
+    const PREFIX = 8;
 
     /** @var int Uses `Forwarded:` */
-    const SOURCE_RFC7239 = 512;
+    const RFC7239 = 16;
 
-    // default: x-forwarded-for, x-forwarded-proto, x-forwarded-host
-    const DEFAULT_SOURCES = 145;
-    const VALID_SOURCES = 511;
+    const DEFAULT_SOURCES = 7;
+    const VALID_SOURCES = 15;
 
     // 12-byte prefix of IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`)
     const IPV4_MAPPED_PREFIX = "\0\0\0\0\0\0\0\0\0\0\xff\xff";
@@ -55,12 +39,18 @@ class Forwarded
     private $allowedHosts = array('*');
     private $currentIp;
     private $flags = self::DEFAULT_SOURCES;
+    private $headers = array(
+        self::IP => 'HTTP_X_FORWARDED_FOR',
+        self::PROTO => 'HTTP_X_FORWARDED_PROTO',
+        self::HOST => 'HTTP_X_FORWARDED_HOST',
+        self::PREFIX => 'HTTP_X_FORWARDED_PREFIX',
+    );
     private $info = array();
-    private $rfc7239Info;
     private $known;
     private $knownNetworks = array('::1/128', '127.0.0.0/8');
     private $knownProxies = array();
     private $limit = 1;
+    private $rfc7239Info;
     private $server;
 
     /**
@@ -120,11 +110,27 @@ class Forwarded
      */
     public function setFlags($flags)
     {
-        if (is_int($flags) === false || ($flags !== self::SOURCE_RFC7239 && ($flags & ~self::VALID_SOURCES) !== 0)) {
+        if (is_int($flags) === false || ($flags !== self::RFC7239 && ($flags & ~self::VALID_SOURCES) !== 0)) {
             throw new Exception('Invalid flag(s)');
         }
 
         $this->flags = $flags;
+        $this->info = array();
+    }
+
+    /**
+     * Set the headers names
+     *
+     * @param int $flag
+     * @param string $name
+     */
+    public function setHeaderName($flag, $name)
+    {
+        if (is_int($flag) === false || isset($this->headers[$flag]) === false) {
+            throw new Exception('Invalid flag');
+        }
+
+        $this->headers[$flag] = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
         $this->info = array();
     }
 
@@ -137,9 +143,6 @@ class Forwarded
      * second to last, and so on. If the limit is greater than the number of entries,
      * the first one is used. This prevents clients from spoofing values at the
      * beginning of the list.
-     *
-     * Headers that carry a single value (`CF-Connecting-IP`, `True-Client-IP`,
-     * `X-Real-IP`, `X-Url-Scheme`) ignore this setting. Clears the cached results.
      *
      * @param int $limit
      */
@@ -161,31 +164,21 @@ class Forwarded
             return $value;
         }
 
-        $value = null;
+        $value = $this->getInfo(self::IP, 'for');
 
-        if ($this->fromKnown()) {
-            $flags = $this->flags;
+        if ($value !== null) {
+            if (preg_match('/\[(.+?)\]/', $value, $matches) === 1) {
+                $value = $matches[1];
+            } elseif (preg_match('/^(.+?)\:\d+$/', $value, $matches) === 1) {
+                $value = $matches[1];
+            }
 
-            if ($flags & self::SOURCE_RFC7239) {
-                $value = $this->getRfc7239('for');
-            } elseif ($flags & self::SOURCE_FORWARDED_FOR) {
-                $value = $this->pick('HTTP_X_FORWARDED_FOR', null, $this->limit);
-            } elseif ($flags & self::SOURCE_CF_CONNECTING_IP) {
-                $value = $this->pick('HTTP_CF_CONNECTING_IP', null, 1);
-            } elseif ($flags & self::SOURCE_TRUE_CLIENT_IP) {
-                $value = $this->pick('HTTP_TRUE_CLIENT_IP', null, 1);
-            } elseif ($flags & self::SOURCE_REAL_IP) {
-                $value = $this->pick('HTTP_X_REAL_IP', null, 1);
+            if (filter_var($value, FILTER_VALIDATE_IP) === false) {
+                $value = null;
             }
         }
 
-        if ($value === null) {
-            $value = $this->currentIp;
-        } elseif (preg_match('/\[(.+?)\]/', $value, $matches) === 1) {
-            $value = $matches[1];
-        }
-
-        return $this->info['ip'] = $value;
+        return $this->info['ip'] = $value === null ? $this->currentIp : $value;
     }
 
     /**
@@ -199,33 +192,16 @@ class Forwarded
             return $value;
         }
 
-        $value = null;
-
-        if ($this->fromKnown()) {
-            $flags = $this->flags;
-
-            if ($flags & self::SOURCE_RFC7239) {
-                $value = $this->getRfc7239('proto');
-            } elseif ($flags & self::SOURCE_FORWARDED_PROTO) {
-                $value = $this->pick('HTTP_X_FORWARDED_PROTO', null, $this->limit);
-            } elseif ($flags & self::SOURCE_FORWARDED_SSL) {
-                $value = $this->pick('HTTP_X_FORWARDED_SSL', 'on', $this->limit);
-            } elseif ($flags & self::SOURCE_URL_SCHEME) {
-                $value = $this->pick('HTTP_X_URL_SCHEME', null, 1);
-            }
-        }
+        $value = $this->getInfo(self::PROTO, 'proto');
 
         if ($value === null && isset($this->server['HTTPS'][0])) {
-            $https = $this->server['HTTPS'];
-            $value = $https !== '' && strcasecmp($https, 'off') !== 0;
+            $value = $this->server['HTTPS'];
         }
 
-        if ($value === null || is_bool($value)) {
-            $value = $value ? 'https' : 'http';
-        } elseif (strcasecmp($value, 'https') === 0) {
-            $value = 'https';
-        } else {
+        if ($value === '' || $value === null || in_array(strtolower($value), array('on', 'https'), true) === false) {
             $value = 'http';
+        } else {
+            $value = 'https';
         }
 
         return $this->info['proto'] = $value;
@@ -242,30 +218,19 @@ class Forwarded
             return $value;
         }
 
-        $flags = $this->flags;
+        $source = $this->getInfo(self::HOST, 'host');
         $value = null;
 
-        if ($this->fromKnown()) {
-            $source = null;
+        if ($source === null && isset($this->server['HTTP_HOST'][0]) && $this->fromKnown()) {
+            $source = $this->server['HTTP_HOST'];
+        }
 
-            if ($flags & self::SOURCE_RFC7239) {
-                $source = $this->getRfc7239('host');
-            } elseif ($flags & self::SOURCE_FORWARDED_HOST) {
-                $source = $this->pick('HTTP_X_FORWARDED_HOST', null, $this->limit);
-            }
+        if ($source !== null && preg_match('#^(.+?)(\:\d+)?$#', $source, $matches)) {
+            $host = $matches[1];
+            $ascii = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
 
-            if ($source === null && isset($this->server['HTTP_HOST'][0])) {
-                $source = $this->server['HTTP_HOST'];
-            }
-
-            if ($source !== null && preg_match('#^(.+?)(\:\d+)?$#', $source, $matches)) {
-                // Extract host from <host>:<port>
-                $host = $matches[1];
-                $ascii = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
-
-                if ($ascii !== false && $this->isAllowedHost($ascii)) {
-                    $value = $source;
-                }
+            if ($ascii !== false && $this->isAllowedHost($ascii)) {
+                $value = $source;
             }
         }
 
@@ -287,16 +252,12 @@ class Forwarded
             return $value;
         }
 
-        $flags = $this->flags;
+        $source = $this->getInfo(self::PREFIX, 'prefix');
         $value = '/';
 
-        if ($flags !== self::SOURCE_RFC7239 && $this->fromKnown() && ($flags & self::SOURCE_FORWARDED_PREFIX)) {
-            $prefix = $this->pick('HTTP_X_FORWARDED_PREFIX', null, $this->limit);
-
-            if ($prefix !== null) {
-                $prefix = trim($prefix, '/');
-                $value = $prefix === '' ? '' : ('/' . $prefix);
-            }
+        if ($source !== null) {
+            $source = trim($source, '/');
+            $value = $source === '' ? '' : ('/' . $source);
         }
 
         return $this->info['prefix'] = $value;
@@ -422,7 +383,22 @@ class Forwarded
         return false;
     }
 
-    private function pick($key, $matches, $limit)
+    private function getInfo($flag, $name)
+    {
+        if ($this->fromKnown()) {
+            if ($this->flags === self::RFC7239) {
+                return $this->getRfc7239($name);
+            }
+
+            if ($this->flags & $flag) {
+                return $this->pick($this->headers[$flag], $this->limit);
+            }
+        }
+
+        return null;
+    }
+
+    private function pick($key, $limit)
     {
         if (isset($this->server[$key][0]) === false) {
             return null;
@@ -433,10 +409,6 @@ class Forwarded
         $index = max(0, count($items) - $limit);
         $value = $items[$index];
 
-        if ($matches !== null) {
-            return strcasecmp($items[$index], $matches) === 0;
-        }
-
         return $value !== '' ? $value : null;
     }
 
@@ -445,7 +417,7 @@ class Forwarded
         if ($this->rfc7239Info !== null) {
             $info = $this->rfc7239Info;
         } else {
-            $info = array('for' => null, 'proto' => null, 'host' => null);
+            $info = array('for' => null, 'proto' => null, 'host' => null, 'prefix' => null);
 
             if (isset($this->server['HTTP_FORWARDED'][0])) {
                 $input = $this->server['HTTP_FORWARDED'];
