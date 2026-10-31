@@ -45,7 +45,7 @@ class Forwarded
 
     // default: x-forwarded-for, x-forwarded-proto, x-forwarded-host
     const DEFAULT_SOURCES = 145;
-    const VALID_SOURCES = 1023;
+    const VALID_SOURCES = 511;
 
     // 12-byte prefix of IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`)
     const IPV4_MAPPED_PREFIX = "\0\0\0\0\0\0\0\0\0\0\xff\xff";
@@ -56,6 +56,7 @@ class Forwarded
     private $currentIp;
     private $flags = self::DEFAULT_SOURCES;
     private $info = array();
+    private $rfc7239Info;
     private $known;
     private $knownNetworks = array('::1/128', '127.0.0.0/8');
     private $knownProxies = array();
@@ -119,7 +120,7 @@ class Forwarded
      */
     public function setFlags($flags)
     {
-        if (is_int($flags) === false || ($flags & ~self::VALID_SOURCES) !== 0) {
+        if (is_int($flags) === false || ($flags !== self::SOURCE_RFC7239 && ($flags & ~self::VALID_SOURCES) !== 0)) {
             throw new Exception('Invalid flag(s)');
         }
 
@@ -146,6 +147,7 @@ class Forwarded
     {
         $this->limit = $limit;
         $this->info = array();
+        $this->rfc7239Info = null;
     }
 
     /**
@@ -165,7 +167,7 @@ class Forwarded
             $flags = $this->flags;
 
             if ($flags & self::SOURCE_RFC7239) {
-                $value = $this->rfc7239('for');
+                $value = $this->getRfc7239('for');
             } elseif ($flags & self::SOURCE_FORWARDED_FOR) {
                 $value = $this->pick('HTTP_X_FORWARDED_FOR', null, $this->limit);
             } elseif ($flags & self::SOURCE_CF_CONNECTING_IP) {
@@ -201,7 +203,7 @@ class Forwarded
             $flags = $this->flags;
 
             if ($flags & self::SOURCE_RFC7239) {
-                $value = $this->rfc7239('proto');
+                $value = $this->getRfc7239('proto');
             } elseif ($flags & self::SOURCE_FORWARDED_PROTO) {
                 // X-Forwarded-Proto: https
                 $value = $this->pick('HTTP_X_FORWARDED_PROTO', null, $this->limit);
@@ -248,7 +250,7 @@ class Forwarded
             $source = null;
 
             if ($flags & self::SOURCE_RFC7239) {
-                $source = $this->rfc7239('host');
+                $source = $this->getRfc7239('host');
             } elseif ($flags & self::SOURCE_FORWARDED_HOST) {
                 $source = $this->pick('HTTP_X_FORWARDED_HOST', null, $this->limit);
             }
@@ -282,19 +284,14 @@ class Forwarded
      */
     public function getPrefix()
     {
-        $flags = $this->flags;
-
-        if ($flags & self::SOURCE_RFC7239) {
-            throw new Exception('Not supported by RFC7239');
-        }
-
         if ($this->cache('prefix', $value)) {
             return $value;
         }
 
+        $flags = $this->flags;
         $value = '/';
 
-        if ($this->fromKnown() && ($flags & self::SOURCE_FORWARDED_PREFIX)) {
+        if ($flags !== self::SOURCE_RFC7239 && $this->fromKnown() && ($flags & self::SOURCE_FORWARDED_PREFIX)) {
             $prefix = $this->pick('HTTP_X_FORWARDED_PREFIX', null, $this->limit);
 
             if ($prefix !== null) {
@@ -448,33 +445,37 @@ class Forwarded
         return $value !== '' ? $value : null;
     }
 
-    private function rfc7239($name)
+    private function getRfc7239($name)
     {
-        $info = array('for' => null, 'host' => null, 'proto' => null);
+        if ($this->rfc7239Info !== null) {
+            $info = $this->rfc7239Info;
+        } else {
+            $info = array('for' => null, 'proto' => null, 'host' => null);
 
-        if (isset($this->server['HTTP_FORWARDED'][0])) {
-            $input = $this->server['HTTP_FORWARDED'];
-            $items = preg_split('/\s*,\s*/', trim($input));
-            $index = max(0, count($items) - $this->limit);
+            if (isset($this->server['HTTP_FORWARDED'][0])) {
+                $input = $this->server['HTTP_FORWARDED'];
+                $items = preg_split('/\s*,\s*/', trim($input));
+                $index = max(0, count($items) - $this->limit);
 
-            if (isset($items[$index][0])) {
-                $entry = $items[$index];
+                if (isset($items[$index][0])) {
+                    $entry = $items[$index];
 
-                preg_match_all(self::REGEX_RFC7239, $entry, $matches, PREG_SET_ORDER);
+                    preg_match_all(self::REGEX_RFC7239, $entry, $matches, PREG_SET_ORDER);
 
-                foreach ($matches as $match) {
-                    if (isset($match['value'])) {
-                        $value = trim($match['value']);
-                    } else {
-                        $value = trim($match['quoted'], '"');
+                    foreach ($matches as $match) {
+                        if (isset($match['value'])) {
+                            $value = trim($match['value']);
+                        } else {
+                            $value = trim($match['quoted'], '"');
+                        }
+
+                        $info[strtolower($match['name'])] = $value === '' ? null : $value;
                     }
-
-                    $info[strtolower($match['name'])] = $value;
                 }
             }
-        }
 
-        $this->info = $info;
+            $this->rfc7239Info = $info;
+        }
 
         return $info[$name];
     }
