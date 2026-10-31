@@ -47,7 +47,7 @@ class Forwarded
     const DEFAULT_SOURCES = 145;
     const VALID_SOURCES = 1023;
 
-    // 12-byte prefix of IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`).
+    // 12-byte prefix of IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`)
     const IPV4_MAPPED_PREFIX = "\0\0\0\0\0\0\0\0\0\0\xff\xff";
 
     const REGEX_RFC7239 = '/(?:^|;)\s*(?<name>for|host|proto)\s*=\s*(?:"(?<quoted>[^"]*)"|(?<value>[^;]*))/i';
@@ -63,9 +63,9 @@ class Forwarded
     private $server;
 
     /**
-     * Creates a new instance.
+     * Creates a new instance
      *
-     * @param string[] $server Server variables, usually `$_SERVER`.
+     * @param string[] $server Server variables, usually `$_SERVER`
      */
     public function __construct(array $server)
     {
@@ -73,7 +73,7 @@ class Forwarded
     }
 
     /**
-     * Set address ranges of known proxies to accept forwarded headers from.
+     * Sets the address ranges (CIDR notation, IPv4 or IPv6) of proxies
      *
      * @param string[] $networks
      */
@@ -85,7 +85,7 @@ class Forwarded
     }
 
     /**
-     * Set addresses of known proxies to accept forwarded headers from.
+     * Sets the exact addresses of proxies from which forwarded headers are accepted
      *
      * @param string[] $proxies
      */
@@ -97,7 +97,7 @@ class Forwarded
     }
 
     /**
-     * Set allowed hosts via x-forwarded-host. Supported patterns:
+     * Sets the hosts accepted when the host comes from a forwarded header. Supported patterns:
      * - `example.com`
      * - `*.example.com`
      * - `*` (any host)
@@ -113,7 +113,7 @@ class Forwarded
     }
 
     /**
-     * Set the headers that must/may provide values.
+     * Set the headers that must/may provide values
      *
      * @param int $flags
      */
@@ -128,7 +128,17 @@ class Forwarded
     }
 
     /**
-     * Set forwarded limit
+     * Sets how many trusted proxies are in front of the application.
+     *
+     * In headers with comma-separated values (e.g. `X-Forwarded-For`, or multiple
+     * `Forwarded:` entries) the value is taken counting from the end of the list:
+     * `1` (default) uses the last entry (appended by the closest proxy), `2` the
+     * second to last, and so on. If the limit is greater than the number of entries,
+     * the first one is used. This prevents clients from spoofing values at the
+     * beginning of the list.
+     *
+     * Headers that carry a single value (`CF-Connecting-IP`, `True-Client-IP`,
+     * `X-Real-IP`, `X-Url-Scheme`) ignore this setting. Clears the cached results.
      *
      * @param int $limit
      */
@@ -289,7 +299,7 @@ class Forwarded
 
             if ($prefix !== null) {
                 $prefix = trim($prefix, '/');
-                $value = $prefix === '' ? '/' : ('/' . $prefix . '/');
+                $value = $prefix === '' ? '' : ('/' . $prefix);
             }
         }
 
