@@ -10,6 +10,7 @@
 use Inphinit\App;
 use Inphinit\Event;
 use Inphinit\Viewing\View;
+use Inphinit\Experimental\Http\Forwarded;
 
 header_remove('X-Powered-By');
 
@@ -161,43 +162,38 @@ if (PHP_SAPI === 'cli') {
     return null;
 }
 
-$inphinit_https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-
-$inphinit_proto = App::config('forwarded_proto');
-$inphinit_host = App::config('forwarded_host');
-$inphinit_port = App::config('forwarded_port');
-
-if ($inphinit_proto === null) {
-    $inphinit_proto = $inphinit_https ? 'https' : 'http';
-}
-
-if ($inphinit_host === null && isset($_SERVER['HTTP_HOST'])) {
-    $inphinit_host = $_SERVER['HTTP_HOST'];
-}
-
-if ($inphinit_host && strpos($inphinit_host, ':') !== false) {
-    list($inphinit_host, $inphinit_port_header) = explode(':', $inphinit_host, 2);
+if (App::config('forwarded') === '1') {
+    $forwarded = new Forwarded($_SERVER);
 } else {
-    $inphinit_port_header = false;
-}
-
-if ($inphinit_port === null) {
-    $inphinit_port = $inphinit_port_header ? $inphinit_port_header : ($inphinit_https ? 443 : 80);
+    $forwarded = null;
 }
 
 $inphinit_path = rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
 
-if (PHP_SAPI === 'cli-server') {
-    $inphinit_prefix = '';
-    include __DIR__ . '/public.php';
+if ($forwarded !== null) {
+    $inphinit_proto = $forwarded->getProto();
+    $inphinit_host = $forwarded->getHost();
+    $inphinit_prefix = $forwarded->getPrefix();
 } else {
-    $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/public/index.php');
-    $inphinit_prefix = substr($inphinit_path, 0, $inphinit_pos);
-    $inphinit_path = substr($inphinit_path, $inphinit_pos);
+    $inphinit_proto = isset($_SERVER['HTTPS'][0]) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
+    $inphinit_host = isset($_SERVER['HTTP_HOST'][0]) ? $_SERVER['HTTP_HOST'] : '';
+
+    if (PHP_SAPI === 'cli-server') {
+        $inphinit_prefix = '';
+    } else {
+        $inphinit_pos = strpos($_SERVER['SCRIPT_NAME'], '/public/index.php');
+        $inphinit_prefix = substr($inphinit_path, 0, $inphinit_pos);
+        $inphinit_path = substr($inphinit_path, $inphinit_pos);
+    }
 }
 
-define('INPHINIT_PATH', $inphinit_path);
-define('INPHINIT_BASE_URL', $inphinit_proto . '://' . $inphinit_host . ':' . $inphinit_port . $inphinit_prefix);
+if (strpos($inphinit_host, ':') === false) {
+    $inphinit_host .= ':' . ($inphinit_proto === 'https' ? '443': '80');
+}
+
+if (PHP_SAPI === 'cli-server') {
+    include __DIR__ . '/public.php';
+}
 
 if ($inphinit_config_development) {
     require __DIR__ . '/development.php';
@@ -206,3 +202,6 @@ if ($inphinit_config_development) {
 }
 
 require INPHINIT_SYSTEM . '/main.php';
+
+define('INPHINIT_PATH', $inphinit_path);
+define('INPHINIT_BASE_URL', $inphinit_proto . '://' . $inphinit_host . $inphinit_prefix);

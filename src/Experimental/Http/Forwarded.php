@@ -181,6 +181,8 @@ class Forwarded
 
         if ($value === null) {
             $value = $this->currentIp;
+        } elseif (preg_match('/\[(.+?)\]/', $value, $matches) === 1) {
+            $value = $matches[1];
         }
 
         return $this->info['ip'] = $value;
@@ -205,13 +207,10 @@ class Forwarded
             if ($flags & self::SOURCE_RFC7239) {
                 $value = $this->getRfc7239('proto');
             } elseif ($flags & self::SOURCE_FORWARDED_PROTO) {
-                // X-Forwarded-Proto: https
                 $value = $this->pick('HTTP_X_FORWARDED_PROTO', null, $this->limit);
             } elseif ($flags & self::SOURCE_FORWARDED_SSL) {
-                // X-Forwarded-Ssl: on
                 $value = $this->pick('HTTP_X_FORWARDED_SSL', 'on', $this->limit);
             } elseif ($flags & self::SOURCE_URL_SCHEME) {
-                // X-Url-Scheme: https
                 $value = $this->pick('HTTP_X_URL_SCHEME', null, 1);
             }
         }
@@ -259,7 +258,7 @@ class Forwarded
                 $source = $this->server['HTTP_HOST'];
             }
 
-            if ($source !== null && preg_match('#^(.*?)(\:\d+)?$#', $source, $matches)) {
+            if ($source !== null && preg_match('#^(.+?)(\:\d+)?$#', $source, $matches)) {
                 // Extract host from <host>:<port>
                 $host = $matches[1];
                 $ascii = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46);
@@ -389,10 +388,6 @@ class Forwarded
             }
         } else {
             $prefix = $bits;
-        }
-
-        if ($prefix > $bits) {
-            return false;
         }
 
         if ($bits === 32) {

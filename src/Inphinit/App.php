@@ -17,6 +17,7 @@ class App
     protected $namespacePrefix = '\\Controllers\\';
     protected $pathPrefix = '/';
     protected $filters = array();
+    protected $scopes = array();
     protected $paramPatterns = array(
         'alnum' => '[\da-zA-Z]+',
         'alpha' => '[a-zA-Z]+',
@@ -124,45 +125,7 @@ class App
      */
     public function scope($pattern, \Closure $callback)
     {
-        $this->refreshPatterns();
-
-        $patterns = &$this->paramPatterns;
-
-        $path_params = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
-
-        $scope_regex = str_replace(self::$beforeRE, self::$afterRE, preg_quote($pattern));
-
-        $scope_regex = preg_replace_callback($path_params, function ($matches) use (&$patterns) {
-            return '(?P<' . $matches[1] . '>' . (
-                isset($matches[3]) ? $patterns[$matches[3]] : '[^/]+'
-            ) . ')';
-        }, $scope_regex);
-
-        $full = $pattern[0] !== '/';
-        $subject = $full ? (INPHINIT_BASE_URL . INPHINIT_PATH) : INPHINIT_PATH;
-
-        if (preg_match('#^' . $scope_regex . '#', $subject, $params) === 1) {
-            $path = $full ? substr($params[0], strlen(INPHINIT_BASE_URL)) : $params[0];
-
-            if ($path) {
-                $this->pathPrefix = $path;
-            }
-
-            foreach ($params as $index => $value) {
-                if (is_int($index)) {
-                    unset($params[$index]);
-                }
-            }
-
-            $previous_filters = $this->filters;
-            $previous_namespace_prefix = $this->namespacePrefix;
-
-            $callback($this, $params);
-
-            $this->filters = $previous_filters;
-            $this->namespacePrefix = $previous_namespace_prefix;
-            $this->pathPrefix = '/';
-        }
+        $this->scopes[] = array($pattern, $callback);
     }
 
     /**
@@ -177,6 +140,12 @@ class App
         $output = null;
 
         if ($code === 200) {
+            $this->refreshPatterns();
+
+            foreach ($this->scopes as $scope) {
+                $this->execScope($scope[0], $scope[1]);
+            }
+
             $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
             $routes = null;
@@ -331,6 +300,49 @@ class App
     {
         if ($this->patternNames === null) {
             $this->patternNames = implode('|', array_keys($this->paramPatterns));
+        }
+    }
+
+    private function execScope($pattern, \Closure $callback)
+    {
+        $this->refreshPatterns();
+
+        $patterns = &$this->paramPatterns;
+
+        $path_params = '#[<]([A-Za-z]\w+)(\:(' . $this->patternNames . '))?[>]#';
+
+        $scope_regex = str_replace(self::$beforeRE, self::$afterRE, preg_quote($pattern));
+
+        $scope_regex = preg_replace_callback($path_params, function ($matches) use (&$patterns) {
+            return '(?P<' . $matches[1] . '>' . (
+                isset($matches[3]) ? $patterns[$matches[3]] : '[^/]+'
+            ) . ')';
+        }, $scope_regex);
+
+        $full = $pattern[0] !== '/';
+        $subject = $full ? (INPHINIT_BASE_URL . INPHINIT_PATH) : INPHINIT_PATH;
+
+        if (preg_match('#^' . $scope_regex . '#', $subject, $params) === 1) {
+            $path = $full ? substr($params[0], strlen(INPHINIT_BASE_URL)) : $params[0];
+
+            if ($path) {
+                $this->pathPrefix = $path;
+            }
+
+            foreach ($params as $index => $value) {
+                if (is_int($index)) {
+                    unset($params[$index]);
+                }
+            }
+
+            $previous_filters = $this->filters;
+            $previous_namespace_prefix = $this->namespacePrefix;
+
+            $callback($this, $params);
+
+            $this->filters = $previous_filters;
+            $this->namespacePrefix = $previous_namespace_prefix;
+            $this->pathPrefix = '/';
         }
     }
 }
