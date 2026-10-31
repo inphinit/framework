@@ -48,7 +48,7 @@ class Forwarded
     private $info = array();
     private $known;
     private $knownNetworks = array('::1/128', '127.0.0.0/8');
-    private $knownProxies = array();
+    private $knownProxies = array('127.0.0.1', '::1');
     private $limit = 1;
     private $rfc7239Info;
     private $server;
