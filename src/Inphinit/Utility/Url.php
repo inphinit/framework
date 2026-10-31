@@ -189,7 +189,7 @@ class Url
         }
 
         if ($host !== null && ($flags & self::HOST_IDNA_ASCII)) {
-            $host_ascii = \idn_to_ascii($host, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46, $idna_info);
+            $host_ascii = \idn_to_ascii($host, \IDNA_NONTRANSITIONAL_TO_ASCII, \INTL_IDNA_VARIANT_UTS46, $idna_info);
 
             if ($host_ascii === false) {
                 throw new Exception('Cannot convert domain to ascii: ' . self::getIdnaError($idna_info));

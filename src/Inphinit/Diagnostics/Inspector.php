@@ -82,7 +82,7 @@ class Inspector
             $errorMessage = "Expects to be string, {$type} given";
             $errorCode = 0;
             return false;
-        } elseif (preg_match($expression, 'sample sample sample') !== false) {
+        } elseif (@preg_match($expression, 'sample sample sample') !== false) {
             $errorMessage = null;
             $errorCode = null;
             return true;
