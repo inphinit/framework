@@ -33,6 +33,7 @@ class App
     private $routes = array();
     private $paramRoutes = array();
     private $hasParams = false;
+    private $scopeId;
 
     private static $beforeRE = array('\\:', '\\<', '\\>', '\\*\\*', '\\*');
     private static $afterRE = array(':', '<', '>', '.*?', '[^/]*?');
@@ -76,12 +77,14 @@ class App
             $routes[$path] = array();
         }
 
+        $entry = array($this->scopeId, $callback);
+
         if (is_array($methods)) {
             foreach ($methods as $method) {
-                $routes[$path][strtoupper($method)] = $callback;
+                $routes[$path][strtoupper($method)] = $entry;
             }
         } else {
-            $routes[$path][strtoupper($methods)] = $callback;
+            $routes[$path][strtoupper($methods)] = $entry;
         }
     }
 
@@ -102,7 +105,7 @@ class App
      */
     public function useFilter(callable $callback)
     {
-        $this->filters[] = $callback;
+        $this->filters[] = array($this->scopeId, $callback);
     }
 
     /**
@@ -136,15 +139,19 @@ class App
     {
         $code = static::maintenance() ? 503 : http_response_code();
         $params = null;
-        $callback = null;
+        $entry = null;
         $output = null;
 
         if ($code === 200) {
             $this->refreshPatterns();
 
-            foreach ($this->scopes as $scope) {
+            foreach ($this->scopes as $index => $scope) {
+                $this->scopeId = $index;
                 $this->execScope($scope[0], $scope[1]);
             }
+
+            $this->scopes = null;
+            $this->scopeId = null;
 
             $path = INPHINIT_PATH;
             $method = $_SERVER['REQUEST_METHOD'];
@@ -157,9 +164,9 @@ class App
             }
 
             if (isset($routes[$method])) {
-                $callback = $routes[$method];
+                $entry = $routes[$method];
             } elseif (isset($routes['ANY'])) {
-                $callback = $routes['ANY'];
+                $entry = $routes['ANY'];
             } else {
                 $code = $routes === null ? 404 : 405;
             }
@@ -169,14 +176,20 @@ class App
             Response::status($code);
             inphinit_sandbox('errors.php', array('code' => $code));
         } else {
-            if (is_string($callback) && strpos($callback, '::') !== false) {
-                list($controller, $method_ctrl) = explode('::', $callback, 2);
-                $callback = array(new $controller(), $method_ctrl);
-            }
+            $scope_id = $entry[0];
+            $callback = $entry[1];
 
             if (empty($this->filters) === false) {
                 foreach ($this->filters as $filter) {
-                    if ($filter($this, $method, $path, $params) === false) {
+                    $cscope = $filter[0];
+
+                    if ($cscope !== null && $scope_id !== $cscope) {
+                        continue;
+                    }
+
+                    $cfilter = $filter[1];
+
+                    if ($cfilter($this, $method, $path, $params) === false) {
                         $callback = null;
                         break;
                     }
@@ -184,6 +197,11 @@ class App
             }
 
             if ($callback) {
+                if (is_string($callback) && strpos($callback, '::') !== false) {
+                    list($controller, $method_ctrl) = explode('::', $callback, 2);
+                    $callback = array(new $controller(), $method_ctrl);
+                }
+
                 $output = $callback($this, $params);
             }
         }
@@ -335,12 +353,10 @@ class App
                 }
             }
 
-            $previous_filters = $this->filters;
             $previous_namespace_prefix = $this->namespacePrefix;
 
             $callback($this, $params);
 
-            $this->filters = $previous_filters;
             $this->namespacePrefix = $previous_namespace_prefix;
             $this->pathPrefix = '/';
         }
