@@ -46,21 +46,29 @@ class Forwarded
         self::PREFIX => 'HTTP_X_FORWARDED_PREFIX',
     );
     private $info = array();
+    private $infoRfc7239;
     private $known;
     private $knownNetworks = array('::1/128', '127.0.0.0/8');
     private $knownProxies = array('127.0.0.1', '::1');
     private $limit = 1;
-    private $rfc7239Info;
     private $server;
+    private $unknownResponseCode;
 
     /**
      * Creates a new instance
      *
      * @param string[] $server Server variables, usually `$_SERVER`
+     * @param int|null $code Response code (4xx) when the request is not from a known proxy (null to disable)
+     * @throws \Inphinit\Exception
      */
-    public function __construct(array $server)
+    public function __construct(array $server, $code = 403)
     {
         $this->server = $server;
+        $this->unknownResponseCode = $code;
+
+        if ($code !== null && ($code < 400 || $code >= 500)) {
+            throw new Exception('Invalid response code');
+        }
     }
 
     /**
@@ -107,6 +115,7 @@ class Forwarded
      * Set the headers that must/may provide values
      *
      * @param int $flags
+     * @throws \Inphinit\Exception
      */
     public function setFlags($flags)
     {
@@ -123,6 +132,7 @@ class Forwarded
      *
      * @param int $flag
      * @param string $name
+     * @throws \Inphinit\Exception
      */
     public function setHeaderName($flag, $name)
     {
@@ -150,7 +160,7 @@ class Forwarded
     {
         $this->limit = $limit;
         $this->info = array();
-        $this->rfc7239Info = null;
+        $this->infoRfc7239 = null;
     }
 
     /**
@@ -273,24 +283,26 @@ class Forwarded
             $this->currentIp = $this->server['REMOTE_ADDR'];
         }
 
-        if ($this->currentIp === null) {
-            return $this->known = false;
-        }
+        if ($this->currentIp !== null) {
+            if (in_array($this->currentIp, $this->knownProxies, true)) {
+                return $this->known = true;
+            }
 
-        if (in_array($this->currentIp, $this->knownProxies, true)) {
-            return $this->known = true;
-        }
+            $addr = @inet_pton($this->currentIp);
 
-        $addr = @inet_pton($this->currentIp);
+            if ($addr !== false) {
+                $addr = self::toIPv6($addr);
 
-        if ($addr !== false) {
-            $addr = self::toIPv6($addr);
-
-            foreach ($this->knownNetworks as $network) {
-                if (self::inNetwork($addr, $network)) {
-                    return $this->known = true;
+                foreach ($this->knownNetworks as $network) {
+                    if (self::inNetwork($addr, $network)) {
+                        return $this->known = true;
+                    }
                 }
             }
+        }
+
+        if ($this->unknownResponseCode !== null && headers_sent() === false) {
+            http_response_code($this->unknownResponseCode);
         }
 
         return $this->known = false;
@@ -414,8 +426,8 @@ class Forwarded
 
     private function getRfc7239($name)
     {
-        if ($this->rfc7239Info !== null) {
-            $info = $this->rfc7239Info;
+        if ($this->infoRfc7239 !== null) {
+            $info = $this->infoRfc7239;
         } else {
             $info = array('for' => null, 'proto' => null, 'host' => null, 'prefix' => null);
 
@@ -441,7 +453,7 @@ class Forwarded
                 }
             }
 
-            $this->rfc7239Info = $info;
+            $this->infoRfc7239 = $info;
         }
 
         return $info[$name];
