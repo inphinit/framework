@@ -241,7 +241,7 @@ class FileGenerator
             throw new \RuntimeException('Could not create the directory: ' . $dir);
         }
 
-        $handle = @fopen($dest, 'x');
+        $handle = @fopen($dest, 'xb');
 
         if ($handle === false) {
             throw new \RuntimeException('Cannot create (it may already exist): ' . $dest);
