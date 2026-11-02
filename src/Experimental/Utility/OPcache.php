@@ -33,6 +33,6 @@ class OPcache
 
     private static function exists($name)
     {
-        return (class_exists($name, true) || interface_exists($name, false) || trait_exists($name, false));
+        return (class_exists($name, true) || interface_exists($name, true) || trait_exists($name, true));
     }
 }
