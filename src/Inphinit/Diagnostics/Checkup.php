@@ -130,29 +130,34 @@ class Checkup
             throw new Exception('PHP release date could not be determined (`phpinfo()` is disabled)');
         }
 
-        $handle = new Document(Document::HTML);
-
-        ob_start();
+        if (ob_start() === false) {
+            throw new Exception('PHP release date could not be determined (output buffering unavailable)');
+        }
 
         phpinfo(INFO_GENERAL);
 
-        $html = ob_get_contents();
+        $output = ob_get_clean();
 
-        ob_end_clean();
+        $value = '';
 
-        $handle->loadString($html);
+        if (strpos($output, '<td') !== false) {
+            $handle = new Document(Document::HTML);
+            $handle->loadString($output);
 
-        $node = $handle->selector()->first('td:contains(Build Date)+td');
+            $node = $handle->selector()->first('td:contains(Build Date)+td');
 
-        $value = $node !== null ? trim($node->textContent) : '';
+            if ($node !== null) {
+                $value = trim($node->textContent);
+            }
+        } elseif (preg_match('/^Build Date => (.*)$/mi', $output, $matches) === 1) {
+            $value = trim($matches[1]);
+        }
 
         if ($value === '') {
             throw new Exception('PHP release date could not be determined (missing info in `phpinfo()`)');
         }
 
-        self::$phpBuildDate = $value;
-
-        return $value;
+        return self::$phpBuildDate = $value;
     }
 
     private function checkSecurity()
