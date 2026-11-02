@@ -1,7 +1,6 @@
 <?php
 namespace Inphinit\Experimental\Validation\Rules;
 
-use Inphinit\Exception;
 use Inphinit\Experimental\Validation\Rule;
 
 class CpfCnpj extends Rule
@@ -10,32 +9,26 @@ class CpfCnpj extends Rule
         'default' => 'Invalid document',
     );
 
-    public function exec($path, $value, $param, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
-        if (empty($rules) === false) {
-            throw new Exception('Invalid combination of rules: ' . get_class($this));
-        }
-
-        parent::exec($path, $value, $param, $rules);
+        $this->isAllowed($rules);
 
         $cpf = new Cpf();
+        $cpf_value = $value;
 
-        $result = $cpf->exec($path, $value, $params, $rules);
-
-        if ($result !== null) {
-            return $result;
+        if ($cpf->exec($path, $cpf_value, $param, $rules)) {
+            return true;
         }
 
         $cnpj = new Cnpj();
+        $cnpj_value = $value;
 
-        $result = $cpf->exec($path, $value, $params, $rules);
-
-        if ($result !== null) {
-            return $result;
+        if ($cnpj->exec($path, $cnpj_value, $param, $rules)) {
+            return true;
         }
 
         $this->failure = $this->messages['default'];
 
-        return null;
+        return $this->passed();
     }
 }

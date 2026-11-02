@@ -6,25 +6,54 @@ use Inphinit\Exception;
 abstract class Rule
 {
     protected $failure;
+    protected $alloweds = array();
     protected $messages = array();
 
     /**
-     * @param string $path   Path being validated
-     * @param string $value Path value
-     * @param string $param  Parameter
-     * @param array  $rules  Other rules
-     * @return mixed         Returns the original or sanitized value; if failed return a null value
+     * Executes the rule on a value.
+     *
+     * @param string      $path   Path of the field being validated
+     * @param mixed       &$value Value of the field (scalar); may be sanitized
+     * @param string|null $param  Text after `:` in the rule (e.g. `foo` in `rule:foo`), or null if absent
+     * @param array       $rules  Other rules applied to the same field (name => parameter)
+     * @throws \RuntimeException  If the rule is misconfigured or combined with incompatible rules
+     * @return bool               True if valid; false otherwise.
      */
-    public function exec($path, $value, $param, array $rules)
+    abstract public function exec($path, &$value, $param, array $rules);
+
+    /**
+     * Check if the rules are accepted
+     *
+     * @param array $rules
+     * @throws \RuntimeException
+     */
+    final protected function isAllowed(array $rules)
     {
+        $diff = array_diff(array_keys($rules), $this->alloweds);
+
+        if (empty($diff) === false) {
+            throw new \RuntimeException('Cannot be combined with ' . implode('|', $diff));
+        }
+
         $this->failure = null;
-        return null;
     }
 
     /**
-     * @return string|null Returns a string if a failure occurs; otherwise, returns null
+     * Validate after set $failure
+     *
+     * @return bool
      */
-    public function getFailure()
+    final protected function passed()
+    {
+        return $this->failure === null;
+    }
+
+    /**
+     * Returns a string if a failure occurs; otherwise, returns null
+     *
+     * @return string|null
+     */
+    final public function getFailure()
     {
         return $this->failure;
     }
@@ -32,13 +61,18 @@ abstract class Rule
     /**
      * @param string $type    Message type
      * @param string $message Message
+     * @throws \Inphinit\Exception
      */
-    public function setMessage($type, $message)
+    final public function setMessage($type, $message)
     {
-        if (isset($this->messages[$type])) {
-            $this->messages[$type] = $message;
-        } else {
+        if (isset($this->messages[$type]) === false) {
             throw new Exception('Invalid message type');
         }
+
+        if (is_string($message) === false) {
+            throw new Exception('Invalid message');
+        }
+
+        $this->messages[$type] = $message;
     }
 }

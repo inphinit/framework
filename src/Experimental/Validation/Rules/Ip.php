@@ -9,38 +9,32 @@ class Ip extends Rule
         'default' => 'Invalid IP',
     );
 
-    public function exec($path, $value, $param, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
-        parent::exec($path, $value, $param, $rules);
+        $this->isAllowed($rules);
 
         $flags = FILTER_NULL_ON_FAILURE;
 
         if ($param !== null) {
-            $args = explode(',', $param);
-
-            if (in_array('v4', $args, true)) {
-                $flags |= FILTER_FLAG_IPV4;
-            }
-
-            if (in_array('v6', $args, true)) {
-                $flags |= FILTER_FLAG_IPV6;
-            }
-
-            if (in_array('no_private', $args, true)) {
-                $flags |= FILTER_FLAG_NO_PRIV_RANGE;
-            }
-
-            if (in_array('no_reserved', $args, true)) {
-                $flags |= FILTER_FLAG_NO_RES_RANGE;
+            foreach (explode(',', $param) as $item) {
+                if ($item === 'v4') {
+                    $flags |= FILTER_FLAG_IPV4;
+                } elseif ($item === 'v6') {
+                    $flags |= FILTER_FLAG_IPV6;
+                } elseif ($item === 'no_private') {
+                    $flags |= FILTER_FLAG_NO_PRIV_RANGE;
+                } elseif ($item === 'no_reserved') {
+                    $flags |= FILTER_FLAG_NO_RES_RANGE;
+                } else {
+                    throw new \RuntimeException('Invalid param: ' . $item);
+                }
             }
         }
 
-        if (filter_var($value, FILTER_VALIDATE_IP, $flags) !== null) {
-            return $value;
+        if (filter_var($value, FILTER_VALIDATE_IP, $flags) === null) {
+            $this->failure = $this->messages['default'];
         }
 
-        $this->failure = $this->messages['default'];
-
-        return null;
+        return $this->passed();
     }
 }

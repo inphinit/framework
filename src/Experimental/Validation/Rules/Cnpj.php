@@ -1,7 +1,6 @@
 <?php
 namespace Inphinit\Experimental\Validation\Rules;
 
-use Inphinit\Exception;
 use Inphinit\Experimental\Validation\Rule;
 
 class Cnpj extends Rule
@@ -10,41 +9,35 @@ class Cnpj extends Rule
         'default' => 'Invalid CNPJ',
     );
 
-    public function exec($path, $value, $param, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
-        if (empty($rules) === false) {
-            throw new Exception('Invalid combination of rules: ' . get_class($this));
-        }
+        $this->isAllowed($rules);
 
-        parent::exec($path, $value, $param, $rules);
-
-        $cnpj = strtoupper($value);
+        $value = strtoupper((string) $value);
+        $cnpj = $value;
 
         $format = '/^(?:[A-Z0-9]{12}\d{2}|[A-Z0-9]{2}\.[A-Z0-9]{3}\.[A-Z0-9]{3}\/[A-Z0-9]{4}-\d{2})$/D';
 
         if (preg_match($format, $cnpj) !== 1) {
             $this->failure = $this->messages['default'];
-            return null;
+            return $this->passed();
         }
 
         $cnpj = preg_replace('/[^A-Z0-9]+/', '', $cnpj);
 
         if (preg_match('/^(.)\1{13}$/', $cnpj) === 1) {
             $this->failure = $this->messages['default'];
-            return null;
+        } else {
+            $base = substr($cnpj, 0, 12);
+            $dv1 = self::modulo11($base, array(5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2));
+            $dv2 = self::modulo11($base . $dv1, array(6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2));
+
+            if (substr($cnpj, 12) !== $dv1 . $dv2) {
+                $this->failure = $this->messages['default'];
+            }
         }
 
-        $base = substr($cnpj, 0, 12);
-        $dv1 = self::modulo11($base, array_merge(range(5, 2), range(9, 2)));
-        $dv2 = self::modulo11($base . $dv1, array_merge(range(6, 2), range(9, 2)));
-
-        if (substr($cnpj, 12) === $dv1 . $dv2) {
-            return $value;
-        }
-
-        $this->failure = $this->messages['default'];
-
-        return null;
+        return $this->passed();
     }
 
     private static function modulo11($base, array $weight)
@@ -57,6 +50,6 @@ class Cnpj extends Rule
 
         $rest = $sum % 11;
 
-        return $rest < 2 ? 0 : 11 - $rest;
+        return $rest < 2 ? '0' : (11 - $rest);
     }
 }

@@ -1,11 +1,11 @@
 <?php
 namespace Inphinit\Experimental\Validation\Rules;
 
-use Inphinit\Exception;
 use Inphinit\Experimental\Validation\Rule;
 
 class Password extends Rule
 {
+    protected $alloweds = array('min', 'max');
     protected $messages = array(
         'lower' => 'The password must contain at least one lowercase letter',
         'number' => 'The password must contain at least one number',
@@ -15,9 +15,11 @@ class Password extends Rule
         'upper' => 'The password must contain at least one uppercase letter',
     );
 
-    public function exec($path, $value, $param, array $rules)
+    public function exec($path, &$value, $param, array $rules)
     {
-        parent::exec($path, $value, $param, $rules);
+        $this->isAllowed($rules);
+
+        $value = (string) $value;
 
         if (strpbrk($value, '0123456789') === false) {
             $this->failure = $this->messages['number'];
@@ -33,6 +35,6 @@ class Password extends Rule
             $this->failure = $this->messages['repeated'];
         }
 
-        return $this->failure === null ? $value : null;
+        return $this->passed();
     }
 }
