@@ -18,7 +18,7 @@ class Config
     private $path;
 
     /**
-     * Return items from a config file in a object (iterator or with `->`)
+     * Load items from a config file in a object
      *
      * @param string $path
      * @throws \Inphinit\Exception
