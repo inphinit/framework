@@ -62,7 +62,7 @@ class FileGenerator
      * @throws \Inphinit\Exception
      * @return string
      */
-    public function command($name, $fileTemplate = 'command.ft')
+    public function command($name, $fileTemplate = 'command')
     {
         return $this->createClass(self::COMMANDS_NAMESPACE, $name, $fileTemplate);
     }
@@ -75,7 +75,7 @@ class FileGenerator
      * @throws \Inphinit\Exception
      * @return string
      */
-    public function controller($name, $fileTemplate = 'controller.ft')
+    public function controller($name, $fileTemplate = 'controller')
     {
         return $this->createClass(self::CONTROLLERS_NAMESPACE, $name, $fileTemplate);
     }
@@ -88,7 +88,7 @@ class FileGenerator
      * @throws \Inphinit\Exception
      * @return string
      */
-    public function view($name, $fileTemplate = 'view.ft')
+    public function view($name, $fileTemplate = 'view')
     {
         if (preg_match('#^[a-z_][a-z0-9_]*(?:/[a-z_][a-z0-9_]*)*$#D', $name) !== 1) {
             throw new Exception('Invalid path: ' . $name);
@@ -114,7 +114,7 @@ class FileGenerator
         $template = self::getTemplateSource($fileTemplate);
 
         if ($template === false) {
-            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate);
+            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate . '.ft');
         }
 
         try {
@@ -182,7 +182,7 @@ class FileGenerator
         $template = self::getTemplateSource($fileTemplate);
 
         if ($template === false) {
-            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate, 0, 3);
+            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate . '.ft', 0, 3);
         }
 
         try {
@@ -203,10 +203,10 @@ class FileGenerator
     {
         $entries = array(
             // from project
-            INPHINIT_SYSTEM . '/stubs/' . $fileTemplate,
+            INPHINIT_SYSTEM . '/stubs/' . $fileTemplate . '.ft',
 
             // fallback
-            __DIR__ . '/../../stubs/' . $fileTemplate,
+            __DIR__ . '/../../stubs/' . $fileTemplate . '.ft',
         );
 
         $path = null;
@@ -313,7 +313,9 @@ class FileGenerator
                 throw new \RuntimeException('Invalid include filename: ' . $include_name);
             }
 
-            $contents = self::getTemplateSource('includes/' . $include_name . '.ft');
+            $include_name .= '.ft';
+
+            $contents = self::getTemplateSource('includes/' . $include_name);
 
             if ($contents === false) {
                 throw new \RuntimeException('Cannot load the file: ' . $include_name);
