@@ -40,7 +40,6 @@ class Debug
         'vscode' => 'vscode://file/{path}:{line}:0',
     );
 
-    private $rendered = false;
     private $views = array();
     private static $booted = false;
     private static $currentAssistant;
@@ -69,10 +68,6 @@ class Debug
     public function setErrorView($view)
     {
         $this->setView('error', $view);
-
-        if (PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set') && ini_get('display_errors') === '1') {
-            self::$restoreDisplayErrors = ini_set('display_errors', '0') !== false;
-        }
     }
 
     /**
@@ -88,6 +83,27 @@ class Debug
     }
 
     /**
+     * Register debug events and views
+     */
+    public function register()
+    {
+        $handle_error = false;
+
+        foreach ($this->views as $type => $callback) {
+            if ($type === 'error') {
+                $handle_error = $type === 'error';
+                Event::on('error', $callback);
+            } else {
+                Event::on('done', $callback);
+            }
+        }
+
+        if ($handle_error && PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set') && ini_get('display_errors') === '1') {
+            self::$restoreDisplayErrors = ini_set('display_errors', '0') !== false;
+        }
+    }
+
+    /**
      * Unregister debug events and views
      */
     public function unregister()
@@ -98,6 +114,7 @@ class Debug
 
         if (self::$restoreDisplayErrors) {
             ini_set('display_errors', '1');
+            self::$restoreDisplayErrors = false;
         }
     }
 
@@ -277,7 +294,7 @@ class Debug
         self::boot();
 
         $link = null;
-        $message = $file . ' in line ' . $line;
+        $message = $file . ' on line ' . $line;
 
         $file = realpath($file);
         $file = str_replace('\\', '/', $file);
@@ -331,8 +348,6 @@ class Debug
             };
 
             $this->views[$type] = $callback;
-
-            Event::on($type === 'error' ? $type : 'done', $callback);
         }
     }
 
