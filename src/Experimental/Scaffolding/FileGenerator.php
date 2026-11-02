@@ -191,7 +191,7 @@ class FileGenerator
             throw new Exception($ex->getMessage(), 0, $depth, $ex);
         }
 
-        return realpath($dest);
+        return str_replace('/', DIRECTORY_SEPARATOR, $dest);
     }
 
     private static function getTemplateSource($fileTemplate)
@@ -472,7 +472,7 @@ class FileGenerator
 
     private static function printable($value)
     {
-        return is_string($value) ? $value : gettype($value);
+        return is_string($value) ? $value : Inspector::type($value);
     }
 
     private static function findReserved(array $parts)
