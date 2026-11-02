@@ -10,6 +10,7 @@
 namespace Inphinit\Experimental\Scaffolding;
 
 use Inphinit\Config;
+use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 
 class FileGenerator
@@ -18,7 +19,7 @@ class FileGenerator
     const CONTROLLERS_NAMESPACE = 'Controllers\\';
 
     const PARSE_MAX_DEPTH = 5;
-    const PARSE_MAX_INCLUDES = 50;
+    const PARSE_MAX_INCLUDES = 20;
 
     private $data;
     private $vars;
@@ -95,9 +96,7 @@ class FileGenerator
             throw new Exception('Invalid path: ' . self::printable($name), 0, 2);
         }
 
-        $error = self::templateNameError($fileTemplate);
-
-        if ($error !== null) {
+        if (self::isNotSafeName($fileTemplate, $error)) {
             throw new Exception($error, 0, 2);
         }
 
@@ -110,9 +109,7 @@ class FileGenerator
             throw new Exception('Invalid path: ' . self::printable($name), 0, 3);
         }
 
-        $error = self::templateNameError($fileTemplate);
-
-        if ($error !== null) {
+        if (self::isNotSafeName($fileTemplate, $error)) {
             throw new Exception($error, 0, 3);
         }
 
@@ -192,9 +189,6 @@ class FileGenerator
             self::createFile($dest, $permissions, $data);
         } catch (\Exception $ex) {
             throw new Exception($ex->getMessage(), 0, $depth, $ex);
-        } catch (\Throwable $ex) {
-            // PHP 7+: TypeError, Error, etc.
-            throw new Exception($ex->getMessage(), 0, $depth, new \RuntimeException($ex->getMessage(), 0, $ex));
         }
 
         return realpath($dest);
@@ -221,10 +215,6 @@ class FileGenerator
         return false;
     }
 
-    /**
-     * Write the file. Directories created by this call are removed again
-     * when writing fails, so no empty directories are left behind.
-     */
     private static function createFile($dest, $permissions, $data)
     {
         if (function_exists('error_clear_last')) {
@@ -408,8 +398,8 @@ class FileGenerator
 
             $include_name = $match[1];
 
-            if (self::templateNameError($include_name) !== null) {
-                throw new \RuntimeException('Invalid include filename: ' . $include_name);
+            if (self::isNotSafeName($include_name, $error)) {
+                throw new \RuntimeException($error . ' (include)');
             }
 
             $contents = self::getTemplateSource('includes/' . $include_name);
@@ -455,28 +445,29 @@ class FileGenerator
         return $template;
     }
 
-    /**
-     * Template names are a whitelist (letters, digits, "_", "-", ".", space),
-     * without the ".ft" extension, which is appended automatically.
-     *
-     * @return string|null error message, or null when the name is valid
-     */
-    private static function templateNameError($name)
+    private static function isNotSafeName($name, &$error)
     {
+        if (is_string($name) === false) {
+            $type = Inspector::type($name);
+            $error = "Template filename must be of type string, {$type} given";
+            return true;
+        }
+
         if (
-            is_string($name) === false ||
             strpos($name, '..') !== false ||
             strlen($name) > 100 ||
             preg_match('/^[A-Za-z0-9_](?:[A-Za-z0-9_ .-]*[A-Za-z0-9_-])?$/D', $name) !== 1
         ) {
-            return 'Invalid file template';
+            $error = 'Invalid file template';
+            return true;
         }
 
         if (preg_match('/\.ft$/Di', $name) === 1) {
-            return 'Invalid file template: omit the ".ft" extension (use "command", not "command.ft")';
+            $error = 'Invalid file template: omit the ".ft" extension (use "command", not "command.ft")';
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     private static function printable($value)
