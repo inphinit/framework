@@ -36,6 +36,7 @@ class Validator
         'required' => 'This field is required',
         'type' => 'Invalid type: expected a string, number or boolean',
         'unicode_error' => 'Contains invalid Unicode (UTF-8) characters',
+        'regex_issue' => 'Failed to resolve pattern',
         'url' => 'Must be a valid HTTP or HTTPS url',
     );
     private $mode;
@@ -46,6 +47,7 @@ class Validator
     private static $allowedInInteger = array('integer', 'in', 'regex', 'min', 'max');
     private static $conversionRules = array('boolean', 'decimal', 'integer');
     private static $rangeRules = array('min', 'max');
+    private static $requireParams = array('equals', 'in', 'regex', 'min', 'max');
     private static $urlRuleScheme = array('https', 'http');
 
     public function __construct(array $data, $mode = 0)
@@ -172,8 +174,6 @@ class Validator
             $rules = explode('|', $rules);
         }
 
-        $numeral = false;
-        $ruleset = array();
         $value = PropertyAccessor::getValue($path, $this->data);
 
         if ($value === null || $value === '') {
@@ -191,9 +191,15 @@ class Validator
             return $this;
         }
 
+        $ruleset = array();
+
         foreach ($rules as $rule) {
             if ($rule === 'required') {
                 continue;
+            }
+
+            if (trim($rule) === 'required') {
+                throw new Exception('Invalid rule format');
             }
 
             if (strpos($rule, ':') !== false) {
@@ -206,15 +212,16 @@ class Validator
                 throw new Exception('Duplicate rule: ' . $rule);
             }
 
+            if (($param === null || $param === '') && in_array($rule, self::$requireParams, true)) {
+                throw new Exception('Missing param in rule: ' . $rule);
+            }
+
             $ruleset[$rule] = $param;
         }
 
-        if (array_key_exists('in', $ruleset) && (isset($ruleset['in']) === false || strpos($ruleset['in'], ',') === false)) {
-            throw new Exception('`in` rule is misconfigured');
-        }
-
-        $rules = array_keys($ruleset);
         $alloweds = null;
+        $numeral = false;
+        $rules = array_keys($ruleset);
 
         if (in_array('boolean', $rules, true)) {
             $alloweds = self::$allowedInBoolean;
@@ -240,15 +247,17 @@ class Validator
         }
 
         // Prioritize rules that do not perform type conversions
-        uksort($ruleset, function ($a, $b) use ($rules) {
-            $pos = self::rulePriority($a) - self::rulePriority($b);
+        if (count($ruleset) > 1) {
+            uksort($ruleset, function ($a, $b) use ($rules) {
+                $pos = self::rulePriority($a) - self::rulePriority($b);
 
-            if ($pos !== 0) {
-                return $pos;
-            }
+                if ($pos !== 0) {
+                    return $pos;
+                }
 
-            return array_search($a, $rules, true) - array_search($b, $rules, true);
-        });
+                return array_search($a, $rules, true) - array_search($b, $rules, true);
+            });
+        }
 
         $this->exec($path, $value, $numeral, $ruleset);
 
@@ -353,9 +362,10 @@ class Validator
                 return filter_var($input, $filter, $flags);
 
             case 'decimal':
-                return filter_var($input, FILTER_VALIDATE_FLOAT, array('flags' => $flags, 'options' => array(
-                    'decimal' => $arg === null ? '.' : $arg
-                )));
+                return filter_var($input, FILTER_VALIDATE_FLOAT, array(
+                    'flags' => $flags,
+                    'options' => array('decimal' => $arg === null ? '.' : $arg)
+                ));
 
             case 'email':
                 $valid = filter_var($input, FILTER_VALIDATE_EMAIL);
@@ -365,10 +375,6 @@ class Validator
                 return filter_var($input, FILTER_VALIDATE_INT, $flags);
 
             case 'equals':
-                if ($arg === null) {
-                    throw new Exception('Invalid value in equals:', 0, 4);
-                }
-
                 $info = $arg;
                 $valid = PropertyAccessor::getValue($arg, $this->data) === $input;
                 break;
@@ -378,10 +384,6 @@ class Validator
                 break;
 
             case 'max':
-                if ($arg === null || is_numeric($arg) === false) {
-                    throw new Exception('Invalid value in max:', 0, 4);
-                }
-
                 $info = $arg;
 
                 if ($numeral) {
@@ -393,10 +395,6 @@ class Validator
                 break;
 
             case 'min':
-                if ($arg === null || is_numeric($arg) === false) {
-                    throw new Exception('Invalid value in min:', 0, 4);
-                }
-
                 $info = $arg;
 
                 if ($numeral) {
@@ -408,14 +406,16 @@ class Validator
                 break;
 
             case 'regex':
-                if ($arg !== null) {
-                    $result = preg_match($arg, $input);
+                $result = preg_match($arg, $input);
 
-                    if ($result === false) {
+                if ($result === false) {
+                    if (preg_last_error() === PREG_INTERNAL_ERROR) {
                         throw new Exception('Invalid regex pattern', 0, 4);
-                    } elseif ($result === 1) {
-                        $valid = true;
                     }
+
+                    $this->appendFailure($this->messages['regex_issue'], $path, null, 6);
+                } elseif ($result === 1) {
+                    $valid = true;
                 }
                 break;
 
