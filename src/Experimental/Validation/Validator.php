@@ -198,10 +198,6 @@ class Validator
                 continue;
             }
 
-            if (trim($rule) === 'required') {
-                throw new Exception('Invalid rule format');
-            }
-
             if (strpos($rule, ':') !== false) {
                 list($rule, $param) = explode(':', $rule, 2);
             } else {
