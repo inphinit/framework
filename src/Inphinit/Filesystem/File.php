@@ -9,7 +9,6 @@
 
 namespace Inphinit\Filesystem;
 
-use Inphinit\App;
 use Inphinit\Diagnostics\Inspector;
 use Inphinit\Exception;
 use Inphinit\Utility\Url;
@@ -64,7 +63,8 @@ class File
 
         // Resolve `/./`, `/../`, and `/` extras before using `inphinit_check_path()`
         if (strpos($path, './') !== false || strpos($path, '//') !== false) {
-            $path = Url::canonpath($path);
+            $url = new Url($path);
+            $path = (string) $url->modify(Url::PATH_RESOLVE);
         }
 
         // Paths that start with `/` or contain a drive letter (e.g., `D:/`) are likely not relative
@@ -94,6 +94,10 @@ class File
      */
     public static function permissions($path, $full = false, $link = false)
     {
+        if (self::checkPath($path) === false) {
+            return false;
+        }
+
         $cache  = $full ? 'full+' : 'octal+';
         $cache .= $link ? 'link:' : 'file:';
         $cache .= $path;
@@ -101,8 +105,6 @@ class File
         if (isset(self::$infos[$cache])) {
             return self::$infos[$cache];
         }
-
-        self::checkCaseSensitive($path);
 
         if ($link) {
             $stat = lstat($path);
@@ -172,7 +174,9 @@ class File
      */
     public static function output($path, $length = 0, $delay = 0)
     {
-        self::checkCaseSensitive($path);
+        if (self::checkPath($path) === false) {
+            return false;
+        }
 
         $handle = fopen($path, 'rb');
 
@@ -186,7 +190,15 @@ class File
             $length = 262144;
         }
 
+        $abort_support = function_exists('connection_aborted');
+        $completed = false;
+
         while (feof($handle) === false) {
+            if ($abort_support && connection_aborted()) {
+                $completed = false;
+                break;
+            }
+
             echo fread($handle, $length);
 
             if ($delay > 0) {
@@ -202,7 +214,7 @@ class File
 
         fclose($handle);
 
-        return true;
+        return $completed;
     }
 
     /**
@@ -211,15 +223,13 @@ class File
      *
      * @param string $path   File path
      * @param int    $offset The offset where the reading starts on the original stream (Negative offsets count from the end of the stream)
-     * @param int    $length Maximum length of data read. The default is to read until end of file is reached
+     * @param int    $length Maximum length of data read.
      * @throws \Inphinit\Exception
      * @return string|false
      */
     public static function portion($path, $offset = 0, $length = 1024)
     {
-        self::checkCaseSensitive($path);
-
-        return file_get_contents($path, false, null, $offset, $length);
+        return self::checkPath($path) ? file_get_contents($path, false, null, $offset, $length) : false;
     }
 
     /**
@@ -241,9 +251,7 @@ class File
             throw new Exception('Invalid length');
         }
 
-        self::checkCaseSensitive($path);
-
-        $handle = fopen($path, 'rb');
+        $handle = self::checkPath($path) ? fopen($path, 'rb') : false;
 
         if ($handle === false) {
             return false;
@@ -271,7 +279,7 @@ class File
     }
 
     /**
-     * Clear state files and clear info files from `Inphinit\File::permissions`
+     * Clear state files and clear info files from `permissions()`
      */
     public static function clearstat()
     {
@@ -279,10 +287,20 @@ class File
         clearstatcache();
     }
 
-    private static function checkCaseSensitive($path, $level = 3)
+    private static function checkPath(&$path, $level = 3)
     {
         if (self::$strictMode && self::exists($path) === false) {
             throw new Exception($path . ' not found (check case-sensitive)', 0, $level);
         }
+
+        if (preg_match('#^([^\/\\]):#', $path) === 1) {
+            if (stripos($path, 'file:') !== 0) {
+                return false;
+            }
+
+            $path = preg_replace('#^file:/+([a-z]:|/)#i', '$1', $path);
+        }
+
+        return true;
     }
 }

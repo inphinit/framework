@@ -9,9 +9,7 @@
 
 namespace Inphinit\Filesystem;
 
-use Inphinit\App;
 use Inphinit\Exception;
-use Inphinit\Utility\Url;
 
 class Size
 {
@@ -59,9 +57,16 @@ class Size
     public function __construct($modes = 0)
     {
         if (self::$osFamily === null) {
-            $os = defined('PHP_OS_FAMILY') ? PHP_OS_FAMILY : php_uname('s');
+            if (DIRECTORY_SEPARATOR === '\\') {
+                $os = 'win';
+            } elseif (defined('PHP_OS_FAMILY')) {
+                $os = strtolower(PHP_OS_FAMILY);
+            } else {
+                // Caution: php_uname() is typically disabled; to avoid issues, [Fallback] will be used in fromSystem().
+                $os = '';
+            }
 
-            self::$osFamily = strtolower($os);
+            self::$osFamily = $os;
         }
 
         $valid_modes = self::COM | self::CURL | self::SYSTEM;
@@ -107,24 +112,25 @@ class Size
             throw new Exception($path . ' file not found (check case-sensitive)');
         }
 
-        $path = realpath($path);
+        $path = preg_replace('#^file:/+([a-z]:|/)#i', '$1', $path);
+        $real_path = realpath($path);
 
-        if ($path === false || is_file($path) === false) {
-            throw new Exception($path . ' not found');
+        if ($real_path === false || is_file($real_path) === false) {
+            throw new Exception($path . ' file not found');
         }
 
         $size = null;
 
         if ($this->modes & self::COM) {
-            $size = $this->fromCOM($path, $errorMessage, $errorCode);
+            $size = $this->fromCOM($real_path, $errorMessage, $errorCode);
         }
 
         if ($size === null && ($this->modes & self::CURL)) {
-            $size = $this->fromCurl($path, $errorMessage, $errorCode);
+            $size = $this->fromCurl($real_path, $errorMessage, $errorCode);
         }
 
         if ($size === null && ($this->modes & self::SYSTEM)) {
-            $size = $this->fromSystem($path, $errorMessage, $errorCode);
+            $size = $this->fromSystem($real_path, $errorMessage, $errorCode);
         }
 
         if ($size !== null) {
@@ -152,7 +158,6 @@ class Size
         if ($boot === false) {
             $errorCode = $this->comErrorCode;
             $errorMessage = $this->comErrorMessage;
-
             return null;
         }
 
@@ -178,7 +183,7 @@ class Size
             return $boot->GetFile($path)->Size;
         } catch (\Exception $ex) {
             // FileSystemObject failures return messages containing HTML for formatting
-            $message = preg_replace('#<br(\s*?)\/?\>#', ' ', $ex->getMessage());
+            $message = preg_replace('#<br(\s*?)\/?\>#i', ' ', $ex->getMessage());
             $message = strip_tags($message);
 
             $errorCode = $ex->getCode();
@@ -190,25 +195,24 @@ class Size
 
     private function fromCurl($path, &$errorMessage, &$errorCode)
     {
-        if ($this->bootCurl === null) {
+        $boot = $this->bootCurl;
+
+        if ($boot === null) {
             $boot = curl_init();
 
-            if ($boot === false) {
-                $this->bootCurl = false;
-
-                $errorCode = 0;
-                $errorMessage = 'cURL: Could not initialize a new cURL handle';
-
-                return null;
-            }
-
-            curl_setopt($boot, CURLOPT_HEADER, true);
-            curl_setopt($boot, CURLOPT_NOBODY, true);
-            curl_setopt($boot, CURLOPT_RETURNTRANSFER, true);
-
             $this->bootCurl = $boot;
-        } else {
-            $boot = $this->bootCurl;
+
+            if ($boot !== false) {
+                curl_setopt($boot, CURLOPT_HEADER, true);
+                curl_setopt($boot, CURLOPT_NOBODY, true);
+                curl_setopt($boot, CURLOPT_RETURNTRANSFER, true);
+            }
+        }
+
+        if ($boot === false) {
+            $errorCode = 0;
+            $errorMessage = 'cURL: Could not initialize a new cURL handle';
+            return null;
         }
 
         // In several tests, it was necessary to encode the URL
