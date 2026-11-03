@@ -293,7 +293,7 @@ class File
             throw new Exception($path . ' not found (check case-sensitive)', 0, $level);
         }
 
-        if (preg_match('#^([^\/\\]):#', $path) === 1) {
+        if (preg_match('#^([^\/\\\\]):#', $path) === 1) {
             if (stripos($path, 'file:') !== 0) {
                 return false;
             }

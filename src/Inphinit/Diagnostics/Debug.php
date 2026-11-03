@@ -40,6 +40,7 @@ class Debug
         'vscode' => 'vscode://file/{path}:{line}:0',
     );
 
+    private $registred = false;
     private $views = array();
     private static $booted = false;
     private static $currentAssistant;
@@ -87,11 +88,17 @@ class Debug
      */
     public function register()
     {
+        if ($this->registred) {
+            return;
+        }
+
+        $this->registred = true;
+
         $handle_error = false;
 
         foreach ($this->views as $type => $callback) {
             if ($type === 'error') {
-                $handle_error = $type === 'error';
+                $handle_error = true;
                 Event::on('error', $callback);
             } else {
                 Event::on('done', $callback);
@@ -108,13 +115,17 @@ class Debug
      */
     public function unregister()
     {
-        foreach ($this->views as $type => $callback) {
-            Event::off($type === 'error' ? $type : 'done', $callback);
-        }
+        if ($this->registred) {
+            $this->registred = false;
 
-        if (self::$restoreDisplayErrors) {
-            ini_set('display_errors', '1');
-            self::$restoreDisplayErrors = false;
+            foreach ($this->views as $type => $callback) {
+                Event::off($type === 'error' ? $type : 'done', $callback);
+            }
+
+            if (self::$restoreDisplayErrors) {
+                ini_set('display_errors', '1');
+                self::$restoreDisplayErrors = false;
+            }
         }
     }
 
@@ -293,15 +304,18 @@ class Debug
     {
         self::boot();
 
-        $link = null;
         $message = $file . ' on line ' . $line;
-
         $file = realpath($file);
+        $vendor = realpath(INPHINIT_SYSTEM . '/vendor');
+
+        if ($file === false || $vendor === false) {
+            return $message;
+        }
+
+        $link = null;
         $file = str_replace('\\', '/', $file);
         $line = (string) $line;
-
-        $vendor = realpath(INPHINIT_SYSTEM . '/vendor/');
-        $vendor = str_replace('\\', '/', $vendor);
+        $vendor = str_replace('\\', '/', $vendor) . '/';
 
         /*
          * Note: The link to the editor will only be available for scripts outside the vendor
@@ -311,8 +325,10 @@ class Debug
         if (strpos($file, $vendor) !== 0) {
             $option = self::$currentEditor;
 
-            if ($option) {
-                $link = isset(static::$editors[$option]) ? static::$editors[$option] : $option;
+            if ($option && isset(static::$editors[$option])) {
+                $link = static::$editors[$option];
+            } else {
+                $link = $option;
             }
         }
 
