@@ -113,6 +113,23 @@ class Storage
     }
 
     /**
+     * Create temporary file and return path.
+     *
+     * @throws \Inphinit\Exception
+     * @return string
+     */
+    public static function temp($prefix = '~')
+    {
+        $dir = static::path('tmp');
+
+        if (is_dir($dir) && ($path = tempnam($dir, $prefix)) !== false) {
+            return $path;
+        }
+
+        return false;
+    }
+
+    /**
      * Clear contents of storage application directory after specified expires date (or UNIX time),
      * and returns number of deleted files
      *
