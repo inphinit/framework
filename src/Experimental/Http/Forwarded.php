@@ -29,7 +29,7 @@ class Forwarded
     const RFC7239 = 16;
 
     const DEFAULT_SOURCES = 7;
-    const VALID_SOURCES = 15;
+    const VALID_SOURCES = 31;
 
     // 12-byte prefix of IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`)
     const IPV4_MAPPED_PREFIX = "\0\0\0\0\0\0\0\0\0\0\xff\xff";
@@ -119,7 +119,7 @@ class Forwarded
      */
     public function setFlags($flags)
     {
-        if (is_int($flags) === false || ($flags !== self::RFC7239 && ($flags & ~self::VALID_SOURCES) !== 0)) {
+        if (is_int($flags) === false || ($flags & ~self::VALID_SOURCES) !== 0) {
             throw new Exception('Invalid flag(s)');
         }
 
@@ -401,7 +401,7 @@ class Forwarded
     private function getInfo($flag, $name)
     {
         if ($this->fromKnown()) {
-            if ($this->flags === self::RFC7239) {
+            if ($this->flags & self::RFC7239) {
                 return $this->getRfc7239($name);
             }
 

@@ -13,139 +13,102 @@ use Inphinit\Http\Request;
 
 class Method
 {
-    private $allowed = array('delete', 'patch', 'put', 'query');
-
-    private $cache;
-
-    private static $initial;
-
-    private $sources = array(
-        // Headers
-        array('x-http-method-override', true, 0),
-        array('x-http-method', true, 0),
-        array('x-method-override', true, 0),
-
-        // fields or querystring
-        array('_method', false, 0),
-        array('_HttpMethod', false, 0),
-    );
+    private $alloweds = array('DELETE', 'PATCH', 'PUT', 'QUERY');
+    private $header = 'x-http-method-override';
+    private $param = '_method';
+    private $server;
+    private $post;
 
     /**
      * Create a Method instance
      *
-     * @param bool $reset Optional. Reset sources
+     * @param array $server
+     * @param array $post
      */
-    public function __construct($reset = false)
+    public function __construct(array $server, array $post)
     {
-        static::original();
-
-        if ($reset) {
-            $this->sources = array();
-        }
+        $this->server = $server;
+        $this->post = $post;
     }
 
     /**
-     * Defines which HTTP methods can be used to override the original method
+     * Replaces `$_SERVER['REQUEST_METHOD']` with the detected alternative method
+     * and create `$_SERVER['REQUEST_METHOD_ORIGINAL']` with original method
+     */
+    public static function override()
+    {
+        $instance = new static($_SERVER, $_POST);
+        $original = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
+
+        $_SERVER['REQUEST_METHOD'] = (string) $instance;
+        $_SERVER['REQUEST_METHOD_ORIGINAL'] = $original;
+
+        $instance = null;
+    }
+
+    /**
+     * Set which HTTP methods can be used to override the original method
      *
      * @param array $methods
      */
     public function setAllowed(array $methods)
     {
-        $this->allowed = array_map('strtolower', $methods);
-        $this->cache = null;
+        $this->alloweds = array_map('strtoupper', $methods);
     }
 
     /**
-     * Adds a request header as an alternative source for determining the HTTP method
+     * Set the source header to override the HTTP method. Examples:
+     * - x-http-method
+     * - x-method-override
      *
      * @param string $header
-     * @param int    $priority
      */
-    public function addHeader($header, $priority = 0)
+    public function setHeader($header)
     {
-        $this->sources[] = array($header, true, $priority);
-        $this->cache = null;
+        $this->header = $header;
     }
 
     /**
-     * Adds a parameter (request body or querystring) as an alternative source for determining the HTTP method
+     * Set the source parameter to override the HTTP method. Examples:
+     * - _HttpMethod
+     * - _method
      *
      * @param string $param
-     * @param int    $priority
      */
-    public function addParam($param, $priority = 0)
+    public function setParam($param)
     {
-        $this->sources[] = array($param, false, $priority);
-        $this->cache = null;
+        $this->param = $param;
     }
 
     /**
-     * Get method from `$_POST` or `$_GET` or headers
+     * Get method from post param or header
      *
      * @return string
      */
     public function __toString()
     {
-        if ($this->cache !== null) {
-            return $this->cache;
-        }
-
-        usort($this->sources, function ($a, $b) {
-            if ($a[2] === $b[2]) {
-                return 0;
-            }
-
-            return $a[2] < $b[2] ? 1 : -1;
-        });
-
         $method = null;
+        $server = $this->server;
+        $original = isset($server['REQUEST_METHOD']) ? $server['REQUEST_METHOD'] : '';
 
-        foreach ($this->sources as $source) {
-            $key = $source[0];
+        if (isset($this->post[$this->param][0]) && $original === 'POST') {
+            $method = $this->post[$this->param];
+        } else {
+            $header = 'HTTP_' . strtoupper(str_replace('-', '_', $this->header));
 
-            if ($source[1]) {
-                $method = Request::header($key);
-            } elseif (isset($_POST[$key])) {
-                $method = $_POST[$key];
-            } elseif (isset($_GET[$key])) {
-                $method = $_GET[$key];
-            }
-
-            if ($method !== null && in_array(strtolower($method), $this->allowed, true)) {
-                return $this->cache = strtoupper($method);
+            if (isset($server[$header][0])) {
+                $method = $server[$header];
             }
         }
 
-        return self::$initial;
-    }
+        if (is_string($method)) {
+            $method = strtoupper($method);
 
-    /**
-     * Replaces `$_SERVER['REQUEST_METHOD']` with the detected alternative method, using the default settings
-     */
-    public static function override()
-    {
-        $instance = new static();
-
-        $method = (string) $instance;
-
-        $instance = null;
-
-        if ($method) {
-            $_SERVER['REQUEST_METHOD'] = $method;
-        }
-    }
-
-    /**
-     * Gets the original HTTP method of the request, before any overrides
-     *
-     * @return string
-     */
-    public static function original()
-    {
-        if (self::$initial === null) {
-            self::$initial = $_SERVER['REQUEST_METHOD'];
+            if (in_array($method, $this->alloweds, true)) {
+                return $method;
+            }
         }
 
-        return self::$initial;
+        return $original;
     }
 }
