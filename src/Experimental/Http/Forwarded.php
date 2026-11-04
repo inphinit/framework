@@ -264,12 +264,12 @@ class Forwarded
 
         $value = '';
 
-        if (($this->flags & self::PREFIX) && $this->fromKnown()) {
+        if ($this->fromKnown() && ($this->flags & self::PREFIX)) {
             $source = $this->pick($this->headers[self::PREFIX], $this->limit);
 
             if ($source !== null) {
                 $source = trim($source, '/');
-                $value = $source !== '' ? '' : ('/' . $source);
+                $value = $source === '' ? '' : ('/' . $source);
             }
         }
 
@@ -432,7 +432,7 @@ class Forwarded
         if ($this->infoRfc7239 !== null) {
             $info = $this->infoRfc7239;
         } else {
-            $info = array('for' => null, 'proto' => null, 'host' => null, 'prefix' => null);
+            $info = array('for' => null, 'proto' => null, 'host' => null);
 
             if (isset($this->server['HTTP_FORWARDED'][0])) {
                 $input = $this->server['HTTP_FORWARDED'];

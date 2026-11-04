@@ -162,13 +162,26 @@ if (PHP_SAPI === 'cli') {
     return null;
 }
 
+$inphinit_path = rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
+
+if (PHP_SAPI === 'cli-server') {
+    include __DIR__ . '/public.php';
+}
+
+if ($inphinit_config_development) {
+    require __DIR__ . '/development.php';
+} else {
+    $app = new App();
+}
+
 if (App::config('forwarded') === '1') {
     $forwarded = new Forwarded($_SERVER);
+    $app->forwarded = $forwarded;
 } else {
     $forwarded = null;
 }
 
-$inphinit_path = rawurldecode(strstr($_SERVER['REQUEST_URI'] . '?', '?', true));
+require INPHINIT_SYSTEM . '/main.php';
 
 if ($forwarded !== null) {
     $inphinit_proto = $forwarded->getProto();
@@ -190,20 +203,6 @@ if ($forwarded !== null) {
 if (strpos($inphinit_host, ':') === false) {
     $inphinit_host .= ':' . ($inphinit_proto === 'https' ? '443': '80');
 }
-
-if (PHP_SAPI === 'cli-server') {
-    include __DIR__ . '/public.php';
-}
-
-if ($inphinit_config_development) {
-    require __DIR__ . '/development.php';
-} else {
-    $app = new App();
-}
-
-$app->forwarded = $forwarded;
-
-require INPHINIT_SYSTEM . '/main.php';
 
 define('INPHINIT_PATH', $inphinit_path);
 define('INPHINIT_BASE_URL', $inphinit_proto . '://' . $inphinit_host . $inphinit_prefix);
