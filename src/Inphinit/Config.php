@@ -55,19 +55,6 @@ class Config
     }
 
     /**
-     * Save configuration to file
-     *
-     * @return bool
-     */
-    public function commit()
-    {
-        $path = INPHINIT_SYSTEM . '/' . $this->path;
-        $contents = "<?php\nreturn " . var_export($this->data, true) . ";\n";
-
-        return file_put_contents($path, $contents, LOCK_EX) !== false;
-    }
-
-    /**
      * Magic method for get specific item
      *
      * @param string $name
@@ -76,22 +63,6 @@ class Config
     public function __get($name)
     {
         return isset($this->data[$name]) ? $this->data[$name] : null;
-    }
-
-    /**
-     * Magic method for set value (this method don't save data)
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function __set($name, $value)
-    {
-        if (is_scalar($value) === false && $value !== null) {
-            $type = Inspector::type($value);
-            throw new Exception("Expects to be scalar or null, {$type} given");
-        }
-
-        $this->data[$name] = $value;
     }
 
     /**
@@ -105,13 +76,8 @@ class Config
         return isset($this->data[$name]);
     }
 
-    /**
-     * Magic method for unset variable with `unset()` function
-     *
-     * @param string $name
-     */
-    public function __unset($name)
+    public function __set($name, $value)
     {
-        unset($this->data[$name]);
+        throw new Exception('Creation of dynamic property is not allowed');
     }
 }
