@@ -262,14 +262,14 @@ class Forwarded
             return $value;
         }
 
-        $value = '/';
+        $value = '';
 
         if (($this->flags & self::PREFIX) && $this->fromKnown()) {
             $source = $this->pick($this->headers[self::PREFIX], $this->limit);
 
             if ($source !== null) {
                 $source = trim($source, '/');
-                $value = $source === '' ? '' : ('/' . $source);
+                $value = $source !== '' ? '' : ('/' . $source);
             }
         }
 
