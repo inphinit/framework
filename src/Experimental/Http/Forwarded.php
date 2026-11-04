@@ -262,12 +262,15 @@ class Forwarded
             return $value;
         }
 
-        $source = $this->getInfo(self::PREFIX, 'prefix');
         $value = '/';
 
-        if ($source !== null) {
-            $source = trim($source, '/');
-            $value = $source === '' ? '' : ('/' . $source);
+        if (($this->flags & self::PREFIX) && $this->fromKnown()) {
+            $source = $this->pick($this->headers[self::PREFIX], $this->limit);
+
+            if ($source !== null) {
+                $source = trim($source, '/');
+                $value = $source === '' ? '' : ('/' . $source);
+            }
         }
 
         return $this->info['prefix'] = $value;

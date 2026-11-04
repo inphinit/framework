@@ -201,6 +201,8 @@ if ($inphinit_config_development) {
     $app = new App();
 }
 
+$app->forwarded = $forwarded;
+
 require INPHINIT_SYSTEM . '/main.php';
 
 define('INPHINIT_PATH', $inphinit_path);
