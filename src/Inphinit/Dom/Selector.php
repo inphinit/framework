@@ -21,8 +21,8 @@ class Selector
         array('/^([^a-z*])/i', '*\\1'),
         array('/([>+~])([^\w*\s])/', '\\1*\\2'),
         array('/\[(.*?)\]/', '[@\\1\\2]'),
-        array('/\.(\w+)/', '[@class~="\\1" i]'),
-        array('/#(\w+)/', '[@id="\\1" i]'),
+        array('/\.(\w[\w\-]*)/', '[@class~="\\1" i]'),
+        array('/#(\w[\w\-]*)/', '[@id="\\1" i]'),
         array('/\:lang\(([\w\-]+)\)/i', '[@lang|="\\1" i]'),
         array('/([>+~]|^)\:nth-(last-)?(child|of-type)\(n\)/i', '\\1*'),
         array('/\:nth-(last-)?(child|of-type)\(n\)/i', ''),
@@ -42,13 +42,13 @@ class Selector
         array('/([>+~])?\*([^>+~]+)?\:last-child/i', '\\1*[position()=last()]\\2'),
         array('/([>+~])?(\w+)([^>+~]+)?\:only-child/i', '\\1*[name()="\\2" and last()=1]\\3'),
         array('/([>+~])?(\w+)([^>+~]+)?\:last-child/i', '\\1*[name()="\\2" and position()=last()]\\3'),
-        array('/\:empty/i', '[not(text())]'),
+        array('/\:empty/i', '[not(*) and not(text())]'),
         array('/\[(@\w+)(.)?=(.*?) i]/', '[lower-case(\\1)\\2=lower-case(\\3)]'),
         array('/\[(@\w+|lower-case\(@\w+\))\*=(.*?)\]/', '[contains(\\1,\\2)]'),
         array('/\[(@\w+|lower-case\(@\w+\))\^=(.*?)\]/', '[starts-with(\\1,\\2)]'),
         array('/\[(@\w+|lower-case\(@\w+\))\~=(.*?)\]/', '[contains(concat(" ",\\1," "),concat(" ",\\2," "))]'),
         array('/\[(@\w+|lower-case\(@\w+\))\|=(.*?)\]/', '[starts-with(concat(\\1,"-"),concat(\\2,"-"))]'),
-        array('/\[(@\w+|lower-case\(@\w+\))\$=(.*?)\]/', '[substring(\\1,string-length(\\1)-2)=\\2]'),
+        array('/\[(@\w+|lower-case\(@\w+\))\$=(.*?)\]/', "[substring(\\1,string-length(\\1)-string-length(\\2)+\x001)=\\2]"),
         array('/\:contains\((.*?)\)/i', '[contains(.,\\1)]'),
         array('/\:contains-child\((.*?)\)/i', '[text()[contains(.,\\1)]]')
     );
@@ -161,6 +161,8 @@ class Selector
 
     private function toXPath($query)
     {
+        $query = str_replace("\x00", '', $query);
+
         $original = $query;
 
         if (isset(self::$cache[$original])) {
@@ -210,7 +212,7 @@ class Selector
             $descendants = implode('//', $descendants);
         }
 
-        $query = implode('|', $queries);
+        $query = implode('|//', $queries);
 
         $query = preg_replace('#\[(\d+)\]#', $this->prevent['['] . '\\1' . $this->prevent[']'], $query);
 
@@ -228,7 +230,9 @@ class Selector
 
         $restore = array_combine(array_values($this->prevent), array_keys($this->prevent));
 
-        return self::$cache[$original] = '//' . strtr($query, $restore);
+        $query = '//' . str_replace("\x00", '', strtr($query, $restore));
+
+        return self::$cache[$original] = '//' . $query;
     }
 
     private function putQuotes($arg)
@@ -262,7 +266,7 @@ class Selector
 
     private function siblingConvert($query)
     {
-        $query = preg_replace('/([+~])([^+~]+)/', '\\1' . $this->allSiblingsToken . '\\2', $query);
+        $query = preg_replace('/([+~])([^+~\x00]+)/', '\\1' . $this->allSiblingsToken . '\\2', $query);
 
         $siblings = explode($this->allSiblingsToken, $query);
 
