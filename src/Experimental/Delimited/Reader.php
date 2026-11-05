@@ -80,7 +80,7 @@ abstract class Reader
      * Get headers from file
      *
      * @throws \Inphinit\Exception
-     * @return array<int, string>
+     * @return string[]
      */
     public function getHeaders()
     {

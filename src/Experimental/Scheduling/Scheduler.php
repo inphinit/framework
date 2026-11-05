@@ -65,6 +65,11 @@ class Scheduler
      */
     public function prioritizeBackgroundTasks($enable)
     {
+        if (is_bool($enable) === false) {
+            $type = Inspector::type($enable);
+            throw new Exception("Expects to be bool, {$type} given");
+        }
+
         $this->prioritizedBackgroundTasks = $enable;
     }
 
@@ -112,7 +117,7 @@ class Scheduler
      * Register a callback function to execute
      *
      * @param string $name
-     * @param callable $command
+     * @param callable $callback
      * @return \Inphinit\Experimental\Scheduling\Task
      */
     public function call($name, callable $callback)
@@ -215,21 +220,30 @@ class Scheduler
             throw new Exception('Execution only supported in the CLI');
         }
 
+        if ($this->backgroundDispatcher === null) {
+            throw new Exception('Missing background dispatcher');
+        }
+
         $executed = 0;
 
         try {
             // Prevents overlapping sweeps if the previous task invocation is still running
             if ($this->lock(true)) {
                 $changed = false;
-
                 $state = $this->loadState();
-
                 $now = new \DateTime('now', $this->timeZone);
-
-                $tasks = $this->tasks;
+                $background = array();
 
                 if ($this->prioritizedBackgroundTasks) {
-                    uasort($tasks, array($this, 'sortTasks'));
+                    foreach ($this->tasks as $name => $task) {
+                        if ($task->isBackground()) {
+                            $background[$name] = $task;
+                        }
+                    }
+
+                    $tasks = $background + $this->tasks;
+                } else {
+                    $tasks = $this->tasks;
                 }
 
                 foreach ($tasks as $name => $task) {
@@ -286,7 +300,6 @@ class Scheduler
 
             return flock($handle, LOCK_EX | LOCK_NB);
         } elseif ($handle !== null) {
-            fflush($handle);
             return flock($handle, LOCK_UN);
         }
 
@@ -338,7 +351,7 @@ class Scheduler
         // eg.: /usr/bin/php /home/project/run schedule:run --task "task_name"
         $exec = implode(' ', $command);
 
-        if (stripos(PHP_OS, 'WIN') === 0) {
+        if (DIRECTORY_SEPARATOR === '\\') {
             $exec = 'start /B "" ' . $exec;
         } else {
             $exec = $exec . ' > /dev/null 2>&1 &';

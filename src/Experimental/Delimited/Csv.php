@@ -82,7 +82,7 @@ class Csv extends Reader
      *
      * @param string $separator Field separator
      * @param string $entry     Line content
-     * @return array<int, string>|false
+     * @return string[]
      */
     protected function parse($separator, $entry)
     {

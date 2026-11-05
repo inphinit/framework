@@ -28,7 +28,7 @@ class Response
      * Note: If the status has changed, the `Event::on('changestatus')` event will be triggered
      *
      * @param int $code
-     * @return int
+     * @return int|false
      */
     public static function status($code = 0)
     {
@@ -105,7 +105,7 @@ class Response
     {
         $time = time();
 
-        if (is_string($seconds)) {
+        if (is_string($seconds) && is_numeric($seconds) === false) {
             $seconds = strtotime($seconds);
 
             if ($seconds === false) {
@@ -115,7 +115,7 @@ class Response
             $seconds -= $time;
         }
 
-        if (is_string($modified)) {
+        if (is_string($modified) && is_numeric($modified) === false) {
             $modified = strtotime($modified);
 
             if ($modified === false) {
@@ -149,7 +149,7 @@ class Response
             throw new Exception('Invalid name: ' . $name);
         }
 
-        if (preg_match('#^[\x00-\x7F]+$#', $name) === 1) {
+        if (preg_match('/^[\x20-\x7E]+$/D', $name) === 1) {
             // Only ASCII
             $filename = '; filename="' . $name . '"';
         } else {
@@ -161,7 +161,6 @@ class Response
             }
         }
 
-        header('Content-Transfer-Encoding: Binary');
         header('Content-Disposition: attachment' . $filename);
 
         if ($length > 0) {

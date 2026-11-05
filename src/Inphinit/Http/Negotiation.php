@@ -39,23 +39,26 @@ class Negotiation
     /**
      * Create a Negotiation instance based in string
      *
-     * @param string $str
+     * @param string $string
+     * @throws \Inphinit\Exception
      * @return \Inphinit\Http\Negotiation
      */
-    public static function fromString($str)
+    public static function fromString($string)
     {
         $headers = array();
 
-        foreach (preg_split('#(\r)?\n#', $str) as $line) {
+        foreach (preg_split('#(\r)?\n#', $string) as $line) {
             if (strpos($line, ':') !== false) {
                 list($key, $value) = explode(':', trim($line), 2);
                 $headers[trim($key)] = ltrim($value);
             }
         }
 
-        $instance = new static($headers);
+        if (empty($headers)) {
+            throw new Exception('Empty entries');
+        }
 
-        $headers = null;
+        $instance = new static($headers);
 
         return $instance;
     }
@@ -170,7 +173,7 @@ class Negotiation
     }
 
     /**
-     * Get the encoding (from `Accept-Language` header) with the highest
+     * Get the language (from `Accept-Language` header) with the highest
      * priority based on the q value. If it does not exist then return
      * the value of `$alternative`.
      *
@@ -197,7 +200,7 @@ class Negotiation
         $headers = array();
 
         foreach (explode(',', $value) as $hvalues) {
-            $current = explode(';', $hvalues, 2);
+            $current = explode(';', trim($hvalues), 2);
 
             if (strlen($current[0]) === 0) {
                 continue;
@@ -235,12 +238,8 @@ class Negotiation
     {
         $value = trim($value);
 
-        if (is_numeric($value) === false) {
-            throw new Exception('Header contains a q-factor non numeric: "' . $value . '"', 0, 3);
-        }
-
-        if ($value < 0 || $value > 1) {
-            throw new Exception('Header contains a q-factor outside the range of 0.0–1.0: "' . $value . '"', 0, 3);
+        if (preg_match('/^(0|1|1\.0|0\.\d{1,3})$/D', $value) !== 1) {
+            throw new Exception('Invalid q-factor: ' . $value, 0, 3);
         }
 
         return (float) $value;

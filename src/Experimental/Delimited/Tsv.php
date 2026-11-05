@@ -29,7 +29,7 @@ class Tsv extends Reader
      *
      * @param string $separator Field separator
      * @param string $entry     Line content
-     * @return array<int, string>|false
+     * @return string[]|false
      */
     protected function parse($separator, $entry)
     {

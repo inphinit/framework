@@ -91,7 +91,7 @@ class FileResponse
     public function send($modes, $overwrite = false)
     {
         if (headers_sent($file, $line)) {
-            throw new \ErrorException('Cannot set sendfile header, headers already sent', 0, E_ERROR, $file, $line);
+            throw new \ErrorException('Cannot send file, headers already sent', 0, E_ERROR, $file, $line);
         }
 
         $valid_modes = self::ACCEL | self::SENDFILE | self::FALLBACK;
