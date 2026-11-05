@@ -108,11 +108,15 @@ class App extends \Inphinit\App
         }
 
         if (strpos($prefix, '\\\\') !== false) {
-            throw new Exception("The namespace prefix must not contain consecutive backslashes: {$prefix}");
+            throw new Exception('The namespace prefix must not contain consecutive backslashes: ' . $prefix);
         }
 
         if ($prefix[0] === '\\' || substr($prefix, -1) === '\\') {
-            throw new Exception("The namespace prefix must not contain beginning or end backslashes: '{$prefix}'");
+            throw new Exception('The namespace prefix must not contain beginning or end backslashes: ' . $prefix);
+        }
+
+        if (preg_match('/\s/', $prefix) === 1) {
+            throw new Exception('The namespace prefix must not contain spaces: ' . $prefix);
         }
 
         parent::setNamespace($prefix);
@@ -132,7 +136,7 @@ class App extends \Inphinit\App
         }
 
         if (preg_match('#^\w+$#', $name) !== 1) {
-            throw new Exception("Invalid pattern name: {$name}");
+            throw new Exception('Invalid pattern name: ' . $name);
         }
 
         if (Inspector::regex('#' . $regex . '#', $error_message, $error_code) === false) {
@@ -176,12 +180,12 @@ class App extends \Inphinit\App
 
                 // Check invalid parameter names
                 if (preg_match('#^[a-z]\w*$#', $name) !== 1) {
-                    throw new Exception("Invalid parameter: {$base}", 0, 3);
+                    throw new Exception('Invalid parameter: ' . $base, 0, 3);
                 }
 
                 // Check invalid patterns
                 if ($item !== '' && preg_match('#^\:[a-z]\w*$#', $item) !== 1) {
-                    throw new Exception("Invalid pattern: {$base}", 0, 3);
+                    throw new Exception('Invalid pattern: ' . $base, 0, 3);
                 }
             }
 
@@ -219,7 +223,7 @@ class App extends \Inphinit\App
                 }
             }
 
-            $word = ":{$word}";
+            $word = ':' . $word;
 
             if ($current_suggestion !== null) {
                 $word .= " (suggestion: {$current_suggestion})";

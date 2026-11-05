@@ -34,7 +34,6 @@ class Cache
     private $cache;
     private $cacheTemp;
     private $debug = false;
-    private $expiresAt;
     private $finishContentLength = 0;
     private $handle;
     private $hash;
@@ -54,7 +53,7 @@ class Cache
      * @param string|null $target Optional. Default is INPHINIT_PATH.
      * @param string|null $query  Optional. Default is not to use a querystring.
      */
-    public function __construct($method = null, $target = null, $querystring = null)
+    public function __construct($method = null, $target = null, $query = null)
     {
         if ($method === null) {
             if (isset($_SERVER['REQUEST_METHOD'][0])) {
@@ -68,8 +67,8 @@ class Cache
             $target = INPHINIT_PATH;
         }
 
-        if ($querystring !== null) {
-            $target .= '?' . $querystring;
+        if ($query !== null) {
+            $target .= '?' . $query;
         }
 
         $hash = static::createHash($target);
@@ -147,6 +146,7 @@ class Cache
      *
      * @param int $chunkSize
      * @throws \ErrorException
+     * @throws \Inphinit\Exception
      * @return int
      */
     public function start($chunkSize = null)
@@ -430,7 +430,7 @@ class Cache
         return $this->method === 'HEAD' ? '' : $data;
     }
 
-    private function setHeaders($contenLength, $lastModified)
+    private function setHeaders($contentLength, $lastModified)
     {
         $expires = $this->lifetime + $lastModified;
         $hash = $this->hash;
@@ -441,7 +441,7 @@ class Cache
 
         // Caution: Firefox requires Content-Length for HTTP conditional (If-None-Match/If-Modified-Since).
         // See: https://bugzilla.mozilla.org/show_bug.cgi?id=2077994
-        header('Content-Length: ' . $contenLength);
+        header('Content-Length: ' . $contentLength);
     }
 
     private function debugWithHeader($flag)

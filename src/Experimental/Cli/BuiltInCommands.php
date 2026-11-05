@@ -322,7 +322,7 @@ class BuiltInCommands
 
         if ($conn) {
             fclose($conn);
-            echo "Address already in use: {$host}:{$port}";
+            echo "Address {$host}:{$port} is already in use";
             return 1;
         }
 

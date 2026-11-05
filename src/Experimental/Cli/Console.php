@@ -78,7 +78,7 @@ class Console
         if (empty($this->commands[$name])) {
             $suggestions = $this->getCommandSuggestions($name);
 
-            $message = "Unknown command: {$name}";
+            $message = 'Unknown command: ' . $name;
 
             if (count($suggestions) !== 0) {
                 $message .= ' - The most similar commands are: ' . implode(', ', $suggestions);
@@ -217,7 +217,7 @@ class Console
 
                 $last_option = null;
             } else {
-                throw new Exception("Unexpected option: {$entry}", 0, 3);
+                throw new Exception('Unexpected option: ' . $entry, 0, 3);
             }
         }
 

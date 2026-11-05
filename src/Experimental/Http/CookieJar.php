@@ -239,7 +239,7 @@ class CookieJar
         }
 
         if ($value !== null && self::validChars($value, self::DISALLOW_VALUE_CHARS) === false) {
-            throw new Exception("Value contains invalid characters: {$value}");
+            throw new Exception('Value contains invalid characters: ' . $value);
         }
 
         $this->cookies[$name] = $value;

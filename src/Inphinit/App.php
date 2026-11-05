@@ -167,8 +167,12 @@ class App
                 $entry = $routes[$method];
             } elseif (isset($routes['ANY'])) {
                 $entry = $routes['ANY'];
+            } elseif ($routes === null) {
+                $code = 404;
             } else {
-                $code = $routes === null ? 404 : 405;
+                $code = 405;
+                unset($routes['ANY']);
+                header('Allow: ' . implode(', ', array_keys($routes)));
             }
         }
 

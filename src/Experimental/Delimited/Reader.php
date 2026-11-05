@@ -138,7 +138,7 @@ abstract class Reader
     public function setDataTransferObject($dto)
     {
         if ($dto !== null && class_exists($dto) === false) {
-            throw new Exception("{$dto} class not found");
+            throw new Exception($dto . ' class not found');
         }
 
         $this->dto = $dto;
