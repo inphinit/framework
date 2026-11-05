@@ -65,7 +65,7 @@ class Console
     public function exec(array $arguments)
     {
         if (empty($arguments[1])) {
-            throw new Exception('Missing command name' . PHP_EOL);
+            throw new Exception('Missing command name');
         }
 
         // Remove the first argument "$arguments[0]"
@@ -84,7 +84,7 @@ class Console
                 $message .= ' - The most similar commands are: ' . implode(', ', $suggestions);
             }
 
-            throw new Exception($message . PHP_EOL);
+            throw new Exception($message);
         }
 
         $command = $this->commands[$name];
@@ -92,17 +92,17 @@ class Console
         try {
             $response = $command->response(static::parseOptions($arguments));
         } catch (\Exception $ex) {
-            throw new Exception($ex->getMessage() . PHP_EOL, $ex->getCode(), 2, $ex);
+            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
         }
 
         if ($response !== null) {
             if (is_int($response) === false) {
                 $type = Inspector::type($response);
-                throw new Exception("Return must be of type int or null, {$type} given" . PHP_EOL);
+                throw new Exception("Return must be of type int or null, {$type} given");
             }
 
             if ($response < 0 || $response > 255) {
-                throw new Exception('Exit codes should be in the range 0 to 255' . PHP_EOL);
+                throw new Exception('Exit codes should be in the range 0 to 255');
             }
         } else {
             $response = 0;

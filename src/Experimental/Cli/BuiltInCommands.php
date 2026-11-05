@@ -136,7 +136,7 @@ class BuiltInCommands
 
         $affecteds = Storage::clear('cache/output', $expires, $attempts);
 
-        echo $affecteds, ' cache files were removed', PHP_EOL;
+        echo $affecteds, ' cache files were removed';
     }
 
     private function createCommand(Command $command, array $options, array $residues)
@@ -219,15 +219,21 @@ class BuiltInCommands
 
         $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}) | crontab -";
 
-        echo "> {$execute}\n";
+        echo '> ', $execute;
+
+        echo PHP_EOL;
 
         passthru($execute, $code);
 
+        echo PHP_EOL;
+
         if ($code === 0) {
-            echo "\nSchedule disabled.\n";
+            echo 'Schedule disabled.';
         } else {
-            echo "\nError {$code}\n";
+            echo 'Error: ', $code;
         }
+
+        echo PHP_EOL;
 
         return $code;
     }
@@ -252,15 +258,21 @@ class BuiltInCommands
 
         $execute = "(crontab -l 2>/dev/null | grep -Fv {$filter}; echo {$expr}) | crontab -";
 
-        echo "> {$execute}\n";
+        echo '> ', $execute;
+
+        echo PHP_EOL;
 
         passthru($execute, $code);
 
+        echo PHP_EOL;
+
         if ($code === 0) {
-            echo "\nSchedule enabled.\n";
+            echo 'Schedule enabled.';
         } else {
-            echo "\nError {$code}\n";
+            echo 'Error: ', $code;
         }
+
+        echo PHP_EOL;
 
         return $code;
     }
@@ -277,8 +289,6 @@ class BuiltInCommands
             } else {
                 echo 'No scheduled task was executed.';
             }
-
-            echo PHP_EOL;
 
             return 0;
         }
@@ -350,7 +360,7 @@ class BuiltInCommands
         $max = App::config('session_max_inactive');
 
         if ($max === null || ctype_digit($max) === false || $max[0] === '0' || $max < 1) {
-            echo 'The APP_SESSION_MAX_INACTIVE environment variable is missing or has an invalid value', PHP_EOL;
+            echo 'The APP_SESSION_MAX_INACTIVE environment variable is missing or has an invalid value';
             return 1;
         }
 
@@ -363,8 +373,6 @@ class BuiltInCommands
             return strpos($filename, '~sess') === 0;
         });
 
-        echo $affecteds, ' session files were removed', PHP_EOL;
-
-        return 0;
+        echo $affecteds, ' session files were removed';
     }
 }

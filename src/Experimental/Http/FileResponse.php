@@ -31,10 +31,10 @@ class FileResponse
     /**
      * Initialize the response with a file path and optional download name
      *
-     * @param string $source   Absolute file path.
-     * @param string $filename Optional. Set download name (defaults to basename of `$source`).
+     * @param string $source        Absolute file path.
+     * @param string|null $filename Optional. Set download name (defaults to basename of `$source`).
      */
-    public function __construct($source, $filename = '')
+    public function __construct($source, $filename = null)
     {
         if (strpbrk($source, "\r\n") !== false) {
             throw new Exception('$source may not contain more than a single header, new line detected');
@@ -44,7 +44,7 @@ class FileResponse
             throw new Exception('$filename may not contain more than a single header, new line detected');
         }
 
-        $this->filename = $filename ? $filename : basename($source);
+        $this->filename = $filename !== null ? $filename : basename($source);
         $this->source = $source;
     }
 

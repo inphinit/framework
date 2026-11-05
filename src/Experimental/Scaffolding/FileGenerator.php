@@ -100,7 +100,7 @@ class FileGenerator
             throw new Exception($error, 0, 2);
         }
 
-        return $this->generate(INPHINIT_SYSTEM . '/views', $name, $fileTemplate, array(), 2);
+        return $this->generate(INPHINIT_SYSTEM . '/views', $name, $fileTemplate, array(), 3);
     }
 
     private function createClass($namespace, $name, $fileTemplate)
@@ -151,7 +151,7 @@ class FileGenerator
                 'NAME' => $class,
                 'NAMESPACE' => $namespace,
             ),
-            3
+            4
         );
     }
 
@@ -174,11 +174,7 @@ class FileGenerator
         $template = self::getTemplateSource($fileTemplate);
 
         if ($template === false) {
-            throw new Exception(
-                'Template does not exist or cannot be read: ' . $fileTemplate . '.ft',
-                0,
-                $depth
-            );
+            throw new Exception('Template does not exist or cannot be read: ' . $fileTemplate . '.ft', 0, $depth);
         }
 
         $dest = $dir . '/' . $relative . '.php';

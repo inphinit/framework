@@ -35,7 +35,7 @@ class Task
     /**
      * Create a Task instance
      *
-     * @param callable      $callback
+     * @param callable $callback
      */
     public function __construct(callable $callback)
     {

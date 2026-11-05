@@ -195,19 +195,6 @@ class Scheduler
         }
     }
 
-    private function sortTasks($a, $b)
-    {
-        if ($a->isBackground() === $b->isBackground()) {
-            return 0;
-        }
-
-        if ($a->isBackground()) {
-            return -1;
-        }
-
-        return 1;
-    }
-
     /**
      * Runs every due task. This method must be executed during all CRON/schedule calls.
      *
@@ -275,7 +262,7 @@ class Scheduler
         } catch(\Exception $ex) {
             $this->lock(false);
 
-            throw new Exception($ex->getMessage() . PHP_EOL, $ex->getCode(), 2, $ex);
+            throw new Exception($ex->getMessage(), $ex->getCode(), 2, $ex);
         }
 
         $this->lock(false);

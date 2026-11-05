@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Inphinit
  *
  * Copyright (c) 2026 Guilherme Nascimento (brcontainer@yahoo.com.br)
@@ -46,7 +46,7 @@ class Cache
     private $lifetime;
     private $writing = false;
 
-    /*
+    /**
      * Define HTTP and request target. By default, the query string is not used;
      * combine INPHINIT_PATH with $_SERVER[QUERY_STRING].
      *
@@ -122,7 +122,7 @@ class Cache
         $this->lifetime = $lifetime;
     }
 
-    /*
+    /**
      * Set storage location
      *
      * @param string $path

@@ -105,7 +105,13 @@ class Debug
             }
         }
 
-        if ($handle_error && PHP_SAPI !== 'cli' && function_exists('ini_get') && function_exists('ini_set') && ini_get('display_errors') === '1') {
+        if (
+            $handle_error &&
+            PHP_SAPI !== 'cli' &&
+            function_exists('ini_get') &&
+            function_exists('ini_set') &&
+            ini_get('display_errors') === '1'
+        ) {
             self::$restoreDisplayErrors = ini_set('display_errors', '0') !== false;
         }
     }

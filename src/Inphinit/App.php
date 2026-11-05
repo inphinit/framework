@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * Inphinit
  *
  * Copyright (c) 2026 Guilherme Nascimento (brcontainer@yahoo.com.br)

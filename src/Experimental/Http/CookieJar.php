@@ -30,6 +30,7 @@ class CookieJar
     const DISALLOW_VALUE_CHARS = " ,;\t\r\n\x0B\x0C";
     const DELETE = '; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Max-Age=0';
     const DELIMITER = ':';
+    const MAX_SIZE = 4000;
 
     private $jar;
     private $cookies = array();
@@ -42,8 +43,6 @@ class CookieJar
     private $path = '/';
     private $sameSite;
     private $secure = false;
-
-    private static $timeZone;
 
     /**
      * @param string $jar Define jar name (cookie name prefix)
@@ -128,14 +127,9 @@ class CookieJar
      */
     public function setExpires($datetime)
     {
-        if (self::$timeZone === null) {
-            self::$timeZone = new \DateTimeZone('UTC');
-        }
-
         try {
-            $dt = new \DateTime($datetime, self::$timeZone);
-            $this->expires = $dt->format('D, d M Y H:i:s \G\M\T');
-            $dt = null;
+            $date = new \DateTime($datetime, new \DateTimeZone('UTC'));
+            $this->expires = $date->format('D, d M Y H:i:s \G\M\T');
         } catch (\Exception $ex) {
             throw new Exception($ex->getMessage(), 0, 2, $ex);
         }
@@ -263,6 +257,16 @@ class CookieJar
     }
 
     /**
+     * Magic method for unset variable with `unset()` function
+     *
+     * @param string $name
+     */
+    public function __unset($name)
+    {
+        $this->cookies[$name] = null;
+    }
+
+    /**
      * Send cookies from jar to headers
      *
      * @throws \ErrorException
@@ -309,6 +313,7 @@ class CookieJar
             $params .= '; Secure';
         }
 
+        $headers = array();
         $prefix = $this->jar . self::DELIMITER;
 
         foreach ($this->cookies as $name => $value) {
@@ -318,7 +323,18 @@ class CookieJar
                 $entry = rawurlencode($value) . $params . $expires;
             }
 
-            header('Set-Cookie: ' . $prefix . $name . '=' . $entry, false);
+            $cookie = $prefix . $name . '=' . $entry;
+            $length = strlen($cookie);
+
+            if ($length > self::MAX_SIZE) {
+                throw new Exception("Cookie '{$name}' exceeds the size limit ({$length})", 0, 3);
+            }
+
+            $headers[] = 'Set-Cookie: ' . $cookie;
+        }
+
+        foreach ($headers as $header) {
+            header($header, false);
         }
     }
 

@@ -1,4 +1,12 @@
 <?php
+/*
+ * Inphinit
+ *
+ * Copyright (c) 2026 Guilherme Nascimento (brcontainer@yahoo.com.br)
+ *
+ * Released under the MIT license
+ */
+
 namespace Inphinit\Experimental\Validation\Rules;
 
 use Inphinit\Experimental\Validation\Rule;
