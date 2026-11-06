@@ -23,11 +23,11 @@ class BuiltInCommands
     const APP_DOWN = 'app:down';
     const APP_UP = 'app:up';
     const CACHE_CLEAR = 'cache:clear';
-    const CREATE_COMMAND = 'create:command';
-    const CREATE_CONTROLLER = 'create:controller';
-    const CREATE_VIEW = 'create:view';
     const ENV_BOOT = 'env:boot';
     const ENV_SOURCE = 'env:source';
+    const MAKE_COMMAND = 'make:command';
+    const MAKE_CONTROLLER = 'make:controller';
+    const MAKE_VIEW = 'make:view';
     const PKG_UP = 'pkg:up';
     const SCHEDULE_DISABLE = 'schedule:disable';
     const SCHEDULE_ENABLE = 'schedule:enable';
@@ -58,19 +58,19 @@ class BuiltInCommands
             ->setOption('expires', 'e', 0, '#^[1-9](\d*?)$#', 'Define expires time (Default: 7200)')
             ->restrictToCli(true);
 
-        $this->registerCommand(self::CREATE_COMMAND, 'createCommand')
-            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define command name');
-
-        $this->registerCommand(self::CREATE_CONTROLLER, 'createController')
-            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define controller name');
-
-        $this->registerCommand(self::CREATE_VIEW, 'createView')
-            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define view name');
-
         $this->registerCommand(self::ENV_BOOT, 'envBoot')
             ->setOption('override', 'o', Command::ARG_NO_VALUE, null, 'Define override mode');
 
         $this->registerCommand(self::ENV_SOURCE, 'envSource');
+
+        $this->registerCommand(self::MAKE_COMMAND, 'createCommand')
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define command name');
+
+        $this->registerCommand(self::MAKE_CONTROLLER, 'createController')
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define controller name');
+
+        $this->registerCommand(self::MAKE_VIEW, 'createView')
+            ->setOption('name', 'n', Command::ARG_REQUIRED, null, 'Define view name');
 
         $this->registerCommand(self::PKG_UP, 'packageUpdate');
 
