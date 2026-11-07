@@ -134,7 +134,10 @@ class BuiltInCommands
 
         echo 'Cleaning cache files ...', PHP_EOL;
 
-        $affecteds = Storage::clear('cache/output', $expires, $attempts);
+        $dt = new \DateTime('now', new \DateTimeZone('UTC'));
+        $dt = $dt->modify("-{$expires} seconds");
+
+        $affecteds = Storage::clear('cache/output', $dt, $attempts);
 
         echo $affecteds, ' cache files were removed';
     }
@@ -364,12 +367,13 @@ class BuiltInCommands
             return 1;
         }
 
-        $expires = time() - $max;
+        $dt = new \DateTime('now', new \DateTimeZone('UTC'));
+        $dt = $dt->modify("-{$max} seconds");
         $attempts = $options['attempts'] === null ? 20 : intval($options['attempts']);
 
         echo 'Cleaning session files ...', PHP_EOL;
 
-        $affecteds = Storage::clear('session', $expires, $attempts, function ($filename) {
+        $affecteds = Storage::clear('session', $dt, $attempts, function ($filename) {
             return strpos($filename, '~sess') === 0;
         });
 
