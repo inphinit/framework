@@ -236,25 +236,23 @@ class FileGenerator
 
         // mode is still subject to the umask
         if ($missing && @mkdir($dir, $permissions & 0777, true) === false && is_dir($dir) === false) {
-            throw new \RuntimeException('Could not create the directory: ' . $dir . self::lastError());
+            throw new \RuntimeException('Could not create the directory: ' . $dir);
         }
 
         $handle = @fopen($dest, 'xb');
 
         if ($handle === false) {
-            $error = self::lastError();
             self::removeDirs($missing);
-            throw new \RuntimeException('Cannot create (it may already exist): ' . $dest . $error);
+            throw new \RuntimeException('Cannot create (it may already exist): ' . $dest);
         }
 
         $written = fwrite($handle, $data);
         $closed = fclose($handle);
 
         if ($written !== strlen($data) || $closed === false) {
-            $error = self::lastError();
             @unlink($dest);
             self::removeDirs($missing);
-            throw new \RuntimeException('Saving the file failed or was only partial: ' . $dest . $error);
+            throw new \RuntimeException('Saving the file failed or was only partial: ' . $dest);
         }
 
         // inherit the directory permissions, but never as executable
@@ -266,13 +264,6 @@ class FileGenerator
         foreach ($dirs as $dir) {
             @rmdir($dir);
         }
-    }
-
-    private static function lastError()
-    {
-        $error = error_get_last();
-
-        return $error ? ' (' . $error['message'] . ')' : '';
     }
 
     /**

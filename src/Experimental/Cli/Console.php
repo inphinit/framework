@@ -217,7 +217,7 @@ class Console
 
                 $last_option = null;
             } else {
-                throw new Exception('Unexpected option: ' . $entry, 0, 3);
+                throw new \RuntimeException('Unexpected option: ' . $entry);
             }
         }
 
