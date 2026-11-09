@@ -40,7 +40,7 @@ The documentation contains instructions for using the framework, as well as the 
 
 - English: https://inphinit.github.io/en/docs/
 - Portuguese: https://inphinit.github.io/pt/docs/
-- API Reference: https://inphinit.github.io/api/
+- API Reference: https://inphinit.github.io/api/2.1/
 
 ## To-Do List
 
